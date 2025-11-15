@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="et">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Märkmete Rakendus - KLIENDIFRONT</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Autentimise vaade (KLIENDIFRONT) -->
+        <div id="auth-view" class="view">
+            <div class="auth-container">
+                <h1>📝 Märkmete Rakendus</h1>
+                <p class="subtitle">KLIENDIFRONT autentimine</p>
+
+                <!-- Login vorm -->
+                <div id="login-form" class="form-container">
+                    <h2>Logi sisse</h2>
+                    <form id="loginForm">
+                        <input type="email" id="login-email" placeholder="Email" required>
+                        <input type="password" id="login-password" placeholder="Parool" required>
+                        <button type="submit">Logi sisse</button>
+                    </form>
+                    <p>Pole veel kontot? <a href="#" id="show-register">Registreeru</a></p>
+                </div>
+
+                <!-- Register vorm -->
+                <div id="register-form" class="form-container" style="display: none;">
+                    <h2>Registreeru</h2>
+                    <form id="registerForm">
+                        <input type="text" id="register-username" placeholder="Kasutajanimi" required>
+                        <input type="email" id="register-email" placeholder="Email" required>
+                        <input type="password" id="register-password" placeholder="Parool" required>
+                        <button type="submit">Registreeru</button>
+                    </form>
+                    <p>On juba konto? <a href="#" id="show-login">Logi sisse</a></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Märkmete vaade (peale sisselogimist) -->
+        <div id="notes-view" class="view" style="display: none;">
+            <div class="notes-container">
+                <div class="header">
+                    <h1>📝 Minu Märkmed</h1>
+                    <div class="user-info">
+                        <span id="username-display"></span>
+                        <button id="logout-btn" class="logout-btn">Logi välja</button>
+                    </div>
+                </div>
+
+                <!-- Uue märkme vorm -->
+                <div class="new-note-form">
+                    <h2>Uus märge</h2>
+                    <form id="noteForm">
+                        <input type="text" id="note-title" placeholder="Pealkiri" required>
+                        <textarea id="note-content" placeholder="Sisu" rows="4" required></textarea>
+                        <button type="submit">Lisa märge</button>
+                    </form>
+                </div>
+
+                <!-- Märkmete nimekiri -->
+                <div class="notes-list">
+                    <h2>Sinu märkmed</h2>
+                    <div id="notes-container">
+                        <p class="loading">Laen märkmeid...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Teated -->
+        <div id="message" class="message"></div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,217 @@
+{
+  "clientName": "Thunder Client",
+  "collectionName": "Notes API - KLIENDIFRONT & MACHINEFRONT",
+  "collectionId": "notes-api-collection",
+  "dateExported": "2025-11-15",
+  "version": "1.0",
+  "folders": [
+    {
+      "id": "kliendifront",
+      "name": "KLIENDIFRONT (Kasutaja)",
+      "containerId": "",
+      "created": "2025-11-15",
+      "sortNum": 10000
+    },
+    {
+      "id": "machinefront",
+      "name": "MACHINEFRONT (Admin)",
+      "containerId": "",
+      "created": "2025-11-15",
+      "sortNum": 20000
+    }
+  ],
+  "requests": [
+    {
+      "id": "register",
+      "name": "1. Registreeru",
+      "url": "http://localhost:3000/api/auth/register",
+      "method": "POST",
+      "sortNum": 10000,
+      "created": "2025-11-15",
+      "modified": "2025-11-15",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"username\": \"testuser\",\n  \"email\": \"test@example.com\",\n  \"password\": \"test123\"\n}",
+        "form": []
+      },
+      "tests": [],
+      "containerId": "kliendifront",
+      "colId": "notes-api-collection"
+    },
+    {
+      "id": "login",
+      "name": "2. Logi sisse (salvesta token!)",
+      "url": "http://localhost:3000/api/auth/login",
+      "method": "POST",
+      "sortNum": 20000,
+      "created": "2025-11-15",
+      "modified": "2025-11-15",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"test123\"\n}",
+        "form": []
+      },
+      "tests": [
+        {
+          "type": "set-env-var",
+          "custom": "json.token",
+          "action": "setto",
+          "value": "{{authToken}}"
+        }
+      ],
+      "containerId": "kliendifront",
+      "colId": "notes-api-collection"
+    },
+    {
+      "id": "get-notes",
+      "name": "3. Hangi minu märkmed",
+      "url": "http://localhost:3000/api/notes",
+      "method": "GET",
+      "sortNum": 30000,
+      "created": "2025-11-15",
+      "modified": "2025-11-15",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{authToken}}"
+        }
+      ],
+      "params": [],
+      "tests": [],
+      "containerId": "kliendifront",
+      "colId": "notes-api-collection"
+    },
+    {
+      "id": "create-note",
+      "name": "4. Loo uus märge",
+      "url": "http://localhost:3000/api/notes",
+      "method": "POST",
+      "sortNum": 40000,
+      "created": "2025-11-15",
+      "modified": "2025-11-15",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{authToken}}"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"title\": \"Test märge\",\n  \"content\": \"See on test märge, loodud Thunder Client'ist\"\n}",
+        "form": []
+      },
+      "tests": [],
+      "containerId": "kliendifront",
+      "colId": "notes-api-collection"
+    },
+    {
+      "id": "update-note",
+      "name": "5. Uuenda märget",
+      "url": "http://localhost:3000/api/notes/1",
+      "method": "PUT",
+      "sortNum": 50000,
+      "created": "2025-11-15",
+      "modified": "2025-11-15",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{authToken}}"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"title\": \"Uuendatud pealkiri\",\n  \"content\": \"Uuendatud sisu\"\n}",
+        "form": []
+      },
+      "tests": [],
+      "containerId": "kliendifront",
+      "colId": "notes-api-collection"
+    },
+    {
+      "id": "delete-note",
+      "name": "6. Kustuta märge",
+      "url": "http://localhost:3000/api/notes/1",
+      "method": "DELETE",
+      "sortNum": 60000,
+      "created": "2025-11-15",
+      "modified": "2025-11-15",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{authToken}}"
+        }
+      ],
+      "params": [],
+      "tests": [],
+      "containerId": "kliendifront",
+      "colId": "notes-api-collection"
+    },
+    {
+      "id": "admin-notes",
+      "name": "1. Hangi KÕIK märkmed (admin)",
+      "url": "http://localhost:3000/api/admin/notes",
+      "method": "GET",
+      "sortNum": 70000,
+      "created": "2025-11-15",
+      "modified": "2025-11-15",
+      "headers": [
+        {
+          "name": "X-API-Key",
+          "value": "{{apiKey}}"
+        }
+      ],
+      "params": [],
+      "tests": [],
+      "containerId": "machinefront",
+      "colId": "notes-api-collection"
+    },
+    {
+      "id": "admin-stats",
+      "name": "2. Hangi statistika",
+      "url": "http://localhost:3000/api/admin/stats",
+      "method": "GET",
+      "sortNum": 80000,
+      "created": "2025-11-15",
+      "modified": "2025-11-15",
+      "headers": [
+        {
+          "name": "X-API-Key",
+          "value": "{{apiKey}}"
+        }
+      ],
+      "params": [],
+      "tests": [],
+      "containerId": "machinefront",
+      "colId": "notes-api-collection"
+    }
+  ],
+  "settings": {
+    "headers": [],
+    "tests": [],
+    "envId": "notes-env"
+  }
+}

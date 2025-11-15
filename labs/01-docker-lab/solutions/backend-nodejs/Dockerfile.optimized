@@ -1,0 +1,41 @@
+# Optimized Multi-Stage Dockerfile for User Service
+# See on optimeeritud lahendus Harjutusele 5
+
+# Stage 1: Dependencies
+FROM node:18-alpine AS dependencies
+
+WORKDIR /app
+
+# Kopeeri ainult package files (layer caching!)
+COPY package*.json ./
+
+# Kasuta npm ci production jaoks (kiirem ja deterministlik)
+RUN npm ci --only=production
+
+# Stage 2: Runtime
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Loo non-root user turvalisuse huvides
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001
+
+# Kopeeri ainult production dependencies stage 1'st
+COPY --from=dependencies /app/node_modules ./node_modules
+
+# Kopeeri rakenduse kood koos õigete õigustega
+COPY --chown=nodejs:nodejs . .
+
+# Kasuta non-root userit
+USER nodejs
+
+# Avalda port
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:3000/health', (r) => { process.exit(r.statusCode === 200 ? 0 : 1) })"
+
+# Käivita rakendus
+CMD ["node", "server.js"]
