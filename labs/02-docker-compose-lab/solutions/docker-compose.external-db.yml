@@ -1,0 +1,62 @@
+# Docker Compose - External PostgreSQL Pattern
+# Labor 2: Harjutus 4
+# Käivitamine: docker compose -f docker-compose.external-db.yml --env-file .env.external up -d
+
+version: '3.8'
+
+services:
+  # NO POSTGRES SERVICE - using external database
+
+  # Node.js Backend (connects to external PostgreSQL)
+  backend:
+    build:
+      context: ../../apps/backend-nodejs
+      dockerfile: Dockerfile
+    container_name: backend-external
+    restart: always
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: 3000
+      # External Database Connection
+      DB_HOST: ${EXTERNAL_DB_HOST}  # External IP or hostname (e.g., 93.127.213.242)
+      DB_PORT: ${EXTERNAL_DB_PORT:-5432}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_SSL: ${DB_SSL:-false}  # Set to "true" for production external DBs
+      # JWT configuration
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+    ports:
+      - "3000:3000"
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    # Extra hosts (if DB is on same VPS)
+    extra_hosts:
+      - "kirjakast:93.127.213.242"
+
+  # Frontend (Nginx + Vanilla JS)
+  frontend:
+    build:
+      context: ../../apps/frontend
+      dockerfile: Dockerfile
+    container_name: frontend-external
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+# NO VOLUMES for PostgreSQL (external DB manages its own storage)
