@@ -103,47 +103,119 @@ Mõlemad meetodid lahendavad sama probleemi - kuidas suunata liiklust välistest
 
 ---
 
-## 🔄 Mis on Reverse Proxy?
+## 📝 Harjutused
 
-**Lihtne selgitus:**
+### 🛤️ Path A: Algaja Tee (6 tundi)
 
-Reverse proxy on server, mis asub sinu rakenduste ees ja suunab kasutajate päringud õigele teenusele.
-
-```
-Kasutaja (brauser)
-    ↓
-    http://kirjakast.cloud/todo
-    ↓
-Reverse Proxy (Nginx VÕI Ingress Controller)
-    ↓
-    ├─→ /todo         → Frontend (port 8080)
-    ├─→ /api/todos    → Todo Service (port 8081)
-    └─→ /api/users    → User Service (port 3000)
-```
-
-**Miks kasutada?**
-- ✅ Üks domeen, mitu teenust (kirjakast.cloud suunab kõik eri portidele)
-- ✅ SSL/TLS lõpetamine (HTTPS) ühes kohas
-- ✅ Load balancing (liikluse jagamine)
-- ✅ Puhverdamine (caching)
-- ✅ Ligipääsu kontroll ja turvalisus
+**Kellele:** Esimest korda reverse proxy või domeenide seadistamisega kokku puutuvad
+**Õppejärjekord:** 01 → 02 → 03 → 04 → 05
 
 ---
 
-## 🆚 Nginx vs Kubernetes Ingress
+#### Harjutus 1: DNS + Nginx Reverse Proxy (90 min) 🔵 Path A ainult
+**Fail:** [exercises/01-dns-nginx-proxy.md](exercises/01-dns-nginx-proxy.md)
 
-| Aspekt | Nginx (Traditsiooniline) | Kubernetes Ingress |
-|--------|-------------------------|-------------------|
-| **Paigaldus** | VPS-i (host OS) | Kubernetes klaster |
-| **Konfiguratsioon** | nginx.conf failid | YAML manifest'id (Ingress) |
-| **Haldusliidesed** | SSH + vim/nano | kubectl |
-| **SSL sertifikaadid** | certbot (Let's Encrypt) | cert-manager (automaatne) |
-| **Teenuste avastamine** | Käsitsi (static upstream'id) | Automaatne (K8s Service'id) |
-| **Skaleerumine** | Vertikaalne (suurem server) | Horisontaalne (replicas) |
-| **Tõrkekindlus** | Üks fail point | High Availability (multiple pods) |
-| **Kasutatakse** | VPS, dedikeeritud serverid | Kubernetes keskkonnad |
-| **Õppimiskõver** | Keskmine (Nginx config syntax) | Kõrgem (K8s kontseptsioonid) |
-| **Ideaalne** | Väiksemad projektid, lihtne setup | Suured klastrid, mikroteenused |
+**Seadista traditsiooniline reverse proxy:**
+- Loo DNS A-kirje domeenile (kirjakast.cloud)
+- Paigalda Nginx VPS-i
+- Konfigureeri virtual hosts
+- Seadista upstream'id backend teenustele
+- Testi path-based routing
+
+**Õpid:**
+- DNS-i põhimõtteid (A-kirjed, propagatsioon)
+- Nginx konfiguratsiooni struktuuri
+- Reverse proxy kontseptsiooni
+- Virtual hosts ja upstream'ide loogika
+
+---
+
+#### Harjutus 2: Kubernetes Ingress (90 min) 🟢 Path A + Path B
+**Fail:** [exercises/02-kubernetes-ingress.md](exercises/02-kubernetes-ingress.md)
+
+**Paigalda kaasaegne Ingress Controller:**
+- Paigalda Nginx Ingress Controller Kubernetes'esse
+- Loo Ingress ressursid path-based routing'uks
+- Võrdle Ingress'i traditsioonilise Nginx'iga (Path A)
+- Testi teenuste kättesaadavust Ingress kaudu
+- Debugi Ingress routing'u probleeme
+
+**Õpid:**
+- Ingress Controller vs Ingress Resource erinevus
+- Kubernetes Service discovery
+- Path-based routing Ingress'is
+- Ingress annotatsioone (custom settings)
+
+---
+
+#### Harjutus 3: SSL/TLS Sertifikaadid (60 min) 🟢 Path A + Path B
+**Fail:** [exercises/03-ssl-tls.md](exercises/03-ssl-tls.md)
+
+**Lisa HTTPS tugi:**
+- Paigalda Let's Encrypt sertifikaat (certbot - Path A)
+- Paigalda cert-manager Kubernetes'esse (Path A + Path B)
+- Loo Certificate ressursid automaatseks halduseks
+- Testi HTTPS ühendust
+- Seadista automaatne sertifikaadi uuendus
+
+**Õpid:**
+- SSL/TLS põhimõtteid
+- Let's Encrypt ACME protokoll
+- cert-manager automaatika
+- HTTPS konfiguratsiooni best practices
+
+---
+
+#### Harjutus 4: Helm Charts (60 min) 🟢 Path A + Path B
+**Fail:** [exercises/04-helm-charts.md](exercises/04-helm-charts.md)
+
+**Paki rakendus Helm Chart'ina:**
+- Installi Helm
+- Loo Chart struktuur (Chart.yaml, values.yaml, templates/)
+- Templeedi Deployment, Service, Ingress
+- Paigalda rakendus Helm'iga
+- Uuenda rakendust (helm upgrade)
+
+**Õpid:**
+- Helm'i arhitektuuri (Chart, Release, Repository)
+- Templating süntaks (Go templates)
+- Values faili kasutamine
+- Helm lifecycle (install, upgrade, rollback)
+
+---
+
+#### Harjutus 5: Autoscaling + Rolling Updates (60 min) 🟢 Path A + Path B
+**Fail:** [exercises/05-autoscaling-rolling.md](exercises/05-autoscaling-rolling.md)
+
+**Tee rakendus production-ready:**
+- Paigalda Metrics Server
+- Loo Horizontal Pod Autoscaler (HPA)
+- Lisa CPU/memory requests ja limits
+- Testi autoscaling'u koormusega
+- Implementeeri Rolling Update strateegia
+- Seadista readiness ja liveness probes
+- Tee zero-downtime deployment
+
+**Õpid:**
+- HPA tööpõhimõte
+- Metrics Server ja Prometheus
+- Rolling update strateegia parameetreid
+- Health check'ide tähtsust
+
+---
+
+### 🛤️ Path B: Kogenud Tee (4 tundi)
+
+**Kellele:** Juba töötanud Nginx või teiste reverse proxy lahendustega
+**Õppejärjekord:** 02 → 03 → 04 → 05
+
+**Harjutused:**
+- Harjutus 2: Kubernetes Ingress (90 min)
+- Harjutus 3: SSL/TLS Sertifikaadid (60 min)
+- Harjutus 4: Helm Charts (60 min)
+- Harjutus 5: Autoscaling + Rolling Updates (60 min)
+
+**Märkus:** Vaata harjutuste detaile Path A sektsioonist. Path B jätab vahele ainult Harjutus 1 (DNS + Nginx).
 
 ---
 
@@ -175,7 +247,9 @@ Iga harjutuse jaoks on valmis lahendused `solutions/` kataloogis. Proovi esmalt 
 
 ---
 
-## 📊 Labori Edenemise Checklist
+## ✅ Kontrolli Tulemusi
+
+Peale labori läbimist pead omama:
 
 ### Path A - Täielik Tee
 - [ ] **Harjutus 01:** DNS A-kirje loodud ja Nginx reverse proxy töötab
@@ -297,7 +371,53 @@ helm rollback <name> <revision>
 
 ---
 
-## 📚 Edasine Lugemine
+## 📚 Lisainfo ja Teooria
+
+### 🔄 Mis on Reverse Proxy?
+
+**Lihtne selgitus:**
+
+Reverse proxy on server, mis asub sinu rakenduste ees ja suunab kasutajate päringud õigele teenusele.
+
+```
+Kasutaja (brauser)
+    ↓
+    http://kirjakast.cloud/todo
+    ↓
+Reverse Proxy (Nginx VÕI Ingress Controller)
+    ↓
+    ├─→ /todo         → Frontend (port 8080)
+    ├─→ /api/todos    → Todo Service (port 8081)
+    └─→ /api/users    → User Service (port 3000)
+```
+
+**Miks kasutada?**
+- ✅ Üks domeen, mitu teenust (kirjakast.cloud suunab kõik eri portidele)
+- ✅ SSL/TLS lõpetamine (HTTPS) ühes kohas
+- ✅ Load balancing (liikluse jagamine)
+- ✅ Puhverdamine (caching)
+- ✅ Ligipääsu kontroll ja turvalisus
+
+---
+
+### 🆚 Nginx vs Kubernetes Ingress
+
+| Aspekt | Nginx (Traditsiooniline) | Kubernetes Ingress |
+|--------|-------------------------|-------------------|
+| **Paigaldus** | VPS-i (host OS) | Kubernetes klaster |
+| **Konfiguratsioon** | nginx.conf failid | YAML manifest'id (Ingress) |
+| **Haldusliidesed** | SSH + vim/nano | kubectl |
+| **SSL sertifikaadid** | certbot (Let's Encrypt) | cert-manager (automaatne) |
+| **Teenuste avastamine** | Käsitsi (static upstream'id) | Automaatne (K8s Service'id) |
+| **Skaleerumine** | Vertikaalne (suurem server) | Horisontaalne (replicas) |
+| **Tõrkekindlus** | Üks fail point | High Availability (multiple pods) |
+| **Kasutatakse** | VPS, dedikeeritud serverid | Kubernetes keskkonnad |
+| **Õppimiskõver** | Keskmine (Nginx config syntax) | Kõrgem (K8s kontseptsioonid) |
+| **Ideaalne** | Väiksemad projektid, lihtne setup | Suured klastrid, mikroteenused |
+
+---
+
+### 📚 Edasine Lugemine
 
 - [Nginx Reverse Proxy Guide](https://nginx.org/en/docs/http/ngx_http_proxy_module.html)
 - [Kubernetes Ingress Documentation](https://kubernetes.io/docs/concepts/services-networking/ingress/)
