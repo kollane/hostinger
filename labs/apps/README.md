@@ -6,6 +6,21 @@
 
 ---
 
+## 🏗️ Mida Iga Teenus Teeb?
+
+**⭐ TÄHTIS:** Loe ESMALT põhjalikku arhitektuuri selgitust:
+
+📖 **[ARHITEKTUUR.md](ARHITEKTUUR.md)** - Mida iga teenus teeb ja MIKS see on vajalik
+
+See dokument selgitab:
+- Mida iga teenus ÄRILISELT teeb
+- MIKS on vaja mikroteenuseid
+- Kuidas teenused omavahel suhtlevad
+- Täielik workflow näited (login → todo loomine)
+- Monolith vs Mikroteenused võrdlus
+
+---
+
 ## 📦 Rakenduste Ülevaade
 
 ### 1. User Service (Node.js)
