@@ -1,61 +1,168 @@
 version: '3.8'
 
+# ==========================================================================
+# Docker Compose - Full Stack DevOps Training Application
+# ==========================================================================
+# Käivitab kõik mikroteenused koos:
+# - User Service (Node.js + PostgreSQL)
+# - Todo Service (Java Spring Boot + PostgreSQL)
+# - Frontend (Nginx)
+#
+# Kasutamine:
+#   docker compose up -d           # Käivita kõik teenused
+#   docker compose ps              # Vaata staatust
+#   docker compose logs -f         # Vaata logisid
+#   docker compose down            # Peata kõik teenused
+# ==========================================================================
+
 services:
-  # PostgreSQL andmebaas
-  postgres:
-    image: postgres:15-alpine
-    container_name: notes-db
+  # ==========================================================================
+  # PostgreSQL - User Service Database
+  # ==========================================================================
+  postgres-user:
+    image: postgres:16-alpine
+    container_name: postgres-user
     environment:
+      POSTGRES_DB: user_service_db
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: notes_db
+    volumes:
+      - user-data:/var/lib/postgresql/data
+      - ./backend-nodejs/database-setup.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./backend-nodejs/database-setup.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - app-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
-  # Node.js Backend API
-  backend:
+  # ==========================================================================
+  # PostgreSQL - Todo Service Database
+  # ==========================================================================
+  postgres-todo:
+    image: postgres:16-alpine
+    container_name: postgres-todo
+    environment:
+      POSTGRES_DB: todo_service_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - todo-data:/var/lib/postgresql/data
+      - ./backend-java-spring/database-setup.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5433:5432"
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ==========================================================================
+  # User Service - Node.js + Express + PostgreSQL
+  # ==========================================================================
+  user-service:
     build:
       context: ./backend-nodejs
       dockerfile: Dockerfile
-    container_name: notes-backend
+    container_name: user-service
     environment:
-      DB_HOST: postgres
+      DB_HOST: postgres-user
       DB_PORT: 5432
-      DB_NAME: notes_db
+      DB_NAME: user_service_db
       DB_USER: postgres
       DB_PASSWORD: postgres
-      JWT_SECRET: dev-secret-key-change-in-production
-      API_KEY: dev-api-key-change-in-production
+      JWT_SECRET: shared-secret-key-change-this-in-production-must-be-at-least-256-bits
+      JWT_EXPIRES_IN: 1h
       PORT: 3000
-      NODE_ENV: development
+      NODE_ENV: production
     ports:
       - "3000:3000"
+    networks:
+      - app-network
     depends_on:
-      postgres:
+      postgres-user:
         condition: service_healthy
-    volumes:
-      - ./backend-nodejs:/app
-      - /app/node_modules
-    command: npm run dev
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
 
-  # Frontend (nginx)
+  # ==========================================================================
+  # Todo Service - Java Spring Boot + PostgreSQL
+  # ==========================================================================
+  todo-service:
+    build:
+      context: ./backend-java-spring
+      dockerfile: Dockerfile.optimized
+    container_name: todo-service
+    environment:
+      DB_HOST: postgres-todo
+      DB_PORT: 5432
+      DB_NAME: todo_service_db
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      JWT_SECRET: shared-secret-key-change-this-in-production-must-be-at-least-256-bits
+      SPRING_PROFILES_ACTIVE: prod
+      JAVA_OPTS: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
+    ports:
+      - "8081:8081"
+    networks:
+      - app-network
+    depends_on:
+      postgres-todo:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  # ==========================================================================
+  # Frontend - Nginx Static Files
+  # ==========================================================================
   frontend:
     image: nginx:alpine
-    container_name: notes-frontend
+    container_name: frontend
     ports:
       - "8080:80"
     volumes:
       - ./frontend:/usr/share/nginx/html:ro
+    networks:
+      - app-network
     depends_on:
-      - backend
+      - user-service
+      - todo-service
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    restart: unless-stopped
 
+# ==========================================================================
+# Volumes
+# ==========================================================================
 volumes:
-  postgres_data:
+  user-data:
+    driver: local
+  todo-data:
+    driver: local
+
+# ==========================================================================
+# Networks
+# ==========================================================================
+networks:
+  app-network:
+    driver: bridge

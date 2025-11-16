@@ -1,0 +1,185 @@
+# ==========================================================================
+# Kubernetes Ingress - Todo App
+# ==========================================================================
+# See on reference lahendus Harjutus 02 jaoks (Kubernetes Ingress)
+#
+# Paigaldamine:
+#   kubectl apply -f app-ingress.yaml
+#
+# Kontrollimine:
+#   kubectl get ingress -n todo-app
+#   kubectl describe ingress todo-app-ingress -n todo-app
+# ==========================================================================
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: todo-app-ingress
+  namespace: todo-app
+  annotations:
+    # Nginx-specific annotation'id
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+
+    # CORS support
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, PATCH, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "Authorization, Content-Type"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "*"
+
+    # Timeout'id (sekundites)
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+
+    # Rate limiting (valikuline)
+    # nginx.ingress.kubernetes.io/limit-rps: "100"
+
+spec:
+  ingressClassName: nginx
+
+  rules:
+  - host: kirjakast.cloud
+    http:
+      paths:
+      # =================================================================
+      # Backend API Routes (peaksid olema ENNE frontend'i)
+      # =================================================================
+
+      # Todo Service API
+      - path: /api/todos
+        pathType: Prefix
+        backend:
+          service:
+            name: todo-service
+            port:
+              number: 8081
+
+      # User Service API - Users
+      - path: /api/users
+        pathType: Prefix
+        backend:
+          service:
+            name: user-service
+            port:
+              number: 3000
+
+      # User Service API - Authentication
+      - path: /api/auth
+        pathType: Prefix
+        backend:
+          service:
+            name: user-service
+            port:
+              number: 3000
+
+      # =================================================================
+      # Frontend Routes (üldisemad, peaksid olema PÄRAST API'd)
+      # =================================================================
+
+      # Todo page
+      - path: /todo
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend
+            port:
+              number: 80
+
+      # Root - Frontend (kõige üldisem, VIIMANE)
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend
+            port:
+              number: 80
+
+  # Default backend kui ükski reegel ei sobi (404 page)
+  defaultBackend:
+    service:
+      name: frontend
+      port:
+        number: 80
+
+---
+
+# ==========================================================================
+# Alternatiivsed Ingress konfiguratsioonid
+# ==========================================================================
+
+# Näide 1: Host-based routing (subdomeenid)
+# apiVersion: networking.k8s.io/v1
+# kind: Ingress
+# metadata:
+#   name: host-based-ingress
+# spec:
+#   rules:
+#   - host: api.kirjakast.cloud
+#     http:
+#       paths:
+#       - path: /
+#         pathType: Prefix
+#         backend:
+#           service:
+#             name: user-service
+#             port:
+#               number: 3000
+#   - host: todo.kirjakast.cloud
+#     http:
+#       paths:
+#       - path: /
+#         pathType: Prefix
+#         backend:
+#           service:
+#             name: todo-service
+#             port:
+#               number: 8081
+
+# Näide 2: SSL/TLS enabled (cert-manager'iga)
+# apiVersion: networking.k8s.io/v1
+# kind: Ingress
+# metadata:
+#   name: ssl-ingress
+#   annotations:
+#     cert-manager.io/cluster-issuer: "letsencrypt-prod"
+#     nginx.ingress.kubernetes.io/ssl-redirect: "true"
+# spec:
+#   tls:
+#   - hosts:
+#     - kirjakast.cloud
+#     - www.kirjakast.cloud
+#     secretName: kirjakast-cloud-tls
+#   rules:
+#   - host: kirjakast.cloud
+#     http:
+#       paths:
+#       - path: /
+#         pathType: Prefix
+#         backend:
+#           service:
+#             name: frontend
+#             port:
+#               number: 80
+
+# Näide 3: Rate limiting per IP
+# apiVersion: networking.k8s.io/v1
+# kind: Ingress
+# metadata:
+#   name: rate-limited-ingress
+#   annotations:
+#     nginx.ingress.kubernetes.io/limit-rps: "10"
+#     nginx.ingress.kubernetes.io/limit-connections: "5"
+# spec:
+#   rules:
+#   - host: api.kirjakast.cloud
+#     http:
+#       paths:
+#       - path: /
+#         pathType: Prefix
+#         backend:
+#           service:
+#             name: user-service
+#             port:
+#               number: 3000

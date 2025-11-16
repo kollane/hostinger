@@ -1,0 +1,78 @@
+# =====================================================
+# Dockerfile.optimized - Todo Service (Multi-stage)
+# =====================================================
+# Multi-stage build Dockerfile, mis:
+# 1. Buildib rakenduse Gradle'iga
+# 2. Käivitab ainult JRE runtime'iga (väiksem image)
+#
+# Build:
+#   docker build -f Dockerfile.optimized -t todo-service:1.0-opt .
+#
+# Run:
+#   docker run -p 8081:8081 \
+#     -e DB_HOST=postgres \
+#     -e JWT_SECRET=your-secret \
+#     todo-service:1.0-opt
+# =====================================================
+
+# ===========================
+# Stage 1: Build
+# ===========================
+FROM eclipse-temurin:17-jdk-alpine AS builder
+
+# Metadata
+LABEL stage=builder
+
+# Working directory
+WORKDIR /workspace/app
+
+# Copy Gradle wrapper
+COPY gradle gradle
+COPY gradlew .
+COPY settings.gradle .
+
+# Copy build.gradle and download dependencies (cache layer)
+COPY build.gradle .
+RUN ./gradlew dependencies --no-daemon || true
+
+# Copy source code
+COPY src src
+
+# Build application (skip tests for faster build)
+RUN ./gradlew bootJar --no-daemon -x test
+
+# ===========================
+# Stage 2: Runtime
+# ===========================
+FROM eclipse-temurin:17-jre-alpine
+
+# Metadata
+LABEL maintainer="DevOps Training <devops@hostinger.com>"
+LABEL description="Todo Service - Java Spring Boot Application (Optimized)"
+LABEL version="1.0.0"
+
+# Working directory
+WORKDIR /app
+
+# Copy JAR from builder stage
+COPY --from=builder /workspace/app/build/libs/todo-service.jar app.jar
+
+# Create non-root user for security
+RUN addgroup -S spring && adduser -S spring -G spring && \
+    chown -R spring:spring /app
+
+# Switch to non-root user
+USER spring:spring
+
+# Expose port
+EXPOSE 8081
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:8081/health || exit 1
+
+# JVM options for containerized environment
+ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Djava.security.egd=file:/dev/./urandom"
+
+# Run application
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]

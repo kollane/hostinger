@@ -1,5 +1,6 @@
 // API URL
-const API_URL = 'http://localhost:3000/api';
+// Kasuta relatiivset URL'i, et töötaks nii localhost kui ka domeeni kaudu
+const API_URL = '/api';
 
 // Salvesta token localStorage'sse
 let authToken = localStorage.getItem('authToken');
@@ -124,7 +125,7 @@ async function loadNotes() {
     }
 
     try {
-        const response = await fetch(`${API_URL}/notes`, {
+        const response = await fetch(`${API_URL}/todos`, {
             headers: {
                 'Authorization': `Bearer ${authToken}`, // KLIENDIFRONT JWT token
             },
@@ -140,7 +141,8 @@ async function loadNotes() {
         const data = await response.json();
 
         if (response.ok) {
-            displayNotes(data.notes);
+            // Todo Service tagastab pagineeritud vastuse
+            displayNotes(data.content || data.todos || []);
         } else {
             showMessage(data.error || 'Märkmete laadimine ebaõnnestus', 'error');
         }
@@ -152,21 +154,25 @@ async function loadNotes() {
 
 // Kuva märkmed
 function displayNotes(notes) {
-    if (notes.length === 0) {
+    if (!notes || notes.length === 0) {
         notesContainer.innerHTML = '<p class="empty-state">Sul pole veel ühtegi märget. Lisa oma esimene märge!</p>';
         return;
     }
 
     notesContainer.innerHTML = notes.map(note => `
-        <div class="note-card" data-id="${note.id}">
+        <div class="note-card ${note.completed ? 'completed' : ''}" data-id="${note.id}">
             <h3>${escapeHtml(note.title)}</h3>
-            <p>${escapeHtml(note.content)}</p>
+            <p>${escapeHtml(note.description || note.content || '')}</p>
             <div class="note-meta">
-                Loodud: ${formatDate(note.created_at)}
-                ${note.updated_at !== note.created_at ? ` | Muudetud: ${formatDate(note.updated_at)}` : ''}
+                ${note.priority ? `<span class="priority priority-${note.priority}">Priority: ${note.priority}</span>` : ''}
+                ${note.completed ? '<span class="completed-badge">✓ Tehtud</span>' : ''}
+                <br>
+                Loodud: ${formatDate(note.createdAt || note.created_at)}
+                ${(note.updatedAt || note.updated_at) !== (note.createdAt || note.created_at) ? ` | Muudetud: ${formatDate(note.updatedAt || note.updated_at)}` : ''}
             </div>
             <div class="note-actions">
-                <button class="edit-btn" onclick="editNote(${note.id}, '${escapeHtml(note.title)}', '${escapeHtml(note.content)}')">Muuda</button>
+                ${!note.completed ? `<button class="complete-btn" onclick="completeNote(${note.id})">Märgi tehtuks</button>` : ''}
+                <button class="edit-btn" onclick="editNote(${note.id}, '${escapeHtml(note.title)}', '${escapeHtml(note.description || note.content || '')}')">Muuda</button>
                 <button class="delete-btn" onclick="deleteNote(${note.id})">Kustuta</button>
             </div>
         </div>
@@ -181,13 +187,18 @@ noteForm.addEventListener('submit', async (e) => {
     const content = document.getElementById('note-content').value;
 
     try {
-        const response = await fetch(`${API_URL}/notes`, {
+        const response = await fetch(`${API_URL}/todos`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${authToken}`, // KLIENDIFRONT JWT token
             },
-            body: JSON.stringify({ title, content }),
+            body: JSON.stringify({
+                title,
+                description: content,
+                priority: 'medium',
+                completed: false
+            }),
         });
 
         const data = await response.json();
@@ -205,6 +216,29 @@ noteForm.addEventListener('submit', async (e) => {
     }
 });
 
+// Märgi TODO tehtuks
+async function completeNote(id) {
+    try {
+        const response = await fetch(`${API_URL}/todos/${id}/complete`, {
+            method: 'PATCH',
+            headers: {
+                'Authorization': `Bearer ${authToken}`,
+            },
+        });
+
+        if (response.ok) {
+            showMessage('TODO märgitud tehtuks!', 'success');
+            loadNotes();
+        } else {
+            const data = await response.json();
+            showMessage(data.error || 'Märkimine ebaõnnestus', 'error');
+        }
+    } catch (error) {
+        console.error('Viga:', error);
+        showMessage('Serveri viga. Palun proovi hiljem uuesti.', 'error');
+    }
+}
+
 // Muuda märget
 async function editNote(id, title, content) {
     const newTitle = prompt('Uus pealkiri:', title);
@@ -214,13 +248,18 @@ async function editNote(id, title, content) {
     if (!newContent) return;
 
     try {
-        const response = await fetch(`${API_URL}/notes/${id}`, {
+        const response = await fetch(`${API_URL}/todos/${id}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${authToken}`, // KLIENDIFRONT JWT token
             },
-            body: JSON.stringify({ title: newTitle, content: newContent }),
+            body: JSON.stringify({
+                title: newTitle,
+                description: newContent,
+                priority: 'medium',
+                completed: false
+            }),
         });
 
         const data = await response.json();
@@ -244,20 +283,24 @@ async function deleteNote(id) {
     }
 
     try {
-        const response = await fetch(`${API_URL}/notes/${id}`, {
+        const response = await fetch(`${API_URL}/todos/${id}`, {
             method: 'DELETE',
             headers: {
                 'Authorization': `Bearer ${authToken}`, // KLIENDIFRONT JWT token
             },
         });
 
-        const data = await response.json();
-
-        if (response.ok) {
+        // DELETE tagastab 204 No Content (tühi vastus)
+        if (response.status === 204 || response.ok) {
             showMessage('Märge kustutatud!', 'success');
             loadNotes();
         } else {
-            showMessage(data.error || 'Märkme kustutamine ebaõnnestus', 'error');
+            try {
+                const data = await response.json();
+                showMessage(data.error || 'Märkme kustutamine ebaõnnestus', 'error');
+            } catch {
+                showMessage('Märkme kustutamine ebaõnnestus', 'error');
+            }
         }
     } catch (error) {
         console.error('Viga:', error);

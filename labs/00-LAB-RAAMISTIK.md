@@ -213,22 +213,25 @@ labs/
 
 ---
 
-### 2. Backend Java Spring Boot (Product Service)
+### 2. Backend Java Spring Boot (Todo Service)
 
-**Tehnoloogiad:** Java 17, Spring Boot 3, PostgreSQL
+**Tehnoloogiad:** Java 17, Spring Boot 3, PostgreSQL, Gradle
 **Port:** 8081
-**Andmebaas:** products (PostgreSQL port 5433)
+**Andmebaas:** todos (PostgreSQL port 5433)
 
 **API Endpoints:**
-- `GET /api/products` - Kõik tooted
-- `GET /api/products/{id}` - Konkreetne toode
-- `POST /api/products` - Loo toode
-- `PUT /api/products/{id}` - Uuenda toodet
-- `DELETE /api/products/{id}` - Kustuta toode
-- `GET /actuator/health` - Health check
+- `POST /api/todos` - Loo uus todo
+- `GET /api/todos` - Kõik todo'd (pagination, filter)
+- `GET /api/todos/{id}` - Konkreetne todo
+- `PUT /api/todos/{id}` - Uuenda todo't
+- `DELETE /api/todos/{id}` - Kustuta todo
+- `PATCH /api/todos/{id}/complete` - Märgi tehtuks
+- `GET /api/todos/stats` - Statistika
+- `GET /health` - Health check
+- `GET /swagger-ui.html` - API dokumentatsioon
 
 **Viited koolituskavale:**
-- Peatükk 12: Docker põhimõtted (Java container)
+- Peatükk 12: Docker põhimõtted (Java container, multi-stage builds)
 
 ---
 
@@ -238,9 +241,10 @@ labs/
 **Port:** 8080
 
 **Funktsioonid:**
-- Kasutajate loend (User Service API)
-- Toodete loend (Product Service API)
+- Kasutajate haldamine (User Service API)
+- Todo märkmete haldamine (Todo Service API)
 - CRUD operatsioonid mõlema teenuse jaoks
+- JWT autentimine
 - Error handling
 - Loading states
 

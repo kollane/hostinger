@@ -39,14 +39,14 @@ Kõik laborid kasutavad samu kolme mikroteenust:
                ▼                  ▼
 ┌──────────────────────┐   ┌──────────────────────┐
 │  Node.js Backend     │   │ Java Spring Backend  │
-│   User Service       │   │  Product Service     │
+│   User Service       │   │   Todo Service       │
 │    (Port 3000)       │   │    (Port 8081)       │
 └──────────┬───────────┘   └──────────┬───────────┘
            │                          │
            ▼                          ▼
 ┌──────────────────────┐   ┌──────────────────────┐
 │  PostgreSQL          │   │  PostgreSQL          │
-│   users DB           │   │  products DB         │
+│   users DB           │   │   todos DB           │
 │   (Port 5432)        │   │   (Port 5433)        │
 └──────────────────────┘   └──────────────────────┘
 ```

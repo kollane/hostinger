@@ -59,38 +59,44 @@ npm start
 
 ---
 
-### 2. Product Service (Java Spring Boot)
+### 2. Todo Service (Java Spring Boot)
 
 **Kaust:** `backend-java-spring/`
 
-**Kirjeldus:** REST API toodete haldamiseks
+**Kirjeldus:** REST API todo märkmete haldamiseks JWT autentimisega
 
 **Tehnoloogiad:**
 - Java 17
 - Spring Boot 3
 - PostgreSQL
-- Spring Security
+- Spring Security + JWT
+- Gradle
 
 **Port:** 8081
 
 **API Endpoint'id:**
-- `GET /api/products` - Kõik tooted
-- `GET /api/products/{id}` - Konkreetne toode
-- `POST /api/products` - Loo toode
-- `PUT /api/products/{id}` - Uuenda toodet
-- `DELETE /api/products/{id}` - Kustuta toode
-- `GET /actuator/health` - Tervisekontroll
+- `POST /api/todos` - Loo uus todo
+- `GET /api/todos` - Kõik todo'd (pagination, filter)
+- `GET /api/todos/{id}` - Konkreetne todo
+- `PUT /api/todos/{id}` - Uuenda todo't
+- `DELETE /api/todos/{id}` - Kustuta todo
+- `PATCH /api/todos/{id}/complete` - Märgi tehtuks
+- `GET /api/todos/stats` - Statistika
+- `GET /health` - Tervisekontroll
+- `GET /swagger-ui.html` - API dokumentatsioon
 
 **Näidis:**
 ```bash
 cd backend-java-spring
-./mvnw spring-boot:run
+./gradlew bootRun
 ```
 
 **Kasutatakse laborites:**
-- Labor 1: Docker põhitõed (Java container)
+- Labor 1: Docker põhitõed (Java container, multi-stage build)
 - Labor 2: Docker Compose (multi-service)
-- Labor 3-4: Kubernetes
+- Labor 3-4: Kubernetes (JVM tuning, resource limits)
+- Labor 5: CI/CD (Gradle builds)
+- Labor 6: Monitoring (JVM metrics)
 
 **Viited koolituskavale:**
 - Peatükk 12: Docker põhimõtted (Java konteinerid)
@@ -101,7 +107,7 @@ cd backend-java-spring
 
 **Kaust:** `frontend/`
 
-**Kirjeldus:** Kasutajaliides User ja Product teenuste jaoks
+**Kirjeldus:** Kasutajaliides User ja Todo teenuste jaoks
 
 **Tehnoloogiad:**
 - HTML5
@@ -112,8 +118,8 @@ cd backend-java-spring
 **Port:** 8080
 
 **Funktsioonid:**
-- Kasutajate loend
-- Toodete loend
+- Kasutajate haldamine (User Service)
+- Todo märkmete haldamine (Todo Service)
 - CRUD operatsioonid
 - JWT autentimine
 - Error handling
@@ -151,7 +157,7 @@ python3 -m http.server 8080
     │                         │
     ▼                         ▼
 ┌──────────────┐      ┌──────────────┐
-│ User Service │      │Product Service│
+│ User Service │      │ Todo Service │
 │  (Node.js)   │      │ (Java Spring) │
 │  Port 3000   │      │   Port 8081   │
 └──────┬───────┘      └───────┬───────┘
@@ -161,6 +167,7 @@ python3 -m http.server 8080
        ▼                      ▼
 ┌──────────────┐      ┌──────────────┐
 │ PostgreSQL   │      │ PostgreSQL   │
+│  users DB    │      │  todos DB    │
 │  Port 5432   │      │  Port 5433   │
 └──────────────┘      └──────────────┘
 ```
@@ -195,9 +202,9 @@ npm install
 cp .env.example .env
 npm start
 
-# Product Service (teine terminal)
+# Todo Service (teine terminal)
 cd backend-java-spring
-./mvnw spring-boot:run
+./gradlew bootRun
 
 # Frontend (kolmas terminal)
 cd frontend
@@ -214,8 +221,8 @@ python3 -m http.server 8080
 # User Service
 curl http://localhost:3000/health
 
-# Product Service
-curl http://localhost:8081/actuator/health
+# Todo Service
+curl http://localhost:8081/health
 
 # Frontend
 curl http://localhost:8080
@@ -257,10 +264,12 @@ apps/
 │   ├── database-setup.sql
 │   └── README.md
 │
-├── backend-java-spring/         # Product Service
+├── backend-java-spring/         # Todo Service
 │   ├── src/
-│   ├── pom.xml
+│   ├── build.gradle
 │   ├── Dockerfile
+│   ├── Dockerfile.optimized
+│   ├── database-setup.sql
 │   └── README.md
 │
 ├── frontend/                    # Web UI
@@ -279,11 +288,12 @@ apps/
 ## 🎓 Kasutatakse Laborites
 
 ### Labor 1: Docker Põhitõed
-- Konteinerise User Service
-- Konteinerise Product Service
+- Konteinerise User Service (Node.js)
+- Konteinerise Todo Service (Java Spring Boot, multi-stage build)
 - Konteinerise Frontend
-- Multi-stage builds
+- Multi-stage builds (eriti Java jaoks)
 - Image optimisatsioon
+- JVM tuunimine konteinerites
 
 ### Labor 2: Docker Compose
 - Käivita kõik teenused
@@ -319,7 +329,7 @@ apps/
 | Rakendus | Seotud Peatükid |
 |----------|----------------|
 | **User Service** | 5, 6, 7, 8, 12 |
-| **Product Service** | 12 |
+| **Todo Service** | 12 (Java konteinerid, multi-stage builds) |
 | **Frontend** | 9, 10, 11 |
 
 ---
