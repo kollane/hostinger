@@ -15,12 +15,12 @@ See kaust sisaldab praktilisi laboreid DevOps administraatorite koolitamiseks. L
 | # | Labor | Kestus | Eeldused | Staatus |
 |---|-------|--------|----------|---------|
 | **0** | [Laborite Raamistik](00-LAB-RAAMISTIK.md) | - | - | ✅ Valmis |
-| **1** | [Docker Põhitõed](01-docker-lab/) | 4h | Peatükk 12 | 📝 Plaanis |
-| **2** | [Docker Compose](02-docker-compose-lab/) | 3h | Labor 1, Peatükk 13 | 📝 Plaanis |
-| **3** | [Kubernetes Alused](03-kubernetes-basics-lab/) | 5h | Labor 1-2, Peatükk 15-16 | 📝 Plaanis |
-| **4** | [Kubernetes Täiustatud](04-kubernetes-advanced-lab/) | 5h | Labor 3, Peatükk 17-19 | 📝 Plaanis |
-| **5** | [CI/CD Pipeline](05-cicd-lab/) | 4h | Labor 1-4, Peatükk 20-21 | 📝 Plaanis |
-| **6** | [Monitoring & Logging](06-monitoring-logging-lab/) | 4h | Labor 1-5, Peatükk 24 | 📝 Plaanis |
+| **1** | [Docker Põhitõed](01-docker-lab/) | 4h | Peatükk 12 | ✅ Valmis |
+| **2** | [Docker Compose](02-docker-compose-lab/) | 3h | Labor 1, Peatükk 13 | ✅ Valmis |
+| **3** | [Kubernetes Alused](03-kubernetes-basics-lab/) | 5h | Labor 1-2, Peatükk 15-16 | ✅ Valmis |
+| **4** | [Kubernetes Täiustatud](04-kubernetes-advanced-lab/) | 5h | Labor 3, Peatükk 17-19 | ✅ Valmis |
+| **5** | [CI/CD Pipeline](05-cicd-lab/) | 4h | Labor 1-4, Peatükk 20-21 | ✅ Valmis |
+| **6** | [Monitoring & Logging](06-monitoring-logging-lab/) | 4h | Labor 1-5, Peatükk 24 | ✅ Valmis |
 
 **Kokku:** 25 tundi hands-on praktikat
 

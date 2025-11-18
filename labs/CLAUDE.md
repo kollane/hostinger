@@ -126,23 +126,23 @@ XX-labname-lab/
 - Exercises: Single container, Multi-container, Networking, Volumes, Optimization
 - Solutions: Dockerfile, Dockerfile.optimized, .dockerignore for backend-nodejs
 
-**Lab 2: Docker Compose** (02-docker-compose-lab/) ⏳ TO DO
+**Lab 2: Docker Compose** (02-docker-compose-lab/) ✅ COMPLETED
 - Exercises: Basic compose, Full-stack, Dev/Prod envs, Scaling
 - Solutions: docker-compose.yml files
 
-**Lab 3: Kubernetes Basics** (03-kubernetes-basics-lab/) ⏳ TO DO
+**Lab 3: Kubernetes Basics** (03-kubernetes-basics-lab/) ✅ COMPLETED
 - Exercises: Pods, Deployments, Services, ConfigMaps/Secrets, PersistentVolumes
 - Solutions: K8s manifests/
 
-**Lab 4: Kubernetes Advanced** (04-kubernetes-advanced-lab/) ⏳ TO DO
+**Lab 4: Kubernetes Advanced** (04-kubernetes-advanced-lab/) ✅ COMPLETED
 - Exercises: Ingress, Helm, Autoscaling, Rolling updates, Monitoring
 - Solutions: K8s manifests/, Helm charts
 
-**Lab 5: CI/CD** (05-cicd-lab/) ⏳ TO DO
+**Lab 5: CI/CD** (05-cicd-lab/) ✅ COMPLETED
 - Exercises: GitHub Actions basics, Docker build/push, K8s deploy, Testing, Rollback
 - Solutions: .github/workflows/
 
-**Lab 6: Monitoring & Logging** (06-monitoring-logging-lab/) ⏳ TO DO
+**Lab 6: Monitoring & Logging** (06-monitoring-logging-lab/) ✅ COMPLETED
 - Exercises: Prometheus, Grafana, Log aggregation, Alerting, Troubleshooting
 - Solutions: configs/
 
@@ -195,7 +195,11 @@ XX-labname-lab/
 
 **Labs:**
 - `01-docker-lab/` - ✅ Complete with 5 exercises + solutions
-- `02-06-labs/` - ⏳ Framework exists, needs exercise content
+- `02-docker-compose-lab/` - ✅ Complete with 4 exercises + solutions
+- `03-kubernetes-basics-lab/` - ✅ Complete with 5 exercises + solutions
+- `04-kubernetes-advanced-lab/` - ✅ Complete with 5 exercises + solutions
+- `05-cicd-lab/` - ✅ Complete with 5 exercises + solutions
+- `06-monitoring-logging-lab/` - ✅ Complete with 5 exercises + solutions
 
 **Documentation:**
 - `00-LAB-RAAMISTIK.md` - Master framework document
@@ -237,15 +241,22 @@ docker inspect <container>
 
 **Completed:**
 - ✅ Repository structure
-- ✅ apps/ with working User Service
+- ✅ apps/ with working User Service, Todo Service, and Frontend
 - ✅ Lab 1 (Docker) with 5 exercises and solutions
+- ✅ Lab 2 (Docker Compose) with 4 exercises and solutions
+- ✅ Lab 3 (Kubernetes Basics) with 5 exercises and solutions
+- ✅ Lab 4 (Kubernetes Advanced) with 5 exercises and solutions
+- ✅ Lab 5 (CI/CD) with 5 exercises and solutions
+- ✅ Lab 6 (Monitoring & Logging) with 5 exercises and solutions
 - ✅ Master framework (00-LAB-RAAMISTIK.md)
 
-**Next Steps:**
-- Create Lab 2 exercises (Docker Compose)
-- Create Lab 3-6 exercises
-- Complete frontend implementation
-- Add more testing scenarios
+**Status:** ✅ All 6 labs are 100% complete!
+
+**Optional Future Enhancements:**
+- Testing all labs in real environments
+- Adding screenshots to exercises
+- Lab 7 (Security & Best Practices)
+- Lab 8 (Advanced Topics: Service Mesh, GitOps)
 
 ---
 
@@ -263,3 +274,4 @@ docker inspect <container>
 **Repository Path:** `/home/janek/Documents/Meie pere/õppematerjal/hostinger/labs/`
 
 **Main Reference:** `00-LAB-RAAMISTIK.md` - Always consult this for lab structure and progression
+- jäta meelde
