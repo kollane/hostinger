@@ -127,10 +127,10 @@ docker system df -v
 
 ## ✅ Kontrolli
 
-- [ ] Volume `postgres-users-data` on loodud
-- [ ] PostgreSQL kasutab volume'i
-- [ ] Andmed jäävad alles container restart järel
-- [ ] Backup on loodud
+- [x] Volume `postgres-users-data` on loodud
+- [x] PostgreSQL kasutab volume'i
+- [x] Andmed jäävad alles container restart järel
+- [x] Backup on loodud
 
 ---
 

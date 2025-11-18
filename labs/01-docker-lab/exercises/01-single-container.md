@@ -278,14 +278,14 @@ docker stats user-service
 
 Peale selle harjutuse läbimist peaksid omama:
 
-- [ ] **Dockerfile** backend-nodejs/ kaustas
-- [ ] **.dockerignore** fail
-- [ ] **Docker image** `user-service:1.0` (vaata `docker images`)
-- [ ] **Container** käivitatud (vaata `docker ps`)
-- [ ] Mõistad Dockerfile'i struktuuri
-- [ ] Oskad build'ida image'i
-- [ ] Oskad käivitada containerit
-- [ ] Oskad vaadata logisid
+- [x] **Dockerfile** backend-nodejs/ kaustas
+- [x] **.dockerignore** fail
+- [x] **Docker image** `user-service:1.0` (vaata `docker images`)
+- [x] **Container** käivitatud (vaata `docker ps`)
+- [x] Mõistad Dockerfile'i struktuuri
+- [x] Oskad build'ida image'i
+- [x] Oskad käivitada containerit
+- [x] Oskad vaadata logisid
 
 ---
 

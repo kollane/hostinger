@@ -154,6 +154,52 @@ Laborid toetuvad järgmistele peatükkidele:
 
 ---
 
+## 🔄 Labori Taastamine (Reset)
+
+Iga labor sisaldab `reset.sh` skripti, mis puhastab kõik labori ressursid ja võimaldab alustada algusest.
+
+### Kasutamine:
+
+```bash
+# Lab 1 taastamine
+cd labs
+./01-docker-lab/reset.sh
+
+# Lab 2 taastamine
+./02-docker-compose-lab/reset.sh
+
+# Lab 3-6 taastamine
+./03-kubernetes-basics-lab/reset.sh
+./04-kubernetes-advanced-lab/reset.sh
+./05-cicd-lab/reset.sh
+./06-monitoring-logging-lab/reset.sh
+```
+
+### Mida reset skript teeb?
+
+Reset skriptid eemaldavad:
+- ✅ Docker containerid ja image'd
+- ✅ Docker network'id ja volume'd
+- ✅ Kubernetes ressursid (Pods, Deployments, Services, ConfigMaps, Secrets, PVCs)
+- ✅ Helm releases (kui kasutatakse)
+- ✅ Namespace'd (lab-spetsiifilised)
+
+### Millal kasutada?
+
+- 🔁 **Soovid harjutust uuesti teha** - algusest peale
+- 🧹 **Süsteem on segane** - puhasta ja alusta uuesti
+- 🐛 **Midagi läks katki** - taasta algseisu ja proovi uuesti
+- 📚 **Liigud järgmise labori juurde** - puhasta eelmise jäljed
+
+### ⚠️ Hoiatus:
+
+Reset skriptid **kustutavad kõik andmed**! Kui sul on midagi olulist:
+- Salvesta oma konfiguratsiooni failid
+- Ekspordi andmebaasi backupid
+- Kopeeri oma lahendused
+
+---
+
 ## 🔑 Olulised Märkmed
 
 ### Laborite Disain:
@@ -218,4 +264,4 @@ Märgi ära läbitud laborid:
 
 ---
 
-**Viimane uuendus:** 2025-11-15
+**Viimane uuendus:** 2025-11-18

@@ -156,12 +156,12 @@ exit
 
 ## ✅ Kontrolli
 
-- [ ] PostgreSQL container töötab
-- [ ] User Service container töötab
-- [ ] Health check tagastab `"database": "connected"`
-- [ ] Saad kasutajaid registreerida
-- [ ] Saad sisse logida ja tokeni saada
-- [ ] CRUD operatsioonid töötavad
+- [x] PostgreSQL container töötab
+- [x] User Service container töötab
+- [x] Health check tagastab `"database": "connected"`
+- [x] Saad kasutajaid registreerida
+- [x] Saad sisse logida ja tokeni saada
+- [x] CRUD operatsioonid töötavad
 
 ---
 

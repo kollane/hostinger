@@ -98,11 +98,11 @@ curl http://localhost:3000/health
 
 ## ✅ Kontrolli
 
-- [ ] `app-network` on loodud
-- [ ] Mõlemad containerid töötavad samas network'is
-- [ ] DNS resolution töötab (container nimi = hostname)
-- [ ] User Service ühendub PostgreSQL'iga
-- [ ] API vastab korrektselt
+- [x] `app-network` on loodud
+- [x] Mõlemad containerid töötavad samas network'is
+- [x] DNS resolution töötab (container nimi = hostname)
+- [x] User Service ühendub PostgreSQL'iga
+- [x] API vastab korrektselt
 
 ---
 

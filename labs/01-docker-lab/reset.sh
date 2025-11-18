@@ -1,0 +1,82 @@
+#!/bin/bash
+
+# Lab 1 Reset Script
+# Puhastab kõik Lab 1 ressursid ja taastab algseis
+
+echo "======================================"
+echo "Lab 1 (Docker) - Süsteemi Taastamine"
+echo "======================================"
+echo ""
+
+# Värvilised väljundid
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+# Kontrolli, kas Docker töötab
+if ! docker info > /dev/null 2>&1; then
+    echo -e "${RED}❌ Docker ei tööta! Palun käivita Docker esmalt.${NC}"
+    exit 1
+fi
+
+echo -e "${YELLOW}📦 Peatame ja eemaldame Lab 1 containerid...${NC}"
+
+# Eemalda User Service containerid
+if docker ps -a --format '{{.Names}}' | grep -q '^user-service$'; then
+    docker rm -f user-service
+    echo -e "${GREEN}  ✓ user-service container eemaldatud${NC}"
+fi
+
+# Eemalda PostgreSQL containerid (mitu võimalikku nime)
+for container in postgres-users postgres user-postgres; do
+    if docker ps -a --format '{{.Names}}' | grep -q "^${container}$"; then
+        docker rm -f "$container"
+        echo -e "${GREEN}  ✓ $container container eemaldatud${NC}"
+    fi
+done
+
+echo ""
+echo -e "${YELLOW}🗑️  Eemaldame Lab 1 Docker image'd...${NC}"
+
+# Eemalda user-service image'd
+if docker images --format '{{.Repository}}:{{.Tag}}' | grep -q '^user-service:'; then
+    docker rmi -f $(docker images --format '{{.Repository}}:{{.Tag}}' | grep '^user-service:') 2>/dev/null
+    echo -e "${GREEN}  ✓ user-service image'd eemaldatud${NC}"
+fi
+
+echo ""
+echo -e "${YELLOW}🔌 Eemaldame Lab 1 network'id...${NC}"
+
+# Eemalda app-network
+if docker network ls --format '{{.Name}}' | grep -q '^app-network$'; then
+    docker network rm app-network 2>/dev/null
+    echo -e "${GREEN}  ✓ app-network eemaldatud${NC}"
+fi
+
+echo ""
+echo -e "${YELLOW}💾 Eemaldame Lab 1 volume'd...${NC}"
+
+# Eemalda PostgreSQL volume'd
+for volume in postgres-users-data postgres-data user-postgres-data; do
+    if docker volume ls --format '{{.Name}}' | grep -q "^${volume}$"; then
+        docker volume rm "$volume" 2>/dev/null
+        echo -e "${GREEN}  ✓ $volume volume eemaldatud${NC}"
+    fi
+done
+
+echo ""
+echo -e "${YELLOW}🧹 Puhastame kasutamata ressursse...${NC}"
+
+# Puhasta kõik kasutamata ressursid
+docker system prune -f > /dev/null 2>&1
+echo -e "${GREEN}  ✓ Kasutamata ressursid eemaldatud${NC}"
+
+echo ""
+echo -e "${GREEN}✅ Lab 1 süsteem on taastatud!${NC}"
+echo ""
+echo "Saad nüüd alustada Lab 1 harjutustega algusest:"
+echo "  1. cd apps/backend-nodejs"
+echo "  2. Jätka 01-docker-lab/exercises/01-single-container.md juhiste järgi"
+echo ""
+echo "======================================"

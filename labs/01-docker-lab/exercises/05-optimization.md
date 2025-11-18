@@ -120,21 +120,21 @@ docker build -f Dockerfile.optimized -t user-service:1.0-optimized .
 
 ## 📊 Optimisatsioonide Võrdlus
 
-| Aspect | Before | After |
-|--------|--------|-------|
-| **Size** | ~200MB | ~120MB |
-| **Layers** | 10+ | 6-8 |
-| **Build time** | 30s | 15s (cached) |
-| **Security** | root user | non-root user |
+| Aspect         | Before    | After         |
+| -------------- | --------- | ------------- |
+| **Size**       | ~200MB    | ~120MB        |
+| **Layers**     | 10+       | 6-8           |
+| **Build time** | 30s       | 15s (cached)  |
+| **Security**   | root user | non-root user |
 
 ---
 
 ## ✅ Kontrolli
 
-- [ ] Optimeeritud image on väiksem
-- [ ] Multi-stage build töötab
-- [ ] Layer caching toimib
-- [ ] Non-root user kasutusel
+- [x] Optimeeritud image on väiksem
+- [x] Multi-stage build töötab
+- [x] Layer caching toimib
+- [x] Non-root user kasutusel
 - [ ] Security scan läbitud
 
 ---
