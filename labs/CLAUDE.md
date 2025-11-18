@@ -45,14 +45,16 @@ Three microservices that serve as training subjects:
    - Full CRUD with pagination, search, filtering
    - Endpoints: `/api/auth/*`, `/api/users/*`, `/health`
 
-2. **Product Service** (backend-java-spring/) - placeholder for future
+2. **Todo Service** (backend-java-spring/)
    - Java 17 + Spring Boot 3
    - Port 8081
+   - JWT auth + Spring Security
+   - Endpoints: `/api/todos/*`, `/health`
 
 3. **Frontend** (frontend/)
    - HTML5 + CSS3 + Vanilla JavaScript
    - Port 8080
-   - Connects to User/Product services
+   - Connects to User/Todo services
 
 ---
 
@@ -187,7 +189,7 @@ XX-labname-lab/
 
 **Applications:**
 - `apps/backend-nodejs/` - User Service (ready to use)
-- `apps/backend-java-spring/` - Product Service (placeholder)
+- `apps/backend-java-spring/` - Todo Service (ready to use)
 - `apps/frontend/` - Web UI (ready to use)
 - `apps/learning-materials/` - Supplementary tutorials (auth, etc)
 
@@ -242,8 +244,8 @@ docker inspect <container>
 **Next Steps:**
 - Create Lab 2 exercises (Docker Compose)
 - Create Lab 3-6 exercises
-- Add Product Service (Java Spring Boot)
-- Add frontend implementation
+- Complete frontend implementation
+- Add more testing scenarios
 
 ---
 

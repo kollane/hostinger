@@ -180,19 +180,19 @@ cat exercises/01-single-container.md
 Peale labori läbimist pead omama:
 
 - [ ] 3 töötavat Docker image'i:
-  - [ ] `backend-nodejs:1.0`
-  - [ ] `backend-java:1.0`
+  - [ ] `user-service:1.0` (Node.js backend)
+  - [ ] `todo-service:1.0` (Java backend)
   - [ ] `frontend:1.0`
 
 - [ ] Töötavad containerid:
-  - [ ] Node.js backend (port 3000)
-  - [ ] Java backend (port 8081)
+  - [ ] Node.js backend - User Service (port 3000)
+  - [ ] Java backend - Todo Service (port 8081)
   - [ ] Frontend (port 8080)
   - [ ] 2x PostgreSQL (ports 5432, 5433)
 
 - [ ] Volumes:
   - [ ] `postgres-users-data`
-  - [ ] `postgres-products-data`
+  - [ ] `postgres-todos-data`
 
 - [ ] Network:
   - [ ] `app-network`

@@ -31,7 +31,7 @@ This is an **Estonian-language full-stack DevOps training curriculum** for learn
 └── labs/                     # Hands-on DevOps practice
     ├── apps/                 # Pre-built microservices for lab exercises
     │   ├── backend-nodejs/   # User Service (Node.js + Express + PostgreSQL)
-    │   ├── backend-java-spring/  # Product Service (placeholder)
+    │   ├── backend-java-spring/  # Todo Service (Java Spring Boot + PostgreSQL)
     │   └── frontend/         # Web UI (HTML + Vanilla JS)
     ├── 01-docker-lab/        # Lab 1: Docker basics (✅ complete)
     ├── 02-docker-compose-lab/    # Lab 2: Multi-container apps
@@ -67,7 +67,7 @@ The lab exercises use three pre-built services:
 Frontend (Port 8080)
     │
     ├──> User Service (Node.js:3000) ──> PostgreSQL (5432)
-    └──> Product Service (Java:8081) ──> PostgreSQL (5433)
+    └──> Todo Service (Java:8081) ──> PostgreSQL (5433)
 ```
 
 **IMPORTANT:** The applications in `labs/apps/` are **already built**. Labs focus on DevOps (containerization, orchestration, deployment), NOT application development.
@@ -389,7 +389,7 @@ Check `PROGRESS-STATUS.md` to see which chapters are complete.
 
 **Applications:**
 - User Service: `labs/apps/backend-nodejs/`
-- Product Service: `labs/apps/backend-java-spring/` (placeholder)
+- Todo Service: `labs/apps/backend-java-spring/`
 - Frontend: `labs/apps/frontend/`
 
 **Lab Exercises:**

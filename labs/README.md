@@ -165,7 +165,7 @@ Laborid toetuvad järgmistele peatükkidele:
 ### Valmis Rakendused:
 Kõik kolm mikroteenust on **eelnevalt valmis kirjutatud**:
 - Backend Node.js (User Service)
-- Backend Java Spring (Product Service)
+- Backend Java Spring (Todo Service)
 - Frontend (Web UI)
 
 **Sina (DevOps admin) tegeleb:**
