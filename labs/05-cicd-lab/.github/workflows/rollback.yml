@@ -1,0 +1,241 @@
+# Rollback Workflow
+#
+# This workflow allows manual rollback of Kubernetes deployments.
+# You can rollback to:
+#   - Previous revision (default)
+#   - Specific revision number
+#
+# Triggered by: Manual workflow_dispatch only
+
+name: Rollback Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to rollback'
+        required: true
+        type: choice
+        options:
+          - development
+          - staging
+          - production
+      revision:
+        description: 'Revision number (leave empty for previous revision)'
+        required: false
+        type: string
+
+env:
+  DEPLOYMENT_NAME: user-service
+
+jobs:
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # Rollback Deployment
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  rollback:
+    name: ⏮️ Rollback to Revision
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    environment:
+      name: ${{ inputs.environment }}
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v3
+
+      - name: 🔧 Setup kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'v1.28.0'
+
+      - name: 🔐 Configure kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBECONFIG }}" | base64 -d > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
+
+      - name: ✅ Verify cluster connection
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🔍 Cluster Information"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          kubectl cluster-info
+          kubectl get nodes
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+      - name: 📜 Show current deployment status
+        run: |
+          ENV="${{ inputs.environment }}"
+
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📊 Current Deployment Status"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+          # Current deployment
+          kubectl get deployment ${{ env.DEPLOYMENT_NAME }} --namespace=$ENV
+
+          echo ""
+          echo "🖼️  Current Image:"
+          kubectl get deployment ${{ env.DEPLOYMENT_NAME }} --namespace=$ENV \
+            -o jsonpath='{.spec.template.spec.containers[0].image}'
+          echo ""
+          echo ""
+
+          # Pods status
+          echo "📦 Current Pods:"
+          kubectl get pods -l app=${{ env.DEPLOYMENT_NAME }} --namespace=$ENV
+
+      - name: 📜 Show rollout history
+        run: |
+          ENV="${{ inputs.environment }}"
+
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📜 Rollout History"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+          kubectl rollout history deployment/${{ env.DEPLOYMENT_NAME }} --namespace=$ENV
+
+      - name: ⏮️ Perform rollback
+        run: |
+          ENV="${{ inputs.environment }}"
+          REVISION="${{ inputs.revision }}"
+
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "⏮️  Initiating Rollback"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+          if [ -z "$REVISION" ]; then
+            echo "⏮️  Rolling back to previous revision in $ENV..."
+            kubectl rollout undo deployment/${{ env.DEPLOYMENT_NAME }} --namespace=$ENV
+          else
+            echo "⏮️  Rolling back to revision $REVISION in $ENV..."
+            kubectl rollout undo deployment/${{ env.DEPLOYMENT_NAME }} \
+              --namespace=$ENV \
+              --to-revision=$REVISION
+          fi
+
+      - name: ⏳ Wait for rollback to complete
+        run: |
+          ENV="${{ inputs.environment }}"
+
+          echo "⏳ Waiting for rollback to complete..."
+
+          kubectl rollout status deployment/${{ env.DEPLOYMENT_NAME }} \
+            --namespace=$ENV \
+            --timeout=5m
+
+          echo "✅ Rollback completed successfully in $ENV"
+
+      - name: 📊 Verify rollback
+        run: |
+          ENV="${{ inputs.environment }}"
+
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📊 Post-Rollback Status"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+          # Deployment status
+          kubectl get deployment ${{ env.DEPLOYMENT_NAME }} --namespace=$ENV
+
+          echo ""
+          echo "🖼️  Current Image (after rollback):"
+          kubectl get deployment ${{ env.DEPLOYMENT_NAME }} --namespace=$ENV \
+            -o jsonpath='{.spec.template.spec.containers[0].image}'
+          echo ""
+          echo ""
+
+          # Pods status
+          echo "📦 Pods Status:"
+          kubectl get pods -l app=${{ env.DEPLOYMENT_NAME }} --namespace=$ENV
+
+          echo ""
+          echo "📜 Updated Rollout History:"
+          kubectl rollout history deployment/${{ env.DEPLOYMENT_NAME }} --namespace=$ENV
+
+      - name: 🏥 Health check
+        run: |
+          ENV="${{ inputs.environment }}"
+
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🏥 Post-Rollback Health Check"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+          # Port forward
+          kubectl port-forward deployment/${{ env.DEPLOYMENT_NAME }} 3000:3000 --namespace=$ENV &
+          PID=$!
+
+          # Wait for port forward
+          sleep 5
+
+          # Health check with retry
+          MAX_RETRIES=3
+          RETRY=0
+
+          while [ $RETRY -lt $MAX_RETRIES ]; do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/health || echo "000")
+
+            if [ "$HTTP_CODE" == "200" ]; then
+              echo "✅ Health check passed (HTTP $HTTP_CODE)"
+              kill $PID
+              exit 0
+            fi
+
+            RETRY=$((RETRY+1))
+            echo "⚠️  Health check failed (HTTP $HTTP_CODE), retry $RETRY/$MAX_RETRIES..."
+            sleep 3
+          done
+
+          # Kill port forward
+          kill $PID
+
+          echo "❌ Health check failed after $MAX_RETRIES attempts"
+          echo "⚠️  Warning: Rollback completed but health check failed"
+          exit 1
+
+      - name: 📝 Rollback summary
+        if: always()
+        run: |
+          ENV="${{ inputs.environment }}"
+          REVISION="${{ inputs.revision }}"
+
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "           ⏮️  Rollback Summary                       "
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🌐 Environment:      $ENV"
+
+          if [ -z "$REVISION" ]; then
+            echo "🔄 Rollback Type:    Previous revision"
+          else
+            echo "🔄 Rollback Type:    Specific revision ($REVISION)"
+          fi
+
+          echo "📦 Current Image:    $(kubectl get deployment ${{ env.DEPLOYMENT_NAME }} --namespace=$ENV -o jsonpath='{.spec.template.spec.containers[0].image}')"
+          echo "🔢 Replicas:         $(kubectl get deployment ${{ env.DEPLOYMENT_NAME }} --namespace=$ENV -o jsonpath='{.spec.replicas}')"
+          echo "✅ Available:        $(kubectl get deployment ${{ env.DEPLOYMENT_NAME }} --namespace=$ENV -o jsonpath='{.status.availableReplicas}')"
+          echo "🕐 Timestamp:        $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "👤 Triggered by:     ${{ github.actor }}"
+          echo "🔗 Workflow:         ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+      - name: 📢 Send notification (optional)
+        if: always()
+        run: |
+          ENV="${{ inputs.environment }}"
+          STATUS="${{ job.status }}"
+
+          echo "📢 Rollback notification:"
+          echo "   Environment: $ENV"
+          echo "   Status: $STATUS"
+          echo "   Triggered by: ${{ github.actor }}"
+
+          # TODO: Add Slack/Discord webhook notification here
+          # Example:
+          # curl -X POST $SLACK_WEBHOOK_URL \
+          #   -H 'Content-Type: application/json' \
+          #   -d '{"text":"Rollback in '"$ENV"' completed with status: '"$STATUS"'"}'

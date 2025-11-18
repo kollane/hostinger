@@ -64,126 +64,56 @@
 ---
 
 ### Lab 5: CI/CD Pipeline
-**Staatus:** ⚠️ 70% VALMIS
+**Staatus:** ✅ 100% VALMIS
 - ✅ README.md (4h labor, 5 harjutust kirjeldatud)
-- ❌ exercises/ kaust (5 harjutust PUUDUVAD):
-  - ❌ 01-github-actions-basics.md (45 min)
-  - ❌ 02-docker-build-push.md (60 min)
-  - ❌ 03-kubernetes-deploy.md (60 min)
-  - ❌ 04-automated-testing.md (45 min)
-  - ❌ 05-multi-environment.md (60 min)
-- ❌ .github/workflows/ (YAML failid PUUDUVAD):
-  - ❌ ci.yml
-  - ❌ cd.yml
-  - ❌ rollback.yml
-- ❌ solutions/ README.md
+- ✅ exercises/ kaust:
+  - ✅ 01-github-actions-basics.md (45 min)
+  - ✅ 02-docker-build-push.md (60 min)
+  - ✅ 03-kubernetes-deploy.md (60 min)
+  - ✅ 04-automated-testing.md (45 min)
+  - ✅ 05-multi-environment.md (60 min)
+- ✅ .github/workflows/:
+  - ✅ ci.yml (Continuous Integration)
+  - ✅ cd.yml (Continuous Deployment)
+  - ✅ rollback.yml (Rollback strateegia)
+- ✅ solutions/README.md
 
-**Kaustad loodud:** exercises/, .github/workflows/, solutions/
+**Kokku:** 5 harjutust + 3 workflow YAML faili
 
 ---
 
 ### Lab 6: Monitoring & Logging
-**Staatus:** ⏸️ EI ALUSTATUD
-- ✅ README.md framework olemas (varasemast)
-- ❌ exercises/ sisu puudub
-- ❌ solutions/ puudub
+**Staatus:** ✅ 100% VALMIS
+- ✅ README.md (olemas varasemast)
+- ✅ exercises/ kaust:
+  - ✅ 01-prometheus-setup.md (60 min)
+  - ✅ 02-grafana-dashboards.md (60 min)
+  - ✅ 03-application-metrics.md (60 min)
+  - ✅ 04-logging-loki.md (60 min)
+  - ✅ 05-alerting-monitoring.md (60 min)
+- ✅ solutions/README.md
+
+**Kokku:** 5 harjutust + config näidised
 
 ---
 
 ## 🎯 JÄRGMISED SAMMUD
 
-### Prioriteet 1: Lab 5 harjutused
-**Asukoht:** `/home/janek/projects/hostinger/labs/05-cicd-lab/exercises/`
+### ✅ Kõik laborid on valmis!
 
-**Vaja luua:**
+**Labs 1-6 on 100% lõpetatud:**
+- ✅ Lab 1: Docker Põhitõed
+- ✅ Lab 2: Docker Compose
+- ✅ Lab 3: Kubernetes Alused
+- ✅ Lab 4: Kubernetes Täiustatud
+- ✅ Lab 5: CI/CD Pipeline
+- ✅ Lab 6: Monitoring & Logging
 
-1. **01-github-actions-basics.md** (45 min)
-   - GitHub Actions workflow struktuur
-   - YAML süntaks
-   - Triggers, jobs, steps
-   - Secrets kasutamine
-   - Esimene "Hello World" workflow
-
-2. **02-docker-build-push.md** (60 min)
-   - Docker Hub autentimine GitHub Actions's
-   - Docker build-push-action
-   - Image tagging (latest, semantic versioning)
-   - Multi-platform builds
-   - Build cache optimization
-
-3. **03-kubernetes-deploy.md** (60 min)
-   - kubeconfig secret seadistamine
-   - kubectl GitHub Actions's
-   - Deployment update
-   - Rolling update verification
-   - Health check post-deploy
-
-4. **04-automated-testing.md** (45 min)
-   - npm test integration
-   - ESLint CI's
-   - Test coverage reporting
-   - Quality gates (fail if tests fail)
-
-5. **05-multi-environment.md** (60 min)
-   - Branch-based deployment (main → prod, develop → staging)
-   - Environment-specific secrets
-   - Manual approval gates (prod)
-   - Rollback workflow
-
-**Stiil:** Järgi Lab 3/4 harjutuste struktuuri:
-- Pealkiri + kestus + eesmärk
-- Ülevaade
-- Õpieesmärgid (✅ checkboxid)
-- Arhitektuur (ASCII diagram)
-- Sammud (numberdatud, koodiblokkidega)
-- Kontrolli tulemusi
-- Troubleshooting
-- Õpitud mõisted
-- Parimad tavad
-- Järgmine samm
-- Viited
-
----
-
-### Prioriteet 2: Lab 5 workflow näidised
-**Asukoht:** `/home/janek/projects/hostinger/labs/05-cicd-lab/.github/workflows/`
-
-**Vaja luua:**
-
-1. **ci.yml** - Continuous Integration
-   - Trigger: push, pull_request
-   - Jobs: test, lint, build
-   - Docker image build + push
-
-2. **cd.yml** - Continuous Deployment
-   - Trigger: workflow_dispatch, push (main)
-   - Jobs: deploy-dev, deploy-staging, deploy-prod
-   - kubectl apply
-
-3. **rollback.yml** - Rollback workflow
-   - Trigger: workflow_dispatch
-   - Input: deployment name, revision
-   - kubectl rollout undo
-
----
-
-### Prioriteet 3: Lab 5 solutions
-**Asukoht:** `/home/janek/projects/hostinger/labs/05-cicd-lab/solutions/`
-
-**Vaja luua:**
-- README.md (kasutamisjuhised)
-- workflows/ (ci.yml, cd.yml täielikud näited)
-- k8s/ (deployment.yaml näited)
-
----
-
-### Prioriteet 4: Lab 6 (tulevikus)
-**Asukoht:** `/home/janek/projects/hostinger/labs/06-monitoring-logging-lab/`
-
-**Plaan:**
-- README.md täiendamine
-- 5 harjutust: Prometheus, Grafana, Loki, Alerting, Troubleshooting
-- solutions/ (Prometheus/Grafana config YAML'd)
+**Võimalikud järgmised sammud:**
+1. **Testimine:** Läbi käia kõik laborid ja testida harjutusi
+2. **Dokumentatsiooni täiendamine:** Lisa screenshotid või lisanäidised
+3. **Lab 7 (optional):** Security & Best Practices
+4. **Lab 8 (optional):** Advanced Topics (Service Mesh, GitOps)
 
 ---
 
@@ -205,12 +135,12 @@
 ### Failide Asukohad
 ```
 /home/janek/projects/hostinger/labs/
-├── 01-docker-lab/          ✅ VALMIS
-├── 02-docker-compose-lab/  ✅ VALMIS
-├── 03-kubernetes-basics-lab/ ✅ VALMIS
-├── 04-kubernetes-advanced-lab/ ✅ VALMIS
-├── 05-cicd-lab/            ⚠️ 70% (README valmis, exercises puuduvad)
-└── 06-monitoring-logging-lab/ ⏸️ EI ALUSTATUD
+├── 01-docker-lab/          ✅ VALMIS (100%)
+├── 02-docker-compose-lab/  ✅ VALMIS (100%)
+├── 03-kubernetes-basics-lab/ ✅ VALMIS (100%)
+├── 04-kubernetes-advanced-lab/ ✅ VALMIS (100%)
+├── 05-cicd-lab/            ✅ VALMIS (100%)
+└── 06-monitoring-logging-lab/ ✅ VALMIS (100%)
 ```
 
 ---
@@ -274,6 +204,6 @@ yamllint /home/janek/projects/hostinger/labs/05-cicd-lab/.github/workflows/*.yml
 
 ---
 
-**Viimane uuendus:** 2025-11-16 18:00
+**Viimane uuendus:** 2025-11-18 (Kõik laborid 1-6 valmis!)
 **Autor:** Claude Code sessioon
-**Järgmine ülesanne:** Lab 5 harjutuste loomine (01-05)
+**Staatus:** ✅ **PROJEKT LÕPETATUD** - Kõik 6 laborit on 100% valmis!
