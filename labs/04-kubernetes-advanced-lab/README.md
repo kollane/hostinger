@@ -103,6 +103,62 @@ Mõlemad meetodid lahendavad sama probleemi - kuidas suunata liiklust välistest
 
 ---
 
+## 🔧 Eeldused
+
+### Eelnevad labid:
+- [x] **Labor 1: Docker Põhitõed** - KOHUSTUSLIK
+  - Docker image build oskus
+  - Dockerfile'ide mõistmine
+
+- [ ] **Labor 2: Docker Compose** - SOOVITUSLIK
+  - Multi-container rakenduste kogemus
+  - Pole otseselt vajalik
+
+- [x] **Labor 3: Kubernetes Alused** - KOHUSTUSLIK (PEAB olema läbitud!)
+  - Töötav Kubernetes cluster (Minikube/K3s)
+  - kubectl konfiguratsioon valmis
+  - User Service ja Frontend deployed K8s'is
+  - Pods, Deployments, Services mõistmine
+  - ConfigMaps, Secrets, PersistentVolumes kogemus
+
+### Tööriistad:
+- [x] Kubernetes cluster töötab (Lab 3'st)
+- [x] kubectl configured (`kubectl cluster-info`)
+- [x] Helm paigaldatud (`helm version` - v3.x)
+- [x] Vähemalt 4GB vaba RAM (Ingress Controller + rakendused)
+- [x] Internet ühendus
+
+### Teadmised:
+- [x] **Labor 3:** Kubernetes põhikontseptsioonid (PEAB olema läbitud)
+- [x] **Peatükk 17:** Kubernetes Ingress ja Service Mesh
+- [x] **Peatükk 18:** Helm package manager
+- [x] **Peatükk 19:** Autoscaling ja rolling updates
+- [x] YAML templating põhimõtted
+
+### Valikuline:
+- [ ] Domeeni nimi (Harjutus 1 - Path A jaoks)
+- [ ] Nginx kogemus (Harjutus 1 - Path A jaoks)
+
+---
+
+## 📚 Progressiivne Õppetee
+
+```
+Labor 1 (Docker)
+  ↓ Docker image'd →
+Labor 2 (Compose)
+  ↓ Multi-container kogemus →
+Labor 3 (K8s Basics)
+  ↓ K8s manifests + deployed apps →
+Labor 4 (K8s Advanced) ← Oled siin
+  ↓ Ingress + Helm →
+Labor 5 (CI/CD)
+  ↓ Automated deployments →
+Labor 6 (Monitoring)
+```
+
+---
+
 ## 📝 Harjutused
 
 ### 🛤️ Path A: Algaja Tee (6 tundi)

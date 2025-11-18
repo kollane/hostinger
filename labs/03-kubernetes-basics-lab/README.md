@@ -116,18 +116,51 @@ Peale selle labori läbimist oskad:
 
 ## 🔧 Eeldused
 
+### Eelnevad labid:
+- [x] **Labor 1: Docker Põhitõed** - KOHUSTUSLIK
+  - Vaja on Labor 1'st loodud Docker image'e:
+    - `user-service:1.0` (Node.js backend)
+    - `frontend:1.0`
+  - Dockerfile'ide ja konteinerite mõistmine
+
+- [ ] **Labor 2: Docker Compose** - SOOVITUSLIK
+  - Multi-container rakenduste kogemus
+  - Ei ole otseselt vajalik, kuid aitab mõista teenuste orkestreerimist
+
 ### Tööriistad:
-- [x] kubectl paigaldatud (`kubectl version --client`)
-- [x] Minikube VÕI K3s paigaldatud
-- [x] Docker image'd Lab 1'st (`user-service:1.0`, `frontend:1.0`)
-- [x] Vähemalt 4GB vaba RAM
+- [x] kubectl paigaldatud (`kubectl version --client` - v1.28+)
+- [x] Kubernetes cluster:
+  - **Minikube** (soovitatud algajatele) VÕI
+  - **K3s** (lightweight, VPS-is)
+  - **Kind** (Kubernetes in Docker)
+- [x] Docker töötab (Minikube jaoks)
+- [x] Vähemalt 4GB vaba RAM (cluster + rakendused)
 - [x] Internet ühendus (image'ite tõmbamiseks)
 
 ### Teadmised:
-- [x] Labor 1: Docker Põhitõed
-- [x] Labor 2: Docker Compose
-- [x] Peatükk 15: Kubernetes arhitektuur
-- [x] Peatükk 16: Kubernetes põhikomponendid
+- [x] **Labor 1:** Docker põhitõed (images, containers, networks, volumes)
+- [x] **Labor 2:** Docker Compose (soovituslik, multi-container kogemus)
+- [x] **Peatükk 15:** Kubernetes arhitektuur ja komponendid
+- [x] **Peatükk 16:** Kubernetes põhikontseptsioonid (Pods, Deployments, Services)
+- [x] YAML süntaks
+
+---
+
+## 📚 Progressiivne Õppetee
+
+```
+Labor 1 (Docker)
+  ↓ Docker image'd →
+Labor 2 (Compose)
+  ↓ Multi-container kogemus →
+Labor 3 (K8s Basics) ← Oled siin
+  ↓ K8s manifests + deployed apps →
+Labor 4 (K8s Advanced)
+  ↓ Ingress + Helm →
+Labor 5 (CI/CD)
+  ↓ Automated deployments →
+Labor 6 (Monitoring)
+```
 
 ---
 

@@ -98,18 +98,64 @@ Peale selle labori läbimist oskad:
 
 ## 🔧 Eeldused
 
+### Eelnevad labid:
+- [x] **Labor 1: Docker Põhitõed** - KOHUSTUSLIK
+  - Vaja on Dockerfile'e ja Docker build kogemust
+  - User Service rakendus valmis
+  - Docker image build oskus
+
+- [ ] **Labor 2: Docker Compose** - SOOVITUSLIK
+  - Pole otseselt vajalik CI/CD jaoks
+
+- [x] **Labor 3: Kubernetes Alused** - KOHUSTUSLIK
+  - Vaja on Kubernetes manifeste (deployment.yaml, service.yaml)
+  - Töötav Kubernetes cluster
+  - kubectl kasutamise kogemus
+  - Deploy'mise põhitunnetus
+
+- [ ] **Labor 4: Kubernetes Täiustatud** - SOOVITUSLIK
+  - Helm Charts kasutatakse Harjutus 5's (optional)
+  - Ingress mõistmine aitab, kuid pole kohustuslik
+
 ### Tööriistad:
-- [x] GitHub konto
-- [x] Docker Hub konto (või GitHub Container Registry)
-- [x] Kubernetes cluster (Lab 3-4'st)
-- [x] kubectl configured
-- [x] Git paigaldatud
+- [x] **GitHub konto** (või GitLab, BitBucket)
+- [x] **Docker Hub konto** (või GitHub Container Registry)
+- [x] Kubernetes cluster töötab (Lab 3'st)
+- [x] kubectl configured (`kubectl cluster-info`)
+- [x] Git paigaldatud (`git --version`)
+- [x] Text editor (VS Code soovitatud GitHub Actions workflow'de jaoks)
 
 ### Valmis komponendid:
 - [x] User Service rakendus (Lab 1)
 - [x] Dockerfile (Lab 1)
-- [x] Kubernetes manifests (Lab 3)
-- [x] Helm Chart (Lab 4 - optional)
+- [x] Kubernetes manifests: deployment.yaml, service.yaml (Lab 3)
+- [ ] Helm Chart (Lab 4 - optional, kasutatakse Harjutus 5's)
+
+### Teadmised:
+- [x] **Labor 1:** Docker image build ja Dockerfile
+- [x] **Labor 3:** Kubernetes deployment (kubectl apply, rolling updates)
+- [x] **Peatükk 20:** CI/CD põhimõtted ja DevOps workflow
+- [x] **Peatükk 21:** GitHub Actions süntaks
+- [x] Git version control (git add, commit, push)
+- [x] YAML süntaks
+
+---
+
+## 📚 Progressiivne Õppetee
+
+```
+Labor 1 (Docker)
+  ↓ Docker image'd →
+Labor 2 (Compose)
+  ↓ Multi-container kogemus →
+Labor 3 (K8s Basics)
+  ↓ K8s manifests + deployed apps →
+Labor 4 (K8s Advanced)
+  ↓ Ingress + Helm →
+Labor 5 (CI/CD) ← Oled siin
+  ↓ Automated deployments →
+Labor 6 (Monitoring)
+```
 
 ---
 

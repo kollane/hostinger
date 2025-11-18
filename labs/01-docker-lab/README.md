@@ -77,6 +77,9 @@ Peale selle labori läbimist oskad:
 
 ## 🔧 Eeldused
 
+### Eelnevad labid:
+- ❌ **Puuduvad** - See on esimene labor
+
 ### Tööriistad:
 - [x] Docker paigaldatud (`docker --version`)
 - [x] Docker daemon töötab (`docker ps`)
@@ -84,9 +87,27 @@ Peale selle labori läbimist oskad:
 - [x] Internet ühendus (image'ite allalaadimiseks)
 
 ### Teadmised:
-- [x] Peatükk 12: Docker põhimõtted
+- [x] **Peatükk 12:** Docker põhimõtted ja konteineriseerimise alused
 - [x] Bash/terminal põhikäsud
-- [x] Text editor kasutamine
+- [x] Text editor kasutamine (vim soovitatud)
+
+---
+
+## 📚 Progressiivne Õppetee
+
+```
+Labor 1 (Docker) ← Oled siin
+  ↓ Docker image'd →
+Labor 2 (Compose)
+  ↓ Multi-container kogemus →
+Labor 3 (K8s Basics)
+  ↓ K8s manifests + deployed apps →
+Labor 4 (K8s Advanced)
+  ↓ Ingress + Helm →
+Labor 5 (CI/CD)
+  ↓ Automated deployments →
+Labor 6 (Monitoring)
+```
 
 ---
 
