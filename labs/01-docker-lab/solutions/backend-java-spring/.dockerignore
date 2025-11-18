@@ -1,0 +1,45 @@
+# Gradle build artifacts
+.gradle
+build/
+!build/libs/todo-service.jar
+
+# IDE files
+.idea
+.vscode
+*.iml
+*.ipr
+*.iws
+
+# Environment and secrets
+.env
+.env.local
+.env.*.local
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+*.md
+docs/
+
+# Tests (kui kasutad lihtsat Dockerfile'i)
+src/test/
+
+# Gradle wrapper (kui kasutad lihtsat Dockerfile'i)
+gradlew
+gradlew.bat
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Docker files (ei kopeeri ennast)
+Dockerfile*
+docker-compose*.yml
+.dockerignore

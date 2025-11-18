@@ -1,20 +1,20 @@
 # Harjutus 2: Multi-Container Setup
 
 **Kestus:** 60 minutit
-**Eesmärk:** Käivita Node.js User Service koos PostgreSQL andmebaasiga
+**Eesmärk:** Käivita Java Spring Boot Todo Service koos PostgreSQL andmebaasiga
 
 ---
 
 ## 📋 Ülevaade
 
-Õpi käivitama kahte containerit koos - User Service ja PostgreSQL - ning ühendama neid omavahel.
+Õpi käivitama kahte containerit koos - Todo Service ja PostgreSQL - ning ühendama neid omavahel.
 
 ---
 
 ## 🎯 Õpieesmärgid
 
 - ✅ Käivitada PostgreSQL container
-- ✅ Ühendada Node.js rakendus PostgreSQL'iga
+- ✅ Ühendada Java Spring Boot rakendus PostgreSQL'iga
 - ✅ Kasutada container networking'ut
 - ✅ Testi CRUD operatsioone
 - ✅ Debuggida connectivity probleeme
@@ -28,34 +28,38 @@
 ```bash
 # Käivita PostgreSQL container
 docker run -d \
-  --name postgres-users \
+  --name postgres-todo \
   -e POSTGRES_USER=postgres \
   -e POSTGRES_PASSWORD=postgres \
-  -e POSTGRES_DB=user_service_db \
-  -p 5432:5432 \
-  postgres:15-alpine
+  -e POSTGRES_DB=todo_service_db \
+  -p 5433:5432 \
+  postgres:16-alpine
 
 # Kontrolli
 docker ps | grep postgres
 
 # Vaata logisid
-docker logs postgres-users
+docker logs postgres-todo
 ```
+
+**Märkus:** Kasutame porti 5433, et vältida konflikti teiste PostgreSQL instantsidega.
 
 ### Samm 2: Seadista Andmebaas (10 min)
 
 ```bash
 # Ühenda PostgreSQL'iga
-docker exec -it postgres-users psql -U postgres -d user_service_db
+docker exec -it postgres-todo psql -U postgres -d todo_service_db
 
 # SQL konsoolis:
--- Loo users tabel
-CREATE TABLE users (
+-- Loo todos tabel
+CREATE TABLE todos (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL,
-    role VARCHAR(20) DEFAULT 'user',
+    user_id INTEGER NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    completed BOOLEAN DEFAULT FALSE,
+    priority VARCHAR(20) DEFAULT 'medium',
+    due_date TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -65,29 +69,28 @@ CREATE TABLE users (
 \q
 ```
 
-### Samm 3: Käivita User Service Container (15 min)
+### Samm 3: Käivita Todo Service Container (15 min)
 
 ```bash
 # Stopp varasem container
-docker stop user-service
-docker rm user-service
+docker stop todo-service
+docker rm todo-service
 
 # Käivita uuesti, ühendades PostgreSQL'iga
 docker run -d \
-  --name user-service \
-  -p 3000:3000 \
+  --name todo-service \
+  -p 8081:8081 \
   -e DB_HOST=host.docker.internal \
   -e DB_PORT=5432 \
-  -e DB_NAME=user_service_db \
+  -e DB_NAME=todo_service_db \
   -e DB_USER=postgres \
   -e DB_PASSWORD=postgres \
   -e JWT_SECRET=my-secret-key \
-  -e JWT_EXPIRES_IN=1h \
-  -e NODE_ENV=production \
-  user-service:1.0
+  -e SPRING_PROFILES_ACTIVE=prod \
+  todo-service:1.0
 
 # Kontrolli logisid
-docker logs -f user-service
+docker logs -f todo-service
 ```
 
 **Probleem:** `host.docker.internal` ei pruugi Linuxis töötada!
@@ -96,43 +99,50 @@ docker logs -f user-service
 
 ```bash
 # Leia PostgreSQL IP
-docker inspect postgres-users | grep IPAddress
+docker inspect postgres-todo | grep IPAddress
 
 # Või kasuta --link (deprecated, aga toimib)
 docker run -d \
-  --name user-service \
-  --link postgres-users:postgres \
-  -p 3000:3000 \
+  --name todo-service \
+  --link postgres-todo:postgres \
+  -p 8081:8081 \
   -e DB_HOST=postgres \
   -e DB_PORT=5432 \
-  -e DB_NAME=user_service_db \
+  -e DB_NAME=todo_service_db \
   -e DB_USER=postgres \
   -e DB_PASSWORD=postgres \
   -e JWT_SECRET=my-secret-key \
-  user-service:1.0
+  todo-service:1.0
 ```
 
 ### Samm 4: Testi API (15 min)
 
+**Märkus:** Todo Service vajab JWT tokenit User Service'ilt. Testimiseks võid kasutada mock tokenit või esmalt registreerida kasutaja User Service'is (kui see on käivitatud).
+
 ```bash
 # Health check
-curl http://localhost:3000/health
+curl http://localhost:8081/health
 
-# Registreeri kasutaja
-curl -X POST http://localhost:3000/api/auth/register \
+# Kui sul on JWT token User Service'ilt:
+TOKEN="<jwt-token-from-user-service>"
+
+# Loo todo
+curl -X POST http://localhost:8081/api/todos \
   -H "Content-Type: application/json" \
-  -d '{"name":"Test User","email":"test@example.com","password":"test123"}'
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{
+    "title": "Õpi Docker",
+    "description": "Läbi töötada kõik Lab 1 harjutused",
+    "priority": "high",
+    "dueDate": "2025-11-20T18:00:00"
+  }'
 
-# Logi sisse
-curl -X POST http://localhost:3000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"test123"}'
+# Loe kõik todos
+curl -X GET http://localhost:8081/api/todos \
+  -H "Authorization: Bearer $TOKEN"
 
-# Salvesta token
-TOKEN="<token-from-response>"
-
-# Hangi kasutajad
-curl http://localhost:3000/api/users \
+# Märgi todo tehtud (id=1)
+curl -X PATCH http://localhost:8081/api/todos/1/complete \
   -H "Authorization: Bearer $TOKEN"
 ```
 
@@ -143,12 +153,13 @@ curl http://localhost:3000/api/users \
 # Kontrolli, kas PostgreSQL töötab
 docker ps | grep postgres
 
-# Vaata User Service logisid
-docker logs user-service
+# Vaata Todo Service logisid
+docker logs todo-service
 
 # Testi connectivity container'ist
-docker exec -it user-service sh
-ping postgres  # peaks töötama kui kasutad --link
+docker exec -it todo-service sh
+# Container sees (kui ping on installitud):
+# ping postgres  # peaks töötama kui kasutad --link
 exit
 ```
 
@@ -156,12 +167,12 @@ exit
 
 ## ✅ Kontrolli
 
-- [x] PostgreSQL container töötab
-- [x] User Service container töötab
-- [x] Health check tagastab `"database": "connected"`
-- [x] Saad kasutajaid registreerida
-- [x] Saad sisse logida ja tokeni saada
-- [x] CRUD operatsioonid töötavad
+- [x] PostgreSQL container töötab (port 5433)
+- [x] Todo Service container töötab (port 8081)
+- [x] Health check tagastab `"status": "UP"`
+- [x] Andmebaas on ühendatud
+- [x] Tabelid on loodud
+- [x] CRUD operatsioonid töötavad (JWT tokeniga)
 
 ---
 

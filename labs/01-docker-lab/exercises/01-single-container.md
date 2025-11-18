@@ -1,13 +1,13 @@
 # Harjutus 1: Single Container
 
 **Kestus:** 45 minutit
-**Eesmärk:** Konteinerise Node.js User Service ja õpi Dockerfile'i loomist
+**Eesmärk:** Konteinerise Java Spring Boot Todo Service ja õpi Dockerfile'i loomist
 
 ---
 
 ## 📋 Ülevaade
 
-Selles harjutuses konteineriseerid Node.js User Service rakenduse. Õpid looma Dockerfile'i, build'ima Docker image'i ja käivitama containerit.
+Selles harjutuses konteineriseerid Java Spring Boot Todo Service rakenduse. Õpid looma Dockerfile'i, build'ima Docker image'i ja käivitama containerit.
 
 ---
 
@@ -15,7 +15,7 @@ Selles harjutuses konteineriseerid Node.js User Service rakenduse. Õpid looma D
 
 Peale selle harjutuse läbimist oskad:
 
-- ✅ Luua Dockerfile'i Node.js rakendusele
+- ✅ Luua Dockerfile'i Java Spring Boot rakendusele
 - ✅ Build'ida Docker image'i
 - ✅ Käivitada ja peatada containereid
 - ✅ Kasutada environment variables
@@ -31,16 +31,16 @@ Peale selle harjutuse läbimist oskad:
 │   Docker Container          │
 │                             │
 │  ┌───────────────────────┐  │
-│  │  Node.js Application  │  │
-│  │  User Service         │  │
-│  │  Port: 3000           │  │
+│  │  Java Application     │  │
+│  │  Todo Service         │  │
+│  │  Port: 8081           │  │
 │  └───────────────────────┘  │
 │                             │
 └─────────────────────────────┘
           │
           │ Port mapping
           │
-    localhost:3000
+    localhost:8081
 ```
 
 ---
@@ -49,10 +49,10 @@ Peale selle harjutuse läbimist oskad:
 
 ### Samm 1: Tutvu Rakendusega (5 min)
 
-Vaata User Service koodi:
+Vaata Todo Service koodi:
 
 ```bash
-cd ../../apps/backend-nodejs
+cd ../../apps/backend-java-spring
 
 # Vaata faile
 ls -la
@@ -60,13 +60,13 @@ ls -la
 # Loe README
 cat README.md
 
-# Vaata server.js
-head -50 server.js
+# Vaata build.gradle
+cat build.gradle
 ```
 
 **Küsimused:**
-- Millise pordiga rakendus käivitub? (3000)
-- Millised sõltuvused on vajalikud? (vaata package.json)
+- Millise pordiga rakendus käivitub? (8081)
+- Millised sõltuvused on vajalikud? (vaata build.gradle)
 - Kas rakendus vajab andmebaasi? (Jah, PostgreSQL)
 
 ### Samm 2: Loo Dockerfile (15 min)
@@ -74,17 +74,17 @@ head -50 server.js
 Loo fail nimega `Dockerfile`:
 
 ```bash
-nano Dockerfile
+vim Dockerfile
 ```
 
 **Ülesanne:** Kirjuta Dockerfile, mis:
-1. Kasutab Node.js 18 alpine base image'i
+1. Kasutab Java 17 JRE alpine base image'i
 2. Seadistab töökataloogiks `/app`
-3. Kopeerib `package*.json` failid
-4. Installib sõltuvused
-5. Kopeerib rakenduse kood
-6. Avaldab pordi 3000
-7. Käivitab rakenduse
+3. Kopeerib JAR faili (eeldab, et build on tehtud)
+4. Avaldab pordi 8081
+5. Käivitab rakenduse
+
+**Märkus:** See on lihtne Dockerfile, mis eeldab, et JAR fail on juba build'itud. Optimeeritud versioonis (Harjutus 5) lisame multi-stage build'i.
 
 **Vihje:** Vaata Docker dokumentatsiooni või solutions/ kausta!
 
@@ -92,24 +92,18 @@ nano Dockerfile
 <summary>💡 Näpunäide: Dockerfile struktuur</summary>
 
 ```dockerfile
-FROM node:18-alpine
+FROM eclipse-temurin:17-jre-alpine
 
 WORKDIR /app
 
-# Kopeeri dependency files
-COPY package*.json ./
-
-# Paigalda sõltuvused
-RUN npm install --production
-
-# Kopeeri rakenduse kood
-COPY . .
+# Kopeeri JAR fail
+COPY build/libs/todo-service.jar app.jar
 
 # Avalda port
-EXPOSE 3000
+EXPOSE 8081
 
-# Käivita
-CMD ["node", "server.js"]
+# Käivita rakendus
+CMD ["java", "-jar", "app.jar"]
 ```
 </details>
 
@@ -118,35 +112,46 @@ CMD ["node", "server.js"]
 Loo `.dockerignore` fail, et vältida tarbetute failide kopeerimist:
 
 ```bash
-nano .dockerignore
+vim .dockerignore
 ```
 
 **Sisu:**
 ```
-node_modules
-npm-debug.log
+.gradle
+build/
+!build/libs/todo-service.jar
 .env
 .git
 .gitignore
 README.md
 *.md
+src/
+gradlew
+gradlew.bat
 ```
 
 **Miks see oluline on?**
 - Väiksem image suurus
 - Kiirem build
 - Turvalisem (ei kopeeri .env faile)
+- Ei kopeeri source code'i (ainult JAR fail)
 
 ### Samm 4: Build Docker Image (10 min)
 
-Build'i oma esimene Docker image:
+Esmalt build'i JAR fail, seejärel Docker image:
 
 ```bash
-# Build image tagiga
-docker build -t user-service:1.0 .
+# Build JAR fail
+./gradlew clean bootJar
+
+# Kontrolli, et JAR on loodud
+ls -lh build/libs/
+
+# Build Docker image tagiga
+docker build -t todo-service:1.0 .
 
 # Vaata build protsessi
-# Märka: iga RUN käsk loob uue layer
+# Märka: iga käsk loob uue layer
 ```
 
 **Kontrolli image'i:**
@@ -155,15 +160,15 @@ docker build -t user-service:1.0 .
 # Vaata kõiki image'id
 docker images
 
-# Vaata user-service image infot
-docker image inspect user-service:1.0
+# Vaata todo-service image infot
+docker image inspect todo-service:1.0
 
 # Kontrolli suurust
-docker images user-service:1.0
+docker images todo-service:1.0
 ```
 
 **Küsimused:**
-- Kui suur on sinu image? (peaks olema ~150-200MB)
+- Kui suur on sinu image? (peaks olema ~200-250MB)
 - Mitu layer'it on image'il?
 - Millal image loodi?
 
@@ -173,21 +178,21 @@ docker images user-service:1.0
 
 ```bash
 # Käivita container interaktiivselt
-docker run -it --name user-service-test \
-  -p 3000:3000 \
+docker run -it --name todo-service-test \
+  -p 8081:8081 \
   -e DB_HOST=localhost \
   -e DB_PORT=5432 \
-  -e DB_NAME=user_service_db \
+  -e DB_NAME=todo_service_db \
   -e DB_USER=postgres \
   -e DB_PASSWORD=postgres \
   -e JWT_SECRET=test-secret \
-  user-service:1.0
+  todo-service:1.0
 ```
 
 **Märkused:**
 - `-it` - interactive + tty
 - `--name` - anna containerile nimi
-- `-p 3000:3000` - map port 3000 host'ist container'isse
+- `-p 8081:8081` - map port 8081 host'ist container'isse
 - `-e` - environment variable
 
 **Probleam:** Rakendus ei käivitu, sest PostgreSQL puudub!
@@ -196,25 +201,25 @@ docker run -it --name user-service-test \
 
 ```bash
 # Käivita taustal (detached mode)
-docker run -d --name user-service \
-  -p 3000:3000 \
+docker run -d --name todo-service \
+  -p 8081:8081 \
   -e DB_HOST=host.docker.internal \
   -e DB_PORT=5432 \
-  -e DB_NAME=user_service_db \
+  -e DB_NAME=todo_service_db \
   -e DB_USER=postgres \
   -e DB_PASSWORD=postgres \
   -e JWT_SECRET=test-secret-key \
-  -e NODE_ENV=production \
-  user-service:1.0
+  -e SPRING_PROFILES_ACTIVE=prod \
+  todo-service:1.0
 
 # Vaata kas töötab
 docker ps
 
 # Vaata logisid
-docker logs user-service
+docker logs todo-service
 
 # Vaata reaalajas
-docker logs -f user-service
+docker logs -f todo-service
 ```
 
 **Probleam:** Kui PostgreSQL ei tööta, siis rakendus crashib!
@@ -226,39 +231,39 @@ docker logs -f user-service
 docker ps -a
 
 # Vaata logisid
-docker logs user-service
+docker logs todo-service
 
 # Sisene containerisse
-docker exec -it user-service sh
+docker exec -it todo-service sh
 
 # Container sees:
 ls -la
-cat package.json
+java -version
 env | grep DB
 exit
 
 # Inspekteeri containerit
-docker inspect user-service
+docker inspect todo-service
 
 # Vaata resource kasutust
-docker stats user-service
+docker stats todo-service
 ```
 
 **Levinud probleemid:**
 
 1. **Port on juba kasutusel:**
    ```bash
-   # Vaata, mis kasutab porti 3000
-   sudo lsof -i :3000
+   # Vaata, mis kasutab porti 8081
+   sudo lsof -i :8081
 
    # Kasuta teist porti
-   docker run -p 3001:3000 ...
+   docker run -p 8082:8081 ...
    ```
 
 2. **Rakendus crashib:**
    ```bash
    # Vaata logisid
-   docker logs user-service
+   docker logs todo-service
 
    # Tõenäoliselt puudub PostgreSQL
    ```
@@ -269,7 +274,7 @@ docker stats user-service
    docker ps
 
    # Vaata network't
-   docker inspect user-service | grep IPAddress
+   docker inspect todo-service | grep IPAddress
    ```
 
 ---
@@ -278,9 +283,10 @@ docker stats user-service
 
 Peale selle harjutuse läbimist peaksid omama:
 
-- [x] **Dockerfile** backend-nodejs/ kaustas
+- [x] **Dockerfile** backend-java-spring/ kaustas
 - [x] **.dockerignore** fail
-- [x] **Docker image** `user-service:1.0` (vaata `docker images`)
+- [x] **JAR fail** build/libs/todo-service.jar
+- [x] **Docker image** `todo-service:1.0` (vaata `docker images`)
 - [x] **Container** käivitatud (vaata `docker ps`)
 - [x] Mõistad Dockerfile'i struktuuri
 - [x] Oskad build'ida image'i
@@ -294,14 +300,14 @@ Peale selle harjutuse läbimist peaksid omama:
 ### Test 1: Kas image on loodud?
 
 ```bash
-docker images | grep user-service
-# Peaks näitama: user-service 1.0 ...
+docker images | grep todo-service
+# Peaks näitama: todo-service 1.0 ...
 ```
 
 ### Test 2: Kas container töötab?
 
 ```bash
-docker ps | grep user-service
+docker ps | grep todo-service
 # Peaks näitama töötavat containerit
 ```
 
@@ -310,11 +316,10 @@ docker ps | grep user-service
 **Märkus:** See ei tööta ilma PostgreSQL'ita!
 
 ```bash
-curl http://localhost:3000/health
+curl http://localhost:8081/health
 # Oodatud vastus:
 # {
-#   "status": "ERROR",
-#   "database": "disconnected"
+#   "status": "DOWN"
 # }
 ```
 
@@ -346,8 +351,8 @@ curl http://localhost:3000/health
 
 1. **Kasuta `.dockerignore`** - Väldi tarbetute failide kopeerimist
 2. **Kasuta alpine images** - Väiksem suurus, kiirem
-3. **RUN npm install --production** - Ära installi dev dependencies
-4. **COPY package.json enne koodi** - Parem layer caching
+3. **Kasuta JRE (mitte JDK)** - Runtime ei vaja compile tools
+4. **Build JAR enne Docker build'i** - Kiire rebuild, kui kood muutub
 5. **Kasuta EXPOSE** - Dokumenteeri, millist porti rakendus kasutab
 
 ---
@@ -364,7 +369,7 @@ Järgmises harjutuses lisame PostgreSQL containeri ja ühendame kaks containerit
 
 - [Dockerfile reference](https://docs.docker.com/engine/reference/builder/)
 - [Docker run reference](https://docs.docker.com/engine/reference/run/)
-- [Node.js Docker best practices](https://github.com/nodejs/docker-node/blob/main/docs/BestPractices.md)
+- [Spring Boot Docker best practices](https://spring.io/guides/topicals/spring-boot-docker/)
 
 ---
 

@@ -22,14 +22,16 @@ fi
 
 echo -e "${YELLOW}📦 Peatame ja eemaldame Lab 1 containerid...${NC}"
 
-# Eemalda User Service containerid
-if docker ps -a --format '{{.Names}}' | grep -q '^user-service$'; then
-    docker rm -f user-service
-    echo -e "${GREEN}  ✓ user-service container eemaldatud${NC}"
-fi
+# Eemalda Todo Service containerid
+for container in todo-service todo-service-opt todo-service-test; do
+    if docker ps -a --format '{{.Names}}' | grep -q "^${container}$"; then
+        docker rm -f "$container"
+        echo -e "${GREEN}  ✓ $container container eemaldatud${NC}"
+    fi
+done
 
 # Eemalda PostgreSQL containerid (mitu võimalikku nime)
-for container in postgres-users postgres user-postgres; do
+for container in postgres-todo postgres todo-postgres; do
     if docker ps -a --format '{{.Names}}' | grep -q "^${container}$"; then
         docker rm -f "$container"
         echo -e "${GREEN}  ✓ $container container eemaldatud${NC}"
@@ -39,26 +41,28 @@ done
 echo ""
 echo -e "${YELLOW}🗑️  Eemaldame Lab 1 Docker image'd...${NC}"
 
-# Eemalda user-service image'd
-if docker images --format '{{.Repository}}:{{.Tag}}' | grep -q '^user-service:'; then
-    docker rmi -f $(docker images --format '{{.Repository}}:{{.Tag}}' | grep '^user-service:') 2>/dev/null
-    echo -e "${GREEN}  ✓ user-service image'd eemaldatud${NC}"
+# Eemalda todo-service image'd
+if docker images --format '{{.Repository}}:{{.Tag}}' | grep -q '^todo-service:'; then
+    docker rmi -f $(docker images --format '{{.Repository}}:{{.Tag}}' | grep '^todo-service:') 2>/dev/null
+    echo -e "${GREEN}  ✓ todo-service image'd eemaldatud${NC}"
 fi
 
 echo ""
 echo -e "${YELLOW}🔌 Eemaldame Lab 1 network'id...${NC}"
 
-# Eemalda app-network
-if docker network ls --format '{{.Name}}' | grep -q '^app-network$'; then
-    docker network rm app-network 2>/dev/null
-    echo -e "${GREEN}  ✓ app-network eemaldatud${NC}"
-fi
+# Eemalda todo-network ja app-network
+for network in todo-network app-network; do
+    if docker network ls --format '{{.Name}}' | grep -q "^${network}$"; then
+        docker network rm "$network" 2>/dev/null
+        echo -e "${GREEN}  ✓ $network eemaldatud${NC}"
+    fi
+done
 
 echo ""
 echo -e "${YELLOW}💾 Eemaldame Lab 1 volume'd...${NC}"
 
 # Eemalda PostgreSQL volume'd
-for volume in postgres-users-data postgres-data user-postgres-data; do
+for volume in postgres-todos-data postgres-todo-data todo-postgres-data postgres-data; do
     if docker volume ls --format '{{.Name}}' | grep -q "^${volume}$"; then
         docker volume rm "$volume" 2>/dev/null
         echo -e "${GREEN}  ✓ $volume volume eemaldatud${NC}"
@@ -76,7 +80,7 @@ echo ""
 echo -e "${GREEN}✅ Lab 1 süsteem on taastatud!${NC}"
 echo ""
 echo "Saad nüüd alustada Lab 1 harjutustega algusest:"
-echo "  1. cd apps/backend-nodejs"
+echo "  1. cd apps/backend-java-spring"
 echo "  2. Jätka 01-docker-lab/exercises/01-single-container.md juhiste järgi"
 echo ""
 echo "======================================"

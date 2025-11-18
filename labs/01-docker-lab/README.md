@@ -228,8 +228,9 @@ free -h
 cd /home/janek/projects/hostinger/labs/01-docker-lab
 
 # Kontrolli rakenduste kättesaadavust
-ls ../apps/backend-nodejs
-ls ../apps/frontend
+ls ../apps/backend-java-spring
+ls ../apps/backend-nodejs  # Lab 2 jaoks
+ls ../apps/frontend  # Lab 2 jaoks
 ```
 
 #### 4. Alusta Harjutus 1'st
