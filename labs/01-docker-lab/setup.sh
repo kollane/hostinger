@@ -105,15 +105,20 @@ echo ""
 
 # 7. Check apps directory
 echo "7️⃣  Kontrollin rakenduste kättesaadavust..."
-if [ -d "../apps/backend-nodejs" ] && [ -d "../apps/frontend" ]; then
-    echo -e "${GREEN}✅ Rakendused on kättesaadavad:${NC}"
-    echo "   - ../apps/backend-nodejs/"
-    echo "   - ../apps/frontend/"
+if [ -d "../apps/backend-java-spring" ]; then
+    echo -e "${GREEN}✅ Todo Service rakendus on kättesaadav:${NC}"
+    echo "   - ../apps/backend-java-spring/ (Lab 1 põhifookus)"
 else
-    echo -e "${RED}❌ Rakendused pole kättesaadavad!${NC}"
+    echo -e "${RED}❌ Todo Service rakendus pole kättesaadav!${NC}"
     echo "Kontrolli, et oled õiges kataloogis:"
     echo "  cd /home/janek/projects/hostinger/labs/01-docker-lab"
     exit 1
+fi
+
+if [ -d "../apps/backend-nodejs" ] && [ -d "../apps/frontend" ]; then
+    echo -e "${GREEN}✅ Täiendavad rakendused (Lab 2 jaoks) on kättesaadavad:${NC}"
+    echo "   - ../apps/backend-nodejs/"
+    echo "   - ../apps/frontend/"
 fi
 echo ""
 

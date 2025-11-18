@@ -50,8 +50,22 @@ else
 fi
 echo ""
 
-# 3. Check Lab 1 images
-echo "3️⃣  Kontrollin Lab 1 image'ite olemasolu..."
+# 3. Check Lab 1 image (todo-service)
+echo "3️⃣  Kontrollin Lab 1 image'i (todo-service)..."
+if ! docker images | grep -q "todo-service.*1.0"; then
+    echo -e "${RED}❌ todo-service:1.0 puudub!${NC}"
+    echo ""
+    echo "Todo Service on Lab 1 KOHUSTUSLIK tulemus!"
+    echo "Build'i see esmalt:"
+    echo "  cd ../apps/backend-java-spring"
+    echo "  docker build -t todo-service:1.0 ."
+    exit 1
+fi
+echo -e "${GREEN}✅ todo-service:1.0 on olemas (Lab 1'st)${NC}"
+echo ""
+
+# 4. Check Lab 2 additional images
+echo "4️⃣  Kontrollin Lab 2 täiendavaid image'e..."
 MISSING_IMAGES=()
 
 if ! docker images | grep -q "user-service.*1.0"; then
@@ -123,8 +137,8 @@ else
 fi
 echo ""
 
-# 4. Check exercises directory
-echo "4️⃣  Kontrollin harjutusi..."
+# 5. Check exercises directory
+echo "5️⃣  Kontrollin harjutusi..."
 if [ -d "exercises" ]; then
     EXERCISE_COUNT=$(ls exercises/*.md 2>/dev/null | wc -l)
     echo -e "${GREEN}✅ Harjutused on kättesaadavad ($EXERCISE_COUNT harjutust)${NC}"
@@ -138,16 +152,17 @@ echo "========================================="
 echo "  ✅ Setup Valmis!"
 echo "========================================="
 echo ""
-echo "Kõik eeldused on täidetud! Võid alustada laboriga."
+echo "Kõik kolm teenust on valmis Lab 2 jaoks!"
 echo ""
 echo "Olemasolevad Docker image'd:"
-docker images | grep -E "REPOSITORY|user-service|frontend"
+docker images | grep -E "REPOSITORY|todo-service|user-service|frontend"
 echo ""
 echo "Järgmised sammud:"
-echo "  1. Alusta harjutus 1'st:"
+echo "  1. Alusta harjutus 1'st (Basic Compose):"
 echo "     cat exercises/01-basic-compose.md"
 echo ""
 echo "  2. Või vaata näidis docker-compose.yml:"
 echo "     cat solutions/docker-compose.yml"
 echo ""
+echo "Lab 2 lõpuks on sul valmis täielik mikroteenuste süsteem!"
 echo "Edu laboriga! 🚀"

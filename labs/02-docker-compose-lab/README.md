@@ -2,21 +2,63 @@
 
 **Kestus:** 3 tundi
 **Eeldused:** Labor 1 läbitud, Peatükk 13 (Docker Compose)
-**Eesmärk:** Hallata mitme-konteineri rakendusi Docker Compose'iga
+**Eesmärk:** Ühenda kõik kolm mikroteenust Docker Compose'iga
 
 ---
 
 ## 📋 Ülevaade
 
-Selles laboris õpid kasutama Docker Compose'i, et hallata kõiki teenuseid ühe YAML failiga. Kasutad Labor 1'st loodud Docker image'id.
+Selles laboris ühendad kõik kolm mikroteenust (**Todo Service, User Service, Frontend**) üheks täisfunktsionaalseks rakenduseks Docker Compose'i abil.
+
+Lab 2 lõpuks on sul valmis terve süsteem, mida saad Lab 3's Kubernetes'esse deploy'da.
+
+---
+
+## 🏗️ Arhitektuur
+
+**Täielik mikroteenuste süsteem:**
+
+```
+┌──────────────────────────────────────────────────┐
+│           Docker Compose Network                 │
+│                                                  │
+│   ┌─────────────┐                                │
+│   │  Frontend   │  Port: 8080                    │
+│   │  (Nginx)    │  UI for users                  │
+│   └──────┬──────┘                                │
+│          │                                        │
+│     ┌────┴────┐                                  │
+│     │         │                                   │
+│     ▼         ▼                                   │
+│  ┌─────┐   ┌─────┐                               │
+│  │User │   │Todo │                               │
+│  │Svc  │   │Svc  │                               │
+│  │:3000│   │:8081│                               │
+│  └──┬──┘   └──┬──┘                               │
+│     │         │                                   │
+│     ▼         ▼                                   │
+│  ┌─────┐   ┌─────┐                               │
+│  │PG   │   │PG   │                               │
+│  │:5432│   │:5433│                               │
+│  └─────┘   └─────┘                               │
+│   users      todos                                │
+└──────────────────────────────────────────────────┘
+```
+
+**Teenused:**
+- **Frontend**: Nginx serving HTML/CSS/JS → Suhtleb mõlema backend'iga
+- **User Service**: Node.js + Express → Autentimine, kasutajate haldus
+- **Todo Service**: Java Spring Boot → Todo CRUD operatsioonid (Lab 1'st)
+- **PostgreSQL x2**: Eraldi andmebaasid users ja todos jaoks
 
 ---
 
 ## 🎯 Õpieesmärgid
 
-✅ Luua docker-compose.yml faile
+✅ Luua docker-compose.yml kõigi kolme teenuse jaoks
 ✅ Hallata mitut teenust korraga
 ✅ Konfigureerida networks ja volumes Compose'is
+✅ Ühenda Frontend mõlema backend'iga
 ✅ Luua erinevaid keskkonna konfiguratsioone (dev, prod)
 ✅ Skaleerida teenuseid
 
@@ -44,12 +86,13 @@ Selles laboris õpid kasutama Docker Compose'i, et hallata kõiki teenuseid ühe
 
 ### Eelnevad labid:
 - [x] **Labor 1: Docker Põhitõed** - KOHUSTUSLIK
-  - Vaja on Labor 1'st loodud Docker image'e:
-    - `user-service:1.0` (Node.js backend)
-    - `todo-service:1.0` (Java backend - optional)
-    - `frontend:1.0`
-  - Docker käskude põhitundmine (docker run, docker build)
-  - Networks ja volumes kogemus
+  - **PEAB olema Lab 1'st:**
+    - `todo-service:1.0` (Java Spring Boot backend image - LAB 1 PÕHIFOOKUS)
+    - Docker käskude põhitundmine (docker run, docker build)
+    - Networks ja volumes kogemus
+  - **Setup script build'ib automaatselt:**
+    - `user-service:1.0` (Node.js backend image - lisatakse Lab 2's)
+    - `frontend:1.0` (Nginx frontend image - lisatakse Lab 2's)
 
 ### Tööriistad:
 - [x] Docker Compose paigaldatud (`docker compose version` - v2.x)
@@ -114,29 +157,40 @@ docker compose version
 sudo apt install docker-compose-plugin
 ```
 
-#### 2. Kontrolli Lab 1 Image'd
+#### 2. Kontrolli Lab 1 Image
 
 ```bash
-# Kontrolli olemasolevaid image'e
-docker images | grep -E "user-service|todo-service|frontend"
+# Kontrolli Lab 1 kohustuslikku image'i
+docker images | grep "todo-service"
 ```
 
-**Kui image'd puuduvad, build'i Lab 1'st:**
+**Kui todo-service:1.0 puudub:**
 
 ```bash
-# User Service
+# Todo Service (LAB 1 KOHUSTUSLIK!)
+cd ../apps/backend-java-spring
+docker build -t todo-service:1.0 .
+cd ../../02-docker-compose-lab
+```
+
+#### 3. Build'i Täiendavad Image'd Lab 2 Jaoks
+
+Setup script build'ib need automaatselt, aga saad ka käsitsi:
+
+```bash
+# User Service (lisame Lab 2's)
 cd ../apps/backend-nodejs
 docker build -t user-service:1.0 .
 
-# Frontend
-cd ../frontend
+# Frontend (lisame Lab 2's)
+cd ../apps/frontend
 docker build -t frontend:1.0 .
 
 # Tagasi Lab 2'sse
 cd ../../02-docker-compose-lab
 ```
 
-#### 3. Alusta Harjutustega
+#### 4. Alusta Harjutustega
 
 ```bash
 cat exercises/01-basic-compose.md

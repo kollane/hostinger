@@ -28,28 +28,31 @@ Peale selle labori läbimist oskad:
 
 ## 🏗️ Arhitektuur
 
+**Peamine fookus: Todo Service (Java Spring Boot Backend)**
+
 ```
-┌──────────────────┐
-│  Frontend        │
-│  (nginx:alpine)  │
-│  Port: 8080      │
-└──────────────────┘
-         │
-    ┌────┴────┐
-    │         │
-    ▼         ▼
-┌────────┐ ┌────────┐
-│Node.js │ │ Java   │
-│Backend │ │Backend │
-│:3000   │ │:8081   │
-└───┬────┘ └───┬────┘
-    │          │
-    ▼          ▼
-┌────────┐ ┌────────┐
-│Postgres│ │Postgres│
-│:5432   │ │:5433   │
-└────────┘ └────────┘
+┌────────────────────────┐
+│   Todo Service         │
+│   (Java 17 + Spring Boot 3)│
+│   Port: 8081           │
+│                        │
+│   - GET /api/todos     │
+│   - POST /api/todos    │
+│   - PUT /api/todos/{id}│
+│   - DELETE /api/todos/{id}│
+│   - GET /health        │
+└──────────┬─────────────┘
+           │
+           ▼
+    ┌─────────────┐
+    │  PostgreSQL │
+    │  Port: 5433 │
+    │             │
+    │  - todos    │
+    └─────────────┘
 ```
+
+**Märkus:** User Service (Node.js) ja Frontend on valikulised ning kaetakse Lab 2's (Docker Compose).
 
 ---
 
@@ -58,19 +61,18 @@ Peale selle labori läbimist oskad:
 ```
 01-docker-lab/
 ├── README.md              # See fail
-├── exercises/             # Harjutused
-│   ├── 01-single-container.md
-│   ├── 02-multi-container.md
-│   ├── 03-networking.md
-│   ├── 04-volumes.md
-│   └── 05-optimization.md
+├── setup.sh               # Automaatne setup script
+├── exercises/             # Harjutused (5 harjutust)
+│   ├── 01-single-container.md     # Todo Service konteineriseerimine
+│   ├── 02-multi-container.md      # Todo Service + PostgreSQL
+│   ├── 03-networking.md           # Docker networks
+│   ├── 04-volumes.md              # Andmete säilitamine
+│   └── 05-optimization.md         # Multi-stage build
 └── solutions/             # Lahendused
-    ├── backend-nodejs/
-    │   └── Dockerfile
-    ├── backend-java/
-    │   └── Dockerfile
-    └── frontend/
-        └── Dockerfile
+    └── backend-java-spring/   # Todo Service lahendused
+        ├── Dockerfile             # Põhiline Dockerfile
+        ├── Dockerfile.optimized   # Multi-stage build
+        └── .dockerignore          # Image optimeerimiseks
 ```
 
 ---
@@ -116,20 +118,20 @@ Labor 6 (Monitoring)
 ### Harjutus 1: Single Container (45 min)
 **Fail:** [exercises/01-single-container.md](exercises/01-single-container.md)
 
-Konteinerise Node.js backend:
+Konteinerise Todo Service (Java Spring Boot):
 - Loo Dockerfile
-- Build image
+- Build todo-service image
 - Käivita container
-- Testi API
+- Testi REST API (/api/todos)
 - Debug logs
 
 ### Harjutus 2: Multi-Container (60 min)
 **Fail:** [exercises/02-multi-container.md](exercises/02-multi-container.md)
 
-Käivita Node.js + PostgreSQL:
-- Käivita PostgreSQL container
-- Ühenda Node.js backend andmebaasiga
-- Testi CRUD operatsioonid
+Käivita Todo Service + PostgreSQL:
+- Käivita PostgreSQL container (port 5433)
+- Ühenda Todo Service andmebaasiga
+- Testi CRUD operatsioonid (todos)
 - Troubleshoot connectivity
 
 ### Harjutus 3: Networking (45 min)
@@ -256,23 +258,32 @@ echo "✅ Kõik eeldused on täidetud!"
 
 Peale labori läbimist pead omama:
 
-- [ ] 3 töötavat Docker image'i:
-  - [ ] `user-service:1.0` (Node.js backend)
-  - [ ] `todo-service:1.0` (Java backend)
-  - [ ] `frontend:1.0`
+### Kohustuslik (Lab 1 põhiulatus):
 
-- [ ] Töötavad containerid:
-  - [ ] Node.js backend - User Service (port 3000)
-  - [ ] Java backend - Todo Service (port 8081)
-  - [ ] Frontend (port 8080)
-  - [ ] 2x PostgreSQL (ports 5432, 5433)
+- [ ] **Docker image:**
+  - [ ] `todo-service:1.0` (Java Spring Boot backend)
+  - [ ] `todo-service:1.0-optimized` (multi-stage build)
 
-- [ ] Volumes:
-  - [ ] `postgres-users-data`
-  - [ ] `postgres-todos-data`
+- [ ] **Töötav container:**
+  - [ ] Todo Service (port 8081)
+  - [ ] PostgreSQL (port 5433)
 
-- [ ] Network:
-  - [ ] `app-network`
+- [ ] **Volume:**
+  - [ ] `postgres-todos-data` (andmete säilitamine)
+
+- [ ] **Network:**
+  - [ ] `app-network` (container'ite omavaheline suhtlus)
+
+- [ ] **Testimine:**
+  - [ ] `GET /api/todos` töötab
+  - [ ] `POST /api/todos` loob uue todo
+  - [ ] `GET /health` tagastab OK
+
+### Valikuline (tehakse Lab 2's):
+
+- [ ] `user-service:1.0` (Node.js backend - töötab portil 3000)
+- [ ] `frontend:1.0` (Nginx - töötab portil 8080)
+- [ ] `postgres-users-data` volume (user-service jaoks)
 
 ---
 

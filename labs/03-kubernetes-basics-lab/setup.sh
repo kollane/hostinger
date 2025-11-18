@@ -115,9 +115,13 @@ else
 fi
 echo ""
 
-# 4. Check Lab 1 images locally
-echo "4️⃣  Kontrollin Lab 1 image'ite olemasolu..."
+# 4. Check Lab 2 images locally (all three services)
+echo "4️⃣  Kontrollin Lab 2 image'ite olemasolu..."
 MISSING_IMAGES=()
+
+if ! docker images | grep -q "todo-service.*1.0"; then
+    MISSING_IMAGES+=("todo-service:1.0")
+fi
 
 if ! docker images | grep -q "user-service.*1.0"; then
     MISSING_IMAGES+=("user-service:1.0")
@@ -136,6 +140,13 @@ if [ ${#MISSING_IMAGES[@]} -gt 0 ]; then
 
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         # Build missing images
+        if [[ " ${MISSING_IMAGES[@]} " =~ "todo-service:1.0" ]]; then
+            echo "📦 Build'in todo-service:1.0..."
+            cd ../apps/backend-java-spring
+            docker build -t todo-service:1.0 .
+            cd - > /dev/null
+        fi
+
         if [[ " ${MISSING_IMAGES[@]} " =~ "user-service:1.0" ]]; then
             echo "📦 Build'in user-service:1.0..."
             cd ../apps/backend-nodejs
@@ -152,7 +163,7 @@ if [ ${#MISSING_IMAGES[@]} -gt 0 ]; then
 
         echo -e "${GREEN}✅ Image'd build'itud${NC}"
     else
-        echo -e "${RED}Image'd on vajalikud. Palun build'i need käsitsi.${NC}"
+        echo -e "${RED}Kõik kolm image'i on vajalikud. Palun build'i need käsitsi või käivita Lab 2 setup.${NC}"
         exit 1
     fi
 else
@@ -165,38 +176,49 @@ echo "5️⃣  Laen image'd Kubernetes cluster'isse..."
 
 case $CLUSTER_TYPE in
     minikube)
-        info "Laen image'd Minikube'sse..."
+        info "Laen kõik 3 image'i Minikube'sse..."
         eval $(minikube docker-env)
 
-        # Rebuild images in Minikube environment
-        cd ../apps/backend-nodejs
+        # Rebuild all three images in Minikube environment
+        cd ../apps/backend-java-spring
+        docker build -t todo-service:1.0 . &> /dev/null
+        cd ../backend-nodejs
         docker build -t user-service:1.0 . &> /dev/null
         cd ../frontend
         docker build -t frontend:1.0 . &> /dev/null
         cd - > /dev/null
 
         eval $(minikube docker-env -u)
-        echo -e "${GREEN}✅ Image'd laetud Minikube'sse${NC}"
+        echo -e "${GREEN}✅ Kõik 3 image'i laetud Minikube'sse${NC}"
         ;;
 
     k3s)
-        info "Importen image'd K3s'i..."
+        info "Importen kõik 3 image'i K3s'i..."
 
-        # Save and import images
+        # Save and import todo-service
+        docker save todo-service:1.0 > /tmp/todo-service-1.0.tar
+        sudo k3s ctr images import /tmp/todo-service-1.0.tar
+        rm /tmp/todo-service-1.0.tar
+
+        # Save and import user-service
         docker save user-service:1.0 > /tmp/user-service-1.0.tar
         sudo k3s ctr images import /tmp/user-service-1.0.tar
         rm /tmp/user-service-1.0.tar
 
+        # Save and import frontend
         docker save frontend:1.0 > /tmp/frontend-1.0.tar
         sudo k3s ctr images import /tmp/frontend-1.0.tar
         rm /tmp/frontend-1.0.tar
 
-        echo -e "${GREEN}✅ Image'd imporditud K3s'i${NC}"
+        echo -e "${GREEN}✅ Kõik 3 image'i imporditud K3s'i${NC}"
         ;;
 
     other)
         warn "Kasutad custom cluster'it - image'd peavad olema registry's"
-        echo "Kui kasutad local registry't, lae image'd sinna käsitsi."
+        echo "Kui kasutad local registry't, lae kõik 3 image'i sinna käsitsi:"
+        echo "  - todo-service:1.0"
+        echo "  - user-service:1.0"
+        echo "  - frontend:1.0"
         ;;
 esac
 echo ""
