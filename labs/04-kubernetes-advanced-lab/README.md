@@ -159,6 +159,86 @@ Labor 6 (Monitoring)
 
 ---
 
+## ⚡ Kiirstart Setup
+
+### Variant A: Automaatne Seadistus (Soovitatud)
+
+Käivita setup script, mis seadistab kõik eeldused:
+
+```bash
+# Käivita setup script
+chmod +x setup.sh
+./setup.sh
+```
+
+**Script teeb:**
+- ✅ Kontrollib Kubernetes cluster'i (Lab 3'st)
+- ✅ Kontrollib Lab 3 deploymente
+- ✅ Deploy'b Lab 3 komponendid kui puuduvad
+- ✅ Paigaldab Helm'i
+- ✅ Valmistab ette Ingress Controller paigalduse
+
+---
+
+### Variant B: Manuaalne Seadistus
+
+#### 1. Kontrolli Lab 3 Eeldusi
+
+```bash
+# Cluster töötab?
+kubectl cluster-info
+kubectl get nodes
+
+# Lab 3 deployments olemas?
+kubectl get deployments
+kubectl get services
+```
+
+**Kui Lab 3 komponendid puuduvad:**
+```bash
+# Mine Lab 3'sse ja käivita setup
+cd ../03-kubernetes-basics-lab
+./setup.sh
+cd ../04-kubernetes-advanced-lab
+```
+
+#### 2. Paigalda Helm
+
+```bash
+# Paigalda Helm v3
+curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+
+# Kontrolli
+helm version
+```
+
+#### 3. Vali Õppetee
+
+- **Path A (6h):** Alusta Harjutus 1'st (DNS + Nginx)
+- **Path B (4h):** Alusta Harjutus 2'st (Kubernetes Ingress)
+
+```bash
+# Path A
+cat exercises/01-dns-nginx-proxy.md
+
+# Path B
+cat exercises/02-kubernetes-ingress.md
+```
+
+---
+
+### ⚡ Kiirkontroll: Kas Oled Valmis?
+
+```bash
+# Kiirkontroll
+kubectl cluster-info && \
+kubectl get nodes && \
+helm version && \
+echo "✅ Kõik eeldused on täidetud!"
+```
+
+---
+
 ## 📝 Harjutused
 
 ### 🛤️ Path A: Algaja Tee (6 tundi)

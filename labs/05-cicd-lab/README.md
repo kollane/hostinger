@@ -261,51 +261,81 @@ Labor 6 (Monitoring)
 
 ---
 
-## 🚀 Kiirstart
+## ⚡ Kiirstart Setup
 
-### 1. Kontrolli Eeldusi
+### Variant A: Automaatne Seadistus (Soovitatud)
+
+Käivita setup script, mis valmistab ette CI/CD keskkonna:
+
+```bash
+# Käivita setup script
+chmod +x setup.sh
+./setup.sh
+```
+
+**Script teeb:**
+- ✅ Kontrollib Git ja kubectl paigaldust
+- ✅ Kontrollib Kubernetes cluster'i
+- ✅ Kontrollib Lab 1 ja Lab 3 eeldusi
+- ✅ Loob näidis repo struktuuri (kui vaja)
+- ✅ Juhendab GitHub/Docker Hub setup'iks
+
+---
+
+### Variant B: Manuaalne Seadistus
+
+#### 1. Kontrolli Eeldusi
 
 ```bash
 # Git
 git --version
-
-# GitHub CLI (optional)
-gh --version
-
-# Docker Hub login
-docker login
 
 # kubectl
 kubectl version --client
 
 # Kubernetes cluster
 kubectl cluster-info
+
+# Docker Hub login (optional, vajalik hiljem)
+docker login
 ```
 
-### 2. Loo GitHub Repository
+#### 2. Kontrolli Lab Eeldusi
 
 ```bash
-# Loo uus repo GitHub'is või kasuta olemasolevat
-# https://github.com/new
+# Lab 1 Dockerfile olemas?
+ls ../apps/backend-nodejs/Dockerfile
 
-# Clone repo
-git clone https://github.com/your-username/user-service.git
-cd user-service
-
-# Kopeeri rakendus
-cp -r ../../apps/backend-nodejs/* .
-
-# Commit ja push
-git add .
-git commit -m "Initial commit"
-git push origin main
+# Lab 3 K8s manifests olemas?
+ls ../03-kubernetes-basics-lab/manifests/
 ```
 
-### 3. Alusta Harjutus 1'st
+#### 3. GitHub/GitLab Konto
+
+- Veendu, et sul on GitHub konto: https://github.com/signup
+- Või GitLab: https://gitlab.com/users/sign_up
+
+#### 4. Docker Hub Konto
+
+- Registreeru Docker Hub'is: https://hub.docker.com/signup
+- Või kasuta GitHub Container Registry (ghcr.io)
+
+#### 5. Alusta Harjutus 1'st
 
 ```bash
-cd exercises
-cat 01-github-actions-basics.md
+cat exercises/01-github-actions-basics.md
+```
+
+---
+
+### ⚡ Kiirkontroll: Kas Oled Valmis?
+
+```bash
+# Kiirkontroll
+git --version && \
+kubectl cluster-info && \
+ls ../apps/backend-nodejs/Dockerfile && \
+echo "✅ Kõik eeldused on täidetud!"
 ```
 
 ---

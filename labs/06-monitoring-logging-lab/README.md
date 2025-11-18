@@ -105,5 +105,78 @@ Labor 6 (Monitoring) ← Oled siin
 
 ---
 
+## ⚡ Kiirstart Setup
+
+### Variant A: Automaatne Seadistus (Soovitatud)
+
+Käivita setup script, mis seadistab monitoring keskkonna:
+
+```bash
+# Käivita setup script
+chmod +x setup.sh
+./setup.sh
+```
+
+**Script teeb:**
+- ✅ Kontrollib Kubernetes cluster'i
+- ✅ Kontrollib Lab 3 rakenduste olemasolu
+- ✅ Deploy'b Lab 3 komponendid kui puuduvad
+- ✅ Kontrollib Helm'i (Lab 4'st)
+- ✅ Valmistab ette Prometheus/Grafana paigalduse
+
+---
+
+### Variant B: Manuaalne Seadistus
+
+#### 1. Kontrolli Kubernetes Cluster'i
+
+```bash
+# Cluster töötab?
+kubectl cluster-info
+kubectl get nodes
+
+# Rakendused töötavad?
+kubectl get deployments
+kubectl get services
+```
+
+#### 2. Kontrolli Helm'i
+
+```bash
+# Helm versioon
+helm version
+
+# Kui puudub, paigalda
+curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+```
+
+#### 3. Kontrolli Vaba RAM-i
+
+Prometheus + Grafana vajab vähemalt 2GB RAM-i:
+
+```bash
+free -h
+```
+
+#### 4. Alusta Harjutus 1'st
+
+```bash
+cat exercises/01-prometheus-setup.md
+```
+
+---
+
+### ⚡ Kiirkontroll: Kas Oled Valmis?
+
+```bash
+# Kiirkontroll
+kubectl cluster-info && \
+kubectl get deployments && \
+helm version && \
+echo "✅ Kõik eeldused on täidetud!"
+```
+
+---
+
 **Staatus:** 📝 Framework valmis, sisu lisatakse
 **Viimane uuendus:** 2025-11-15

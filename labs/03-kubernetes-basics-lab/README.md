@@ -261,38 +261,83 @@ Labor 6 (Monitoring)
 
 ---
 
-## 🚀 Kiirstart
+## ⚡ Kiirstart Setup
 
-### 1. Kontrolli Eeldusi
+### Variant A: Automaatne Seadistus (Soovitatud)
+
+Käivita setup script, mis seadistab Kubernetes cluster'i ja laeb image'd:
 
 ```bash
-# kubectl versioon
+# Käivita setup script
+chmod +x setup.sh
+./setup.sh
+```
+
+**Script teeb:**
+- ✅ Kontrollib kubectl paigaldust
+- ✅ Käivitab Kubernetes cluster'i (Minikube või K3s)
+- ✅ Kontrollib Lab 1 image'ite olemasolu
+- ✅ Build'ib puuduvad image'd
+- ✅ Laeb image'd Kubernetes cluster'isse
+- ✅ Testib cluster'i töökorras olekut
+
+---
+
+### Variant B: Manuaalne Seadistus
+
+#### 1. Paigalda kubectl (kui puudub)
+
+```bash
+# Ubuntu/Debian
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+
+# Kontrolli
 kubectl version --client
+```
 
-# Kubernetes cluster (vali üks)
+#### 2. Vali ja Käivita Kubernetes Cluster
 
-# Variant A: Minikube
-minikube version
+**Variant 2A: Minikube (Soovitatud Algajatele)**
+
+```bash
+# Paigalda Minikube
+curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+sudo install minikube-linux-amd64 /usr/local/bin/minikube
+
+# Käivita cluster
 minikube start --cpus=2 --memory=4096
 
-# Variant B: K3s
-k3s --version
-sudo systemctl status k3s
-
-# Kontrolli cluster'i
+# Kontrolli
 kubectl cluster-info
 kubectl get nodes
 ```
 
-### 2. Lae Docker Image'd
+**Variant 2B: K3s (Lightweight, VPS-is)**
 
-Kui kasutad Minikube, lae Labor 1 image'd:
+```bash
+# Paigalda K3s
+curl -sfL https://get.k3s.io | sh -
+
+# Setup kubeconfig
+mkdir -p ~/.kube
+sudo cp /etc/rancher/k3s/k3s.yaml ~/.kube/config
+sudo chown $USER ~/.kube/config
+
+# Kontrolli
+kubectl cluster-info
+kubectl get nodes
+```
+
+#### 3. Lae Lab 1 Image'd Cluster'isse
+
+**Kui kasutad Minikube:**
 
 ```bash
 # Minikube docker environment
 eval $(minikube docker-env)
 
-# Build image'd uuesti Minikube sees
+# Build image'd Minikube sees
 cd ../../apps/backend-nodejs
 docker build -t user-service:1.0 .
 
@@ -301,13 +346,47 @@ docker build -t frontend:1.0 .
 
 # Tagasi normaalsesse environmenti
 eval $(minikube docker-env -u)
+
+# Tagasi Lab 3'sse
+cd ../../03-kubernetes-basics-lab
 ```
 
-### 3. Alusta Harjutus 1'st
+**Kui kasutad K3s:**
 
 ```bash
-cd exercises
-cat 01-pods.md
+# Build image'd lokaalselt (kui puuduvad)
+cd ../apps/backend-nodejs
+docker build -t user-service:1.0 .
+docker save user-service:1.0 > /tmp/user-service-1.0.tar
+
+cd ../frontend
+docker build -t frontend:1.0 .
+docker save frontend:1.0 > /tmp/frontend-1.0.tar
+
+# Import K3s'i
+sudo k3s ctr images import /tmp/user-service-1.0.tar
+sudo k3s ctr images import /tmp/frontend-1.0.tar
+
+# Tagasi Lab 3'sse
+cd ../../03-kubernetes-basics-lab
+```
+
+#### 4. Alusta Harjutus 1'st
+
+```bash
+cat exercises/01-pods.md
+```
+
+---
+
+### ⚡ Kiirkontroll: Kas Oled Valmis?
+
+```bash
+# Kiirkontroll
+kubectl version --client && \
+kubectl cluster-info && \
+kubectl get nodes && \
+echo "✅ Kõik eeldused on täidetud!"
 ```
 
 ---

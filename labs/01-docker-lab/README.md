@@ -162,36 +162,92 @@ Optimeeri image suurust:
 
 ---
 
-## 🚀 Kiirstart
+## ⚡ Kiirstart Setup
 
-### 1. Kontrolli Eeldusi
+### Variant A: Automaatne Seadistus (Soovitatud)
+
+Käivita setup script, mis kontrollib kõik eeldused automaatselt:
 
 ```bash
-# Docker versioon
+# Käivita setup script
+chmod +x setup.sh
+./setup.sh
+```
+
+**Script teeb:**
+- ✅ Kontrollib Docker'i paigaldust ja versiooni
+- ✅ Kontrollib Docker daemon'i staatust
+- ✅ Kontrollib vaba kettaruumi
+- ✅ Testib Docker'i (hello-world)
+- ✅ Valmistab ette töökeskkonna
+
+---
+
+### Variant B: Manuaalne Seadistus
+
+Kui eelistad samm-sammult:
+
+#### 1. Kontrolli Docker Paigaldust
+
+```bash
+# Docker versioon (peaks olema 20.x või uuem)
 docker --version
 
-# Kas Docker töötab?
+# Kas Docker daemon töötab?
 docker ps
 
 # Testi Hello World
 docker run hello-world
 ```
 
-### 2. Valmista Ette Rakendused
-
+**Kui Docker puudub:**
 ```bash
-# Mine apps kausta
-cd ../apps
-
-# Vaata rakendusi
-ls -la
+# Ubuntu/Debian
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+sudo usermod -aG docker $USER
+newgrp docker
 ```
 
-### 3. Alusta Harjutus 1'st
+#### 2. Kontrolli Süsteemi Ressursse
 
 ```bash
-cd ../01-docker-lab
+# Vaba kettaruum (peaks olema vähemalt 4GB)
+df -h
+
+# Vaba RAM (soovitavalt 4GB+)
+free -h
+```
+
+#### 3. Valmista Ette Töökeskkond
+
+```bash
+# Mine labori kataloogi
+cd /home/janek/projects/hostinger/labs/01-docker-lab
+
+# Kontrolli rakenduste kättesaadavust
+ls ../apps/backend-nodejs
+ls ../apps/frontend
+```
+
+#### 4. Alusta Harjutus 1'st
+
+```bash
 cat exercises/01-single-container.md
+```
+
+---
+
+### ⚡ Kiirkontroll: Kas Oled Valmis?
+
+Enne labori alustamist veendu, et kõik on korras:
+
+```bash
+# Käivita kiirkontroll
+docker --version && \
+docker ps && \
+df -h | grep -E "/$|/home" && \
+echo "✅ Kõik eeldused on täidetud!"
 ```
 
 ---

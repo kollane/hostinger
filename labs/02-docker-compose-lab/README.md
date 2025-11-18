@@ -82,5 +82,78 @@ Labor 6 (Monitoring)
 
 ---
 
+## ⚡ Kiirstart Setup
+
+### Variant A: Automaatne Seadistus (Soovitatud)
+
+Käivita setup script, mis kontrollib ja loob kõik vajalikud eeldused:
+
+```bash
+# Käivita setup script
+chmod +x setup.sh
+./setup.sh
+```
+
+**Script teeb:**
+- ✅ Kontrollib Docker Compose paigaldust
+- ✅ Kontrollib Lab 1 image'ite olemasolu
+- ✅ Build'ib puuduvad image'd automaatselt
+- ✅ Valmistab ette töökeskkonna
+
+---
+
+### Variant B: Manuaalne Seadistus
+
+#### 1. Kontrolli Docker Compose
+
+```bash
+# Docker Compose versioon (v2.x)
+docker compose version
+
+# Kui puudub
+sudo apt install docker-compose-plugin
+```
+
+#### 2. Kontrolli Lab 1 Image'd
+
+```bash
+# Kontrolli olemasolevaid image'e
+docker images | grep -E "user-service|todo-service|frontend"
+```
+
+**Kui image'd puuduvad, build'i Lab 1'st:**
+
+```bash
+# User Service
+cd ../apps/backend-nodejs
+docker build -t user-service:1.0 .
+
+# Frontend
+cd ../frontend
+docker build -t frontend:1.0 .
+
+# Tagasi Lab 2'sse
+cd ../../02-docker-compose-lab
+```
+
+#### 3. Alusta Harjutustega
+
+```bash
+cat exercises/01-basic-compose.md
+```
+
+---
+
+### ⚡ Kiirkontroll: Kas Oled Valmis?
+
+```bash
+# Kiirkontroll
+docker compose version && \
+docker images | grep -E "user-service|frontend" && \
+echo "✅ Kõik eeldused on täidetud!"
+```
+
+---
+
 **Staatus:** 📝 Framework valmis, sisu lisatakse
 **Viimane uuendus:** 2025-11-15
