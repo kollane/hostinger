@@ -3,11 +3,22 @@
 **Kestus:** 60 minutit
 **Eesmärk:** Käivita Java Spring Boot Todo Service koos PostgreSQL andmebaasiga
 
+**Eeldus:** [Harjutus 1: Single Container](01-single-container.md) läbitud ✅
+
 ---
 
 ## 📋 Ülevaade
 
-Õpi käivitama kahte containerit koos - Todo Service ja PostgreSQL - ning ühendama neid omavahel.
+**Mäletad Harjutus 1-st?** Todo Service container crashis, sest PostgreSQL andmebaas puudus. Nüüd lahendame selle probleemi!
+
+Selles harjutuses õpid:
+- Käivitama kahte containerit koos (Todo Service + PostgreSQL)
+- Ühendama containereid omavahel
+- Saama **töötava rakenduse** (mitte crashinud container!)
+
+**Erinevus Harjutus 1-st:**
+- ❌ Harjutus 1: Üks container, crashib (PostgreSQL puudub)
+- ✅ Harjutus 2: Kaks containerit, töötab (PostgreSQL on olemas!)
 
 ---
 
@@ -74,37 +85,24 @@ CREATE TABLE todos (
 ### Samm 3: Käivita Todo Service Container (15 min)
 
 ```bash
-# Stopp varasem container
-docker stop todo-service
-docker rm todo-service
+# Puhasta varasem container Harjutus 1-st
+docker stop todo-service 2>/dev/null || true
+docker rm todo-service 2>/dev/null || true
 
 # Genereeri turvaline JWT_SECRET (kui pole veel teinud)
 openssl rand -base64 32
-
-# Käivita uuesti, ühendades PostgreSQL'iga
-# HOIATUS: host.docker.internal ei tööta Linuxis!
-docker run -d \
-  --name todo-service \
-  -p 8081:8081 \
-  -e DB_HOST=host.docker.internal \
-  -e DB_PORT=5432 \
-  -e DB_NAME=todo_service_db \
-  -e DB_USER=postgres \
-  -e DB_PASSWORD=postgres \
-  -e JWT_SECRET=zXsK64+uquelt/hQqVzK9P3xoBISiiNQsQbg2OR3ncU= \
-  -e SPRING_PROFILES_ACTIVE=prod \
-  todo-service:1.0
-
-# Kontrolli logisid
-docker logs -f todo-service
+# Kopeeri see väljund ja kasuta all -e JWT_SECRET=...
 ```
 
-**Probleem:** `host.docker.internal` ei tööta Linuxis!
+**Oluline:** Nüüd ühendame PostgreSQL'iga, mis on ERINEVAS containeris!
 
-**Lahendus Linuxis (Ubuntu):** Kasuta `--link` või PostgreSQL container IP'd:
+#### Variant 1: --link (Lihtne, aga deprecated)
 
 ```bash
-# Variant 1: Kasuta --link (deprecated, aga lihtne ja toimib)
+# Kasuta --link et ühendada containerid
+# MÄRKUS: --link on deprecated, aga lihtne õppimiseks
+# Harjutus 3 õpetab proper lahendust (custom networks)!
+
 docker run -d \
   --name todo-service \
   --link postgres-todo:postgres \
@@ -114,13 +112,27 @@ docker run -d \
   -e DB_NAME=todo_service_db \
   -e DB_USER=postgres \
   -e DB_PASSWORD=postgres \
-  -e JWT_SECRET=zXsK64+uquelt/hQqVzK9P3xoBISiiNQsQbg2OR3ncU= \
+  -e JWT_SECRET=<sinu-genereeritud-secret-siia> \
   todo-service:1.0
 
-# Variant 2: Leia PostgreSQL IP ja kasuta seda
+# Vaata logisid
+docker logs -f todo-service
+# Peaks nägema: "Started TodoApplication in X.XX seconds"
+```
+
+**Mida --link teeb?**
+- Loob DNS aliase: `postgres` → `postgres-todo` container IP
+- Lisab environment variables
+- **Deprecated** (kasuta Harjutus 3-s custom networks!)
+
+#### Variant 2: Container IP (Advanced)
+
+```bash
+# Leia PostgreSQL IP aadress
 POSTGRES_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' postgres-todo)
 echo "PostgreSQL IP: $POSTGRES_IP"
 
+# Kasuta IP'd otse
 docker run -d \
   --name todo-service \
   -p 8081:8081 \
@@ -129,9 +141,11 @@ docker run -d \
   -e DB_NAME=todo_service_db \
   -e DB_USER=postgres \
   -e DB_PASSWORD=postgres \
-  -e JWT_SECRET=zXsK64+uquelt/hQqVzK9P3xoBISiiNQsQbg2OR3ncU= \
+  -e JWT_SECRET=<sinu-genereeritud-secret-siia> \
   todo-service:1.0
 ```
+
+**Probleem:** Kui PostgreSQL container taaskäivitub, IP võib muutuda!
 
 ### Samm 4: Testi API (15 min)
 
