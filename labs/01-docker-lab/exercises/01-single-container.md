@@ -216,19 +216,16 @@ docker images todo-service:1.0
 **See variant on PARIM õppimiseks** - näed kohe, mida juhtub:
 
 ```bash
-# Genereeri turvaline JWT_SECRET
-openssl rand -base64 32
-# Näide väljund: zXsK64+uquelt/hQqVzK9P3xoBISiiNQsQbg2OR3ncU=
-
 # Käivita container interaktiivselt
+# MÄRKUS: DB_HOST on vale, seega crashib (see on ÕIGE käitumine!)
 docker run -it --name todo-service-test \
   -p 8081:8081 \
-  -e DB_HOST=localhost \
+  -e DB_HOST=nonexistent-db \
   -e DB_PORT=5432 \
   -e DB_NAME=todo_service_db \
   -e DB_USER=postgres \
   -e DB_PASSWORD=postgres \
-  -e JWT_SECRET=zXsK64+uquelt/hQqVzK9P3xoBISiiNQsQbg2OR3ncU= \
+  -e JWT_SECRET=my-test-secret-key-min-32-chars-long \
   todo-service:1.0
 ```
 
@@ -237,7 +234,7 @@ docker run -it --name todo-service-test \
 - `--name` - anna containerile nimi
 - `-p 8081:8081` - map port 8081 host'ist container'isse
 - `-e` - environment variable
-- **JWT_SECRET peab olema vähemalt 32 tähemärki** (256 bits) HMAC-SHA256 jaoks
+- `JWT_SECRET` - lihtsalt test väärtus (min 32 tähemärki); tootmises kasuta `openssl rand -base64 32`
 
 **Oodatud tulemus:**
 ```
@@ -263,18 +260,16 @@ Vajuta `Ctrl+C` et peatada.
 # Puhasta eelmine test container
 docker rm -f todo-service-test
 
-# Genereeri turvaline JWT_SECRET (kui pole veel teinud)
-openssl rand -base64 32
-
 # Käivita taustal (detached mode)
+# MÄRKUS: DB_HOST on vale, seega crashib (see on ÕIGE käitumine!)
 docker run -d --name todo-service \
   -p 8081:8081 \
-  -e DB_HOST=172.17.0.1 \
+  -e DB_HOST=nonexistent-db \
   -e DB_PORT=5432 \
   -e DB_NAME=todo_service_db \
   -e DB_USER=postgres \
   -e DB_PASSWORD=postgres \
-  -e JWT_SECRET=zXsK64+uquelt/hQqVzK9P3xoBISiiNQsQbg2OR3ncU= \
+  -e JWT_SECRET=my-test-secret-key-min-32-chars-long \
   -e SPRING_PROFILES_ACTIVE=prod \
   todo-service:1.0
 ```
@@ -313,19 +308,10 @@ docker logs todo-service
 - Õppisid, et logid on ka peatatud containerites ✅
 - Mõistad, miks multi-container lahendus on vaja ✅
 
-**Tähtis info:**
-
-1. **host.docker.internal ei tööta Linuxis!**
-   - Mac/Windows: kasuta `host.docker.internal`
-   - **Linux/Ubuntu:** kasuta `172.17.0.1` (Docker bridge gateway IP)
-
-2. **`172.17.0.1` on Docker bridge network'i default gateway**
-   - See võimaldab containeril ühenduda host masina teenustega
-   - Toimib ainult kui PostgreSQL töötab VPS'il (mitte containeris)
-
-3. **Crashimine on oodatud!**
-   - See on õppimise osa - õpid debuggima probleeme
-   - Lahendus tuleb: [Harjutus 2: Multi-Container](02-multi-container.md)
+**Miks kasutasime `DB_HOST=nonexistent-db`?**
+- See tagab, et container **crashib**, sest andmebaasi pole
+- See on OODATUD käitumine Harjutus 1's!
+- Töötava lahenduse saad [Harjutus 2: Multi-Container](02-multi-container.md)-s
 
 ### Samm 6: Debug ja Troubleshoot (5 min)
 
@@ -380,26 +366,21 @@ docker stats todo-service
    docker inspect todo-service | grep IPAddress
    ```
 
-4. **JWT_SECRET liiga lühike:**
+4. **JWT_SECRET liiga lühike (kui kasutad oma väärtust):**
    ```bash
    # Error: The specified key byte array is 88 bits which is not secure enough
 
-   # Lahendus: Genereeri 256+ bitine võti
-   openssl rand -base64 32
-
-   # Kasuta genereeritud võtit -e JWT_SECRET=...
+   # Lahendus: Kasuta vähemalt 32 tähemärki (256 bits)
+   # Test jaoks: my-test-secret-key-min-32-chars-long
+   # Tootmises: openssl rand -base64 32
    ```
 
-5. **host.docker.internal ei tööta (Linux):**
+5. **Container crashib kohe (andmebaas puudub):**
    ```bash
-   # Error: java.net.UnknownHostException: host.docker.internal
+   # Error: Unable to connect to database
 
-   # Lahendus Linuxis:
-   # Variant 1: Kasuta Docker bridge gateway IP
-   docker run ... -e DB_HOST=172.17.0.1 ...
-
-   # Variant 2: Käivita PostgreSQL container (Harjutus 2)
-   # See on PROPER lahendus - õpi järgmises harjutuses!
+   # See on OODATUD käitumine Harjutus 1's!
+   # Lahendus: Käivita PostgreSQL container (Harjutus 2)
    ```
 
 ---
@@ -558,9 +539,8 @@ Sa õppisid:
 
 ### Õpitud probleemid ja lahendused:
 
-- **JWT_SECRET peab olema vähemalt 256 bits** - Kasuta `openssl rand -base64 32`
-- **host.docker.internal ei tööta Linuxis** - Kasuta `172.17.0.1` või Docker network
-- **PostgreSQL ühendus puudub** - Õpi Harjutus 2'st, kuidas käivitada PostgreSQL container
+- **JWT_SECRET peab olema min 32 tähemärki** - Test: `my-test-secret-key-min-32-chars-long`, Tootmine: `openssl rand -base64 32`
+- **Container crashib (PostgreSQL puudub)** - See on Harjutus 1's OODATUD! Lahendus tuleb Harjutus 2's
 
 ---
 
@@ -571,7 +551,7 @@ Sa õppisid:
 3. **Kasuta JRE (mitte JDK)** - Runtime ei vaja compile tools
 4. **Build JAR enne Docker build'i** - Kiire rebuild, kui kood muutub
 5. **Kasuta EXPOSE** - Dokumenteeri, millist porti rakendus kasutab
-6. **JWT_SECRET peab olema turvaline** - Vähemalt 256 bits (32+ tähemärki) HMAC-SHA algoritmi jaoks
+6. **JWT_SECRET peab olema turvaline** - Min 32 tähemärki; testiks sobib lihtsalt string, tootmises kasuta `openssl rand -base64 32`
 
 ---
 
