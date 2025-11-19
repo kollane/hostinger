@@ -9,7 +9,7 @@
 
 ## 📋 Ülevaade
 
-**Mäletad Harjutus 2-st?** Kasutasime `--link` et ühendada containereid. See toimis, aga Docker soovitab kasutada **custom networks** selle asemel!
+Eelmises harjutuses kasutasime `--link` et ühendada kontenereid. See toimis, aga Docker soovitab kasutada **custom networks** selle asemel!
 
 **Miks custom networks on paremad kui --link?**
 - ✅ Automaatne DNS resolution (container nimi = hostname)
