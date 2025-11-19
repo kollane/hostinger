@@ -440,22 +440,6 @@ docker exec postgres-todo psql -U postgres -d todo_service_db -c "SELECT id, use
 
 ---
 
-## ✅ Kontrolli Tulemusi
-
-Peale selle harjutuse läbimist peaksid omama:
-
-- [x] `todo-network` on loodud (`docker network ls`)
-- [x] KÕIK 4 containerit töötavad samas network'is (`docker ps`)
-- [x] Network inspect näitab kõiki containereid (`docker network inspect todo-network`)
-- [x] DNS resolution töötab mõlemas suunas (User Service ↔ Todo Service)
-- [x] Mõlemad teenused ühenduvad oma PostgreSQL'idega
-- [x] Health check'id töötavad mõlemas teenuses (`/health`)
-- [x] End-to-End JWT workflow töötab (User Service → Todo Service)
-- [x] **Ei kasuta --link** (kasutab custom network!) ✅
-- [x] Mõistad, miks custom networks > --link
-
----
-
 ## 🎓 Õpitud Mõisted
 
 ### Custom Bridge Networks:
