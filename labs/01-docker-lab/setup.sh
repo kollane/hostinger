@@ -264,29 +264,166 @@ else
 fi
 echo ""
 
+# 13. Küsi, kas ehitada base image'd (harjutuste 2-5 jaoks)
+echo "1️⃣3️⃣  Kontrollin Docker image'de olemasolu..."
+
+# Kontrolli, kas base image'd on juba olemas
+USER_IMAGE_EXISTS=$(docker images --format '{{.Repository}}:{{.Tag}}' | grep -q '^user-service:1.0$' && echo "yes" || echo "no")
+TODO_IMAGE_EXISTS=$(docker images --format '{{.Repository}}:{{.Tag}}' | grep -q '^todo-service:1.0$' && echo "yes" || echo "no")
+
+if [ "$USER_IMAGE_EXISTS" = "yes" ] && [ "$TODO_IMAGE_EXISTS" = "yes" ]; then
+    echo -e "${GREEN}✅ Base image'd on juba olemas:${NC}"
+    echo "   ✓ user-service:1.0"
+    echo "   ✓ todo-service:1.0"
+    echo ""
+    echo "Saad alustada otse Harjutus 2'st!"
+elif [ "$USER_IMAGE_EXISTS" = "yes" ] || [ "$TODO_IMAGE_EXISTS" = "yes" ]; then
+    echo -e "${YELLOW}⚠️  Osaliselt olemas:${NC}"
+    [ "$USER_IMAGE_EXISTS" = "yes" ] && echo "   ✓ user-service:1.0"
+    [ "$TODO_IMAGE_EXISTS" = "yes" ] && echo "   ✓ todo-service:1.0"
+    echo ""
+    echo -e "${YELLOW}💡 Soovitus: Ehita puuduvad image'd Harjutus 1'es${NC}"
+else
+    echo -e "${YELLOW}⚠️  Base image'd ei leitud${NC}"
+    echo ""
+    echo "🚀 Kas soovid ehitada base image'd KOHE?"
+    echo "   (user-service:1.0 ja todo-service:1.0)"
+    echo ""
+    echo "  [Y] Jah, ehita mõlemad image'd nüüd"
+    echo "      → Saad otse alustada Harjutus 2'st"
+    echo "      → Kulub ~2-5 minutit (sõltuvalt süsteemist)"
+    echo "  [N] Ei, teen Harjutus 1 käsitsi (soovitatud õppimiseks)"
+    echo "      → Õpid Dockerfile'i loomist algusest"
+    echo ""
+    read -p "Vali [y/N]: " -n 1 -r BUILD_IMAGES
+    echo ""
+    echo ""
+
+    if [[ $BUILD_IMAGES =~ ^[Yy]$ ]]; then
+        echo -e "${YELLOW}📦 Ehitan base image'd...${NC}"
+        echo ""
+
+        # Ehita User Service image
+        echo "1/2: Ehitan user-service:1.0..."
+        if [ -f "solutions/backend-nodejs/Dockerfile" ]; then
+            cd ../apps/backend-nodejs
+            cp ../../01-docker-lab/solutions/backend-nodejs/Dockerfile .
+            cp ../../01-docker-lab/solutions/backend-nodejs/.dockerignore .
+
+            if docker build -t user-service:1.0 . > /tmp/user-service-build.log 2>&1; then
+                echo -e "${GREEN}   ✓ user-service:1.0 ehitatud edukalt!${NC}"
+            else
+                echo -e "${RED}   ✗ user-service:1.0 ehitamine ebaõnnestus${NC}"
+                echo "   Logi: cat /tmp/user-service-build.log"
+            fi
+
+            rm -f Dockerfile .dockerignore
+            cd ../../01-docker-lab
+        else
+            echo -e "${RED}   ✗ Dockerfile lahendust ei leitud${NC}"
+        fi
+        echo ""
+
+        # Ehita Todo Service image
+        echo "2/2: Ehitan todo-service:1.0..."
+        if [ -f "solutions/backend-java-spring/Dockerfile" ]; then
+            cd ../apps/backend-java-spring
+            cp ../../01-docker-lab/solutions/backend-java-spring/Dockerfile .
+            cp ../../01-docker-lab/solutions/backend-java-spring/.dockerignore .
+
+            # Esmalt ehita JAR fail
+            echo "   Building JAR file..."
+            if ./gradlew clean bootJar > /tmp/todo-gradle-build.log 2>&1; then
+                echo -e "${GREEN}   ✓ JAR file ehitatud${NC}"
+
+                if docker build -t todo-service:1.0 . > /tmp/todo-service-build.log 2>&1; then
+                    echo -e "${GREEN}   ✓ todo-service:1.0 ehitatud edukalt!${NC}"
+                else
+                    echo -e "${RED}   ✗ todo-service:1.0 ehitamine ebaõnnestus${NC}"
+                    echo "   Logi: cat /tmp/todo-service-build.log"
+                fi
+            else
+                echo -e "${RED}   ✗ JAR ehitamine ebaõnnestus${NC}"
+                echo "   Logi: cat /tmp/todo-gradle-build.log"
+            fi
+
+            rm -f Dockerfile .dockerignore
+            cd ../../01-docker-lab
+        else
+            echo -e "${RED}   ✗ Dockerfile lahendust ei leitud${NC}"
+        fi
+        echo ""
+
+        # Kontrolli tulemust
+        USER_IMAGE_BUILT=$(docker images --format '{{.Repository}}:{{.Tag}}' | grep -q '^user-service:1.0$' && echo "yes" || echo "no")
+        TODO_IMAGE_BUILT=$(docker images --format '{{.Repository}}:{{.Tag}}' | grep -q '^todo-service:1.0$' && echo "yes" || echo "no")
+
+        if [ "$USER_IMAGE_BUILT" = "yes" ] && [ "$TODO_IMAGE_BUILT" = "yes" ]; then
+            echo -e "${GREEN}✅ Mõlemad image'd on valmis!${NC}"
+            echo ""
+            echo "Saad nüüd alustada otse:"
+            echo "  → Harjutus 2: Multi-Container"
+            echo "  → Harjutus 3: Networking"
+            echo "  → Harjutus 4: Volumes"
+        else
+            echo -e "${YELLOW}⚠️  Mõned image'd ebaõnnestusid${NC}"
+            echo "Soovitus: Tee Harjutus 1 käsitsi, et õppida Dockerfile'i loomist"
+        fi
+    else
+        echo -e "${GREEN}✅ OK, alusta Harjutus 1'st!${NC}"
+        echo ""
+        echo "Harjutus 1 õpetab sulle:"
+        echo "  → Kuidas kirjutada Dockerfile'i"
+        echo "  → Kuidas optimeerida image suurust"
+        echo "  → Kuidas kasutada .dockerignore faili"
+    fi
+fi
+echo ""
+
 # Summary
 echo "========================================="
 echo "  ✅ Setup Valmis!"
 echo "========================================="
 echo ""
-echo "Kõik eeldused on täidetud! Võid alustada laboriga."
-echo ""
-echo "📚 Lab 1 harjutuste progressioon:"
-echo "  1. Harjutus 1a: Single Container (User Service - Node.js)"
-echo "  2. Harjutus 1b: Single Container (Todo Service - Java)"
-echo "  3. Harjutus 2: Multi-Container (PostgreSQL + Backend)"
-echo "  4. Harjutus 3: Networking (Custom Bridge Network, 4 containerit)"
-echo "  5. Harjutus 4: Volumes (Data Persistence, 2 volume'd)"
-echo "  6. Harjutus 5: Optimization (Multi-stage Builds, 2 teenust)"
-echo ""
-echo "Järgmised sammud:"
-echo "  1. Alusta User Service'ga (Harjutus 1a):"
-echo "     cat exercises/01-single-container-user_service.md"
-echo ""
-echo "  2. Või alusta Todo Service'ga (Harjutus 1b):"
-echo "     cat exercises/01-single-container-todo_service.md"
-echo ""
-echo "  3. Või vaata kõiki harjutusi:"
-echo "     ls exercises/"
+
+# Kontroll, kas image'd on olemas ja näita vastavat sõnumit
+FINAL_USER_IMAGE=$(docker images --format '{{.Repository}}:{{.Tag}}' | grep -q '^user-service:1.0$' && echo "yes" || echo "no")
+FINAL_TODO_IMAGE=$(docker images --format '{{.Repository}}:{{.Tag}}' | grep -q '^todo-service:1.0$' && echo "yes" || echo "no")
+
+if [ "$FINAL_USER_IMAGE" = "yes" ] && [ "$FINAL_TODO_IMAGE" = "yes" ]; then
+    echo "Kõik eeldused on täidetud JA base image'd on olemas!"
+    echo ""
+    echo "📚 Võid alustada järgmistest harjutustest:"
+    echo "  1. ✓ Harjutus 1a: Single Container (User Service) - image olemas"
+    echo "  2. ✓ Harjutus 1b: Single Container (Todo Service) - image olemas"
+    echo "  3. → Harjutus 2: Multi-Container (PostgreSQL + Backend)"
+    echo "  4. → Harjutus 3: Networking (Custom Bridge Network, 4 containerit)"
+    echo "  5. → Harjutus 4: Volumes (Data Persistence, 2 volume'd)"
+    echo "  6. → Harjutus 5: Optimization (Multi-stage Builds, 2 teenust)"
+    echo ""
+    echo "Järgmised sammud:"
+    echo "  Alusta Harjutus 2'st:"
+    echo "     cat exercises/02-multi-container.md"
+else
+    echo "Kõik eeldused on täidetud! Võid alustada laboriga."
+    echo ""
+    echo "📚 Lab 1 harjutuste progressioon:"
+    echo "  1. Harjutus 1a: Single Container (User Service - Node.js)"
+    echo "  2. Harjutus 1b: Single Container (Todo Service - Java)"
+    echo "  3. Harjutus 2: Multi-Container (PostgreSQL + Backend)"
+    echo "  4. Harjutus 3: Networking (Custom Bridge Network, 4 containerit)"
+    echo "  5. Harjutus 4: Volumes (Data Persistence, 2 volume'd)"
+    echo "  6. Harjutus 5: Optimization (Multi-stage Builds, 2 teenust)"
+    echo ""
+    echo "Järgmised sammud:"
+    echo "  1. Alusta User Service'ga (Harjutus 1a):"
+    echo "     cat exercises/01-single-container-user_service.md"
+    echo ""
+    echo "  2. Või alusta Todo Service'ga (Harjutus 1b):"
+    echo "     cat exercises/01-single-container-todo_service.md"
+    echo ""
+    echo "  3. Või vaata kõiki harjutusi:"
+    echo "     ls exercises/"
+fi
 echo ""
 echo "Edu laboriga! 🚀"

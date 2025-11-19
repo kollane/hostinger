@@ -36,6 +36,24 @@ if [[ ! $REPLY =~ ^[Yy]$ ]]; then
 fi
 echo ""
 
+# Küsi, kas kustutada ka Docker image'd
+echo -e "${YELLOW}📦 Docker Image'de Kustutamine${NC}"
+echo ""
+echo "Kas soovid kustutada ka Docker image'd?"
+echo "  [N] Ei, jäta base image'd alles (user-service:1.0, todo-service:1.0)"
+echo "      → Saad alustada otse Harjutus 2'st ilma uuesti buildimata"
+echo "  [Y] Jah, kustuta KÕIK image'd (täielik reset)"
+echo "      → Pead alustama Harjutus 1'st ja buildima image'd uuesti"
+echo ""
+read -p "Vali [N/y]: " -n 1 -r DELETE_IMAGES
+echo ""
+
+# Vaikimisi on N (kui kasutaja vajutab lihtsalt Enter või midagi muud kui Y/y)
+if [[ ! $DELETE_IMAGES =~ ^[Yy]$ ]]; then
+    DELETE_IMAGES="n"
+fi
+echo ""
+
 echo -e "${YELLOW}📦 Peatame ja eemaldame Lab 1 containerid...${NC}"
 
 # Eemalda User Service containerid (Harjutus 1a, 3, 5)
@@ -65,16 +83,47 @@ done
 echo ""
 echo -e "${YELLOW}🗑️  Eemaldame Lab 1 Docker image'd...${NC}"
 
-# Eemalda user-service image'd (Harjutus 1a, 5)
-if docker images --format '{{.Repository}}:{{.Tag}}' | grep -q '^user-service:'; then
-    docker rmi -f $(docker images --format '{{.Repository}}:{{.Tag}}' | grep '^user-service:') 2>/dev/null
-    echo -e "${GREEN}  ✓ user-service image'd eemaldatud${NC}"
-fi
+if [[ $DELETE_IMAGES =~ ^[Yy]$ ]]; then
+    # Täielik reset - kustuta KÕIK image'd
+    # Eemalda user-service image'd (Harjutus 1a, 5)
+    if docker images --format '{{.Repository}}:{{.Tag}}' | grep -q '^user-service:'; then
+        docker rmi -f $(docker images --format '{{.Repository}}:{{.Tag}}' | grep '^user-service:') 2>/dev/null
+        echo -e "${GREEN}  ✓ Kõik user-service image'd eemaldatud${NC}"
+    fi
 
-# Eemalda todo-service image'd (Harjutus 1b, 5)
-if docker images --format '{{.Repository}}:{{.Tag}}' | grep -q '^todo-service:'; then
-    docker rmi -f $(docker images --format '{{.Repository}}:{{.Tag}}' | grep '^todo-service:') 2>/dev/null
-    echo -e "${GREEN}  ✓ todo-service image'd eemaldatud${NC}"
+    # Eemalda todo-service image'd (Harjutus 1b, 5)
+    if docker images --format '{{.Repository}}:{{.Tag}}' | grep -q '^todo-service:'; then
+        docker rmi -f $(docker images --format '{{.Repository}}:{{.Tag}}' | grep '^todo-service:') 2>/dev/null
+        echo -e "${GREEN}  ✓ Kõik todo-service image'd eemaldatud${NC}"
+    fi
+else
+    # Osaline reset - kustuta AINULT optimeeritud image'd, säilita base image'd
+    # Eemalda user-service optimeeritud image (Harjutus 5)
+    if docker images --format '{{.Repository}}:{{.Tag}}' | grep -q '^user-service:1.0-optimized$'; then
+        docker rmi -f user-service:1.0-optimized 2>/dev/null
+        echo -e "${GREEN}  ✓ user-service:1.0-optimized eemaldatud${NC}"
+    fi
+
+    # Eemalda todo-service optimeeritud image (Harjutus 5)
+    if docker images --format '{{.Repository}}:{{.Tag}}' | grep -q '^todo-service:1.0-optimized$'; then
+        docker rmi -f todo-service:1.0-optimized 2>/dev/null
+        echo -e "${GREEN}  ✓ todo-service:1.0-optimized eemaldatud${NC}"
+    fi
+
+    # Kontrolli, kas base image'd on olemas
+    BASE_IMAGES_EXIST=0
+    if docker images --format '{{.Repository}}:{{.Tag}}' | grep -q '^user-service:1.0$'; then
+        echo -e "${YELLOW}  ℹ  user-service:1.0 säilitatud (Harjutuste 2-5 jaoks)${NC}"
+        BASE_IMAGES_EXIST=1
+    fi
+    if docker images --format '{{.Repository}}:{{.Tag}}' | grep -q '^todo-service:1.0$'; then
+        echo -e "${YELLOW}  ℹ  todo-service:1.0 säilitatud (Harjutuste 2-5 jaoks)${NC}"
+        BASE_IMAGES_EXIST=1
+    fi
+
+    if [ $BASE_IMAGES_EXIST -eq 0 ]; then
+        echo -e "${YELLOW}  ℹ  Base image'd ei leitud (pead looma Harjutus 1'es)${NC}"
+    fi
 fi
 
 echo ""
@@ -132,16 +181,40 @@ done
 echo ""
 echo -e "${GREEN}✅ Lab 1 süsteem on taastatud!${NC}"
 echo ""
-echo "📚 Harjutuste ülevaade:"
-echo "  1. Harjutus 1a: Single Container (User Service - Node.js)"
-echo "  2. Harjutus 1b: Single Container (Todo Service - Java)"
-echo "  3. Harjutus 2: Multi-Container (PostgreSQL + Backend)"
-echo "  4. Harjutus 3: Networking (Custom Bridge Network)"
-echo "  5. Harjutus 4: Volumes (Data Persistence)"
-echo "  6. Harjutus 5: Optimization (Multi-stage Builds)"
-echo ""
-echo "Alusta harjutustega:"
-echo "  cd exercises/"
-echo "  cat 01-single-container-user_service.md"
+
+# Näita erinevat sõnumit sõltuvalt sellest, kas image'd säilitati
+if [[ $DELETE_IMAGES =~ ^[Yy]$ ]]; then
+    echo "📚 Harjutuste ülevaade:"
+    echo "  1. Harjutus 1a: Single Container (User Service - Node.js)"
+    echo "  2. Harjutus 1b: Single Container (Todo Service - Java)"
+    echo "  3. Harjutus 2: Multi-Container (PostgreSQL + Backend)"
+    echo "  4. Harjutus 3: Networking (Custom Bridge Network)"
+    echo "  5. Harjutus 4: Volumes (Data Persistence)"
+    echo "  6. Harjutus 5: Optimization (Multi-stage Builds)"
+    echo ""
+    echo "Alusta harjutustega:"
+    echo "  cd exercises/"
+    echo "  cat 01-single-container-user_service.md"
+else
+    echo -e "${YELLOW}💡 Base image'd (user-service:1.0, todo-service:1.0) on säilitatud!${NC}"
+    echo ""
+    echo "Saad nüüd:"
+    echo "  ✓ Alustada otse Harjutus 2'st (Multi-Container)"
+    echo "  ✓ Jätkata Harjutus 3'ga (Networking)"
+    echo "  ✓ Jätkata Harjutus 4'ga (Volumes)"
+    echo "  ✓ Alustada Harjutus 5't (Optimization) uuesti"
+    echo ""
+    echo "Kui soovid täielikku reset'i (sh image'd):"
+    echo "  ./reset.sh (ja vali Y image'de kustutamisel)"
+    echo ""
+    echo "📚 Harjutuste ülevaade:"
+    echo "  1. Harjutus 1a: Single Container (User Service - Node.js) - image olemas ✓"
+    echo "  2. Harjutus 1b: Single Container (Todo Service - Java) - image olemas ✓"
+    echo "  3. Harjutus 2: Multi-Container (PostgreSQL + Backend)"
+    echo "  4. Harjutus 3: Networking (Custom Bridge Network)"
+    echo "  5. Harjutus 4: Volumes (Data Persistence)"
+    echo "  6. Harjutus 5: Optimization (Multi-stage Builds)"
+fi
+
 echo ""
 echo "======================================"
