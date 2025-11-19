@@ -206,52 +206,24 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=40s \
 
 CMD ["java", "-jar", "app.jar"]
 ```
-> See Dockerfile kasutab kaheastmelist ehitust Java Spring Boot rakendusele Gradle'iga, et optimeerida build’i ja runtime’i turvalisust ning väiksemat pilti. Kõik peamised sammud on lahti seletatud allpool.
-> 
-> ## Ehitusetapp (Stage 1: Build)
-> 
-> - **Baaspilt:**  
->     Kasutab `gradle:8.5-jdk17-alpine`, mis sisaldab vajalikku JDK-d ning Gradle’t.
->     
-> - **Töökaust:**  
->     Määra töökaustaks `/app`, kuhu järgnevad käsud paigutavad failid.
->     
-> - **Gradle failide kopeerimine:**  
->     Kopeeritakse Gradle’i konfiguratsioonifailid (`build.gradle`, `settings.gradle`) ning Gradle kataloog, et võimaldada kiirem dependency cache – väliseid dependencies saab alla laadida juba enne lähtekoodi kopeerimist.
->     
-> - **Sõltuvuste allalaadimine:**  
->     Käivitatakse `gradle dependencies --no-daemon`. Kui Gradle failid jäid samaks, ei pea dependencies uuesti alla laadima, mis kiirendab build’i (Docker cache).
->     
-> - **Lähtekoodi kopeerimine ja ehitamine:**  
->     Kopeeritakse kogu `/src` kataloog, mis sisaldab Java koodi ja käivitatakse `gradle bootJar --no-daemon`, mis genereerib käivitatava JAR-faili Spring Boot rakenduse jaoks.
->     
-> 
-> ## Runtime etapp (Stage 2: Runtime)
-> 
-> - **Baaspilt:**  
->     Kasutab Eclipse Temurin OpenJDK 17 Alpine varianti, mis on väikese jalajäljega ja optimeeritud production’i jaoks.
->     
-> - **Töökaust:**  
->     Määra töökaustaks `/app`.
->     
-> - **Non-root kasutaja loomine:**  
->     Turvalisuse parendamiseks lisatakse non-root kasutaja `spring` (UID ja GID 1001). See hoiab rakendust ja pildi turvalisamat, sest root-kasutaja on avoiditav harjumuspäraste rakenduste juures.
->     
-> - **JAR-faili kopeerimine:**  
->     Kopeeritakse ainult ehitatud JAR-fail esimesest ehitusetapist `[COPY --from=builder ...]`, mitte kogu lähtekood või build-kataloogid.
->     
-> - **Non-root kasutaja kasutamine:**  
->     Määratakse konteineris jooksvalt kasutajaks `spring:spring`.
->     
-> - **Pordi avamine:**  
->     Deklareeritakse, et konteiner kuulab porti 8081.
->     
-> - **Healthcheck:**  
->     Määratakse konteineri jälgimiseks tervisekontroll. See kontrollib, kas rakendus vastab local port 8081 endpointile `/health` igal 30s ning timeout on 3s. Kui see ebaõnnestub, märgitakse konteiner probleemseks.
->     
-> - **Rakenduse käivitamine:**  
->     Käivitatakse JAR-fail `java -jar app.jar`, mis alustab Spring Boot teenuse tööd.
+## Ülevaade sammude järjestusest
 
+|Samm|Eesmärk|Tähendus|
+|---|---|---|
+|Gradle base image|Build- ja dependency-keskkond|Alustab pildi ehitust vajalikul build-keskkonnal|
+|COPY Gradle failid|Dependency caching|Väliste pakendite cache säilitamine Docker build’i jaoks|
+|RUN dependencies|Sõltuvuste allalaadimine|Kiirem build, kui ainult lähtekood muutub|
+|COPY src|Lähtekoodi lisamine|Kopeerib projekti Java lähtekoodi|
+|RUN bootJar|Rakenduse ehitamine|Teeb käivitatava JAR-faili|
+|Temurin base image|Kompaktne runtime-keskkond|Toodangut optimeeriv ja turvaline JVM|
+|Non-root user|Turvalisuse parendamine|Kaitseb konteinerit privilege escalation’i eest|
+|COPY jar|Ainult production artefakti kopeerimine|Vähendab pildi suurust ja turvariske|
+|USER spring:spring|Non-root konteineri jooksutamine|Turvalisuse tagamine|
+|EXPOSE 8081|Porta kuulamine|Võimaldab teenusele ligi pääseda väljastpoolt|
+|HEALTHCHECK|Kontroll teenuse elususe üle|Tervisekontroll info orkestreerijale (nt Docker Swarm, Kubernetes)|
+|CMD|Teenuse käivitamine|Käivitab Spring Boot JAR-faili|
+
+Iga samm on vajalik, et saavutada efektiivne, turvaline ja skaleeritav konteineripilt Java Spring Boot rakendusele.
 
 ### Samm 3: Build MÕLEMAD Optimeeritud Images (15 min)
 
