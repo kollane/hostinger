@@ -206,6 +206,24 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=40s \
 
 CMD ["java", "-jar", "app.jar"]
 ```
+## Ülevaade sammude järjestusest
+
+|Samm|Eesmärk|Tähendus|
+|---|---|---|
+|Gradle base image|Build- ja dependency-keskkond|Alustab pildi ehitust vajalikul build-keskkonnal|
+|COPY Gradle failid|Dependency caching|Väliste pakendite cache säilitamine Docker build’i jaoks|
+|RUN dependencies|Sõltuvuste allalaadimine|Kiirem build, kui ainult lähtekood muutub|
+|COPY src|Lähtekoodi lisamine|Kopeerib projekti Java lähtekoodi|
+|RUN bootJar|Rakenduse ehitamine|Teeb käivitatava JAR-faili|
+|Temurin base image|Kompaktne runtime-keskkond|Toodangut optimeeriv ja turvaline JVM|
+|Non-root user|Turvalisuse parendamine|Kaitseb konteinerit privilege escalation’i eest|
+|COPY jar|Ainult production artefakti kopeerimine|Vähendab pildi suurust ja turvariske|
+|USER spring:spring|Non-root konteineri jooksutamine|Turvalisuse tagamine|
+|EXPOSE 8081|Porta kuulamine|Võimaldab teenusele ligi pääseda väljastpoolt|
+|HEALTHCHECK|Kontroll teenuse elususe üle|Tervisekontroll info orkestreerijale (nt Docker Swarm, Kubernetes)|
+|CMD|Teenuse käivitamine|Käivitab Spring Boot JAR-faili|
+
+Iga samm on vajalik, et saavutada efektiivne, turvaline ja skaleeritav konteineripilt Java Spring Boot rakendusele.
 
 ### Samm 3: Build MÕLEMAD Optimeeritud Images (15 min)
 

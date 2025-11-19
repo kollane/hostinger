@@ -9,7 +9,7 @@
 
 ## 📋 Ülevaade
 
-**Mäletad Harjutus 2-st?** Kasutasime `--link` et ühendada containereid. See toimis, aga Docker soovitab kasutada **custom networks** selle asemel!
+Eelmises harjutuses kasutasime `--link` et ühendada kontenereid. See toimis, aga Docker soovitab kasutada **custom networks** selle asemel!
 
 **Miks custom networks on paremad kui --link?**
 - ✅ Automaatne DNS resolution (container nimi = hostname)
@@ -440,22 +440,6 @@ docker exec postgres-todo psql -U postgres -d todo_service_db -c "SELECT id, use
 
 ---
 
-## ✅ Kontrolli Tulemusi
-
-Peale selle harjutuse läbimist peaksid omama:
-
-- [x] `todo-network` on loodud (`docker network ls`)
-- [x] KÕIK 4 containerit töötavad samas network'is (`docker ps`)
-- [x] Network inspect näitab kõiki containereid (`docker network inspect todo-network`)
-- [x] DNS resolution töötab mõlemas suunas (User Service ↔ Todo Service)
-- [x] Mõlemad teenused ühenduvad oma PostgreSQL'idega
-- [x] Health check'id töötavad mõlemas teenuses (`/health`)
-- [x] End-to-End JWT workflow töötab (User Service → Todo Service)
-- [x] **Ei kasuta --link** (kasutab custom network!) ✅
-- [x] Mõistad, miks custom networks > --link
-
----
-
 ## 🎓 Õpitud Mõisted
 
 ### Custom Bridge Networks:
@@ -490,24 +474,6 @@ Peale selle harjutuse läbimist peaksid omama:
 | **Best practice** | ❌ EI (Docker soovitab mitte kasutada) | ✅ JAH (tänapäevane standard) |
 
 **Järeldus:** Kasuta ALATI custom networks, mitte --link!
-
-**Näide võrdluseks:**
-
-**Harjutus 2 (--link):**
-```bash
-docker run -d --name postgres-todo ...
-docker run -d --name todo-service --link postgres-todo:postgres ...
-# Vajab manuaalset link'imist iga ühenduse jaoks!
-```
-
-**Harjutus 3 (custom network):**
-```bash
-docker network create todo-network
-docker run -d --name postgres-todo --network todo-network ...
-docker run -d --name todo-service --network todo-network ...
-# Automaatne DNS! Ei vaja --link!
-```
-
 ---
 
 ## 🎉 Õnnitleme! Mida Sa Õppisid?
