@@ -44,7 +44,7 @@
 ### Samm 1: Mõõda Algne Suurus (5 min)
 
 ```bash
-cd ../../apps/backend-java-spring
+cd ../apps/backend-java-spring
 
 # Vaata Harjutus 1-st loodud image suurust
 docker images todo-service:1.0
@@ -69,6 +69,12 @@ docker history todo-service:1.0
 ### Samm 2: Optimeeri Dockerfile (20 min)
 
 Loo uus `Dockerfile.optimized` mis lahendab KÕIK probleemid:
+
+**💡 Abi vajadusel:**
+```bash
+# Vaata näidislahendust
+cat ../../01-docker-lab/solutions/backend-java-spring/Dockerfile.optimized
+```
 
 ```dockerfile
 # Stage 1: Build

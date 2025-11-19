@@ -75,7 +75,7 @@ Peale selle harjutuse läbimist oskad:
 Vaata Todo Service koodi:
 
 ```bash
-cd ../../apps/backend-java-spring
+cd ../apps/backend-java-spring
 
 # Vaata faile
 ls -la
@@ -109,7 +109,13 @@ vim Dockerfile
 
 **Märkus:** See on lihtne Dockerfile, mis eeldab, et JAR fail on juba build'itud. Optimeeritud versioonis (Harjutus 5) lisame multi-stage build'i.
 
-**Vihje:** Vaata Docker dokumentatsiooni või solutions/ kausta!
+**💡 Abi vajadusel:**
+- Vaata Docker dokumentatsiooni: https://docs.docker.com/engine/reference/builder/
+- Vaata näidislahendust: `../../01-docker-lab/solutions/backend-java-spring/Dockerfile`
+  ```bash
+  # Näidislahenduse vaatamine (ära kopeeri, õpi seda!)
+  cat ../../01-docker-lab/solutions/backend-java-spring/Dockerfile
+  ```
 
 <details>
 <summary>💡 Näpunäide: Dockerfile struktuur</summary>
@@ -136,6 +142,12 @@ Loo `.dockerignore` fail, et vältida tarbetute failide kopeerimist:
 
 ```bash
 vim .dockerignore
+```
+
+**💡 Abi vajadusel:**
+```bash
+# Vaata näidislahendust
+cat ../../01-docker-lab/solutions/backend-java-spring/.dockerignore
 ```
 
 **Sisu:**

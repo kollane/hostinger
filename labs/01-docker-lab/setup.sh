@@ -140,6 +140,53 @@ else
 fi
 echo ""
 
+# 9. Check solutions directory
+echo "9️⃣  Kontrollin näidislahenduste kättesaadavust..."
+if [ -d "solutions/backend-java-spring" ]; then
+    echo -e "${GREEN}✅ Näidislahendused on kättesaadavad:${NC}"
+
+    # Check for solution files
+    if [ -f "solutions/backend-java-spring/Dockerfile" ]; then
+        echo "   - solutions/backend-java-spring/Dockerfile"
+    fi
+    if [ -f "solutions/backend-java-spring/Dockerfile.optimized" ]; then
+        echo "   - solutions/backend-java-spring/Dockerfile.optimized"
+    fi
+    if [ -f "solutions/backend-java-spring/.dockerignore" ]; then
+        echo "   - solutions/backend-java-spring/.dockerignore"
+    fi
+
+    echo -e "${YELLOW}💡 Vaata lahendusi vajaduse korral: cat solutions/backend-java-spring/Dockerfile${NC}"
+else
+    warn "Näidislahenduste kaust puudub"
+fi
+echo ""
+
+# 10. Ensure apps directory is clean (no Dockerfiles that would spoil the exercise)
+echo "🔟 Kontrollin, et apps kaust on harjutuse jaoks valmis..."
+FOUND_FILES=0
+if [ -f "$APPS_DIR/Dockerfile" ]; then
+    warn "Leitud: $APPS_DIR/Dockerfile (see tuleks kustutada harjutuse jaoks)"
+    FOUND_FILES=1
+fi
+if [ -f "$APPS_DIR/Dockerfile.optimized" ]; then
+    warn "Leitud: $APPS_DIR/Dockerfile.optimized (see tuleks kustutada harjutuse jaoks)"
+    FOUND_FILES=1
+fi
+if [ -f "$APPS_DIR/.dockerignore" ]; then
+    warn "Leitud: $APPS_DIR/.dockerignore (see tuleks kustutada harjutuse jaoks)"
+    FOUND_FILES=1
+fi
+
+if [ $FOUND_FILES -eq 1 ]; then
+    echo ""
+    echo -e "${YELLOW}💡 Soovitus: Käivita reset.sh, et puhastada apps kaust:${NC}"
+    echo "   ./reset.sh"
+else
+    echo -e "${GREEN}✅ Apps kaust on puhas (Dockerfile'e pole, nagu peab olema)${NC}"
+fi
+echo ""
+
 # Summary
 echo "========================================="
 echo "  ✅ Setup Valmis!"

@@ -91,6 +91,22 @@ docker system prune -f > /dev/null 2>&1
 echo -e "${GREEN}  ✓ Kasutamata ressursid eemaldatud${NC}"
 
 echo ""
+echo -e "${YELLOW}🗂️  Eemaldame harjutuste failid apps kaustast...${NC}"
+
+# Eemalda Dockerfile'id ja .dockerignore apps/backend-java-spring kaustast
+APP_DIR="../apps/backend-java-spring"
+if [ -d "$APP_DIR" ]; then
+    for file in Dockerfile Dockerfile.optimized .dockerignore; do
+        if [ -f "$APP_DIR/$file" ]; then
+            rm -f "$APP_DIR/$file"
+            echo -e "${GREEN}  ✓ $file eemaldatud apps/backend-java-spring/ kaustast${NC}"
+        fi
+    done
+else
+    echo -e "${YELLOW}  ⚠ $APP_DIR kausta ei leitud${NC}"
+fi
+
+echo ""
 echo -e "${GREEN}✅ Lab 1 süsteem on taastatud!${NC}"
 echo ""
 echo "Saad nüüd alustada Lab 1 harjutustega algusest:"
