@@ -28,31 +28,33 @@ Peale selle labori läbimist oskad:
 
 ## 🏗️ Arhitektuur
 
-**Peamine fookus: Todo Service (Java Spring Boot Backend)**
+**Lab 1 katab MÕLEMAD mikroteenust:**
 
 ```
-┌────────────────────────┐
-│   Todo Service         │
-│   (Java 17 + Spring Boot 3)│
-│   Port: 8081           │
-│                        │
-│   - GET /api/todos     │
-│   - POST /api/todos    │
-│   - PUT /api/todos/{id}│
-│   - DELETE /api/todos/{id}│
-│   - GET /health        │
-└──────────┬─────────────┘
-           │
-           ▼
-    ┌─────────────┐
-    │  PostgreSQL │
-    │  Port: 5433 │
-    │             │
-    │  - todos    │
-    └─────────────┘
+┌────────────────────────┐        ┌────────────────────────┐
+│   User Service         │        │   Todo Service         │
+│   (Node.js 18)         │        │   (Java 17 + Spring)   │
+│   Port: 3000           │        │   Port: 8081           │
+│                        │        │                        │
+│   - POST /auth/register│        │   - GET /api/todos     │
+│   - POST /auth/login   │        │   - POST /api/todos    │
+│   - GET /api/users     │        │   - PATCH /api/todos/:id│
+│   - GET /health        │        │   - DELETE /api/todos/:id│
+└──────────┬─────────────┘        └──────────┬─────────────┘
+           │                                 │
+           ▼                                 ▼
+    ┌─────────────┐                  ┌─────────────┐
+    │  PostgreSQL │                  │  PostgreSQL │
+    │  Port: 5432 │                  │  Port: 5433 │
+    │             │                  │             │
+    │  - users    │                  │  - todos    │
+    └─────────────┘                  └─────────────┘
 ```
 
-**Märkus:** User Service (Node.js) ja Frontend on valikulised ning kaetakse Lab 2's (Docker Compose).
+**Mikroteenuste arhitektuur:**
+- User Service: JWT autentimine, kasutajate haldus
+- Todo Service: Ülesannete haldus, kasutab User Service'i JWT token'eid
+- Eraldatud andmebaasid: igal teenustel oma PostgreSQL instants
 
 ---
 
@@ -61,18 +63,25 @@ Peale selle labori läbimist oskad:
 ```
 01-docker-lab/
 ├── README.md              # See fail
-├── setup.sh               # Automaatne setup script
-├── exercises/             # Harjutused (5 harjutust)
-│   ├── 01-single-container.md     # Todo Service konteineriseerimine
-│   ├── 02-multi-container.md      # Todo Service + PostgreSQL
-│   ├── 03-networking.md           # Docker networks
-│   ├── 04-volumes.md              # Andmete säilitamine
-│   └── 05-optimization.md         # Multi-stage build
+├── setup.sh               # Automaatne setup ja image'de ehitamine
+├── reset.sh               # Labori ressursside puhastamine
+├── exercises/             # Harjutused (6 harjutust)
+│   ├── 01a-single-container-nodejs.md        # User Service (Node.js)
+│   ├── 01b-single-container-java.md          # Todo Service (Java)
+│   ├── 02-multi-container.md                 # Multi-service + PostgreSQL
+│   ├── 03-networking.md                      # Docker networks
+│   ├── 04-volumes.md                         # Andmete säilitamine
+│   └── 05-optimization.md                    # Multi-stage builds
 └── solutions/             # Lahendused
+    ├── backend-nodejs/        # User Service lahendused
+    │   ├── Dockerfile             # Lihtne Dockerfile
+    │   ├── Dockerfile.optimized   # Multi-stage build
+    │   ├── .dockerignore          # Build context optimeerimine
+    │   └── healthcheck.js         # Health check script
     └── backend-java-spring/   # Todo Service lahendused
-        ├── Dockerfile             # Põhiline Dockerfile
+        ├── Dockerfile             # Lihtne Dockerfile
         ├── Dockerfile.optimized   # Multi-stage build
-        └── .dockerignore          # Image optimeerimiseks
+        └── .dockerignore          # Build context optimeerimine
 ```
 
 ---
@@ -115,52 +124,64 @@ Labor 6 (Monitoring)
 
 ## 📝 Harjutused
 
-### Harjutus 1: Single Container (45 min)
-**Fail:** [exercises/01-single-container.md](exercises/01-single-container.md)
+### Harjutus 1A: Single Container - User Service (45 min)
+**Fail:** [exercises/01a-single-container-nodejs.md](exercises/01a-single-container-nodejs.md)
+
+Konteinerise User Service (Node.js):
+- Loo Dockerfile
+- Build user-service:1.0 image
+- Käivita container
+- Testi REST API (/api/auth/*, /api/users)
+- Debug logs
+
+### Harjutus 1B: Single Container - Todo Service (45 min)
+**Fail:** [exercises/01b-single-container-java.md](exercises/01b-single-container-java.md)
 
 Konteinerise Todo Service (Java Spring Boot):
 - Loo Dockerfile
-- Build todo-service image
+- Build JAR file
+- Build todo-service:1.0 image
 - Käivita container
 - Testi REST API (/api/todos)
-- Debug logs
 
-### Harjutus 2: Multi-Container (60 min)
+💡 **Kiirvalik:** Käivita `./setup.sh` ja vali `Y` → ehitab mõlemad image'd automaatselt
+
+### Harjutus 2: Multi-Container Setup (90 min)
 **Fail:** [exercises/02-multi-container.md](exercises/02-multi-container.md)
 
-Käivita Todo Service + PostgreSQL:
-- Käivita PostgreSQL container (port 5433)
-- Ühenda Todo Service andmebaasiga
-- Testi CRUD operatsioonid (todos)
+Käivita User Service + Todo Service + 2x PostgreSQL:
+- Käivita 2 PostgreSQL containerit (portid 5432, 5433)
+- Ühenda mõlemad teenused oma andmebaasidega
+- Testi mikroteenuste suhtlust (JWT workflow)
 - Troubleshoot connectivity
 
-### Harjutus 3: Networking (45 min)
+### Harjutus 3: Docker Networking (45 min)
 **Fail:** [exercises/03-networking.md](exercises/03-networking.md)
 
-Loo custom network:
-- Loo Docker network
-- Käivita containerid samas network'is
-- Testi hostname resolution
-- Inspekteeri network
+Loo custom network (4 containerit):
+- Loo todo-network
+- Käivita kõik containerid samas network'is
+- Testi DNS resolution
+- Test End-to-End JWT workflow
 
-### Harjutus 4: Volumes (45 min)
+### Harjutus 4: Docker Volumes (45 min)
 **Fail:** [exercises/04-volumes.md](exercises/04-volumes.md)
 
-Andmete säilitamine:
-- Loo named volume
-- Mount volume PostgreSQL'ile
+Andmete säilitamine (2 volume'd):
+- Loo postgres-user-data ja postgres-todo-data
+- Mount volume'd PostgreSQL'idele
 - Testi andmete persistence
-- Backup ja restore
+- Backup ja restore mõlemast andmebaasist
 
-### Harjutus 5: Optimization (45 min)
+### Harjutus 5: Image Optimization (45 min)
 **Fail:** [exercises/05-optimization.md](exercises/05-optimization.md)
 
-Optimeeri image suurust:
-- Kasuta alpine base images
-- Multi-stage build
+Optimeeri mõlema teenuse image'd:
+- Node.js: Multi-stage build (200MB → 50MB)
+- Java: Multi-stage build (370MB → 180MB)
+- Health checks
 - Layer caching
 - .dockerignore
-- Image security scan
 
 ---
 
@@ -168,7 +189,7 @@ Optimeeri image suurust:
 
 ### Variant A: Automaatne Seadistus (Soovitatud)
 
-Käivita setup script, mis kontrollib kõik eeldused automaatselt:
+Käivita setup script, mis kontrollib kõik eeldused ja valmistab labori ette:
 
 ```bash
 # Käivita setup script
@@ -176,12 +197,82 @@ chmod +x setup.sh
 ./setup.sh
 ```
 
-**Script teeb:**
-- ✅ Kontrollib Docker'i paigaldust ja versiooni
-- ✅ Kontrollib Docker daemon'i staatust
-- ✅ Kontrollib vaba kettaruumi
-- ✅ Testib Docker'i (hello-world)
-- ✅ Valmistab ette töökeskkonna
+**Script kontrollib:**
+- ✅ Docker'i paigaldust ja versiooni
+- ✅ Docker daemon'i staatust
+- ✅ Vaba kettaruumi (>5GB soovitatud)
+- ✅ Java ja Node.js olemasolu
+- ✅ Rakenduste kättesaadavust
+- ✅ Harjutuste ja lahenduste olemasolu
+
+**Script pakub:**
+- 💡 Automaatset base image'de ehitamist (`user-service:1.0`, `todo-service:1.0`)
+- 💡 Võimalust vahele jätta Harjutus 1 ja alustada otse Harjutus 2'st
+
+**Kuidas kasutada:**
+
+```bash
+./setup.sh
+
+# Kui küsitakse: "Kas soovid ehitada base image'd KOHE?"
+# Vali Y → Ehitab image'd automaatselt (~2-5 min)
+#       → Saad alustada otse Harjutus 2'st
+# Vali N → Alustad Harjutus 1'st (soovitatud õppimiseks)
+#       → Õpid Dockerfile'i loomist algusest
+```
+
+---
+
+## 🔄 Labori Ressursside Haldamine
+
+### reset.sh - Puhasta ja Alusta Uuesti
+
+Kui soovid labori ressursse puhastada ja alustada uuesti:
+
+```bash
+chmod +x reset.sh
+./reset.sh
+```
+
+**Script kustutab:**
+- 🗑️ Kõik Lab 1 containerid (user-service*, todo-service*, postgres-*)
+- 🗑️ Lab 1 network'id (todo-network)
+- 🗑️ Lab 1 volume'd (postgres-user-data, postgres-todo-data)
+- 🗑️ Apps kaustadest harjutuste failid (Dockerfile, .dockerignore)
+
+**Interaktiivne valik: Image'de Kustutamine**
+
+Script küsib, kas kustutada ka Docker image'd:
+
+```
+Kas soovid kustutada ka Docker image'd?
+  [N] Ei, jäta base image'd alles (user-service:1.0, todo-service:1.0)
+      → Saad alustada otse Harjutus 2'st ilma uuesti buildimata
+      → Kiire restart Harjutuste 2-5 jaoks
+  [Y] Jah, kustuta KÕIK image'd (täielik reset)
+      → Pead alustama Harjutus 1'st ja buildima image'd uuesti
+      → Täielik "puhas leht" algusest
+```
+
+**Kasutusstsenaariume:**
+
+```bash
+# Stsenaarium 1: Kiire restart (säilita image'd)
+./reset.sh
+# Vali: N
+# → Containerid/networks/volumes kustutatakse
+# → Base image'd säilitatakse
+# → Alusta uuesti Harjutus 2'st või 3'st
+
+# Stsenaarium 2: Täielik reset (kustuta kõik)
+./reset.sh
+# Vali: Y
+# → Kõik kustutatakse (sh image'd)
+# → Alusta päris algusest (Harjutus 1)
+
+# Stsenaarium 3: Automaatne reset (sh image'd)
+echo "y" | ./reset.sh  # Kustutab KÕIK
+```
 
 ---
 
@@ -259,42 +350,59 @@ echo "✅ Kõik eeldused on täidetud!"
 
 Peale labori läbimist pead omama:
 
-### Kohustuslik (Lab 1 põhiulatus):
+### Docker Image'd:
 
-- [ ] **Docker image:**
-  - [ ] `todo-service:1.0` (Java Spring Boot backend)
-  - [ ] `todo-service:1.0-optimized` (multi-stage build)
+- [ ] `user-service:1.0` (Node.js backend, ~200MB)
+- [ ] `user-service:1.0-optimized` (multi-stage build, ~50MB)
+- [ ] `todo-service:1.0` (Java Spring Boot backend, ~370MB)
+- [ ] `todo-service:1.0-optimized` (multi-stage build, ~180MB)
 
-- [ ] **Töötav container:**
-  - [ ] Todo Service (port 8081)
-  - [ ] PostgreSQL (port 5433)
+### Töötavad Containerid (Harjutus 4 lõpus):
 
-- [ ] **Volume:**
-  - [ ] `postgres-todos-data` (andmete säilitamine)
+- [ ] User Service (port 3000)
+- [ ] Todo Service (port 8081)
+- [ ] PostgreSQL User DB (port 5432)
+- [ ] PostgreSQL Todo DB (port 5433)
 
-- [ ] **Network:**
-  - [ ] `app-network` (container'ite omavaheline suhtlus)
+### Volume'd:
 
-- [ ] **Testimine:**
-  - [ ] `GET /api/todos` töötab
-  - [ ] `POST /api/todos` loob uue todo
-  - [ ] `GET /health` tagastab OK
+- [ ] `postgres-user-data` (kasutajate andmebaas)
+- [ ] `postgres-todo-data` (ülesannete andmebaas)
 
-### Valikuline (tehakse Lab 2's):
+### Network:
 
-- [ ] `user-service:1.0` (Node.js backend - töötab portil 3000)
-- [ ] `frontend:1.0` (Nginx - töötab portil 8080)
-- [ ] `postgres-users-data` volume (user-service jaoks)
+- [ ] `todo-network` (custom bridge network)
+
+### Testimine:
+
+**User Service:**
+- [ ] `POST /api/auth/register` - kasutaja registreerimine
+- [ ] `POST /api/auth/login` - JWT token genereerimine
+- [ ] `GET /api/users` - kasutajate nimekiri (vajab JWT)
+- [ ] `GET /health` - tagastab OK
+
+**Todo Service:**
+- [ ] `POST /api/todos` - loo todo (vajab User Service JWT)
+- [ ] `GET /api/todos` - loe todos
+- [ ] `PATCH /api/todos/:id/complete` - märgi tehtud
+- [ ] `DELETE /api/todos/:id` - kustuta
+- [ ] `GET /health` - tagastab OK
+
+**End-to-End JWT Workflow:**
+- [ ] User Service genereerib JWT token
+- [ ] Todo Service valideerib sama JWT token'it
+- [ ] Mikroteenuste suhtlus toimib
 
 ---
 
 ## 📊 Progressi Jälgimine
 
-- [ ] Harjutus 1: Single Container
-- [ ] Harjutus 2: Multi-Container
-- [ ] Harjutus 3: Networking
-- [ ] Harjutus 4: Volumes
-- [ ] Harjutus 5: Optimization
+- [ ] Harjutus 1A: Single Container (User Service - Node.js)
+- [ ] Harjutus 1B: Single Container (Todo Service - Java)
+- [ ] Harjutus 2: Multi-Container (2 teenust + 2 DB)
+- [ ] Harjutus 3: Networking (Custom network, 4 containerit)
+- [ ] Harjutus 4: Volumes (Data persistence, 2 volume'd)
+- [ ] Harjutus 5: Optimization (Multi-stage builds, 2 teenust)
 
 ---
 
@@ -345,11 +453,29 @@ Peale selle labori edukat läbimist, jätka:
 
 ---
 
-**Edu laboriga! 🚀**
+## 🎓 Kokkuvõte
 
-*Sisustame selle labori exercises/ ja solutions/ kaustad hiljem.*
+Peale selle labori läbimist oled:
+- ✅ Konteineriseerinud 2 mikroteenust (Node.js ja Java)
+- ✅ Loonud 4 Docker image't (2 lihtsat + 2 optimeeritud)
+- ✅ Hallanud multi-container süsteemi (4 containerit)
+- ✅ Kasutanud Docker networks ja volumes
+- ✅ Testinud End-to-End mikroteenuste suhtlust
+- ✅ Optimeerinud image suurust (kuni 75% väiksemad!)
+
+**Edu laboriga! 🚀**
 
 ---
 
-**Staatus:** 📝 Framework valmis, sisu lisatakse
-**Viimane uuendus:** 2025-11-15
+## 📌 Lisainfo
+
+**Abiskriptid:**
+- `./setup.sh` - Automaatne setup ja image'de ehitamine
+- `./reset.sh` - Labori ressursside puhastamine
+
+**Harjutused:**
+- 6 harjutust: 2x Single Container, Multi-Container, Networking, Volumes, Optimization
+- Kokku: ~4.5 tundi
+
+**Staatus:** ✅ 100% valmis
+**Viimane uuendus:** 2025-11-19

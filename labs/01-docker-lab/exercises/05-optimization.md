@@ -4,6 +4,7 @@
 **Eesmärk:** Optimeeri Docker image suurust ja build kiirust
 
 **Eeldus:** [Harjutus 1: Single Container](01-single-container.md) läbitud ✅
+💡 **Alternatiiv:** Kui vahele jätsid, käivita `./setup.sh` ja vali `Y` - see ehitab vajalikud base image'd automaatselt
 
 ---
 

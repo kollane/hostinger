@@ -4,8 +4,9 @@
 **Eesmärk:** Käivita User Service + Todo Service + PostgreSQL ja mõista mikroteenuste suhtlust
 
 **Eeldused:**
-- ✅ [Harjutus 1A: Single Container (User Service)](01-single-container-user_service.md) läbitud
-- ✅ [Harjutus 1B: Single Container (Todo Service)](01-single-container-todo_service.md) läbitud
+- ✅ [Harjutus 1A: Single Container (User Service)](01a-single-container-nodejs.md) läbitud
+- ✅ [Harjutus 1B: Single Container (Todo Service)](01b-single-container-java.md) läbitud
+- 💡 **Alternatiiv:** Kui vahele jätsid, käivita `./setup.sh` ja vali `Y` - see ehitab vajalikud image'd automaatselt
 
 ---
 

@@ -4,6 +4,7 @@
 **Eesmärk:** Loo custom network ja ühenda containerid proper networking'uga
 
 **Eeldus:** [Harjutus 2: Multi-Container](02-multi-container.md) läbitud ✅
+💡 **Märkus:** Kui base image'd (`user-service:1.0`, `todo-service:1.0`) puuduvad, käivita `./setup.sh` ja vali `Y`
 
 ---
 

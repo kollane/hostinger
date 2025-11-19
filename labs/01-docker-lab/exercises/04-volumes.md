@@ -4,6 +4,7 @@
 **Eesmärk:** Säilita andmed volumes'iga ja õpi data persistence
 
 **Eeldus:** [Harjutus 3: Networking](03-networking.md) läbitud ✅
+💡 **Märkus:** Kui base image'd (`user-service:1.0`, `todo-service:1.0`) puuduvad, käivita `./setup.sh` ja vali `Y`
 
 ---
 

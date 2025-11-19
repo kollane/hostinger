@@ -194,7 +194,7 @@ if [[ $DELETE_IMAGES =~ ^[Yy]$ ]]; then
     echo ""
     echo "Alusta harjutustega:"
     echo "  cd exercises/"
-    echo "  cat 01-single-container-user_service.md"
+    echo "  cat 01a-single-container-nodejs.md"
 else
     echo -e "${YELLOW}💡 Base image'd (user-service:1.0, todo-service:1.0) on säilitatud!${NC}"
     echo ""
