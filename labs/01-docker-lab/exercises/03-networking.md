@@ -490,24 +490,6 @@ Peale selle harjutuse läbimist peaksid omama:
 | **Best practice** | ❌ EI (Docker soovitab mitte kasutada) | ✅ JAH (tänapäevane standard) |
 
 **Järeldus:** Kasuta ALATI custom networks, mitte --link!
-
-**Näide võrdluseks:**
-
-**Harjutus 2 (--link):**
-```bash
-docker run -d --name postgres-todo ...
-docker run -d --name todo-service --link postgres-todo:postgres ...
-# Vajab manuaalset link'imist iga ühenduse jaoks!
-```
-
-**Harjutus 3 (custom network):**
-```bash
-docker network create todo-network
-docker run -d --name postgres-todo --network todo-network ...
-docker run -d --name todo-service --network todo-network ...
-# Automaatne DNS! Ei vaja --link!
-```
-
 ---
 
 ## 🎉 Õnnitleme! Mida Sa Õppisid?
