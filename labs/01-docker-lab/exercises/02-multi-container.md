@@ -52,9 +52,11 @@ docker exec -it postgres-todo psql -U postgres -d todo_service_db
 
 # SQL konsoolis:
 -- Loo todos tabel
+-- TÄHTIS: Kasuta BIGSERIAL ja BIGINT, mitte SERIAL ja INTEGER!
+-- Spring Boot JPA Entity kasutab Long tüüpi, mis vajab BIGINT
 CREATE TABLE todos (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL,
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL,
     title VARCHAR(255) NOT NULL,
     description TEXT,
     completed BOOLEAN DEFAULT FALSE,
@@ -76,7 +78,11 @@ CREATE TABLE todos (
 docker stop todo-service
 docker rm todo-service
 
+# Genereeri turvaline JWT_SECRET (kui pole veel teinud)
+openssl rand -base64 32
+
 # Käivita uuesti, ühendades PostgreSQL'iga
+# HOIATUS: host.docker.internal ei tööta Linuxis!
 docker run -d \
   --name todo-service \
   -p 8081:8081 \
@@ -85,7 +91,7 @@ docker run -d \
   -e DB_NAME=todo_service_db \
   -e DB_USER=postgres \
   -e DB_PASSWORD=postgres \
-  -e JWT_SECRET=my-secret-key \
+  -e JWT_SECRET=zXsK64+uquelt/hQqVzK9P3xoBISiiNQsQbg2OR3ncU= \
   -e SPRING_PROFILES_ACTIVE=prod \
   todo-service:1.0
 
@@ -93,15 +99,12 @@ docker run -d \
 docker logs -f todo-service
 ```
 
-**Probleem:** `host.docker.internal` ei pruugi Linuxis töötada!
+**Probleem:** `host.docker.internal` ei tööta Linuxis!
 
-**Lahendus:** Kasuta PostgreSQL container IP'd:
+**Lahendus Linuxis (Ubuntu):** Kasuta `--link` või PostgreSQL container IP'd:
 
 ```bash
-# Leia PostgreSQL IP
-docker inspect postgres-todo | grep IPAddress
-
-# Või kasuta --link (deprecated, aga toimib)
+# Variant 1: Kasuta --link (deprecated, aga lihtne ja toimib)
 docker run -d \
   --name todo-service \
   --link postgres-todo:postgres \
@@ -111,7 +114,22 @@ docker run -d \
   -e DB_NAME=todo_service_db \
   -e DB_USER=postgres \
   -e DB_PASSWORD=postgres \
-  -e JWT_SECRET=my-secret-key \
+  -e JWT_SECRET=zXsK64+uquelt/hQqVzK9P3xoBISiiNQsQbg2OR3ncU= \
+  todo-service:1.0
+
+# Variant 2: Leia PostgreSQL IP ja kasuta seda
+POSTGRES_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' postgres-todo)
+echo "PostgreSQL IP: $POSTGRES_IP"
+
+docker run -d \
+  --name todo-service \
+  -p 8081:8081 \
+  -e DB_HOST=$POSTGRES_IP \
+  -e DB_PORT=5432 \
+  -e DB_NAME=todo_service_db \
+  -e DB_USER=postgres \
+  -e DB_PASSWORD=postgres \
+  -e JWT_SECRET=zXsK64+uquelt/hQqVzK9P3xoBISiiNQsQbg2OR3ncU= \
   todo-service:1.0
 ```
 
@@ -148,7 +166,7 @@ curl -X PATCH http://localhost:8081/api/todos/1/complete \
 
 ### Samm 5: Troubleshooting (5 min)
 
-**Connection refused:**
+**1. Connection refused:**
 ```bash
 # Kontrolli, kas PostgreSQL töötab
 docker ps | grep postgres
@@ -161,6 +179,51 @@ docker exec -it todo-service sh
 # Container sees (kui ping on installitud):
 # ping postgres  # peaks töötama kui kasutad --link
 exit
+```
+
+**2. JWT_SECRET liiga lühike:**
+```bash
+# Error: The specified key byte array is 88 bits which is not secure enough
+
+# Lahendus: Genereeri 256+ bitine võti
+openssl rand -base64 32
+# Kasuta väljundit -e JWT_SECRET=...
+```
+
+**3. Schema validation error (wrong column type):**
+```bash
+# Error: wrong column type encountered in column [id] in table [todos];
+# found [serial (Types#INTEGER)], but expecting [bigint (Types#BIGINT)]
+
+# Lahendus: Kasuta BIGSERIAL ja BIGINT, mitte SERIAL ja INTEGER
+docker exec postgres-todo psql -U postgres -d todo_service_db -c "
+DROP TABLE IF EXISTS todos;
+CREATE TABLE todos (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    completed BOOLEAN DEFAULT FALSE,
+    priority VARCHAR(20) DEFAULT 'medium',
+    due_date TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);"
+
+# Restart todo-service
+docker restart todo-service
+```
+
+**4. host.docker.internal ei tööta (Linux):**
+```bash
+# Error: java.net.UnknownHostException: host.docker.internal
+
+# Lahendus: Kasuta --link või container IP
+docker stop todo-service && docker rm todo-service
+docker run -d --name todo-service \
+  --link postgres-todo:postgres \
+  -e DB_HOST=postgres \
+  ... (muud parameetrid)
 ```
 
 ---
@@ -178,11 +241,21 @@ exit
 
 ## 🎓 Õpitud
 
+### Kontseptsioonid:
 - Container linking (deprecated, kasuta networks!)
-- Environment variables
-- Container connectivity
-- Database initialization
+- Environment variables ja nende edastamine containeritele
+- Container-to-container connectivity
+- Database initialization ja tabeli loomine
 - Multi-container troubleshooting
+
+### Levinud probleemid ja lahendused:
+- **JWT_SECRET** peab olema vähemalt 256 bits (32 tähemärki)
+- **BIGSERIAL vs SERIAL** - Spring Boot JPA kasutab Long → vajab BIGINT
+- **host.docker.internal** ei tööta Linuxis → kasuta `--link` või container IP
+- **Schema validation errors** - andmebaasi veergude tüübid peavad vastama JPA Entity tüüpidele
+
+### Järgmine samm:
+Harjutus 3 õpetab **proper networking'ut** Docker networks kasutades (mitte deprecated `--link`)!
 
 ---
 

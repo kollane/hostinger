@@ -105,13 +105,21 @@ echo ""
 
 # 7. Check apps directory
 echo "7️⃣  Kontrollin rakenduste kättesaadavust..."
-if [ -d "../apps/backend-java-spring" ]; then
+APPS_DIR="../apps/backend-java-spring"
+if [ -d "$APPS_DIR" ]; then
     echo -e "${GREEN}✅ Todo Service rakendus on kättesaadav:${NC}"
-    echo "   - ../apps/backend-java-spring/ (Lab 1 põhifookus)"
+    echo "   - $APPS_DIR (Lab 1 põhifookus)"
+
+    # Check if JAR build tool exists
+    if [ -f "$APPS_DIR/gradlew" ]; then
+        echo -e "${GREEN}✅ Gradle wrapper on olemas (JAR build'imiseks)${NC}"
+    else
+        warn "gradlew puudub - võid vajada manuaalset Gradle paigaldust"
+    fi
 else
     echo -e "${RED}❌ Todo Service rakendus pole kättesaadav!${NC}"
     echo "Kontrolli, et oled õiges kataloogis:"
-    echo "  cd /home/janek/projects/hostinger/labs/01-docker-lab"
+    echo "  cd labs/01-docker-lab"
     exit 1
 fi
 

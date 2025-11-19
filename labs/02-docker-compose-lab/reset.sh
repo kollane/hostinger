@@ -26,21 +26,31 @@ if ! docker compose version > /dev/null 2>&1; then
     exit 1
 fi
 
+echo -e "${YELLOW}⚠️  HOIATUS: See kustutab KÕIK Lab 2 ressursid:${NC}"
+echo "  - Compose rakendused (kõik docker-compose.yml failid)"
+echo "  - Containerid: user-service, frontend, todo-service, postgres"
+echo "  - Image'd: user-service:*, frontend:*, todo-service:*"
+echo "  - Network'id: app-network, fullstack-network"
+echo "  - Volume'd: postgres-data, postgres-*-data"
+echo ""
+read -p "Kas oled kindel, et soovid jätkata? (y/n) " -n 1 -r
+echo ""
+if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    echo "Tühistatud."
+    exit 0
+fi
+echo ""
+
 echo -e "${YELLOW}🛑 Peatame kõik Docker Compose rakendused...${NC}"
 
 # Peata ja eemalda compose ressursid solutions kaustast
-if [ -d "02-docker-compose-lab/solutions" ]; then
-    cd 02-docker-compose-lab/solutions
-
-    for compose_dir in */; do
+if [ -d "solutions" ]; then
+    for compose_dir in solutions/*/; do
         if [ -f "${compose_dir}docker-compose.yml" ]; then
             echo -e "${YELLOW}  Peatame ${compose_dir}...${NC}"
             (cd "$compose_dir" && docker compose down -v 2>/dev/null)
         fi
     done
-
-    # Tagasi peakausta
-    cd ../..
 fi
 
 # Kui kasutaja on ise compose faile loonud
@@ -64,7 +74,7 @@ for prefix in 02-docker-compose fullstack-app backend frontend todos userservice
 done
 
 # Eemalda ka üksikud containerid, mis võivad olla
-for container in postgres user-service frontend todo-service; do
+for container in postgres postgres-todo postgres-user user-service frontend todo-service; do
     if docker ps -a --format '{{.Names}}' | grep -q "^${container}$"; then
         docker rm -f "$container" 2>/dev/null
         echo -e "${GREEN}  ✓ $container eemaldatud${NC}"
@@ -107,7 +117,7 @@ echo ""
 echo -e "${YELLOW}💾 Eemaldame Lab 2 volume'd...${NC}"
 
 # Eemalda named volume'd
-for volume in postgres-data postgres-users-data postgres-todos-data db-data; do
+for volume in postgres-data postgres-users-data postgres-todos-data postgres-todo-data db-data; do
     if docker volume ls --format '{{.Name}}' | grep -q "^${volume}$"; then
         docker volume rm "$volume" 2>/dev/null
         echo -e "${GREEN}  ✓ $volume eemaldatud${NC}"

@@ -20,6 +20,20 @@ if ! docker info > /dev/null 2>&1; then
     exit 1
 fi
 
+echo -e "${YELLOW}⚠️  HOIATUS: See kustutab KÕIK Lab 1 ressursid:${NC}"
+echo "  - Containerid: todo-service*, postgres-todo*"
+echo "  - Image'd: todo-service:*"
+echo "  - Network'id: todo-network, app-network"
+echo "  - Volume'd: postgres-*-data"
+echo ""
+read -p "Kas oled kindel, et soovid jätkata? (y/n) " -n 1 -r
+echo ""
+if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    echo "Tühistatud."
+    exit 0
+fi
+echo ""
+
 echo -e "${YELLOW}📦 Peatame ja eemaldame Lab 1 containerid...${NC}"
 
 # Eemalda Todo Service containerid

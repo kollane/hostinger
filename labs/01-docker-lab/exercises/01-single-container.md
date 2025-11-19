@@ -177,6 +177,10 @@ docker images todo-service:1.0
 #### Variant A: Ilma andmebaasita (testimiseks)
 
 ```bash
+# Genereeri turvaline JWT_SECRET
+openssl rand -base64 32
+# Näide väljund: zXsK64+uquelt/hQqVzK9P3xoBISiiNQsQbg2OR3ncU=
+
 # Käivita container interaktiivselt
 docker run -it --name todo-service-test \
   -p 8081:8081 \
@@ -185,7 +189,7 @@ docker run -it --name todo-service-test \
   -e DB_NAME=todo_service_db \
   -e DB_USER=postgres \
   -e DB_PASSWORD=postgres \
-  -e JWT_SECRET=test-secret \
+  -e JWT_SECRET=zXsK64+uquelt/hQqVzK9P3xoBISiiNQsQbg2OR3ncU= \
   todo-service:1.0
 ```
 
@@ -194,21 +198,28 @@ docker run -it --name todo-service-test \
 - `--name` - anna containerile nimi
 - `-p 8081:8081` - map port 8081 host'ist container'isse
 - `-e` - environment variable
+- **JWT_SECRET peab olema vähemalt 32 tähemärki** (256 bits) HMAC-SHA256 jaoks
 
 **Probleam:** Rakendus ei käivitu, sest PostgreSQL puudub!
 
 #### Variant B: Background režiimis
 
+**Märkus:** Selles harjutuses õpid Docker image'i loomist ja container'i käivitamist. PostgreSQL ühendus EI TÖÖTA veel! Järgmises harjutuses ([Harjutus 2: Multi-Container](02-multi-container.md)) õpid PostgreSQL containerit käivitama.
+
 ```bash
+# Genereeri turvaline JWT_SECRET (kui pole veel teinud)
+openssl rand -base64 32
+
 # Käivita taustal (detached mode)
+# HOIATUS: See näide EI TÖÖTA Linuxis ilma PostgreSQL'ita!
 docker run -d --name todo-service \
   -p 8081:8081 \
-  -e DB_HOST=host.docker.internal \
+  -e DB_HOST=172.17.0.1 \
   -e DB_PORT=5432 \
   -e DB_NAME=todo_service_db \
   -e DB_USER=postgres \
   -e DB_PASSWORD=postgres \
-  -e JWT_SECRET=test-secret-key \
+  -e JWT_SECRET=zXsK64+uquelt/hQqVzK9P3xoBISiiNQsQbg2OR3ncU= \
   -e SPRING_PROFILES_ACTIVE=prod \
   todo-service:1.0
 
@@ -222,7 +233,19 @@ docker logs todo-service
 docker logs -f todo-service
 ```
 
-**Probleam:** Kui PostgreSQL ei tööta, siis rakendus crashib!
+**Tähtis info:**
+
+1. **host.docker.internal ei tööta Linuxis!**
+   - Mac/Windows: kasuta `host.docker.internal`
+   - **Linux/Ubuntu:** kasuta `172.17.0.1` (Docker bridge gateway IP)
+
+2. **`172.17.0.1` on Docker bridge network'i default gateway**
+   - See võimaldab containeril ühenduda host masina teenustega
+   - Toimib ainult kui PostgreSQL töötab VPS'il (mitte containeris)
+
+3. **Probleam:** Kui PostgreSQL ei tööta host'il, siis rakendus crashib!
+   - See on **oodatud käitumine** sellel harjutusel
+   - Lahendus: [Harjutus 2: Multi-Container](02-multi-container.md)
 
 ### Samm 6: Debug ja Troubleshoot (5 min)
 
@@ -275,6 +298,28 @@ docker stats todo-service
 
    # Vaata network't
    docker inspect todo-service | grep IPAddress
+   ```
+
+4. **JWT_SECRET liiga lühike:**
+   ```bash
+   # Error: The specified key byte array is 88 bits which is not secure enough
+
+   # Lahendus: Genereeri 256+ bitine võti
+   openssl rand -base64 32
+
+   # Kasuta genereeritud võtit -e JWT_SECRET=...
+   ```
+
+5. **host.docker.internal ei tööta (Linux):**
+   ```bash
+   # Error: java.net.UnknownHostException: host.docker.internal
+
+   # Lahendus Linuxis:
+   # Variant 1: Kasuta Docker bridge gateway IP
+   docker run ... -e DB_HOST=172.17.0.1 ...
+
+   # Variant 2: Käivita PostgreSQL container (Harjutus 2)
+   # See on PROPER lahendus - õpi järgmises harjutuses!
    ```
 
 ---
@@ -345,6 +390,21 @@ curl http://localhost:8081/health
 - `docker exec` - Käivita käsk töötavas containeris
 - `docker inspect` - Vaata container/image infot
 
+### Docker run parameetrid:
+
+- `-d` - Detached mode (taustal)
+- `-it` - Interactive + TTY (interaktiivne)
+- `-p 8081:8081` - Port mapping (host:container)
+- `-e KEY=value` - Environment variable
+- `--name <nimi>` - Anna containerile nimi
+- `--link <container>:<alias>` - Ühenda teise containeriga (deprecated, kasuta networks!)
+
+### Õpitud probleemid ja lahendused:
+
+- **JWT_SECRET peab olema vähemalt 256 bits** - Kasuta `openssl rand -base64 32`
+- **host.docker.internal ei tööta Linuxis** - Kasuta `172.17.0.1` või Docker network
+- **PostgreSQL ühendus puudub** - Õpi Harjutus 2'st, kuidas käivitada PostgreSQL container
+
 ---
 
 ## 💡 Parimad Tavad
@@ -354,6 +414,7 @@ curl http://localhost:8081/health
 3. **Kasuta JRE (mitte JDK)** - Runtime ei vaja compile tools
 4. **Build JAR enne Docker build'i** - Kiire rebuild, kui kood muutub
 5. **Kasuta EXPOSE** - Dokumenteeri, millist porti rakendus kasutab
+6. **JWT_SECRET peab olema turvaline** - Vähemalt 256 bits (32+ tähemärki) HMAC-SHA algoritmi jaoks
 
 ---
 
