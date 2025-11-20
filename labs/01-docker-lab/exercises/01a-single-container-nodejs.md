@@ -471,7 +471,7 @@ docker ps | grep user-service
 
 Järgmises harjutuses lisame PostgreSQL konteineri ja ühendame kaks konteinerit!
 
-**Jätka:** [Harjutus 2: Multi-Container](02-multi-container.md)
+**Jätka:** [Harjutus 1B: Single-Container-Java] (https://github.com/kollane/hostinger/blob/master/labs/01-docker-lab/exercises/01b-single-container-java.md)
 
 ---
 
