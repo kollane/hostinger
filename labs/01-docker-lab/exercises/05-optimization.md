@@ -211,23 +211,29 @@ Vaata näidislahendust: `/hostinger/labs/01-docker-lab/solutions/backend-java-sp
 **Näidis:**
 
 ```dockerfile
+# Optimeeritud Dockerfile Todo Service jaoks (Harjutus 5)
+# Multi-stage build: Gradle build → JRE runtime
+# Eelised: väiksem image, layer caching, non-root user, health check
+
 # Stage 1: Build
 FROM gradle:8.5-jdk17-alpine AS builder
+
 WORKDIR /app
 
-# Kopeeri Gradle failid (caching jaoks)
+# Kopeeri Gradle failid (dependencies caching jaoks)
 COPY build.gradle settings.gradle ./
 COPY gradle ./gradle
 
 # Download dependencies (cached kui build.gradle ei muutu)
 RUN gradle dependencies --no-daemon
 
-# Kopeeri source code ja build
+# Kopeeri source code ja build JAR
 COPY src ./src
 RUN gradle bootJar --no-daemon
 
 # Stage 2: Runtime
 FROM eclipse-temurin:17-jre-alpine
+
 WORKDIR /app
 
 # Loo non-root user
@@ -242,11 +248,16 @@ USER spring:spring
 
 EXPOSE 8081
 
-# Health check
+# Health check (kontrollib iga 30s, timeout 3s, start grace period 40s)
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s \
   CMD wget --no-verbose --tries=1 --spider http://localhost:8081/health || exit 1
 
-CMD ["java", "-jar", "app.jar"]
+# Käivita rakendus JVM memory tuning'uga (container-aware)
+CMD ["java", \
+    "-XX:InitialRAMPercentage=80", \
+    "-XX:MaxRAMPercentage=80", \
+    "-jar", \
+    "app.jar"]
 ```
 ## Ülevaade sammude järjestusest
 
