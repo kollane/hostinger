@@ -30,7 +30,11 @@ Kasutame **eestikeelseid sõnu**, tehnilised terminid **sulgudes inglise keeles*
 | parim praktika (best practice) | best practice | Dockeri parimad praktikad (best practices) |
 | võrkude isolatsioon (network isolation) | network isolation | Võrkude isolatsioon (network isolation) |
 | seadistus | setup | PostgreSQL seadistus |
-| konteiner (container) | container | Docker konteiner (container) |
+| konteiner | container | Docker konteiner |
+| keskkonna muutuja (environment variable) | environment variable | Kasuta keskkonna muutujaid (environment variables) |
+| viga (error) | error | Vea (error) sõnum |
+| rakendus (application) | application | Node.js rakendus (application) |
+| teenus (service) | service | User teenus (service) |
 | tag | tag | Docker pilt tag'iga 1.0 |
 | taustal töötav režiim | detached mode | Käivita taustal töötavas režiimis (detached mode) |
 | portide vastendamine (port mapping) | port mapping | Portide vastendamine (port mapping) 3000:3000 |

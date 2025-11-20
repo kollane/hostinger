@@ -12,13 +12,13 @@
 ✅ **Õpid:**
 - Dockerfile'i loomist Node.js rakendusele
 - Docker pildi (image) ehitamist
-- Konteineri (container) käivitamist
+- Konteineri käivitamist
 - JWT autentimise põhimõtteid
 - Logide vaatamist ja debuggimist
 
 ❌ **Rakendus EI TÖÖTA täielikult:**
 - User Service vajab PostgreSQL andmebaasi
-- Konteiner (container) käivitub, aga hangub kohe (see on **OODATUD**)
+- Konteiner käivitub, aga hangub kohe (see on **OODATUD**)
 - Töötava rakenduse saad **Harjutus 2**-s (Multi-Container)
 
 **User Service roll:**
@@ -30,7 +30,7 @@
 
 ## 📋 Ülevaade
 
-Selles harjutuses konteineriseerid Node.js User Service rakenduse. Õpid looma Dockerfile'i, ehitama Docker pilti (image) ja käivitama konteinerit (container) (isegi kui see hangub andmebaasi puudumise tõttu).
+Selles harjutuses konteineriseerid Node.js User Service rakenduse. Õpid looma Dockerfile'i, ehitama Docker pilti (image) ja käivitama konteinerit (isegi kui see hangub andmebaasi puudumise tõttu).
 
 ---
 
@@ -40,10 +40,10 @@ Peale selle harjutuse läbimist oskad:
 
 - ✅ Luua Dockerfile'i Node.js rakendusele
 - ✅ Ehitada Docker pilti (image)
-- ✅ Käivitada ja peatada konteinereid (containers)
+- ✅ Käivitada ja peatada konteinereid
 - ✅ Kasutada environment variables
-- ✅ Vaadata konteineri (container) logisid
-- ✅ Debuggida konteineri (container) probleeme
+- ✅ Vaadata konteineri logisid
+- ✅ Debuggida konteineri probleeme
 
 ---
 
@@ -52,7 +52,7 @@ Peale selle harjutuse läbimist oskad:
 ```
 ┌─────────────────────────────┐
 │   Docker Konteiner          │
-│   (Container)               │
+│                             │
 │  ┌───────────────────────┐  │
 │  │  Node.js Application  │  │
 │  │  User Service         │  │
@@ -200,12 +200,12 @@ docker images user-service:1.0
 - Mitu kihti (layers) on pildil (image)?
 - Millal pilt (image) loodi?
 
-### Samm 5: Käivita Konteiner (Container) (10 min)
+### Samm 5: Käivita Konteiner (10 min)
 
 #### Variant A: Ilma andmebaasita (testimiseks)
 
 ```bash
-# Käivita konteiner (container) interaktiivselt
+# Käivita konteiner interaktiivselt
 docker run -it --name user-service-test \
   -p 3000:3000 \
   -e DB_HOST=localhost \
@@ -219,8 +219,8 @@ docker run -it --name user-service-test \
 
 **Märkused:**
 - `-it` - interactive + tty
-- `--name` - anna konteinerile (container) nimi
-- `-p 3000:3000` - portide vastendamine (port mapping) 3000 host'ist konteinerisse (container)
+- `--name` - anna konteinerile nimi
+- `-p 3000:3000` - portide vastendamine (port mapping) 3000 host'ist konteinerisse
 - `-e` - environment variable
 
 **Oodatud tulemus:**
@@ -231,7 +231,7 @@ Application failed to start
 ```
 
 **See on TÄPSELT see, mida tahame näha!** 🎉
-- Konteiner (container) käivitus ✅
+- Konteiner käivitus ✅
 - Rakendus proovis käivituda ✅
 - Error message näitab probleemi (puuduv DB) ✅
 - Õppisid, kuidas Docker error'eid näeb ✅
@@ -263,22 +263,22 @@ docker logs user-service
 docker logs -f user-service
 ```
 
-**Oodatud:** Konteiner (container) hangub, sest PostgreSQL puudub! See on ÕIGE käitumine!
+**Oodatud:** Konteiner hangub, sest PostgreSQL puudub! See on ÕIGE käitumine!
 
 ```bash
 # Vaata kas töötab? (HINT: Ei tööta!)
 docker ps
 
-# Vaata ka peatatud konteinereid (containers)
+# Vaata ka peatatud konteinereid
 docker ps -a
 # STATUS peaks olema: Exited (1)
 ```
 
-**Miks konteiner (container) puudub `docker ps` väljundis?**
-- Konteiner (container) käivitus, aga rakendus hangus kohe
-- Docker peatas hangunud konteineri (container) automaatselt
-- `docker ps` näitab ainult TÖÖTAVAID konteinereid (containers)
-- `docker ps -a` näitab KÕIKI konteinereid (containers) (ka peatatud)
+**Miks konteiner puudub `docker ps` väljundis?**
+- Konteiner käivitus, aga rakendus hangus kohe
+- Docker peatas hangunud konteineri automaatselt
+- `docker ps` näitab ainult TÖÖTAVAID konteinereid
+- `docker ps -a` näitab KÕIKI konteinereid (ka peatatud)
 
 ### Samm 6: Mõista JWT Tokeni Rolli (10 min)
 
@@ -325,22 +325,22 @@ curl -X POST http://localhost:3000/api/auth/login \
 ### Samm 7: Debug ja Troubleshoot (5 min)
 
 ```bash
-# Vaata konteineri (container) statusit
+# Vaata konteineri statusit
 docker ps -a
 
 # Vaata logisid
 docker logs user-service
 
-# Sisene konteinerisse (container)
+# Sisene konteinerisse
 docker exec -it user-service sh
 
-# Konteineri (container) sees:
+# Konteineri sees:
 ls -la
 cat package.json
 env | grep DB
 exit
 
-# Inspekteeri konteinerit (container)
+# Inspekteeri konteinerit
 docker inspect user-service
 
 # Vaata resource kasutust
@@ -368,7 +368,7 @@ docker stats user-service
 
 3. **Ei saa ühendust:**
    ```bash
-   # Kontrolli, kas konteiner (container) töötab
+   # Kontrolli, kas konteiner töötab
    docker ps
 
    # Vaata võrku (network)
@@ -384,10 +384,10 @@ Peale selle harjutuse läbimist peaksid omama:
 - [x] **Dockerfile** backend-nodejs/ kaustas
 - [x] **.dockerignore** fail
 - [x] **Docker pilt (image)** `user-service:1.0` (vaata `docker images`)
-- [x] **Konteiner (container)** käivitatud (vaata `docker ps`)
+- [x] **Konteiner** käivitatud (vaata `docker ps`)
 - [x] Mõistad Dockerfile'i struktuuri
 - [x] Oskad ehitada pilti (image)
-- [x] Oskad käivitada konteinerit (container)
+- [x] Oskad käivitada konteinerit
 - [x] Oskad vaadata logisid
 
 ---
@@ -401,11 +401,11 @@ docker images | grep user-service
 # Peaks näitama: user-service 1.0 ...
 ```
 
-### Test 2: Kas konteiner (container) töötab?
+### Test 2: Kas konteiner töötab?
 
 ```bash
 docker ps | grep user-service
-# Peaks näitama töötavat konteinerit (container)
+# Peaks näitama töötavat konteinerit
 ```
 
 ### Test 3: Kas logid näitavad error messaget? ✅
@@ -419,11 +419,11 @@ docker logs user-service | head -20
 ```
 
 **See on PERFEKTNE!** Sa õppisid:
-- Kuidas vaadata logisid hangunud konteineris (container)
+- Kuidas vaadata logisid hangunud konteineris
 - Kuidas debuggida error messaget
 - Miks multi-container lahendus on vajalik
 
-### Test 4: Kas konteiner (container) ei ole `docker ps` väljundis? ✅
+### Test 4: Kas konteiner ei ole `docker ps` väljundis? ✅
 
 ```bash
 docker ps | grep user-service
@@ -431,9 +431,9 @@ docker ps | grep user-service
 ```
 
 **See on ÕIGE!**
-- `docker ps` näitab ainult TÖÖTAVAID konteinereid (containers)
-- Hangunud konteiner (container) on peatatud
-- Kasuta `docker ps -a` et näha kõiki konteinereid (containers)
+- `docker ps` näitab ainult TÖÖTAVAID konteinereid
+- Hangunud konteiner on peatatud
+- Kasuta `docker ps -a` et näha kõiki konteinereid
 
 ---
 
@@ -446,16 +446,16 @@ docker ps | grep user-service
 - `COPY` - Kopeeri failid
 - `RUN` - Käivita käsk ehitamise ajal (build)
 - `EXPOSE` - Avalda port
-- `CMD` - Käivita käsk konteineri (container) käivitamisel
+- `CMD` - Käivita käsk konteineri käivitamisel
 
 ### Docker käsud:
 
 - `docker build` - Ehita pilt (image)
-- `docker run` - Käivita konteiner (container)
-- `docker ps` - Näita töötavaid konteinereid (containers)
-- `docker logs` - Vaata konteineri (container) logisid
-- `docker exec` - Käivita käsk töötavas konteineris (container)
-- `docker inspect` - Vaata konteineri/pildi (container/image) infot
+- `docker run` - Käivita konteiner
+- `docker ps` - Näita töötavaid konteinereid
+- `docker logs` - Vaata konteineri logisid
+- `docker exec` - Käivita käsk töötavas konteineris
+- `docker inspect` - Vaata konteineri/pildi infot
 
 ---
 
@@ -471,7 +471,7 @@ docker ps | grep user-service
 
 ## 🔗 Järgmine Samm
 
-Järgmises harjutuses lisame PostgreSQL konteineri (container) ja ühendame kaks konteinerit (containers)!
+Järgmises harjutuses lisame PostgreSQL konteineri ja ühendame kaks konteinerit!
 
 **Jätka:** [Harjutus 2: Multi-Container](02-multi-container.md)
 

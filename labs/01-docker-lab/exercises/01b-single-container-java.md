@@ -1,7 +1,7 @@
-# Harjutus 1: Single Container
+# Harjutus 1: Ühe Konteineri Käivitamine
 
 **Kestus:** 45 minutit
-**Eesmärk:** Konteinerise Java Spring Boot Todo Service ja õpi Dockerfile'i loomist
+**Eesmärk:** Konteinerise Java Spring Boot Todo teenus (service) ja õpi Dockerfile'i loomist
 
 ---
 
@@ -11,15 +11,15 @@
 
 ✅ **Õpid:**
 - Dockerfile'i loomist
-- Docker image'i build'imist
-- Container'i käivitamist
+- Docker pildi (image) ehitamist
+- Konteineri käivitamist
 - Logide vaatamist ja debuggimist
 - Docker käskude kasutamist
 
-❌ **Rakendus EI TÖÖTA täielikult:**
-- Todo-service vajab PostgreSQL andmebaasi
-- Container käivitub, aga crashib kohe (see on **OODATUD**)
-- Töötava rakenduse saad **Harjutus 2**-s (Multi-Container)
+❌ **Rakendus (application) EI TÖÖTA täielikult:**
+- Todo teenus (service) vajab PostgreSQL andmebaasi
+- Konteiner käivitub, aga hangub kohe (see on **OODATUD**)
+- Töötava rakenduse (application) saad **Harjutus 2**-s (mitme konteineri käivitamine)
 
 **Miks see hea on?**
 - Õpid debuggima probleeme (`docker logs`, `docker exec`)
