@@ -32,7 +32,7 @@ docker images | grep -E 'user-service|todo-service'
 ```
 
 **Kui midagi puudub:**
-- 🔗 PostgreSQL containerid ja tabelid → [Harjutus 2, Sammud 1-3](02-multi-container.md)
+- 🔗 PostgreSQL setup (todo-network + volumes + tabelid) → [Harjutus 4, Sammud 2-4](04-volumes.md)
 - 🔗 Base image'd → [Harjutus 1A](01a-single-container-nodejs.md) ja [Harjutus 1B](01b-single-container-java.md) või käivita `./setup.sh`
 
 **✅ Kui kõik ülalpool on OK, võid jätkata!**
