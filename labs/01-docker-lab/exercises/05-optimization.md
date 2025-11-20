@@ -19,79 +19,21 @@
 ```bash
 # 1. Kontrolli, et MÕLEMAD PostgreSQL containerid töötavad
 docker ps | grep postgres
+# Oodatud: postgres-user (5432) ja postgres-todo (5433)
 
-# Oodatud: Näed kahte töötavat PostgreSQL containerit
-# postgres-user   Up X minutes   0.0.0.0:5432->5432/tcp
-# postgres-todo   Up X minutes   0.0.0.0:5433->5432/tcp
-```
-
-**Kui PostgreSQL containerid ei tööta, käivita:**
-```bash
-# Vaata Harjutus 2, Samm 1-3 või käivita:
-docker run -d --name postgres-user \
-  -e POSTGRES_USER=postgres \
-  -e POSTGRES_PASSWORD=postgres \
-  -e POSTGRES_DB=user_service_db \
-  -p 5432:5432 \
-  postgres:16-alpine
-
-docker run -d --name postgres-todo \
-  -e POSTGRES_USER=postgres \
-  -e POSTGRES_PASSWORD=postgres \
-  -e POSTGRES_DB=todo_service_db \
-  -p 5433:5432 \
-  postgres:16-alpine
-```
-
-**2. Kontrolli, et andmebaasides on tabelid ja andmed:**
-
-```bash
-# User Service andmebaas
+# 2. Kontrolli, et andmebaasides on tabelid
 docker exec postgres-user psql -U postgres -d user_service_db -c "\dt"
-# Oodatud: Näed "users" tabelit
-
-# Todo Service andmebaas
 docker exec postgres-todo psql -U postgres -d todo_service_db -c "\dt"
-# Oodatud: Näed "todos" tabelit
-```
+# Oodatud: "users" ja "todos" tabelid
 
-**Kui tabelid puuduvad, loo need (Harjutus 2, Sammud 2-3):**
-```bash
-# User Service tabel
-docker exec -i postgres-user psql -U postgres -d user_service_db <<EOF
-CREATE TABLE users (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL,
-    role VARCHAR(50) DEFAULT 'user',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-EOF
-
-# Todo Service tabel
-docker exec -i postgres-todo psql -U postgres -d todo_service_db <<EOF
-CREATE TABLE todos (
-    id BIGSERIAL PRIMARY KEY,
-    user_id BIGINT NOT NULL,
-    title VARCHAR(255) NOT NULL,
-    description TEXT,
-    completed BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-EOF
-```
-
-**3. Kontrolli olemasolevaid image'eid:**
-
-```bash
-# Peaksid olema Harjutus 1-st
+# 3. Kontrolli olemasolevaid image'eid
 docker images | grep -E 'user-service|todo-service'
-
-# Kui puuduvad, ehita need (Harjutus 1) või käivita ./setup.sh
+# Oodatud: user-service:1.0 ja todo-service:1.0
 ```
+
+**Kui midagi puudub:**
+- 🔗 PostgreSQL containerid ja tabelid → [Harjutus 2, Sammud 1-3](02-multi-container.md)
+- 🔗 Base image'd → [Harjutus 1A](01a-single-container-nodejs.md) ja [Harjutus 1B](01b-single-container-java.md) või käivita `./setup.sh`
 
 **✅ Kui kõik ülalpool on OK, võid jätkata!**
 
