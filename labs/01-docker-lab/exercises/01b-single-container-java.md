@@ -72,7 +72,7 @@ Peale selle harjutuse läbimist oskad:
 
 ### Samm 1: Tutvu Rakendusega (5 min)
 
-**Asukoht:** `/hostinger/labs/apps/backend-java-spring`
+**Rakenduse juurkataloog:** `/hostinger/labs/apps/backend-java-spring`
 
 Vaata Todo teenuse (service) koodi:
 
@@ -96,9 +96,9 @@ cat build.gradle
 
 ### Samm 2: Loo Dockerfile (15 min)
 
-**Asukoht:** `/hostinger/labs/apps/backend-java-spring`
-
 Loo fail nimega `Dockerfile`:
+
+**⚠️ Oluline:** Dockerfail tuleb luua rakenduse juurkataloogi `/hostinger/labs/apps/backend-java-spring`
 
 ```bash
 vim Dockerfile
@@ -136,9 +136,9 @@ CMD ["java", "-jar", "app.jar"]
 
 ### Samm 3: Loo .dockerignore (5 min)
 
-**Asukoht:** `/hostinger/labs/apps/backend-java-spring`
-
 Loo `.dockerignore` fail, et vältida tarbetute failide kopeerimist:
+
+**⚠️ Oluline:** .dockerignore tuleb luua rakenduse juurkataloogi `/hostinger/labs/apps/backend-java-spring`
 
 ```bash
 vim .dockerignore
