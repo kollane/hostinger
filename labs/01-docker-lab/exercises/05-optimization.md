@@ -8,7 +8,7 @@
 - ✅ [Harjutus 2: Multi-Container](02-multi-container.md) läbitud
 - ✅ **MÕLEMAD PostgreSQL containerid töötavad JA sisaldavad andmeid (tabelid + testikasutajad)**
 
-💡 **Alternatiiv:** Kui vahele jätsid, käivita `./setup.sh` ja vali `Y` - see ehitab vajalikud image'd ja seadistab andmebaasid automaatselt
+💡 **Kui base image'd puuduvad:** Käivita `./setup.sh` ja vali `Y` - see ehitab vajalikud image'd
 
 ---
 
