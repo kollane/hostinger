@@ -38,30 +38,30 @@ docker images | grep -E 'user-service|todo-service'
 **Mäletad Harjutus 1-st?** Lõime lihtsa Dockerfile'i, mis toimis. Aga nüüd õpime, kuidas teha seda **PALJU paremaks**!
 
 **Praegune Dockerfile (Harjutus 1) probleemid - MÕLEMAS teenuses:**
-- ❌ Liiga suur image (~180-250MB)
+- ❌ Liiga suur pilt (image) (~200-230MB)
 - ❌ Build on aeglane (rebuild iga source muudatuse korral)
 - ❌ Ei kasuta layer caching'ut efektiivselt
-- ❌ Runs as root (security risk!)
+- ❌ Töötab root'ina (security risk!)
 - ❌ Pole health check'i
 
 **Selles harjutuses - optimeerime MÕLEMAT teenust:**
 - ✅ **Node.js (User Service):** Multi-stage build (dependencies → runtime)
 - ✅ **Java (Todo Service):** Multi-stage build (JDK build → JRE runtime)
 - ✅ Layer caching optimization (dependencies cached)
-- ✅ Väiksem image suurus (alpine images)
 - ✅ Security (non-root users: nodejs:1001, spring:1001)
 - ✅ Health checks
+- ⚠️ **Märkus:** User Service kasutab `node:18-slim` (mitte alpine) bcrypt native moodulite tõttu
 
 ---
 
 ## 🎯 Õpieesmärgid
 
-- ✅ Kasutada alpine base images (mõlemas teenuses)
 - ✅ Implementeerida multi-stage builds (Node.js ja Java)
 - ✅ Optimeerida layer caching (dependencies eraldi)
 - ✅ Parandada .dockerignore faile
 - ✅ Lisa health check'id mõlemasse teenusesse
 - ✅ Kasuta non-root users (nodejs:1001, spring:1001)
+- ✅ Mõista Alpine vs Debian (slim) trade-off'e native moodulitega
 - ✅ Võrrelda Node.js vs Java optimization tulemusi
 - ✅ Testida End-to-End workflow optimeeritud süsteemiga
 
@@ -116,9 +116,34 @@ Loo uus `Dockerfile.optimized`:
 **💡 Abi vajadusel:**
 Vaata näidislahendust: `/hostinger/labs/01-docker-lab/solutions/backend-nodejs/Dockerfile.optimized`
 
+**⚠️ OLULINE: Alpine vs Debian (Slim) Valik**
+
+**Miks kasutame `node:18-slim` asemel `node:18-alpine`?**
+
+User Service kasutab **bcrypt** teeki paroolide hashing'uks. Bcrypt sisaldab native C++ mooduleid, mis peavad olema kompileeritud konkreetse operatsioonisüsteemi jaoks.
+
+**Probleem Alpine'iga:**
+- Alpine Linux kasutab `musl libc` asemel `glibc`
+- bcrypt native binaarid crashivad (exit code 139 - segmentation fault)
+- Lahendus oleks installida build tools (python3, make, g++), AGA see suurendab pildi (image) suurust ~100MB võrra
+
+**Lahendus: Debian Slim**
+- `node:18-slim` on Debian-based minimalistlik pilt (image)
+- bcrypt native moodulid töötavad out-of-the-box
+- Pisut suurem kui Alpine (~305MB vs ~180MB), AGA töötab kindlalt
+
+**Trade-off:**
+```
+Alpine + build tools:   ~280MB (ei tööta stabiilselt)
+Debian Slim:            ~305MB (✅ töötab perfektselt)
+Alpine ilma bcrypt'ita: ~120MB (aga bcrypt on kohustuslik!)
+```
+
+**Järeldus:** Kaotame ~100MB suurust, aga **saame töökindla ja turvalise lahenduse**.
+
 ```dockerfile
 # Stage 1: Dependencies
-FROM node:18-alpine AS dependencies
+FROM node:18-slim AS dependencies
 WORKDIR /app
 
 # Kopeeri dependency files (caching jaoks)
@@ -128,12 +153,12 @@ COPY package*.json ./
 RUN npm ci --only=production
 
 # Stage 2: Runtime
-FROM node:18-alpine
+FROM node:18-slim
 WORKDIR /app
 
-# Loo non-root user
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001 -G nodejs
+# Loo non-root user (Debian käsud!)
+RUN groupadd -g 1001 nodejs && \
+    useradd -r -u 1001 -g nodejs nodejs
 
 # Kopeeri dependencies builder stage'ist
 COPY --from=dependencies --chown=nodejs:nodejs /app/node_modules ./node_modules
@@ -152,6 +177,11 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=10s \
 
 CMD ["node", "server.js"]
 ```
+
+**Märkused:**
+- ⚠️ Kasutame `groupadd`/`useradd` (Debian) asemel `addgroup`/`adduser` (Alpine)
+- ✅ bcrypt töötab natively ilma lisatööriistu
+- ✅ Production-ready ja testitud lahendus
 
 **⚠️ OLULINE: Lisa `healthcheck.js` fail rakenduse juurkataloogi enne Docker build'i!**
 
@@ -276,11 +306,23 @@ docker images | grep -E 'user-service|todo-service'
 
 # Oodatud väljund:
 # REPOSITORY       TAG             SIZE
-# user-service     1.0             ~180MB (vana)
-# user-service     1.0-optimized   ~120MB (uus) 📉 -33%
+# user-service     1.0             ~200MB (vana, alpine)
+# user-service     1.0-optimized   ~305MB (uus, slim + bcrypt) ⚠️ SUUREM, aga töötab!
 # todo-service     1.0             ~230MB (vana)
 # todo-service     1.0-optimized   ~180MB (uus) 📉 -22%
 ```
+
+**⚠️ Märkus User Service suuruse kohta:**
+User Service optimeeritud pilt (image) on **suurem** kui baasversioon! See on trade-off bcrypt native moodulite tõttu:
+- Baasversioon (`1.0`): ~200MB - kasutab `node:18-alpine`, aga crashib bcrypt'iga
+- Optimeeritud (`1.0-optimized`): ~305MB - kasutab `node:18-slim`, **töötab kindlalt**
+
+**Mida võitsime:**
+✅ Multi-stage build (dependencies cached)
+✅ Non-root user (security)
+✅ Health check
+✅ -60% kiirem rebuild
+❌ +~100MB suurem pilt (image) (kompromiss töökindluse nimel)
 
 ### Samm 4: Testi MÕLEMAD Optimeeritud Images (20 min)
 
@@ -517,14 +559,17 @@ docker images | grep -E 'user-service|todo-service' | sort
 
 | Aspekt | Before (Harjutus 1) | After (Optimized) | Improvement |
 | ------ | ------------------- | ----------------- | ----------- |
-| **Size** | ~180MB | ~120MB | 📉 -33% |
-| **Base image** | node:18-alpine | Multi-stage (deps → runtime) | ✅ |
+| **Size** | ~200MB | ~305MB | ❌ +52% (trade-off!) |
+| **Base image** | node:18-alpine | node:18-slim (Debian) | ⚠️ bcrypt fix |
 | **Layers** | 5-6 | 8-10 (but cached!) | ✅ |
 | **Build time (1st)** | 30s | 40s | ❌ +10s |
 | **Build time (rebuild)** | 30s | 10s | 📉 -66% |
 | **Security** | root user | non-root (nodejs:1001) | ✅ |
 | **Health check** | ❌ | ✅ `healthcheck.js` | ✅ |
 | **Caching** | ❌ Poor | ✅ Excellent (npm ci cached) | ✅ |
+| **Stability** | ❌ crashib (bcrypt) | ✅ töötab (native modules) | ✅ |
+
+**Trade-off selgitus:** Kaotame ~100MB suurust, AGA saame töökindla süsteemi. Production'is on **töökindlus olulisem kui pildi (image) suurus**!
 
 ### Java (Todo Service) Võrdlus
 
@@ -543,22 +588,23 @@ docker images | grep -E 'user-service|todo-service' | sort
 
 | Metric | Node.js (User Service) | Java (Todo Service) |
 |--------|------------------------|---------------------|
-| **Base size (before)** | ~180MB | ~230MB |
-| **Optimized size (after)** | ~120MB | ~180MB |
-| **Size reduction** | 📉 -33% | 📉 -22% |
+| **Base size (before)** | ~200MB | ~230MB |
+| **Optimized size (after)** | ~305MB ⚠️ | ~180MB ✅ |
+| **Size change** | ❌ +52% (bcrypt trade-off) | 📉 -22% |
 | **Build time (1st)** | 40s | 90s |
 | **Build time (rebuild)** | 10s | 20s |
 | **Multi-stage benefit** | Dependencies layer | JDK → JRE separation |
 | **Non-root user** | nodejs:1001 | spring:1001 |
 | **Health check** | Custom JS script | Built-in /health endpoint |
+| **Base image** | node:18-slim (Debian) | eclipse-temurin:17-jre-alpine |
 
 **Järeldus:**
-- ✅ Node.js image väiksem (120MB vs 180MB)
-- ✅ Node.js build kiirem (10s vs 20s rebuild)
-- ✅ Mõlemad kasutavad alpine base image
-- ✅ Mõlemad on production-ready
+- ⚠️ User Service pilt (image) on SUUREM (+105MB) bcrypt native moodulite tõttu
+- ✅ Todo Service pilt (image) väiksem (-50MB) multi-stage build'i tõttu
+- ✅ Mõlemad on **production-ready ja töötavad stabiilselt**
 - ✅ **Rebuild -60-80% kiirem mõlemas teenuses!**
-- ❌ Esimene build pisut aeglasem (aga see on OK - juhtub ainult 1x!)
+- ✅ Security (non-root users) ja health checks mõlemas
+- 📚 **Õppetund:** Töökindlus > pildi (image) suurus (User Service näide)
 
 ---
 
@@ -566,9 +612,9 @@ docker images | grep -E 'user-service|todo-service' | sort
 
 Peale selle harjutuse läbimist peaksid omama:
 
-- [x] **2 optimeeritud images** loodud
-  - user-service:1.0-optimized (~120MB, -33%)
-  - todo-service:1.0-optimized (~180MB, -22%)
+- [x] **2 optimeeritud pilti (images)** loodud
+  - user-service:1.0-optimized (~305MB, +52% ⚠️ bcrypt trade-off)
+  - todo-service:1.0-optimized (~180MB, -22% ✅)
 - [x] Multi-stage builds töötavad (Node.js: deps → runtime, Java: JDK → JRE)
 - [x] Layer caching toimib SUUREPÄRASELT (rebuild -60-80% kiirem!)
 - [x] Non-root users kasutusel
@@ -577,22 +623,27 @@ Peale selle harjutuse läbimist peaksid omama:
 - [x] Health checks lisatud MÕLEMASSE teenusesse
   - User Service: healthcheck.js
   - Todo Service: /health endpoint
-- [x] Optimeeritud containerid töötavad (`docker ps` näitab "healthy")
+- [x] Optimeeritud konteinerid töötavad (`docker ps` näitab "healthy")
 - [x] End-to-End JWT workflow töötab identitsioonilt
 - [x] .dockerignore failid on optimeeritud
+- [x] Mõistad Alpine vs Debian (slim) trade-off'e native moodulitega
 - [ ] Security scan läbitud (bonus, kui trivy installitud)
 
 ---
 
 ## 🎓 Parimad Tavad
 
-1. ✅ Kasuta alpine images
-2. ✅ Multi-stage builds (JDK → JRE)
-3. ✅ Layer caching (COPY build.gradle enne src/)
-4. ✅ .dockerignore fail
-5. ✅ Non-root user
-6. ✅ Gradle --no-daemon (vähem memory)
-7. ✅ Health check Dockerfile'is
+1. ✅ Multi-stage builds (JDK → JRE, dependencies → runtime)
+2. ✅ Layer caching (COPY dependencies enne source code'i)
+3. ✅ .dockerignore fail (välistab tarbetud failid)
+4. ✅ Non-root user (security)
+5. ✅ Health check Dockerfile'is (monitoring)
+6. ⚠️ **Alpine vs Debian:** Vali native moodulite järgi
+   - ✅ Alpine: väiksem, kui pole native dependencies
+   - ✅ Debian Slim: suurem, AGA töötab native moodulitega (bcrypt, node-gyp)
+   - 📚 **Reegel:** Töökindlus > pildi (image) suurus
+7. ✅ Gradle/npm --no-daemon (vähem memory, kiirem build)
+8. ✅ Testi optimeeritud pilte (images) end-to-end workflow'ga
 
 ---
 
@@ -603,16 +654,18 @@ Peale selle harjutuse läbimist peaksid omama:
 **Docker Optimization:**
 - ✅ Multi-stage builds (Node.js: deps → runtime, Java: JDK → JRE)
 - ✅ Layer caching optimization (dependencies eraldi layer)
-- ✅ Alpine base images (väiksem suurus)
 - ✅ .dockerignore optimization (väiksem build context)
 - ✅ Non-root users (security)
 - ✅ Health checks (monitoring)
+- ⚠️ **Alpine vs Debian trade-off'id** (native moodulite tõttu)
 
 **Võrdlus Enne vs Pärast:**
-- 📉 Image suurus: -22-33%
-- 📉 Rebuild kiirus: -60-80%
+- 📉 Todo Service: -22% väiksem pilt (image)
+- ⚠️ User Service: +52% suurem (bcrypt native moodulid), AGA töötab stabiilselt
+- 📉 Rebuild kiirus: -60-80% MÕLEMAS teenuses
 - ✅ Security: root → non-root
 - ✅ Monitoring: ❌ → health checks
+- ✅ Stability: crashid → töötab (native modules fixed)
 
 ### 🔄 Progressioon Läbi Kõigi 5 Harjutuse
 
@@ -641,23 +694,26 @@ Peale selle harjutuse läbimist peaksid omama:
 - ❌ Images siiski optimeerimata
 
 **Harjutus 5: Optimization (PRAEGU)**
-- ✅ Optimeeritud images (-22-33% väiksemad)
-- ✅ Multi-stage builds
+- ✅ Multi-stage builds (mõlemas teenuses)
 - ✅ Layer caching (-60-80% kiirem rebuild)
 - ✅ Security (non-root users)
 - ✅ Health checks
+- ⚠️ Alpine vs Debian trade-off (töökindlus > suurus)
+- ✅ Todo Service: -22% väiksem pilt (image)
+- ⚠️ User Service: +52% suurem (bcrypt fix), AGA töötab stabiilselt
 - ✅ End-to-End test optimeeritud süsteemiga
 
 ### 🏆 LÕPPTULEMUS: Production-Ready Docker Setup!
 
 **Mis sul nüüd on:**
 - ✅ 2 optimeeritud mikroteenust (User Service + Todo Service)
-- ✅ 2 andmebaasi volumes'itega (data persistence)
-- ✅ Custom network (proper DNS resolution)
-- ✅ Health monitoring (healthy containerid)
-- ✅ Security (non-root users, alpine images)
-- ✅ Fast rebuilds (layer caching)
+- ✅ 2 andmebaasi andmehoidlate (volumes) abil (data persistence)
+- ✅ Kohandatud võrk (custom network) (proper DNS resolution)
+- ✅ Health monitoring (healthy konteinerid)
+- ✅ Security (non-root users)
+- ✅ Fast rebuilds (layer caching - 60-80% kiirem!)
 - ✅ End-to-End tested (JWT workflow töötab!)
+- 📚 **Õppetund:** Töökindlus > pildi (image) suurus (Alpine vs Debian)
 
 **See on TÄIELIK production-ready mikroteenuste süsteem!** 🎉🚀
 
@@ -696,10 +752,11 @@ Sa oskad nüüd:
 **🎉 ÕNNITLEME! OLED EDUKALT LÄBINUD LAB 01! 🎉**
 
 **Mida saavutasid 5 harjutusega:**
-- ✅ Docker põhitõed (images, containers, networks, volumes)
+- ✅ Docker põhitõed (pildid/images, konteinerid, võrgud/networks, andmehoidlad/volumes)
 - ✅ Mikroteenuste arhitektuur (User Service + Todo Service)
 - ✅ Production best practices (optimization, security, monitoring)
 - ✅ End-to-End tested süsteem (JWT workflow)
+- 📚 **Praktiline õppetund:** Alpine vs Debian trade-off'id native moodulitega
 
 **Järgmine:** [Lab 2: Docker Compose](../../02-docker-compose-lab/README.md)
 
