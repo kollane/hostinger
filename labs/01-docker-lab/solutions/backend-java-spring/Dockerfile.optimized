@@ -28,7 +28,7 @@ RUN addgroup -g 1001 -S spring && \
     adduser -S spring -u 1001 -G spring
 
 # Kopeeri ainult JAR fail builder stage'ist
-COPY --from=builder /app/build/libs/todo-service.jar app.jar
+COPY --from=builder --chown=spring:spring /app/build/libs/todo-service.jar app.jar
 
 # Kasuta non-root userit
 USER spring:spring

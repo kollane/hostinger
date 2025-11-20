@@ -19,10 +19,10 @@ RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001 -G nodejs
 
 # Kopeeri dependencies builder stage'ist
-COPY --from=dependencies /app/node_modules ./node_modules
+COPY --from=dependencies --chown=nodejs:nodejs /app/node_modules ./node_modules
 
 # Kopeeri application code
-COPY . .
+COPY --chown=nodejs:nodejs . .
 
 # Kasuta non-root userit
 USER nodejs:nodejs

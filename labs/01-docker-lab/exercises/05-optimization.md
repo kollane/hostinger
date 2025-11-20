@@ -111,10 +111,10 @@ RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001 -G nodejs
 
 # Kopeeri dependencies builder stage'ist
-COPY --from=dependencies /app/node_modules ./node_modules
+COPY --from=dependencies --chown=nodejs:nodejs /app/node_modules ./node_modules
 
 # Kopeeri application code
-COPY . .
+COPY --chown=nodejs:nodejs . .
 
 # Kasuta non-root userit
 USER nodejs:nodejs
@@ -128,7 +128,9 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=10s \
 CMD ["node", "server.js"]
 ```
 
-**Lisa `healthcheck.js` fail:**
+**⚠️ OLULINE: Lisa `healthcheck.js` fail rakenduse juurkataloogi enne Docker build'i!**
+
+See fail on vajalik HEALTHCHECK käsu jaoks Dockerfile'is. Ilma selleta ei käivitu container korralikult.
 
 ```bash
 cat > healthcheck.js <<'EOF'
@@ -192,7 +194,7 @@ RUN addgroup -g 1001 -S spring && \
     adduser -S spring -u 1001 -G spring
 
 # Kopeeri ainult JAR fail builder stage'ist
-COPY --from=builder /app/build/libs/todo-service.jar app.jar
+COPY --from=builder --chown=spring:spring /app/build/libs/todo-service.jar app.jar
 
 # Kasuta non-root userit
 USER spring:spring
