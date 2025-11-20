@@ -23,14 +23,14 @@
 
 **Miks see hea on?**
 - Õpid debuggima probleeme (`docker logs`, `docker exec`)
-- Mõistad, miks rakendused vajavad omavahel suhtlemist
-- Näed, kuidas Docker error messaged välja näevad
+- Mõistad, miks rakendused (applications) vajavad omavahel suhtlemist
+- Näed, kuidas Docker vea (error) sõnumid välja näevad
 
 ---
 
 ## 📋 Ülevaade
 
-Selles harjutuses konteineriseerid Java Spring Boot Todo Service rakenduse. Õpid looma Dockerfile'i, build'ima Docker image'i ja käivitama containerit (isegi kui see crashib andmebaasi puudumise tõttu).
+Selles harjutuses konteineriseerid Java Spring Boot Todo teenuse (service) rakenduse (application). Õpid looma Dockerfile'i, ehitama Docker pilti (image) ja käivitama konteinereid (isegi kui see hangub andmebaasi puudumise tõttu).
 
 ---
 
@@ -38,12 +38,12 @@ Selles harjutuses konteineriseerid Java Spring Boot Todo Service rakenduse. Õpi
 
 Peale selle harjutuse läbimist oskad:
 
-- ✅ Luua Dockerfile'i Java Spring Boot rakendusele
-- ✅ Build'ida Docker image'i
-- ✅ Käivitada ja peatada containereid
-- ✅ Kasutada environment variables
-- ✅ Vaadata container logisid
-- ✅ Debuggida container probleeme
+- ✅ Luua Dockerfile'i Java Spring Boot rakendusele (application)
+- ✅ Ehitada Docker pilti (image)
+- ✅ Käivitada ja peatada konteinereid
+- ✅ Kasutada keskkonna muutujaid (environment variables)
+- ✅ Vaadata konteineri logisid
+- ✅ Debuggida konteineri probleeme
 
 ---
 
@@ -51,17 +51,17 @@ Peale selle harjutuse läbimist oskad:
 
 ```
 ┌─────────────────────────────┐
-│   Docker Container          │
+│   Docker Konteiner          │
 │                             │
 │  ┌───────────────────────┐  │
-│  │  Java Application     │  │
-│  │  Todo Service         │  │
+│  │  Java Rakendus        │  │
+│  │  Todo Teenus          │  │
 │  │  Port: 8081           │  │
 │  └───────────────────────┘  │
 │                             │
 └─────────────────────────────┘
           │
-          │ Port mapping
+          │ Portide vastendamine
           │
     localhost:8081
 ```
@@ -74,7 +74,7 @@ Peale selle harjutuse läbimist oskad:
 
 **Asukoht:** `/hostinger/labs/apps/backend-java-spring`
 
-Vaata Todo Service koodi:
+Vaata Todo teenuse (service) koodi:
 
 ```bash
 cd ../apps/backend-java-spring
@@ -90,9 +90,9 @@ cat build.gradle
 ```
 
 **Küsimused:**
-- Millise pordiga rakendus käivitub? (8081)
+- Millise pordiga rakendus (application) käivitub? (8081)
 - Millised sõltuvused on vajalikud? (vaata build.gradle)
-- Kas rakendus vajab andmebaasi? (Jah, PostgreSQL)
+- Kas rakendus (application) vajab andmebaasi? (Jah, PostgreSQL)
 
 ### Samm 2: Loo Dockerfile (15 min)
 
@@ -105,13 +105,13 @@ vim Dockerfile
 ```
 
 **Ülesanne:** Kirjuta Dockerfile, mis:
-1. Kasutab Java 17 JRE alpine base image'i
+1. Kasutab Java 17 JRE alpine baaspilti (base image)
 2. Seadistab töökataloogiks `/app`
-3. Kopeerib JAR faili (eeldab, et build on tehtud)
+3. Kopeerib JAR faili (eeldab, et ehitamine on tehtud)
 4. Avaldab pordi 8081
-5. Käivitab rakenduse
+5. Käivitab rakenduse (application)
 
-**Märkus:** See on lihtne Dockerfile, mis eeldab, et JAR fail on juba build'itud. Optimeeritud versioonis (Harjutus 5) lisame multi-stage build'i.
+**Märkus:** See on lihtne Dockerfile, mis eeldab, et JAR fail on juba ehitatud. Optimeeritud versioonis (Harjutus 5) lisame mitme-sammulise (multi-stage) ehitamise.
 
 **💡 Abi vajadusel:**
 - Vaata Docker dokumentatsiooni: https://docs.docker.com/engine/reference/builder/
@@ -131,7 +131,7 @@ COPY build/libs/todo-service.jar app.jar
 # Avalda port
 EXPOSE 8081
 
-# Käivita rakendus
+# Käivita rakendus (application)
 CMD ["java", "-jar", "app.jar"]
 ```
 </details>
@@ -165,18 +165,18 @@ gradlew.bat
 ```
 
 **Miks see oluline on?**
-- Väiksem image suurus
-- Kiirem build
+- Väiksem pildi (image) suurus
+- Kiirem ehitamine
 - Turvalisem (ei kopeeri .env faile)
-- Ei kopeeri source code'i (ainult JAR fail)
+- Ei kopeeri lähtekoodi (ainult JAR fail)
 
-### Samm 4: Build Docker Image (10 min)
+### Samm 4: Ehita Docker Pilt (Image) (10 min)
 
 **Asukoht:** `/hostinger/labs/apps/backend-java-spring`
 
-Esmalt build'i JAR fail, seejärel Docker image:
+Esmalt ehita JAR fail, seejärel Docker pilt (image):
 
-**⚠️ Oluline:** Nii JAR-i kui ka Docker image'i ehitamiseks pead olema rakenduse juurkataloogis (kus asuvad `build.gradle` ja `Dockerfile`).
+**⚠️ Oluline:** Nii JAR-i kui ka Docker pildi (image) ehitamiseks pead olema rakenduse (application) juurkataloogis (kus asuvad `build.gradle` ja `Dockerfile`).
 
 ```bash
 # Build JAR fail
@@ -185,20 +185,20 @@ Esmalt build'i JAR fail, seejärel Docker image:
 # Kontrolli, et JAR on loodud
 ls -lh build/libs/
 
-# Build Docker image tagiga
+# Ehita Docker pilt (image) tagiga
 docker build -t todo-service:1.0 .
 
-# Vaata build protsessi
-# Märka: iga käsk loob uue layer
+# Vaata ehitamise protsessi
+# Märka: iga käsk loob uue kihi (layer)
 ```
 
-**Kontrolli image'i:**
+**Kontrolli pilti (image):**
 
 ```bash
-# Vaata kõiki image'id
+# Vaata kõiki pilte (images)
 docker images
 
-# Vaata todo-service image infot
+# Vaata todo-service pildi (image) infot
 docker image inspect todo-service:1.0
 
 # Kontrolli suurust
@@ -206,21 +206,21 @@ docker images todo-service:1.0
 ```
 
 **Küsimused:**
-- Kui suur on sinu image? (peaks olema ~200-250MB)
-- Mitu layer'it on image'il?
-- Millal image loodi?
+- Kui suur on sinu pilt (image)? (peaks olema ~200-250MB)
+- Mitu kihti (layers) on pildil (image)?
+- Millal pilt (image) loodi?
 
-### Samm 5: Käivita Container (10 min)
+### Samm 5: Käivita Konteiner (10 min)
 
-**⚠️ OLULINE:** Järgnevad käsud käivitavad containeri, aga rakendus crashib, sest PostgreSQL puudub. See on **OODATUD** käitumine! Fookus on õppida Docker käske, mitte saada töötav rakendus.
+**⚠️ OLULINE:** Järgnevad käsud käivitavad konteineri, aga rakendus (application) hangub, sest PostgreSQL puudub. See on **OODATUD** käitumine! Fookus on õppida Docker käske, mitte saada töötav rakendus (application).
 
-#### Variant A: Interaktiivne režiim (näed kohe error'eid)
+#### Variant A: Interaktiivne režiim (näed kohe vigasid (errors))
 
 **See variant on PARIM õppimiseks** - näed kohe, mida juhtub:
 
 ```bash
-# Käivita container interaktiivselt
-# MÄRKUS: DB_HOST on vale, seega crashib (see on ÕIGE käitumine!)
+# Käivita konteiner interaktiivselt
+# MÄRKUS: DB_HOST on vale, seega hangub (see on ÕIGE käitumine!)
 docker run -it --name todo-service-test \
   -p 8081:8081 \
   -e DB_HOST=nonexistent-db \
@@ -234,9 +234,9 @@ docker run -it --name todo-service-test \
 
 **Märkused:**
 - `-it` - interactive + tty (näed logisid real-time)
-- `--name` - anna containerile nimi
-- `-p 8081:8081` - map port 8081 host'ist container'isse
-- `-e` - environment variable
+- `--name` - anna konteinerile nimi
+- `-p 8081:8081` - portide vastendamine (port mapping) host'ist konteinerisse
+- `-e` - keskkonna muutuja (environment variable)
 - `JWT_SECRET` - lihtsalt test väärtus (min 32 tähemärki); tootmises kasuta `openssl rand -base64 32`
 
 **Oodatud tulemus:**
@@ -248,23 +248,23 @@ Application failed to start
 ```
 
 **See on TÄPSELT see, mida tahame näha!** 🎉
-- Container käivitus ✅
-- Rakendus proovis käivituda ✅
-- Error message näitab probleemi (puuduv DB) ✅
-- Õppisid, kuidas Docker error'eid näeb ✅
+- Konteiner käivitus ✅
+- Rakendus (application) proovis käivituda ✅
+- Vea (error) sõnum näitab probleemi (puuduv DB) ✅
+- Õppisid, kuidas Docker vigasid (errors) näeb ✅
 
 Vajuta `Ctrl+C` et peatada.
 
-#### Variant B: Background režiim (õpi `docker ps` ja `docker logs`)
+#### Variant B: Taustal töötav režiim (detached mode) (õpi `docker ps` ja `docker logs`)
 
-**See variant õpetab, kuidas debuggida crashinud containereid:**
+**See variant õpetab, kuidas debuggida hangunud konteinereid:**
 
 ```bash
-# Puhasta eelmine test container
+# Puhasta eelmine test konteiner
 docker rm -f todo-service-test
 
-# Käivita taustal (detached mode)
-# MÄRKUS: DB_HOST on vale, seega crashib (see on ÕIGE käitumine!)
+# Käivita taustal töötavas režiimis (detached mode)
+# MÄRKUS: DB_HOST on vale, seega hangub (see on ÕIGE käitumine!)
 docker run -d --name todo-service \
   -p 8081:8081 \
   -e DB_HOST=nonexistent-db \
@@ -283,21 +283,21 @@ docker run -d --name todo-service \
 # Kas töötab? (HINT: Ei tööta!)
 docker ps
 
-# Vaata ka peatatud containereid
+# Vaata ka peatatud konteinereid
 docker ps -a
 # STATUS peaks olema: Exited (1)
 ```
 
-**Miks container puudub `docker ps` väljundis?**
-- Container käivitus, aga rakendus crashis kohe
-- Docker peatas crashinud container'i automaatselt
-- `docker ps` näitab ainult TÖÖTAVAID containereid
-- `docker ps -a` näitab KÕIKi containereid (ka peatatud)
+**Miks konteiner puudub `docker ps` väljundis?**
+- Konteiner käivitus, aga rakendus (application) hangus kohe
+- Docker peatas hangunud konteineri automaatselt
+- `docker ps` näitab ainult TÖÖTAVAID konteinereid
+- `docker ps -a` näitab KÕIKi konteinereid (ka peatatud)
 
 **Õpi logisid vaatama:**
 
 ```bash
-# Vaata logisid (isegi kui container on peatatud!)
+# Vaata logisid (isegi kui konteiner on peatatud!)
 docker logs todo-service
 
 # Oodatud väljund:
@@ -306,38 +306,38 @@ docker logs todo-service
 ```
 
 **See on PERFEKTNE õppetund! 🎓**
-- Õppisid `-d` (detached mode) ✅
+- Õppisid `-d` (taustal töötav režiim (detached mode)) ✅
 - Õppisid vahet `docker ps` vs `docker ps -a` ✅
-- Õppisid, et logid on ka peatatud containerites ✅
-- Mõistad, miks multi-container lahendus on vaja ✅
+- Õppisid, et logid on ka peatatud konteinerites ✅
+- Mõistad, miks mitme konteineri lahendus on vaja ✅
 
 **Miks kasutasime `DB_HOST=nonexistent-db`?**
-- See tagab, et container **crashib**, sest andmebaasi pole
+- See tagab, et konteiner **hangub**, sest andmebaasi pole
 - See on OODATUD käitumine Harjutus 1's!
-- Töötava lahenduse saad [Harjutus 2: Multi-Container](02-multi-container.md)-s
+- Töötava lahenduse saad [Harjutus 2: Mitme Konteineri Käivitamine](02-multi-container.md)-s
 
 ### Samm 6: Debug ja Troubleshoot (5 min)
 
 ```bash
-# Vaata container statusit
+# Vaata konteineri statusit
 docker ps -a
 
 # Vaata logisid
 docker logs todo-service
 
-# Sisene containerisse
+# Sisene konteinerisse
 docker exec -it todo-service sh
 
-# Container sees:
+# Konteineri sees:
 ls -la
 java -version
 env | grep DB
 exit
 
-# Inspekteeri containerit
+# Inspekteeri konteinerit
 docker inspect todo-service
 
-# Vaata resource kasutust
+# Vaata ressursside kasutust
 docker stats todo-service
 ```
 
@@ -352,7 +352,7 @@ docker stats todo-service
    docker run -p 8082:8081 ...
    ```
 
-2. **Rakendus crashib:**
+2. **Rakendus (application) hangub:**
    ```bash
    # Vaata logisid
    docker logs todo-service
@@ -362,28 +362,28 @@ docker stats todo-service
 
 3. **Ei saa ühendust:**
    ```bash
-   # Kontrolli, kas container töötab
+   # Kontrolli, kas konteiner töötab
    docker ps
 
-   # Vaata network't
+   # Vaata võrku (network)
    docker inspect todo-service | grep IPAddress
    ```
 
 4. **JWT_SECRET liiga lühike (kui kasutad oma väärtust):**
    ```bash
-   # Error: The specified key byte array is 88 bits which is not secure enough
+   # Viga (error): The specified key byte array is 88 bits which is not secure enough
 
    # Lahendus: Kasuta vähemalt 32 tähemärki (256 bits)
    # Test jaoks: my-test-secret-key-min-32-chars-long
    # Tootmises: openssl rand -base64 32
    ```
 
-5. **Container crashib kohe (andmebaas puudub):**
+5. **Konteiner hangub kohe (andmebaas puudub):**
    ```bash
-   # Error: Unable to connect to database
+   # Viga (error): Unable to connect to database
 
    # See on OODATUD käitumine Harjutus 1's!
-   # Lahendus: Käivita PostgreSQL container (Harjutus 2)
+   # Lahendus: Käivita PostgreSQL konteiner (Harjutus 2)
    ```
 
 ---
@@ -392,36 +392,36 @@ docker stats todo-service
 
 **Mida PEAKS saavutama:**
 
-✅ **Docker image on loodud:**
+✅ **Docker pilt (image) on loodud:**
 ```bash
 docker images | grep todo-service
 # todo-service   1.0    abc123   ~200-250MB
 ```
 
-✅ **Container käivitub (isegi kui crashib):**
+✅ **Konteiner käivitub (isegi kui hangub):**
 ```bash
 docker ps -a | grep todo-service
 # STATUS: Exited (1) - See on OK!
 ```
 
-✅ **Logid näitavad error messaget:**
+✅ **Logid näitavad vea (error) sõnumit:**
 ```bash
 docker logs todo-service
 # Error: Unable to connect to database...
 ```
 
 ✅ **Oskad Docker käske kasutada:**
-- `docker build` - image loomine
-- `docker run` - container käivitamine
-- `docker ps` vs `docker ps -a` - töötavad vs kõik containerid
+- `docker build` - pildi (image) loomine
+- `docker run` - konteineri käivitamine
+- `docker ps` vs `docker ps -a` - töötavad vs kõik konteinerid
 - `docker logs` - logide vaatamine
-- `docker exec` - containerisse sisenemine
+- `docker exec` - konteinerisse sisenemine
 
 **Mida EI PEAKS saavutama:**
 
-❌ Töötav rakendus (see tuleb Harjutus 2-s)
+❌ Töötav rakendus (application) (see tuleb Harjutus 2-s)
 ❌ Edukad API testid (andmebaas puudub)
-❌ `docker ps` näitab töötavat containerit (crashib kohe)
+❌ `docker ps` näitab töötavat konteinerit (hangub kohe)
 
 ---
 
@@ -432,28 +432,28 @@ Peale selle harjutuse läbimist peaksid omama:
 - [x] **Dockerfile** backend-java-spring/ kaustas
 - [x] **.dockerignore** fail
 - [x] **JAR fail** build/libs/todo-service.jar
-- [x] **Docker image** `todo-service:1.0` (vaata `docker images`)
-- [x] **Container käivitatud** (vaata `docker ps -a` - STATUS: Exited)
+- [x] **Docker pilt (image)** `todo-service:1.0` (vaata `docker images`)
+- [x] **Konteiner käivitatud** (vaata `docker ps -a` - STATUS: Exited)
 - [x] Mõistad Dockerfile'i struktuuri
-- [x] Oskad build'ida image'i
-- [x] Oskad käivitada containerit
+- [x] Oskad ehitada pilti (image)
+- [x] Oskad käivitada konteinerit
 - [x] Oskad vaadata logisid
-- [x] **Mõistad, miks crashib** (PostgreSQL puudub)
+- [x] **Mõistad, miks hangub** (PostgreSQL puudub)
 
 ---
 
 ## 🧪 Testimine
 
-### Test 1: Kas image on loodud? ✅
+### Test 1: Kas pilt (image) on loodud? ✅
 
 ```bash
 docker images | grep todo-service
 # Oodatud: todo-service   1.0   ...   200-250MB
 ```
 
-**Kui näed seda, siis image on edukalt loodud!** 🎉
+**Kui näed seda, siis pilt (image) on edukalt loodud!** 🎉
 
-### Test 2: Kas container käivitus? ✅
+### Test 2: Kas konteiner käivitus? ✅
 
 ```bash
 docker ps -a | grep todo-service
@@ -461,12 +461,12 @@ docker ps -a | grep todo-service
 ```
 
 **Miks "Exited (1)" on hea?**
-- Container käivitus (Docker image toimib) ✅
-- Rakendus käivitus (Java töötab) ✅
-- Rakendus crashis (PostgreSQL puudub) ✅
+- Konteiner käivitus (Docker pilt (image) toimib) ✅
+- Rakendus (application) käivitus (Java töötab) ✅
+- Rakendus (application) hangus (PostgreSQL puudub) ✅
 - See on TÄPSELT see, mida ootame! ✅
 
-### Test 3: Kas logid näitavad error messaget? ✅
+### Test 3: Kas logid näitavad vea (error) sõnumit? ✅
 
 ```bash
 docker logs todo-service | head -20
@@ -477,11 +477,11 @@ docker logs todo-service | head -20
 ```
 
 **See on PERFEKTNE!** Sa õppisid:
-- Kuidas vaadata logisid crashinud containeris
-- Kuidas debuggida error messaget
-- Miks multi-container lahendus on vajalik
+- Kuidas vaadata logisid hangunud konteineris
+- Kuidas debuggida vea (error) sõnumit
+- Miks mitme konteineri lahendus on vajalik
 
-### Test 4: Kas container ei ole `docker ps` väljundis? ✅
+### Test 4: Kas konteiner ei ole `docker ps` väljundis? ✅
 
 ```bash
 docker ps | grep todo-service
@@ -489,9 +489,9 @@ docker ps | grep todo-service
 ```
 
 **See on ÕIGE!**
-- `docker ps` näitab ainult TÖÖTAVAID containereid
-- Crashinud container on peatatud
-- Kasuta `docker ps -a` et näha kõiki containereid
+- `docker ps` näitab ainult TÖÖTAVAID konteinereid
+- Hangunud konteiner on peatatud
+- Kasuta `docker ps -a` et näha kõiki konteinereid
 
 ---
 
@@ -500,14 +500,14 @@ docker ps | grep todo-service
 **Kui kõik 4 testi läbisid, siis oled edukalt läbinud Harjutuse 1!**
 
 Sa õppisid:
-- ✅ Docker image'i build'imist
-- ✅ Container'i käivitamist
+- ✅ Docker pildi (image) ehitamist
+- ✅ Konteineri käivitamist
 - ✅ Vahet `docker ps` vs `docker ps -a`
-- ✅ Logide vaatamist crashinud containeris
-- ✅ Error message'ite debuggimist
-- ✅ Miks multi-container setup on vajalik
+- ✅ Logide vaatamist hangunud konteineris
+- ✅ Vea (error) sõnumite debuggimist
+- ✅ Miks mitme konteineri lahendus on vajalik
 
-**Järgmine samm:** [Harjutus 2: Multi-Container](02-multi-container.md) - Lisame PostgreSQL ja saame töötava rakenduse!
+**Järgmine samm:** [Harjutus 2: Mitme Konteineri Käivitamine](02-multi-container.md) - Lisame PostgreSQL ja saame töötava rakenduse (application)!
 
 ---
 
@@ -515,54 +515,54 @@ Sa õppisid:
 
 ### Dockerfile instruktsioonid:
 
-- `FROM` - Base image
+- `FROM` - Baaspilt (base image)
 - `WORKDIR` - Töökataloog
 - `COPY` - Kopeeri failid
-- `RUN` - Käivita käsk build ajal
+- `RUN` - Käivita käsk ehitamise ajal
 - `EXPOSE` - Avalda port
-- `CMD` - Käivita käsk container start'imisel
+- `CMD` - Käivita käsk konteineri käivitamisel
 
 ### Docker käsud:
 
-- `docker build` - Build image
-- `docker run` - Käivita container
-- `docker ps` - Näita töötavaid containereid
-- `docker logs` - Vaata container logisid
-- `docker exec` - Käivita käsk töötavas containeris
-- `docker inspect` - Vaata container/image infot
+- `docker build` - Ehita pilt (image)
+- `docker run` - Käivita konteiner
+- `docker ps` - Näita töötavaid konteinereid
+- `docker logs` - Vaata konteineri logisid
+- `docker exec` - Käivita käsk töötavas konteineris
+- `docker inspect` - Vaata konteineri/pildi (image) infot
 
 ### Docker run parameetrid:
 
-- `-d` - Detached mode (taustal)
+- `-d` - Taustal töötav režiim (detached mode)
 - `-it` - Interactive + TTY (interaktiivne)
-- `-p 8081:8081` - Port mapping (host:container)
-- `-e KEY=value` - Environment variable
-- `--name <nimi>` - Anna containerile nimi
-- `--link <container>:<alias>` - Ühenda teise containeriga (deprecated, kasuta networks!)
+- `-p 8081:8081` - Portide vastendamine (port mapping) (host:konteiner)
+- `-e KEY=value` - Keskkonna muutuja (environment variable)
+- `--name <nimi>` - Anna konteinerile nimi
+- `--link <konteiner>:<alias>` - Ühenda teise konteineriga (deprecated, kasuta võrke (networks)!)
 
 ### Õpitud probleemid ja lahendused:
 
 - **JWT_SECRET peab olema min 32 tähemärki** - Test: `my-test-secret-key-min-32-chars-long`, Tootmine: `openssl rand -base64 32`
-- **Container crashib (PostgreSQL puudub)** - See on Harjutus 1's OODATUD! Lahendus tuleb Harjutus 2's
+- **Konteiner hangub (PostgreSQL puudub)** - See on Harjutus 1's OODATUD! Lahendus tuleb Harjutus 2's
 
 ---
 
 ## 💡 Parimad Tavad
 
 1. **Kasuta `.dockerignore`** - Väldi tarbetute failide kopeerimist
-2. **Kasuta alpine images** - Väiksem suurus, kiirem
+2. **Kasuta alpine pilte (images)** - Väiksem suurus, kiirem
 3. **Kasuta JRE (mitte JDK)** - Runtime ei vaja compile tools
-4. **Build JAR enne Docker build'i** - Kiire rebuild, kui kood muutub
-5. **Kasuta EXPOSE** - Dokumenteeri, millist porti rakendus kasutab
+4. **Ehita JAR enne Docker pildi (image) ehitamist** - Kiire taasehitamine, kui kood muutub
+5. **Kasuta EXPOSE** - Dokumenteeri, millist porti rakendus (application) kasutab
 6. **JWT_SECRET peab olema turvaline** - Min 32 tähemärki; testiks sobib lihtsalt string, tootmises kasuta `openssl rand -base64 32`
 
 ---
 
 ## 🔗 Järgmine Samm
 
-Järgmises harjutuses lisame PostgreSQL containeri ja ühendame kaks containerit!
+Järgmises harjutuses lisame PostgreSQL konteineri ja ühendame kaks konteinerit!
 
-**Jätka:** [Harjutus 2: Multi-Container](02-multi-container.md)
+**Jätka:** [Harjutus 2: Mitme Konteineri Käivitamine](02-multi-container.md)
 
 ---
 
@@ -574,4 +574,4 @@ Järgmises harjutuses lisame PostgreSQL containeri ja ühendame kaks containerit
 
 ---
 
-**Õnnitleme! Oled loonud oma esimese Docker image'i! 🎉**
+**Õnnitleme! Oled loonud oma esimese Docker pildi (image)! 🎉**
