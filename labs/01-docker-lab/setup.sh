@@ -17,6 +17,20 @@ RED='\033[0;31m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
+# Loo ajutine kataloog logide jaoks (mitme kasutaja tugi)
+LOGDIR=$(mktemp -d /tmp/docker-lab.XXXXXX)
+CLEANUP_LOGS=true
+
+# Puhastamise funktsioon
+cleanup() {
+    if [ "$CLEANUP_LOGS" = "true" ]; then
+        rm -rf "$LOGDIR"
+    else
+        echo -e "${YELLOW}ℹ️  Logid säilitatud: $LOGDIR${NC}"
+    fi
+}
+trap cleanup EXIT
+
 # Check function
 check() {
     if [ $? -eq 0 ]; then
@@ -310,11 +324,12 @@ else
             cp ../../01-docker-lab/solutions/backend-nodejs/Dockerfile .
             cp ../../01-docker-lab/solutions/backend-nodejs/.dockerignore .
 
-            if docker build -t user-service:1.0 . > /tmp/user-service-build.log 2>&1; then
+            if docker build -t user-service:1.0 . > "$LOGDIR/user-service-build.log" 2>&1; then
                 echo -e "${GREEN}   ✓ user-service:1.0 ehitatud edukalt!${NC}"
             else
                 echo -e "${RED}   ✗ user-service:1.0 ehitamine ebaõnnestus${NC}"
-                echo "   Logi: cat /tmp/user-service-build.log"
+                echo "   Logi: cat $LOGDIR/user-service-build.log"
+                CLEANUP_LOGS=false
             fi
 
             rm -f Dockerfile .dockerignore
@@ -333,18 +348,20 @@ else
 
             # Esmalt ehita JAR fail
             echo "   Building JAR file..."
-            if ./gradlew clean bootJar > /tmp/todo-gradle-build.log 2>&1; then
+            if ./gradlew clean bootJar > "$LOGDIR/todo-gradle-build.log" 2>&1; then
                 echo -e "${GREEN}   ✓ JAR file ehitatud${NC}"
 
-                if docker build -t todo-service:1.0 . > /tmp/todo-service-build.log 2>&1; then
+                if docker build -t todo-service:1.0 . > "$LOGDIR/todo-service-build.log" 2>&1; then
                     echo -e "${GREEN}   ✓ todo-service:1.0 ehitatud edukalt!${NC}"
                 else
                     echo -e "${RED}   ✗ todo-service:1.0 ehitamine ebaõnnestus${NC}"
-                    echo "   Logi: cat /tmp/todo-service-build.log"
+                    echo "   Logi: cat $LOGDIR/todo-service-build.log"
+                    CLEANUP_LOGS=false
                 fi
             else
                 echo -e "${RED}   ✗ JAR ehitamine ebaõnnestus${NC}"
-                echo "   Logi: cat /tmp/todo-gradle-build.log"
+                echo "   Logi: cat $LOGDIR/todo-gradle-build.log"
+                CLEANUP_LOGS=false
             fi
 
             rm -f Dockerfile .dockerignore

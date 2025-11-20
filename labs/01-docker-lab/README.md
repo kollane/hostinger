@@ -327,7 +327,7 @@ ls ../apps/frontend  # Lab 2 jaoks
 #### 4. Alusta Harjutus 1'st
 
 ```bash
-cat exercises/01-single-container.md
+cat exercises/01a-single-container-nodejs.md
 ```
 
 ---

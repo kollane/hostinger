@@ -58,8 +58,8 @@ docker build -f Dockerfile.optimized -t user-service:1.0-optimized .
 
 # Võrdle suurusi
 docker images | grep user-service
-# user-service:1.0            ~180MB
-# user-service:1.0-optimized  ~120MB (-33%)
+# user-service:1.0            ~305MB
+# user-service:1.0-optimized  ~305MB (sama suurus, kuid kiirem rebuild ja health check)
 ```
 
 ### Todo Service (Java)
@@ -110,14 +110,15 @@ docker images | grep todo-service
 
 | Versioon | Suurus | Kirjeldus |
 |----------|--------|-----------|
-| **Lihtne** | ~180MB | node:18-alpine + npm install |
-| **Optimeeritud** | ~120MB | Multi-stage (dependencies → runtime) + non-root |
+| **Lihtne** | ~305MB | node:18-slim + npm install |
+| **Optimeeritud** | ~305MB | Multi-stage + non-root + health check (sama suurus, kuid kiirem rebuild) |
 
 **Parandused optimeeritud versioonis:**
-- Multi-stage build (dependencies cached eraldi)
+- Multi-stage build (dependencies cached eraldi - kiirem rebuild!)
 - Non-root user (nodejs:1001)
 - Health check (healthcheck.js)
-- `npm ci --only=production` (väiksem suurus)
+- `npm ci --only=production` (väiksem dependencies)
+- ⚠️ Suurus jääb samaks: bcrypt native moodulid nõuavad node:18-slim base image'i
 
 ### Todo Service (Java)
 
