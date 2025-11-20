@@ -116,10 +116,6 @@ vim Dockerfile
 **💡 Abi vajadusel:**
 - Vaata Docker dokumentatsiooni: https://docs.docker.com/engine/reference/builder/
 - Vaata näidislahendust lahenduste kataloogis: `/hostinger/labs/01-docker-lab/solutions/backend-java-spring/Dockerfile`
-  ```bash
-  # Näidislahenduse vaatamine (ära kopeeri, õpi seda!)
-  cat ../../01-docker-lab/solutions/backend-java-spring/Dockerfile
-  ```
 
 <details>
 <summary>💡 Näpunäide: Dockerfile struktuur</summary>
@@ -152,10 +148,6 @@ vim .dockerignore
 
 **💡 Abi vajadusel:**
 Vaata näidislahendust: `/hostinger/labs/01-docker-lab/solutions/backend-java-spring/.dockerignore`
-```bash
-# Näidislahenduse vaatamine
-cat ../../01-docker-lab/solutions/backend-java-spring/.dockerignore
-```
 
 **Sisu:**
 ```
@@ -184,7 +176,7 @@ gradlew.bat
 
 Esmalt build'i JAR fail, seejärel Docker image:
 
-**⚠️ Oluline:** Docker image'i ehitamiseks pead olema rakenduse juurkataloogis (kus asub `Dockerfile`). Kui sa pole seal, kasuta `cd` käsku ülalpool näidatud asukohta minekuks.
+**⚠️ Oluline:** Nii JAR-i kui ka Docker image'i ehitamiseks pead olema rakenduse juurkataloogis (kus asuvad `build.gradle` ja `Dockerfile`).
 
 ```bash
 # Build JAR fail

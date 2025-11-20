@@ -90,10 +90,6 @@ Loo uus `Dockerfile.optimized`:
 
 **💡 Abi vajadusel:**
 Vaata näidislahendust: `/hostinger/labs/01-docker-lab/solutions/backend-nodejs/Dockerfile.optimized`
-```bash
-# Näidislahenduse vaatamine
-cat ../../01-docker-lab/solutions/backend-nodejs/Dockerfile.optimized
-```
 
 ```dockerfile
 # Stage 1: Dependencies
@@ -170,10 +166,6 @@ Loo uus `Dockerfile.optimized`:
 
 **💡 Abi vajadusel:**
 Vaata näidislahendust: `/hostinger/labs/01-docker-lab/solutions/backend-java-spring/Dockerfile.optimized`
-```bash
-# Näidislahenduse vaatamine
-cat ../../01-docker-lab/solutions/backend-java-spring/Dockerfile.optimized
-```
 
 ```dockerfile
 # Stage 1: Build
@@ -236,7 +228,7 @@ Iga samm on vajalik, et saavutada efektiivne, turvaline ja skaleeritav konteiner
 
 **Asukoht (User Service):** `/hostinger/labs/apps/backend-nodejs`
 
-**⚠️ Oluline:** Docker image'i ehitamiseks pead olema rakenduse juurkataloogis (kus asub `Dockerfile.optimized`). Kui sa pole seal, kasuta `cd` käsku.
+**⚠️ Oluline:** Docker image'i ehitamiseks pead olema rakenduse juurkataloogis (kus asub `Dockerfile.optimized`).
 
 ```bash
 # === BUILD USER SERVICE (Node.js) ===

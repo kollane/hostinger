@@ -172,7 +172,7 @@ README.md
 
 Build'i oma esimene Docker image:
 
-**⚠️ Oluline:** Docker image'i ehitamiseks pead olema rakenduse juurkataloogis (kus asub `Dockerfile`). Kui sa pole seal, kasuta `cd` käsku ülalpool näidatud asukohta minekuks.
+**⚠️ Oluline:** Docker image'i ehitamiseks pead olema rakenduse juurkataloogis (kus asub `Dockerfile`).
 
 ```bash
 # Build image tagiga
