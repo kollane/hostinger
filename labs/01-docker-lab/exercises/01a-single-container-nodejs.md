@@ -74,7 +74,7 @@ Peale selle harjutuse läbimist oskad:
 
 **Rakenduse juurkataloog:** `/hostinger/labs/apps/backend-nodejs`
 
-Vaata User Service koodi:
+Vaata rakenduse "User Service" koodi:
 
 ```bash
 cd ../../apps/backend-nodejs
