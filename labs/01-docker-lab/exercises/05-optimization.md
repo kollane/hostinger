@@ -1,7 +1,7 @@
 # Harjutus 5: Image Optimization
 
 **Kestus:** 45 minutit
-**Eesmärk:** Optimeeri Docker image suurust ja build kiirust
+**Eesmärk:** Optimeeri Docker pildi (image) suurust ja ehituse kiirust
 
 ---
 
@@ -35,7 +35,7 @@ docker images | grep -E 'user-service|todo-service'
 
 ## 📋 Ülevaade
 
-**Mäletad Harjutus 1-st?** Lõime lihtsa Dockerfile'i, mis toimis. Aga nüüd õpime, kuidas teha seda **PALJU paremaks**!
+**Mäletad Harjutus 1-st?** Lõime lihtsa Dockerfile'i, mis toimis. Aga nüüd õpime, kuidas teha seda **paremaks**!
 
 **Praegune Dockerfile (Harjutus 1) probleemid - MÕLEMAS teenuses:**
 - ❌ Liiga suur pilt (image) (~200-230MB)
@@ -67,10 +67,10 @@ docker images | grep -E 'user-service|todo-service'
 
 ## 📝 Sammud
 
-### Samm 1: Mõõda MÕLEMA Teenuse Algne Suurus (10 min)
+### Samm 1: Uuri mõlema teenuse algset suurust (10 min)
 
 ```bash
-# Vaata MÕLEMA Harjutus 1-st loodud image suurust
+# Vaata mõlema Harjutus 1-st loodud pildi (image) suurust
 docker images | grep -E 'user-service|todo-service'
 
 # Oodatud väljund:
@@ -79,7 +79,7 @@ docker images | grep -E 'user-service|todo-service'
 # todo-service     1.0    def456ghi     2 hours ago    230MB (Java)
 ```
 
-**Analyseer MÕLEMAT:**
+**Uuri kummagi teenuse ajalugu:**
 
 ```bash
 # === USER SERVICE (Node.js) ===
@@ -97,13 +97,15 @@ docker history todo-service:1.0
 - Mitu layer'it on igal? (5-6 layer'it)
 - Kui kiire on rebuild, kui muudad source code'i? (Aeglane - kõik rebuilditakse!)
 
-### Samm 2: Optimeeri MÕLEMAT Dockerfaili (30 min)
+### Samm 2: Optimeeri mõlema rakenduse Dockerfaili (30 min)
 
 Loome optimeeritud Dockerfailid mõlemale teenusele.
 
 #### 2a. User Service (Node.js) Optimization
 
-**Asukoht:** `/hostinger/labs/apps/backend-nodejs`
+**⚠️ Oluline:** Dockerfile asub rakenduse juurkataloogis.
+
+**Rakenduse juurkataloog:** `/hostinger/labs/apps/backend-nodejs`
 
 ```bash
 cd ../apps/backend-nodejs
@@ -157,11 +159,15 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=10s \
 CMD ["node", "server.js"]
 ```
 
-**⚠️ OLULINE: Lisa `healthcheck.js` fail rakenduse juurkataloogi enne Docker build'i!**
+**⚠️ OLULINE: Lisa `healthcheck.js` fail rakenduse juurkataloogi**
 
 See fail on vajalik HEALTHCHECK käsu jaoks Dockerfile'is. Ilma selleta ei käivitu container korralikult.
 
 Loo fail `healthcheck.js`:
+
+```bash
+vim healthcheck.js
+```
 
 ```javascript
 const http = require('http');
@@ -187,7 +193,7 @@ req.end();
 
 #### 2b. Todo Service (Java) Optimization
 
-**Asukoht:** `/hostinger/labs/apps/backend-java-spring`
+**Rakenduse juurkataloog:** `/hostinger/labs/apps/backend-java-spring`
 
 ```bash
 cd ../backend-java-spring
@@ -264,9 +270,9 @@ Multi-stage build koosneb kahest põhietapist:
 
 Tulemus: efektiivne, turvaline ja skaleeritav konteineripilt.
 
-### Samm 3: Ehita MÕLEMAD Optimeeritud Pildid (Images) (15 min)
+### Samm 3: Ehita mõlemad optimeeritud Docker pildid (Images) (15 min)
 
-**Asukoht (User Service):** `/hostinger/labs/apps/backend-nodejs`
+**Rakenduse juurkataloog (User Service):** `/hostinger/labs/apps/backend-nodejs`
 
 **⚠️ Oluline:** Docker pildi (image) ehitamiseks pead olema rakenduse juurkataloogis (kus asub `Dockerfile.optimized`).
 
@@ -481,7 +487,7 @@ trivy image user-service:1.0-optimized > uus-user.txt
 
 **Testime, kui hästi layer caching töötab rebuild'imisel:**
 
-**Asukoht (User Service):** `/hostinger/labs/apps/backend-nodejs`
+**Rakenduse juurkataloog (User Service):** `/hostinger/labs/apps/backend-nodejs`
 
 ```bash
 # === TEST 1: Rebuild ILMA muudatusteta ===
