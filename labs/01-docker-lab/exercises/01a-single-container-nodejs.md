@@ -115,11 +115,10 @@ vim Dockerfile
 
 **Vihje:** Vaata Docker dokumentatsiooni või solutions/ kausta!
 
-<details>
-<summary>💡 Näpunäide: Dockerfile struktuur</summary>
+**Näidis:**
 
 ```dockerfile
-FROM node:18-alpine
+FROM node:18-slim
 
 WORKDIR /app
 
@@ -138,7 +137,6 @@ EXPOSE 3000
 # Käivita
 CMD ["node", "server.js"]
 ```
-</details>
 
 ### Samm 3: Loo .dockerignore (5 min)
 

@@ -86,7 +86,7 @@ docker images | grep -E 'user-service|todo-service'
 ```bash
 # === USER SERVICE (Node.js) ===
 docker history user-service:1.0
-# Näed: FROM node:18-alpine, WORKDIR, COPY package*.json, RUN npm install, COPY ., CMD
+# Näed: FROM node:18-slim, WORKDIR, COPY package*.json, RUN npm install, COPY ., CMD
 
 # === TODO SERVICE (Java) ===
 docker history todo-service:1.0
@@ -306,23 +306,27 @@ docker images | grep -E 'user-service|todo-service'
 
 # Oodatud väljund:
 # REPOSITORY       TAG             SIZE
-# user-service     1.0             ~200MB (vana, alpine)
-# user-service     1.0-optimized   ~305MB (uus, slim + bcrypt) ⚠️ SUUREM, aga töötab!
+# user-service     1.0             ~305MB (vana, slim, single-stage)
+# user-service     1.0-optimized   ~305MB (uus, slim, multi-stage)
 # todo-service     1.0             ~230MB (vana)
 # todo-service     1.0-optimized   ~180MB (uus) 📉 -22%
 ```
 
-**⚠️ Märkus User Service suuruse kohta:**
-User Service optimeeritud pilt (image) on **suurem** kui baasversioon! See on trade-off bcrypt native moodulite tõttu:
-- Baasversioon (`1.0`): ~200MB - kasutab `node:18-alpine`, aga crashib bcrypt'iga
-- Optimeeritud (`1.0-optimized`): ~305MB - kasutab `node:18-slim`, **töötab kindlalt**
+**ℹ️ Märkus User Service suuruse kohta:**
+User Service pilt (image) jääb samaks (~305MB), sest MÕLEMAD versioonid kasutavad `node:18-slim`:
+- Baasversioon (`1.0`): ~305MB - `node:18-slim`, single-stage
+- Optimeeritud (`1.0-optimized`): ~305MB - `node:18-slim`, multi-stage
 
-**Mida võitsime:**
+**Miks kasutame slim, mitte alpine?**
+- Alpine crashib bcrypt native moodulitega (exit 139)
+- Slim on suurem (~105MB vs ~5MB), aga töötab stabiilselt
+
+**Mida võitsime optimeeritud versiooniga:**
 ✅ Multi-stage build (dependencies cached)
 ✅ Non-root user (security)
 ✅ Health check
 ✅ -60% kiirem rebuild
-❌ +~100MB suurem pilt (image) (kompromiss töökindluse nimel)
+⚠️ Suurus jääb samaks (mõlemad ~305MB)
 
 ### Samm 4: Testi MÕLEMAD Optimeeritud Images (20 min)
 
@@ -559,17 +563,17 @@ docker images | grep -E 'user-service|todo-service' | sort
 
 | Aspekt | Before (Harjutus 1) | After (Optimized) | Improvement |
 | ------ | ------------------- | ----------------- | ----------- |
-| **Size** | ~200MB | ~305MB | ❌ +52% (trade-off!) |
-| **Base image** | node:18-alpine | node:18-slim (Debian) | ⚠️ bcrypt fix |
+| **Size** | ~305MB | ~305MB | ⚠️ Same (both slim) |
+| **Base image** | node:18-slim | node:18-slim (multi-stage) | ✅ |
 | **Layers** | 5-6 | 8-10 (but cached!) | ✅ |
 | **Build time (1st)** | 30s | 40s | ❌ +10s |
 | **Build time (rebuild)** | 30s | 10s | 📉 -66% |
 | **Security** | root user | non-root (nodejs:1001) | ✅ |
 | **Health check** | ❌ | ✅ `healthcheck.js` | ✅ |
 | **Caching** | ❌ Poor | ✅ Excellent (npm ci cached) | ✅ |
-| **Stability** | ❌ crashib (bcrypt) | ✅ töötab (native modules) | ✅ |
+| **Stability** | ✅ töötab (bcrypt OK) | ✅ töötab (bcrypt OK) | ✅ |
 
-**Trade-off selgitus:** Kaotame ~100MB suurust, AGA saame töökindla süsteemi. Production'is on **töökindlus olulisem kui pildi (image) suurus**!
+**Selgitus:** Mõlemad kasutavad `node:18-slim` (sest bcrypt native moodulid). Optimeeritud versioon ei vähenda suurust, aga annab **palju kiiremad rebuild'id** (-66%) ja **parema security** (non-root user).
 
 ### Java (Todo Service) Võrdlus
 
@@ -588,23 +592,23 @@ docker images | grep -E 'user-service|todo-service' | sort
 
 | Metric | Node.js (User Service) | Java (Todo Service) |
 |--------|------------------------|---------------------|
-| **Base size (before)** | ~200MB | ~230MB |
+| **Base size (before)** | ~305MB | ~230MB |
 | **Optimized size (after)** | ~305MB ⚠️ | ~180MB ✅ |
-| **Size change** | ❌ +52% (bcrypt trade-off) | 📉 -22% |
+| **Size change** | ⚠️ 0% (same) | 📉 -22% |
 | **Build time (1st)** | 40s | 90s |
 | **Build time (rebuild)** | 10s | 20s |
 | **Multi-stage benefit** | Dependencies layer | JDK → JRE separation |
 | **Non-root user** | nodejs:1001 | spring:1001 |
 | **Health check** | Custom JS script | Built-in /health endpoint |
-| **Base image** | node:18-slim (Debian) | eclipse-temurin:17-jre-alpine |
+| **Base image** | node:18-slim (both) | eclipse-temurin:17-jre-alpine |
 
 **Järeldus:**
-- ⚠️ User Service pilt (image) on SUUREM (+105MB) bcrypt native moodulite tõttu
-- ✅ Todo Service pilt (image) väiksem (-50MB) multi-stage build'i tõttu
+- ⚠️ User Service: suurus jääb samaks (~305MB), mõlemad kasutavad `node:18-slim` bcrypt'i tõttu
+- ✅ Todo Service: pilt (image) väiksem (-50MB) multi-stage build'i tõttu
 - ✅ Mõlemad on **production-ready ja töötavad stabiilselt**
 - ✅ **Rebuild -60-80% kiirem mõlemas teenuses!**
 - ✅ Security (non-root users) ja health checks mõlemas
-- 📚 **Õppetund:** Töökindlus > pildi (image) suurus (User Service näide)
+- 📚 **Õppetund:** User Service optimisatsioon ei vähenda suurust (sama base image), aga annab **kiiremad rebuild'id** ja **parema security**
 
 ---
 
@@ -613,7 +617,7 @@ docker images | grep -E 'user-service|todo-service' | sort
 Peale selle harjutuse läbimist peaksid omama:
 
 - [x] **2 optimeeritud pilti (images)** loodud
-  - user-service:1.0-optimized (~305MB, +52% ⚠️ bcrypt trade-off)
+  - user-service:1.0-optimized (~305MB, sama kui 1.0 ⚠️ mõlemad slim)
   - todo-service:1.0-optimized (~180MB, -22% ✅)
 - [x] Multi-stage builds töötavad (Node.js: deps → runtime, Java: JDK → JRE)
 - [x] Layer caching toimib SUUREPÄRASELT (rebuild -60-80% kiirem!)
@@ -661,11 +665,11 @@ Peale selle harjutuse läbimist peaksid omama:
 
 **Võrdlus Enne vs Pärast:**
 - 📉 Todo Service: -22% väiksem pilt (image)
-- ⚠️ User Service: +52% suurem (bcrypt native moodulid), AGA töötab stabiilselt
+- ⚠️ User Service: sama suurus (~305MB), mõlemad kasutavad `node:18-slim`
 - 📉 Rebuild kiirus: -60-80% MÕLEMAS teenuses
 - ✅ Security: root → non-root
 - ✅ Monitoring: ❌ → health checks
-- ✅ Stability: crashid → töötab (native modules fixed)
+- ✅ Caching: halb → suurepärane (dependencies cached)
 
 ### 🔄 Progressioon Läbi Kõigi 5 Harjutuse
 
@@ -698,9 +702,9 @@ Peale selle harjutuse läbimist peaksid omama:
 - ✅ Layer caching (-60-80% kiirem rebuild)
 - ✅ Security (non-root users)
 - ✅ Health checks
-- ⚠️ Alpine vs Debian trade-off (töökindlus > suurus)
+- ⚠️ Mõlemad User Service versioonid kasutavad `node:18-slim` (bcrypt native moodulid)
 - ✅ Todo Service: -22% väiksem pilt (image)
-- ⚠️ User Service: +52% suurem (bcrypt fix), AGA töötab stabiilselt
+- ⚠️ User Service: sama suurus (~305MB), optimisatsioon annab kiiremad rebuild'id
 - ✅ End-to-End test optimeeritud süsteemiga
 
 ### 🏆 LÕPPTULEMUS: Production-Ready Docker Setup!
