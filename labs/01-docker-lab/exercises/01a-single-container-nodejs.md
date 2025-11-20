@@ -96,9 +96,9 @@ head -50 server.js
 
 ### Samm 2: Loo Dockerfile (15 min)
 
-**Asukoht:** `/hostinger/labs/apps/backend-nodejs`
-
 Loo fail nimega `Dockerfile`:
+**⚠️ Oluline:** Dockerfail tuleb luua rakenduse juurkataloogi.
+**Asukoht:** `/hostinger/labs/apps/backend-nodejs`
 
 ```bash
 vim Dockerfile
