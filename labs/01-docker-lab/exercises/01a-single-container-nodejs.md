@@ -109,7 +109,7 @@ vim Dockerfile
 2. Seadistab töökataloogiks `/app`
 3. Kopeerib `package*.json` failid
 4. Installib sõltuvused
-5. Kopeerib rakenduse kood
+5. Kopeerib rakenduse koodi
 6. Avaldab pordi 3000
 7. Käivitab rakenduse
 
@@ -140,9 +140,9 @@ CMD ["node", "server.js"]
 
 ### Samm 3: Loo .dockerignore (5 min)
 
-**Asukoht:** `/hostinger/labs/apps/backend-nodejs`
-
 Loo `.dockerignore` fail, et vältida tarbetute failide kopeerimist:
+
+**⚠️ Oluline:** .dockerignore tuleb luua rakenduse juurkataloogi `/hostinger/labs/apps/backend-nodejs`. 
 
 ```bash
 vim .dockerignore
