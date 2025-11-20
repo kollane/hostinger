@@ -8,8 +8,6 @@
 - ✅ [Harjutus 2: Multi-Container](02-multi-container.md) läbitud
 - ✅ **MÕLEMAD PostgreSQL containerid töötavad JA sisaldavad andmeid (tabelid + testikasutajad)**
 
-💡 **Kui base image'd puuduvad:** Käivita `./setup.sh` ja vali `Y` - see ehitab vajalikud image'd
-
 ---
 
 ## ⚠️ Enne Alustamist: Kontrolli Eeldusi
