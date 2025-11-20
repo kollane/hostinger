@@ -80,6 +80,8 @@ Loome optimeeritud Dockerfailid mõlemale teenusele.
 
 #### 2a. User Service (Node.js) Optimization
 
+**Asukoht:** `/hostinger/labs/apps/backend-nodejs`
+
 ```bash
 cd ../apps/backend-nodejs
 ```
@@ -87,8 +89,9 @@ cd ../apps/backend-nodejs
 Loo uus `Dockerfile.optimized`:
 
 **💡 Abi vajadusel:**
+Vaata näidislahendust: `/hostinger/labs/01-docker-lab/solutions/backend-nodejs/Dockerfile.optimized`
 ```bash
-# Vaata näidislahendust
+# Näidislahenduse vaatamine
 cat ../../01-docker-lab/solutions/backend-nodejs/Dockerfile.optimized
 ```
 
@@ -157,6 +160,8 @@ EOF
 
 #### 2b. Todo Service (Java) Optimization
 
+**Asukoht:** `/hostinger/labs/apps/backend-java-spring`
+
 ```bash
 cd ../backend-java-spring
 ```
@@ -164,8 +169,9 @@ cd ../backend-java-spring
 Loo uus `Dockerfile.optimized`:
 
 **💡 Abi vajadusel:**
+Vaata näidislahendust: `/hostinger/labs/01-docker-lab/solutions/backend-java-spring/Dockerfile.optimized`
 ```bash
-# Vaata näidislahendust
+# Näidislahenduse vaatamine
 cat ../../01-docker-lab/solutions/backend-java-spring/Dockerfile.optimized
 ```
 
@@ -228,6 +234,8 @@ Iga samm on vajalik, et saavutada efektiivne, turvaline ja skaleeritav konteiner
 
 ### Samm 3: Build MÕLEMAD Optimeeritud Images (15 min)
 
+**Asukoht (User Service):** `/hostinger/labs/apps/backend-nodejs`
+
 ```bash
 # === BUILD USER SERVICE (Node.js) ===
 cd ../apps/backend-nodejs
@@ -236,6 +244,7 @@ cd ../apps/backend-nodejs
 docker build -f Dockerfile.optimized -t user-service:1.0-optimized .
 
 # === BUILD TODO SERVICE (Java) ===
+# Asukoht: /hostinger/labs/apps/backend-java-spring
 cd ../backend-java-spring
 
 # Build optimeeritud image (multi-stage build teeb ka JAR'i)
@@ -429,6 +438,8 @@ trivy image user-service:1.0-optimized > uus-user.txt
 
 **Testime, kui hästi layer caching töötab rebuild'imisel:**
 
+**Asukoht (User Service):** `/hostinger/labs/apps/backend-nodejs`
+
 ```bash
 # === TEST 1: Rebuild ILMA muudatusteta ===
 cd ../apps/backend-nodejs
@@ -437,6 +448,7 @@ cd ../apps/backend-nodejs
 time docker build -f Dockerfile.optimized -t user-service:1.0-optimized .
 # Oodatud: "CACHED" iga layer jaoks, build ~2-5s
 
+# Asukoht: /hostinger/labs/apps/backend-java-spring
 cd ../backend-java-spring
 
 # Rebuild Todo Service (peaks olema VÄGA kiire!)
@@ -446,6 +458,7 @@ time docker build -f Dockerfile.optimized -t todo-service:1.0-optimized .
 # === TEST 2: Rebuild KUI source code muutub ===
 
 # User Service - muuda source code
+# Asukoht: /hostinger/labs/apps/backend-nodejs
 cd ../backend-nodejs
 echo "// test comment" >> server.js
 
@@ -454,6 +467,7 @@ time docker build -f Dockerfile.optimized -t user-service:1.0-optimized .
 # Oodatud: Dependencies layer CACHED, ainult COPY . ja pärast rebuilditakse (~10-15s)
 
 # Todo Service - muuda source code
+# Asukoht: /hostinger/labs/apps/backend-java-spring
 cd ../backend-java-spring
 echo "// test comment" >> src/main/java/com/hostinger/todoapp/TodoApplication.java
 

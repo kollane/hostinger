@@ -72,6 +72,8 @@ Peale selle harjutuse läbimist oskad:
 
 ### Samm 1: Tutvu Rakendusega (5 min)
 
+**Asukoht:** `/hostinger/labs/apps/backend-nodejs`
+
 Vaata User Service koodi:
 
 ```bash
@@ -93,6 +95,8 @@ head -50 server.js
 - Kas rakendus vajab andmebaasi? (Jah, PostgreSQL)
 
 ### Samm 2: Loo Dockerfile (15 min)
+
+**Asukoht:** `/hostinger/labs/apps/backend-nodejs`
 
 Loo fail nimega `Dockerfile`:
 
@@ -138,6 +142,8 @@ CMD ["node", "server.js"]
 
 ### Samm 3: Loo .dockerignore (5 min)
 
+**Asukoht:** `/hostinger/labs/apps/backend-nodejs`
+
 Loo `.dockerignore` fail, et vältida tarbetute failide kopeerimist:
 
 ```bash
@@ -161,6 +167,8 @@ README.md
 - Turvalisem (ei kopeeri .env faile)
 
 ### Samm 4: Build Docker Image (10 min)
+
+**Asukoht:** `/hostinger/labs/apps/backend-nodejs`
 
 Build'i oma esimene Docker image:
 

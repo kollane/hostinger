@@ -72,6 +72,8 @@ Peale selle harjutuse läbimist oskad:
 
 ### Samm 1: Tutvu Rakendusega (5 min)
 
+**Asukoht:** `/hostinger/labs/apps/backend-java-spring`
+
 Vaata Todo Service koodi:
 
 ```bash
@@ -94,6 +96,8 @@ cat build.gradle
 
 ### Samm 2: Loo Dockerfile (15 min)
 
+**Asukoht:** `/hostinger/labs/apps/backend-java-spring`
+
 Loo fail nimega `Dockerfile`:
 
 ```bash
@@ -111,7 +115,7 @@ vim Dockerfile
 
 **💡 Abi vajadusel:**
 - Vaata Docker dokumentatsiooni: https://docs.docker.com/engine/reference/builder/
-- Vaata näidislahendust: `../../01-docker-lab/solutions/backend-java-spring/Dockerfile`
+- Vaata näidislahendust lahenduste kataloogis: `/hostinger/labs/01-docker-lab/solutions/backend-java-spring/Dockerfile`
   ```bash
   # Näidislahenduse vaatamine (ära kopeeri, õpi seda!)
   cat ../../01-docker-lab/solutions/backend-java-spring/Dockerfile
@@ -138,6 +142,8 @@ CMD ["java", "-jar", "app.jar"]
 
 ### Samm 3: Loo .dockerignore (5 min)
 
+**Asukoht:** `/hostinger/labs/apps/backend-java-spring`
+
 Loo `.dockerignore` fail, et vältida tarbetute failide kopeerimist:
 
 ```bash
@@ -145,8 +151,9 @@ vim .dockerignore
 ```
 
 **💡 Abi vajadusel:**
+Vaata näidislahendust: `/hostinger/labs/01-docker-lab/solutions/backend-java-spring/.dockerignore`
 ```bash
-# Vaata näidislahendust
+# Näidislahenduse vaatamine
 cat ../../01-docker-lab/solutions/backend-java-spring/.dockerignore
 ```
 
@@ -172,6 +179,8 @@ gradlew.bat
 - Ei kopeeri source code'i (ainult JAR fail)
 
 ### Samm 4: Build Docker Image (10 min)
+
+**Asukoht:** `/hostinger/labs/apps/backend-java-spring`
 
 Esmalt build'i JAR fail, seejärel Docker image:
 
