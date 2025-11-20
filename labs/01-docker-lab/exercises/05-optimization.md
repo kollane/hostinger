@@ -486,6 +486,7 @@ trivy image user-service:1.0-optimized > uus-user.txt
 ```bash
 # === TEST 1: Rebuild ILMA muudatusteta ===
 cd ../apps/backend-nodejs
+pwd  # Veendu, et oled õiges kataloogis
 
 # Rebuild User Service (peaks olema VÄGA kiire!)
 time docker build -f Dockerfile.optimized -t user-service:1.0-optimized .
@@ -493,6 +494,7 @@ time docker build -f Dockerfile.optimized -t user-service:1.0-optimized .
 
 # Asukoht: /hostinger/labs/apps/backend-java-spring
 cd ../backend-java-spring
+pwd  # Veendu, et oled õiges kataloogis
 
 # Rebuild Todo Service (peaks olema VÄGA kiire!)
 time docker build -f Dockerfile.optimized -t todo-service:1.0-optimized .
@@ -503,6 +505,7 @@ time docker build -f Dockerfile.optimized -t todo-service:1.0-optimized .
 # User Service - muuda source code
 # Asukoht: /hostinger/labs/apps/backend-nodejs
 cd ../backend-nodejs
+pwd  # Veendu, et oled õiges kataloogis
 echo "// test comment" >> server.js
 
 # Rebuild
@@ -512,6 +515,7 @@ time docker build -f Dockerfile.optimized -t user-service:1.0-optimized .
 # Todo Service - muuda source code
 # Asukoht: /hostinger/labs/apps/backend-java-spring
 cd ../backend-java-spring
+pwd  # Veendu, et oled õiges kataloogis
 echo "// test comment" >> src/main/java/com/hostinger/todoapp/TodoApplication.java
 
 # Rebuild
