@@ -72,7 +72,7 @@ Peale selle harjutuse läbimist oskad:
 
 ### Samm 1: Tutvu Rakendusega (5 min)
 
-**Asukoht:** `/hostinger/labs/apps/backend-nodejs`
+**Rakenduse juurkataloog:** `/hostinger/labs/apps/backend-nodejs`
 
 Vaata User Service koodi:
 
