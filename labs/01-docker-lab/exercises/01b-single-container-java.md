@@ -184,6 +184,8 @@ gradlew.bat
 
 Esmalt build'i JAR fail, seejärel Docker image:
 
+**⚠️ Oluline:** Docker image'i ehitamiseks pead olema rakenduse juurkataloogis (kus asub `Dockerfile`). Kui sa pole seal, kasuta `cd` käsku ülalpool näidatud asukohta minekuks.
+
 ```bash
 # Build JAR fail
 ./gradlew clean bootJar

@@ -236,6 +236,8 @@ Iga samm on vajalik, et saavutada efektiivne, turvaline ja skaleeritav konteiner
 
 **Asukoht (User Service):** `/hostinger/labs/apps/backend-nodejs`
 
+**⚠️ Oluline:** Docker image'i ehitamiseks pead olema rakenduse juurkataloogis (kus asub `Dockerfile.optimized`). Kui sa pole seal, kasuta `cd` käsku.
+
 ```bash
 # === BUILD USER SERVICE (Node.js) ===
 cd ../apps/backend-nodejs
