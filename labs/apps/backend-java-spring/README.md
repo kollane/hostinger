@@ -323,6 +323,14 @@ See rakendus on osa DevOps õppekavast:
 - **Lab 5:** CI/CD with GitHub Actions
 - **Lab 6:** Monitoring with Prometheus + Grafana
 
+## 📘 Täiendav Dokumentatsioon
+
+- **[DOCKER-BEST-PRACTICES.md](DOCKER-BEST-PRACTICES.md)** - Advanced Docker best practices
+  - JVM memory tuning containerites
+  - Spring Boot layering (build cache optimiseerimine)
+  - Graceful shutdown konfiguratsioon
+  - Production-ready checklist
+
 ## 📄 Litsents
 
 MIT License - DevOps Training Project

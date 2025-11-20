@@ -1,0 +1,18 @@
+FROM node:18-slim
+
+WORKDIR /app
+
+# Kopeeri dependency files
+COPY package*.json ./
+
+# Paigalda sõltuvused
+RUN npm install --production
+
+# Kopeeri rakenduse kood
+COPY . .
+
+# Avalda port
+EXPOSE 3000
+
+# Käivita
+CMD ["node", "server.js"]

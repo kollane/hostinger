@@ -39,5 +39,9 @@ EXPOSE 8081
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s \
   CMD wget --no-verbose --tries=1 --spider http://localhost:8081/health || exit 1
 
-# Käivita rakendus
-CMD ["java", "-jar", "app.jar"]
+# Käivita rakendus JVM memory tuning'uga (container-aware)
+CMD ["java", \
+    "-XX:InitialRAMPercentage=80", \
+    "-XX:MaxRAMPercentage=80", \
+    "-jar", \
+    "app.jar"]
