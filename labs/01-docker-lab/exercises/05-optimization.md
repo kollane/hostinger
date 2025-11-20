@@ -3,11 +3,6 @@
 **Kestus:** 45 minutit
 **Eesmärk:** Optimeeri Docker image suurust ja build kiirust
 
-**Eeldused:**
-- ✅ [Harjutus 1: Single Container](01a-single-container-nodejs.md) ja [Harjutus 1B](01b-single-container-java.md) läbitud
-- ✅ [Harjutus 2: Multi-Container](02-multi-container.md) läbitud
-- ✅ **MÕLEMAD PostgreSQL containerid töötavad JA sisaldavad andmeid (tabelid + testikasutajad)**
-
 ---
 
 ## ⚠️ Enne Alustamist: Kontrolli Eeldusi
