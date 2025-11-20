@@ -7,7 +7,7 @@
 
 ## ⚠️ OLULINE: Harjutuse Fookus
 
-**See harjutus keskendub Docker põhitõdedele, MITTE töötavale rakendusele!**
+**See harjutus keskendub Docker põhitõdede õppimisele, MITTE töötavale rakendusele!**
 
 ✅ **Õpid:**
 - Dockerfile'i loomist Node.js rakendusele
@@ -164,7 +164,7 @@ README.md
 - Kiirem ehitamine (build)
 - Turvalisem (ei kopeeri .env faile)
 
-### Samm 4: Ehita Docker Pilt (Image) (10 min)
+### Samm 4: Ehita Docker pilt (image) (10 min)
 
 **Asukoht:** `/hostinger/labs/apps/backend-nodejs`
 

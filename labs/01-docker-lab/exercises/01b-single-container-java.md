@@ -7,7 +7,7 @@
 
 ## ⚠️ OLULINE: Harjutuse Fookus
 
-**See harjutus keskendub Docker põhitõdedele, MITTE töötavale rakendusele!**
+**See harjutus keskendub Docker põhitõdede õppimisele, MITTE töötavale rakendusele!**
 
 ✅ **Õpid:**
 - Dockerfile'i loomist
@@ -117,8 +117,7 @@ vim Dockerfile
 - Vaata Docker dokumentatsiooni: https://docs.docker.com/engine/reference/builder/
 - Vaata näidislahendust lahenduste kataloogis: `/hostinger/labs/01-docker-lab/solutions/backend-java-spring/Dockerfile`
 
-<details>
-<summary>💡 Näpunäide: Dockerfile struktuur</summary>
+**💡 Näpunäide: Dockerfile struktuur**
 
 ```dockerfile
 FROM eclipse-temurin:17-jre-alpine
@@ -134,7 +133,6 @@ EXPOSE 8081
 # Käivita rakendus (application)
 CMD ["java", "-jar", "app.jar"]
 ```
-</details>
 
 ### Samm 3: Loo .dockerignore (5 min)
 
@@ -170,7 +168,7 @@ gradlew.bat
 - Turvalisem (ei kopeeri .env faile)
 - Ei kopeeri lähtekoodi (ainult JAR fail)
 
-### Samm 4: Ehita Docker Pilt (Image) (10 min)
+### Samm 4: Ehita Docker pilt (image) (10 min)
 
 **Asukoht:** `/hostinger/labs/apps/backend-java-spring`
 

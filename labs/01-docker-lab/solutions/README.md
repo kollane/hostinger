@@ -53,7 +53,7 @@ docker run -d --name user-service -p 3000:3000 \
 cp ../../01-docker-lab/solutions/backend-nodejs/Dockerfile.optimized .
 cp ../../01-docker-lab/solutions/backend-nodejs/healthcheck.js .
 
-# Build (multi-stage build)
+# Ehita (mitme-sammuline (multi-stage) build)
 docker build -f Dockerfile.optimized -t user-service:1.0-optimized .
 
 # Võrdle suurusi
@@ -93,7 +93,7 @@ docker run -d --name todo-service -p 8081:8081 \
 # Kopeeri optimeeritud versioon
 cp ../../01-docker-lab/solutions/backend-java-spring/Dockerfile.optimized .
 
-# Build (multi-stage build teeb ka JAR'i)
+# Ehita (mitme-sammuline (multi-stage) build teeb ka JAR'i)
 docker build -f Dockerfile.optimized -t todo-service:1.0-optimized .
 
 # Võrdle suurusi

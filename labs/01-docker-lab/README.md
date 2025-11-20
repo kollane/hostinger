@@ -2,13 +2,13 @@
 
 **Kestus:** 4 tundi
 **Eeldused:** Peatükk 12 (Docker põhimõtted) läbitud
-**Eesmärk:** Õppida Docker image'ite ja containerite haldamist hands-on
+**Eesmärk:** Õppida Docker piltide (images) ja containerite haldamist hands-on
 
 ---
 
 ## 📋 Ülevaade
 
-Selles laboris õpid konteineriseerima kolme mikroteenust, haldama volumes ja networks ning optimeerima Docker image'id production'i jaoks.
+Selles laboris õpid paigaldama kolme mikroteenust konteineritesse, haldama volumes ja networks ning optimeerima Docker pilte (images) production'i jaoks.
 
 ---
 
@@ -17,7 +17,7 @@ Selles laboris õpid konteineriseerima kolme mikroteenust, haldama volumes ja ne
 Peale selle labori läbimist oskad:
 
 ✅ Luua Dockerfile'e erinevatele rakendustele
-✅ Build'ida Docker image'id
+✅ Ehitada Docker pilte (images)
 ✅ Käivitada ja hallata containereid
 ✅ Seadistada Docker networks
 ✅ Kasutada volumes andmete säilitamiseks
@@ -63,7 +63,7 @@ Peale selle labori läbimist oskad:
 ```
 01-docker-lab/
 ├── README.md              # See fail
-├── setup.sh               # Automaatne setup ja image'de ehitamine
+├── setup.sh               # Automaatne setup ja piltide (images) ehitamine
 ├── reset.sh               # Labori ressursside puhastamine
 ├── exercises/             # Harjutused (6 harjutust)
 │   ├── 01a-single-container-nodejs.md        # User Service (Node.js)
@@ -95,7 +95,7 @@ Peale selle labori läbimist oskad:
 - [x] Docker paigaldatud (`docker --version`)
 - [x] Docker daemon töötab (`docker ps`)
 - [x] Vähemalt 4GB vaba kettaruumi
-- [x] Internet ühendus (image'ite allalaadimiseks)
+- [x] Internet ühendus (piltide (images) allalaadimiseks)
 
 ### Teadmised:
 - [x] **Peatükk 12:** Docker põhimõtted ja konteineriseerimise alused
@@ -108,7 +108,7 @@ Peale selle labori läbimist oskad:
 
 ```
 Labor 1 (Docker) ← Oled siin
-  ↓ Docker image'd →
+  ↓ Docker pildid (images) →
 Labor 2 (Compose)
   ↓ Multi-container kogemus →
 Labor 3 (K8s Basics)
@@ -144,7 +144,7 @@ Konteinerise Todo Service (Java Spring Boot):
 - Käivita container
 - Testi REST API (/api/todos)
 
-💡 **Kiirvalik:** Käivita `./setup.sh` ja vali `Y` → ehitab mõlemad image'd automaatselt
+💡 **Kiirvalik:** Käivita `./setup.sh` ja vali `Y` → ehitab mõlemad pildid (images) automaatselt
 
 ### Harjutus 2: Multi-Container Setup (90 min)
 **Fail:** [exercises/02-multi-container.md](exercises/02-multi-container.md)
@@ -206,7 +206,7 @@ chmod +x setup.sh
 - ✅ Harjutuste ja lahenduste olemasolu
 
 **Script pakub:**
-- 💡 Automaatset base image'de ehitamist (`user-service:1.0`, `todo-service:1.0`)
+- 💡 Automaatset base piltide (images) ehitamist (`user-service:1.0`, `todo-service:1.0`)
 - 💡 Võimalust vahele jätta Harjutus 1 ja alustada otse Harjutus 2'st
 
 **Kuidas kasutada:**
@@ -214,8 +214,8 @@ chmod +x setup.sh
 ```bash
 ./setup.sh
 
-# Kui küsitakse: "Kas soovid ehitada base image'd KOHE?"
-# Vali Y → Ehitab image'd automaatselt (~2-5 min)
+# Kui küsitakse: "Kas soovid ehitada base pilte (images) KOHE?"
+# Vali Y → Ehitab pildid (images) automaatselt (~2-5 min)
 #       → Saad alustada otse Harjutus 2'st
 # Vali N → Alustad Harjutus 1'st (soovitatud õppimiseks)
 #       → Õpid Dockerfile'i loomist algusest
@@ -240,37 +240,37 @@ chmod +x reset.sh
 - 🗑️ Lab 1 volume'd (postgres-user-data, postgres-todo-data)
 - 🗑️ Apps kaustadest harjutuste failid (Dockerfile, .dockerignore)
 
-**Interaktiivne valik: Image'de Kustutamine**
+**Interaktiivne valik: Piltide (Images) Kustutamine**
 
-Script küsib, kas kustutada ka Docker image'd:
+Script küsib, kas kustutada ka Docker pildid (images):
 
 ```
-Kas soovid kustutada ka Docker image'd?
-  [N] Ei, jäta base image'd alles (user-service:1.0, todo-service:1.0)
+Kas soovid kustutada ka Docker pilte (images)?
+  [N] Ei, jäta base pildid (images) alles (user-service:1.0, todo-service:1.0)
       → Saad alustada otse Harjutus 2'st ilma uuesti buildimata
       → Kiire restart Harjutuste 2-5 jaoks
-  [Y] Jah, kustuta KÕIK image'd (täielik reset)
-      → Pead alustama Harjutus 1'st ja buildima image'd uuesti
+  [Y] Jah, kustuta KÕIK pildid (images) (täielik reset)
+      → Pead alustama Harjutus 1'st ja ehitama pilte (images) uuesti
       → Täielik "puhas leht" algusest
 ```
 
 **Kasutusstsenaariume:**
 
 ```bash
-# Stsenaarium 1: Kiire restart (säilita image'd)
+# Stsenaarium 1: Kiire restart (säilita pildid (images))
 ./reset.sh
 # Vali: N
 # → Containerid/networks/volumes kustutatakse
-# → Base image'd säilitatakse
+# → Base pildid (images) säilitatakse
 # → Alusta uuesti Harjutus 2'st või 3'st
 
 # Stsenaarium 2: Täielik reset (kustuta kõik)
 ./reset.sh
 # Vali: Y
-# → Kõik kustutatakse (sh image'd)
+# → Kõik kustutatakse (sh pildid (images))
 # → Alusta päris algusest (Harjutus 1)
 
-# Stsenaarium 3: Automaatne reset (sh image'd)
+# Stsenaarium 3: Automaatne reset (sh pildid (images))
 echo "y" | ./reset.sh  # Kustutab KÕIK
 ```
 
@@ -470,7 +470,7 @@ Peale selle labori läbimist oled:
 ## 📌 Lisainfo
 
 **Abiskriptid:**
-- `./setup.sh` - Automaatne setup ja image'de ehitamine
+- `./setup.sh` - Automaatne setup ja piltide (images) ehitamine
 - `./reset.sh` - Labori ressursside puhastamine
 
 **Harjutused:**

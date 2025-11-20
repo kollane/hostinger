@@ -19,7 +19,7 @@ docker exec postgres-user psql -U postgres -d user_service_db -c "\dt"
 docker exec postgres-todo psql -U postgres -d todo_service_db -c "\dt"
 # Oodatud: "users" ja "todos" tabelid
 
-# 3. Kontrolli olemasolevaid image'eid
+# 3. Kontrolli olemasolevaid pilte (images)
 docker images | grep -E 'user-service|todo-service'
 # Oodatud: user-service:1.0 ja todo-service:1.0
 ```
@@ -27,7 +27,7 @@ docker images | grep -E 'user-service|todo-service'
 **Kui midagi puudub:**
 - 🔗 Network `todo-network` → [Harjutus 3, Samm 2](03-networking.md)
 - 🔗 PostgreSQL setup (volumes + tabelid) → [Harjutus 4, Sammud 2-4](04-volumes.md)
-- 🔗 Base image'd → [Harjutus 1A](01a-single-container-nodejs.md) ja [Harjutus 1B](01b-single-container-java.md) või käivita `./setup.sh`
+- 🔗 Base pildid (images) → [Harjutus 1A](01a-single-container-nodejs.md) ja [Harjutus 1B](01b-single-container-java.md) või käivita `./setup.sh`
 
 **✅ Kui kõik ülalpool on OK, võid jätkata!**
 
@@ -264,11 +264,11 @@ Multi-stage build koosneb kahest põhietapist:
 
 Tulemus: efektiivne, turvaline ja skaleeritav konteineripilt.
 
-### Samm 3: Build MÕLEMAD Optimeeritud Images (15 min)
+### Samm 3: Ehita MÕLEMAD Optimeeritud Pildid (Images) (15 min)
 
 **Asukoht (User Service):** `/hostinger/labs/apps/backend-nodejs`
 
-**⚠️ Oluline:** Docker image'i ehitamiseks pead olema rakenduse juurkataloogis (kus asub `Dockerfile.optimized`).
+**⚠️ Oluline:** Docker pildi (image) ehitamiseks pead olema rakenduse juurkataloogis (kus asub `Dockerfile.optimized`).
 
 ```bash
 # === BUILD USER SERVICE (Node.js) ===
@@ -463,7 +463,7 @@ docker stats --no-stream --format "table {{.Name}}\t{{.MemUsage}}\t{{.CPUPerc}}"
 # sudo apt install trivy  # või
 # brew install trivy
 
-# Skanni MÕLEMAT optimeeritud image'i
+# Skanni MÕLEMAT optimeeritud pilti (image)
 echo "=== User Service Security Scan ==="
 trivy image user-service:1.0-optimized
 
@@ -579,7 +579,7 @@ docker images | grep -E 'user-service|todo-service' | sort
 | **Base image** | node:18-slim (both) | eclipse-temurin:17-jre-alpine |
 
 **Järeldus:**
-- ⚠️ User Service: suurus jääb samaks (~305MB), sest mõlemad versioonid kasutavad sama base image'it
+- ⚠️ User Service: suurus jääb samaks (~305MB), sest mõlemad versioonid kasutavad sama baaspilti (base image)
 - ✅ Todo Service: pilt (image) väiksem (-50MB) multi-stage build'i tõttu (JDK → JRE)
 - ✅ Mõlemad on production-ready ja töötavad stabiilselt
 - ✅ **Rebuild -60-80% kiirem mõlemas teenuses!** (dependency caching)
@@ -697,7 +697,7 @@ Peale selle harjutuse läbimist peaksid omama:
 ## 🚀 Järgmised Sammud
 
 Sa oskad nüüd:
-1. ✅ Build'ida Docker image'eid
+1. ✅ Ehitada Docker pilte (images)
 2. ✅ Käivitada multi-container setup'e
 3. ✅ Kasutada custom networks
 4. ✅ Säilitada andmeid volumes'iga

@@ -6,15 +6,15 @@
 **Eeldused:**
 - ✅ [Harjutus 1A: Single Container (User Service)](01a-single-container-nodejs.md) läbitud
 - ✅ [Harjutus 1B: Single Container (Todo Service)](01b-single-container-java.md) läbitud
-- 💡 **Alternatiiv:** Kui vahele jätsid, käivita `./setup.sh` ja vali `Y` - see ehitab vajalikud image'd automaatselt
+- 💡 **Alternatiiv:** Kui vahele jätsid, käivita `./setup.sh` ja vali `Y` - see ehitab vajalikud pildid (images) automaatselt
 
 ---
 
 ## 📋 Ülevaade
 
 **Mäletad Harjutus 1-st?**
-- User Service crashis (PostgreSQL puudub)
-- Todo Service crashis (PostgreSQL puudub)
+- User Service hangus (PostgreSQL puudub)
+- Todo Service hangus (PostgreSQL puudub)
 - JWT token ei töötanud (teenused ei suhtle)
 
 **Harjutus 2 lahendab:**
