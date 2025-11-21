@@ -289,7 +289,7 @@ Tulemus: efektiivne, turvaline ja skaleeritav konteineripilt.
 
 ```bash
 # === BUILD USER SERVICE (Node.js) ===
-cd ../apps/backend-nodejs
+cd ../backend-nodejs
 
 # Build optimeeritud image
 docker build -f Dockerfile.optimized -t user-service:1.0-optimized .
