@@ -1,7 +1,7 @@
-# Harjutus 5: Image Optimization
+# Harjutus 5: Pildi (Image) Optimeerimine
 
 **Kestus:** 45 minutit
-**Eesmärk:** Optimeeri Docker pildi (image) suurust ja ehituse kiirust
+**Eesmärk:** Optimeeri Docker pildi (image) suurust ja ehituse (build) kiirust
 
 ---
 
@@ -10,7 +10,7 @@
 **Veendu, et süsteem on valmis:**
 
 ```bash
-# 1. Kontrolli, et MÕLEMAD PostgreSQL containerid töötavad
+# 1. Kontrolli, et MÕLEMAD PostgreSQL konteinerid töötavad
 docker ps | grep postgres
 # Oodatud: postgres-user (5432) ja postgres-todo (5433)
 
@@ -25,9 +25,9 @@ docker images | grep -E 'user-service|todo-service'
 ```
 
 **Kui midagi puudub:**
-- 🔗 Network `todo-network` → [Harjutus 3, Samm 2](03-networking.md)
-- 🔗 PostgreSQL setup (volumes + tabelid) → [Harjutus 4, Sammud 2-4](04-volumes.md)
-- 🔗 Base pildid (images) → [Harjutus 1A](01a-single-container-nodejs.md) ja [Harjutus 1B](01b-single-container-java.md) või käivita `./setup.sh`
+- 🔗 Võrk (Network) `todo-network` → [Harjutus 3, Samm 2](03-networking.md)
+- 🔗 PostgreSQL seadistus (setup) (andmehoidlad (volumes) + tabelid) → [Harjutus 4, Sammud 2-4](04-volumes.md)
+- 🔗 Baaspildid (base images) → [Harjutus 1A](01a-single-container-nodejs.md) ja [Harjutus 1B](01b-single-container-java.md) või käivita `./setup.sh`
 
 **✅ Kui kõik ülalpool on OK, võid jätkata!**
 
@@ -37,30 +37,30 @@ docker images | grep -E 'user-service|todo-service'
 
 **Mäletad Harjutus 1-st?** Lõime lihtsa Dockerfile'i, mis toimis. Aga nüüd õpime, kuidas teha seda **paremaks**!
 
-**Praegune Dockerfile (Harjutus 1) probleemid - MÕLEMAS teenuses:**
+**Praegune Dockerfile (Harjutus 1) probleemid - MÕLEMAS teenuses (service):**
 - ❌ Liiga suur pilt (image) (~200-230MB)
-- ❌ Build on aeglane (rebuild iga source muudatuse korral)
-- ❌ Ei kasuta layer caching'ut efektiivselt
-- ❌ Töötab root'ina (security risk!)
-- ❌ Pole health check'i
+- ❌ Ehitus (build) on aeglane (rebuild iga source muudatuse korral)
+- ❌ Ei kasuta kihtide vahemälu (layer caching) efektiivselt
+- ❌ Töötab root'ina (turvarisk!)
+- ❌ Pole seisukorra kontrolli (health check)
 
-**Selles harjutuses - optimeerime MÕLEMAT teenust:**
-- ✅ **Node.js (User Service):** Multi-stage build (dependencies → runtime)
-- ✅ **Java (Todo Service):** Multi-stage build (JDK build → JRE runtime)
-- ✅ Layer caching optimization (dependencies cached)
-- ✅ Security (non-root users: nodejs:1001, spring:1001)
-- ✅ Health checks
+**Selles harjutuses - optimeerime MÕLEMAT teenust (service):**
+- ✅ **Node.js (User Teenus (Service)):** Mitme-sammuline (multi-stage) ehitus (build) (sõltuvused (dependencies) → runtime)
+- ✅ **Java (Todo Teenus (Service)):** Mitme-sammuline (multi-stage) ehitus (build) (JDK build → JRE runtime)
+- ✅ Kihtide vahemälu (layer caching) optimeerimine (sõltuvused (dependencies) on vahemälus (cached))
+- ✅ Turvalisus (mitte-juurkasutajad (non-root users): nodejs:1001, spring:1001)
+- ✅ Seisukorra kontrollid (health checks)
 
 ---
 
 ## 🎯 Õpieesmärgid
 
-- ✅ Implementeerida multi-stage builds (Node.js ja Java)
-- ✅ Optimeerida layer caching (dependencies eraldi)
+- ✅ Implementeerida mitme-sammulised (multi-stage) ehitused (builds) (Node.js ja Java)
+- ✅ Optimeerida kihtide vahemälu (layer caching) (sõltuvused (dependencies) eraldi)
 - ✅ Parandada .dockerignore faile
-- ✅ Lisa health check'id mõlemasse teenusesse
-- ✅ Kasuta non-root users (nodejs:1001, spring:1001)
-- ✅ Võrrelda Node.js vs Java optimization tulemusi
+- ✅ Lisa seisukorra kontrollid (health checks) mõlemasse teenusesse (service)
+- ✅ Kasuta mitte-juurkasutajaid (non-root users) (nodejs:1001, spring:1001)
+- ✅ Võrrelda Node.js vs Java optimeerimise tulemusi
 - ✅ Testida End-to-End workflow optimeeritud süsteemiga
 
 ---

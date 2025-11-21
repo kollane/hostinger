@@ -1,20 +1,20 @@
 <img src="https://r2cdn.perplexity.ai/pplx-full-logo-primary-dark%402x.png" style="height:64px;margin-right:32px"/>
 
-# BUILD etapis, kuidas ma tean, millised failid tuleb kopeerida?
+# EHITUSE (BUILD) etapis, kuidas ma tean, millised failid tuleb kopeerida?
 
-BUILD-etapis tuleb Dockerfile’is kopeerida **need failid ja kaustad**, mis on vajalikud rakenduse edukaks ehitamiseks (buildimiseks). Need sõltuvad kasutatavast buildisüsteemist (näiteks Gradle, Maven, npm jne) ja rakenduse struktuurist.[^2][^3][^4]
+EHITUSE (BUILD)-etapis tuleb Dockerfile’is kopeerida **need failid ja kaustad**, mis on vajalikud rakenduse (application) edukaks ehitamiseks (buildimiseks). Need sõltuvad kasutatavast ehitussüsteemist (build system) (näiteks Gradle, Maven, npm jne) ja rakenduse (application) struktuurist.[^2][^3][^4]
 
 ### Kuidas valida, mida kopeerida:
 
-- **Build script’id ja konfiguratsioon**
-  Pane kõigepealt failid nagu `build.gradle`, `settings.gradle`, ja vajadusel `gradle/` alakaust. Need on vajalikud sõltuvuste allalaadimiseks ja buildiprotsessi käivitamiseks.
+- **Ehituse (build) skriptid ja konfiguratsioon**
+  Pane kõigepealt failid nagu `build.gradle`, `settings.gradle`, ja vajadusel `gradle/` alakaust. Need on vajalikud sõltuvuste (dependencies) allalaadimiseks ja ehitusprotsessi (build process) käivitamiseks.
 - **Lähtekood**
-  Kopeeri `src/` kaust, sest seal asub kogu rakenduse lähtekood.
+  Kopeeri `src/` kaust, sest seal asub kogu rakenduse (application) lähtekood.
   Näide: `COPY src ./src`
 - **Lisakonfiguratsioonid**
-  Kui projektis on näiteks `application.properties`, `docker-compose.yml` või teisi vajalikke faile build’iks, kopeeri ka need.
+  Kui projektis on näiteks `application.properties`, `docker-compose.yml` või teisi vajalikke faile ehituseks (build), kopeeri ka need.
 - **Sõltuvused (dependency cache)**
-  Kui ehitad build cache loogikat, kopeeri kõigepealt build-konfiguratsioonid ja tõmba sõltuvused juba enne lähtekoodi kopeerimist, et kiirendada korduvaid builde.
+  Kui ehitad ehituse (build) vahemälu (cache) loogikat, kopeeri kõigepealt ehitus-konfiguratsioonid (build configurations) ja tõmba sõltuvused (dependencies) juba enne lähtekoodi kopeerimist, et kiirendada korduvaid ehitusi (builds).
 
 
 ### Näide:
@@ -28,12 +28,12 @@ COPY src ./src
 RUN gradle bootJar --no-daemon
 ```
 
-- Esmalt build-script’id ja konfiguratsioon (sõltuvused saavad cache’i minna).
-- Lõpuks lähtekood ja tegelik build’iks vajaliku allika kopeerimine.
+- Esmalt ehitus-skriptid (build-scripts) ja konfiguratsioon (sõltuvused (dependencies) saavad vahemällu (cache) minna).
+- Lõpuks lähtekood ja tegelikuks ehituseks (build) vajaliku allika kopeerimine.
 
-Kui mõni fail puudu jääb, viskab Docker build build-etapis vea ("file not found"). Võimalik on ka buildi logis või käsitsi kontrollida, mis faile ja kaustu allikas vajab. Parim allikas kontrollimiseks on build-süsteemi enda dokumentatsioon või projektistruktuur (failipuu).
+Kui mõni fail puudu jääb, viskab Docker ehitus (build) ehitus-etapis (build-stage) vea ("file not found"). Võimalik on ka ehituse (build) logis või käsitsi kontrollida, mis faile ja kaustu allikas vajab. Parim allikas kontrollimiseks on ehitus-süsteemi (build-system) enda dokumentatsioon või projektistruktuur (failipuu).
 
-Kokkuvõte: **kopeerida tuleb kõik failid ja kaustad, mis on vajalikud rakenduse buildimiseks**; enamasti build scriptid, konfiguratsioonid ja lähtekood.[^3][^4][^5]
+Kokkuvõte: **kopeerida tuleb kõik failid ja kaustad, mis on vajalikud rakenduse (application) ehitamiseks (build)**; enamasti ehitus skriptid, konfiguratsioonid ja lähtekood.[^3][^4][^5]
 <span style="display:none">[^1][^6][^7][^8]</span>
 
 <div align="center">⁂</div>

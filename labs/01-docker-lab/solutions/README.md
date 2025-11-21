@@ -1,6 +1,6 @@
 # Labor 1 Lahendused
 
-See kaust sisaldab näidis-lahendusi Labor 1 harjutustele **mõlema teenuse** jaoks.
+See kaust sisaldab näidis-lahendusi Labor 1 harjutustele **mõlema teenuse (service)** jaoks.
 
 ---
 
@@ -9,12 +9,12 @@ See kaust sisaldab näidis-lahendusi Labor 1 harjutustele **mõlema teenuse** ja
 ```
 solutions/
 ├── README.md                    # See fail
-├── backend-nodejs/              # User Service (Node.js)
+├── backend-nodejs/              # User Teenus (Service) (Node.js)
 │   ├── Dockerfile               # Lihtne Dockerfile (Harjutus 1)
 │   ├── Dockerfile.optimized     # Optimeeritud (Harjutus 5)
 │   ├── .dockerignore
-│   └── healthcheck.js           # Health check script
-└── backend-java-spring/         # Todo Service (Java)
+│   └── healthcheck.js           # Seisukorra kontrolli (health check) skript
+└── backend-java-spring/         # Todo Teenus (Service) (Java)
     ├── Dockerfile               # Lihtne Dockerfile (Harjutus 1)
     ├── Dockerfile.optimized     # Optimeeritud (Harjutus 5)
     └── .dockerignore
@@ -24,7 +24,7 @@ solutions/
 
 ## 🚀 Kasutamine
 
-### User Service (Node.js)
+### User Teenus (Service) (Node.js)
 
 #### Lihtne Dockerfile (Harjutus 1)
 
@@ -36,7 +36,7 @@ cd ../../apps/backend-nodejs
 cp ../../01-docker-lab/solutions/backend-nodejs/Dockerfile .
 cp ../../01-docker-lab/solutions/backend-nodejs/.dockerignore .
 
-# Build Docker image
+# Ehita (build) Docker pilt (image)
 docker build -t user-service:1.0 .
 
 # Käivita
@@ -53,16 +53,16 @@ docker run -d --name user-service -p 3000:3000 \
 cp ../../01-docker-lab/solutions/backend-nodejs/Dockerfile.optimized .
 cp ../../01-docker-lab/solutions/backend-nodejs/healthcheck.js .
 
-# Ehita (mitme-sammuline (multi-stage) build)
+# Ehita (build) (mitme-sammuline (multi-stage) ehitus (build))
 docker build -f Dockerfile.optimized -t user-service:1.0-optimized .
 
 # Võrdle suurusi
 docker images | grep user-service
 # user-service:1.0            ~305MB
-# user-service:1.0-optimized  ~305MB (sama suurus, kuid kiirem rebuild ja health check)
+# user-service:1.0-optimized  ~305MB (sama suurus, kuid kiirem uuesti ehitamine (rebuild) ja seisukorra kontroll (health check))
 ```
 
-### Todo Service (Java)
+### Todo Teenus (Service) (Java)
 
 #### Lihtne Dockerfile (Harjutus 1)
 
@@ -74,10 +74,10 @@ cd ../../apps/backend-java-spring
 cp ../../01-docker-lab/solutions/backend-java-spring/Dockerfile .
 cp ../../01-docker-lab/solutions/backend-java-spring/.dockerignore .
 
-# Build JAR
+# Ehita (build) JAR
 ./gradlew clean bootJar
 
-# Build Docker image
+# Ehita (build) Docker pilt (image)
 docker build -t todo-service:1.0 .
 
 # Käivita
@@ -93,7 +93,7 @@ docker run -d --name todo-service -p 8081:8081 \
 # Kopeeri optimeeritud versioon
 cp ../../01-docker-lab/solutions/backend-java-spring/Dockerfile.optimized .
 
-# Ehita (mitme-sammuline (multi-stage) build teeb ka JAR'i)
+# Ehita (build) (mitme-sammuline (multi-stage) ehitus (build) teeb ka JAR'i)
 docker build -f Dockerfile.optimized -t todo-service:1.0-optimized .
 
 # Võrdle suurusi
@@ -104,35 +104,35 @@ docker images | grep todo-service
 
 ---
 
-## 📊 Image Suuruste Võrdlus
+## 📊 Piltide (Images) Suuruste Võrdlus
 
-### User Service (Node.js)
+### User Teenus (Service) (Node.js)
 
 | Versioon | Suurus | Kirjeldus |
 |----------|--------|-----------|
 | **Lihtne** | ~305MB | node:18-slim + npm install |
-| **Optimeeritud** | ~305MB | Multi-stage + non-root + health check (sama suurus, kuid kiirem rebuild) |
+| **Optimeeritud** | ~305MB | Mitme-sammuline (multi-stage) + mitte-juurkasutaja (non-root) + seisukorra kontroll (health check) (sama suurus, kuid kiirem uuesti ehitamine (rebuild)) |
 
 **Parandused optimeeritud versioonis:**
-- Multi-stage build (dependencies cached eraldi - kiirem rebuild!)
-- Non-root user (nodejs:1001)
-- Health check (healthcheck.js)
-- `npm ci --only=production` (väiksem dependencies)
-- ⚠️ Suurus jääb samaks: bcrypt native moodulid nõuavad node:18-slim base image'i
+- Mitme-sammuline (multi-stage) ehitus (build) (sõltuvused (dependencies) on vahemälus (cached) eraldi - kiirem uuesti ehitamine (rebuild)!)
+- Mitte-juurkasutaja (non-root user) (nodejs:1001)
+- Seisukorra kontroll (health check) (healthcheck.js)
+- `npm ci --only=production` (väiksemad sõltuvused (dependencies))
+- ⚠️ Suurus jääb samaks: bcrypt natiivmoodulid nõuavad node:18-slim baaspilti (base image)
 
-### Todo Service (Java)
+### Todo Teenus (Service) (Java)
 
 | Versioon | Suurus | Kirjeldus |
 |----------|--------|-----------|
 | **Lihtne** | ~230MB | eclipse-temurin:17-jre-alpine + JAR |
-| **Optimeeritud** | ~180MB | Multi-stage (Gradle build → JRE runtime) + non-root |
+| **Optimeeritud** | ~180MB | Mitme-sammuline (multi-stage) (Gradle ehitus (build) → JRE runtime) + mitte-juurkasutaja (non-root) |
 
 **Parandused optimeeritud versioonis:**
-- Multi-stage build (Gradle JDK → JRE runtime)
-- Non-root user (spring:1001)
-- Health check (wget-based)
-- Layer caching (dependencies cached eraldi)
-- Gradle --no-daemon (vähem memory kasutust)
+- Mitme-sammuline (multi-stage) ehitus (build) (Gradle JDK → JRE runtime)
+- Mitte-juurkasutaja (non-root user) (spring:1001)
+- Seisukorra kontroll (health check) (wget-based)
+- Kihtide vahemälu (layer caching) (sõltuvused (dependencies) on vahemälus (cached) eraldi)
+- Gradle --no-daemon (vähem mälu kasutust)
 
 ---
 
@@ -141,11 +141,11 @@ docker images | grep todo-service
 - ⚠️ Need on **näidis-lahendused** - proovi esmalt ise!
 - 💪 Õppimine toimub läbi proovimise ja vigade parandamise
 - 📚 Kasuta neid ainult kui jääd hätta
-- ✅ Mõlemad teenused on production-ready:
-  - Alpine base images (väiksem suurus)
-  - Non-root users (security)
-  - Health checks (monitoring)
-  - Layer caching (kiirem rebuild)
+- ✅ Mõlemad teenused (services) on tootmisvalmis (production-ready):
+  - Alpine baaspildid (base images) (väiksem suurus)
+  - Mitte-juurkasutajad (non-root users) (turvalisus)
+  - Seisukorra kontrollid (health checks) (monitooring)
+  - Kihtide vahemälu (layer caching) (kiirem uuesti ehitamine (rebuild))
 
 ---
 

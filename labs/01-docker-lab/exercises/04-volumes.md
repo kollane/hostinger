@@ -1,16 +1,16 @@
-# Harjutus 4: Docker Volumes
+# Harjutus 4: Docker Andmehoidlad (Volumes)
 
 **Kestus:** 45 minutit
-**Eesmärk:** Säilita andmed volumes'iga ja õpi data persistence
+**Eesmärk:** Säilita andmed andmehoidlatega (volumes) ja õpi andmete püsivust (data persistence)
 
-**Eeldus:** [Harjutus 3: Networking](03-networking.md) läbitud ✅
-💡 **Märkus:** Kui base pildid (images) (`user-service:1.0`, `todo-service:1.0`) puuduvad, käivita `./setup.sh` ja vali `Y`
+**Eeldus:** [Harjutus 3: Võrgundus (Networking)](03-networking.md) läbitud ✅
+💡 **Märkus:** Kui baaspildid (base images) (`user-service:1.0`, `todo-service:1.0`) puuduvad, käivita `./setup.sh` ja vali `Y`
 
 ---
 
 ## 📋 Ülevaade
 
-**Mäletad Harjutus 3-st?** Me käivitasime 4 containerit (2 PostgreSQL + 2 teenust) custom network'is. Aga mis juhtub, kui container kustutatakse? **Kõik andmed kaovad!** 😱
+**Mäletad Harjutus 3-st?** Me käivitasime 4 konteinerit (2 PostgreSQL + 2 teenust (services)) kohandatud võrgus (custom network). Aga mis juhtub, kui konteiner kustutatakse? **Kõik andmed kaovad!** 😱
 
 **Probleem:**
 ```bash
@@ -19,23 +19,23 @@ docker rm postgres-todo postgres-user
 # Kõik andmed (users JA todos) on KADUNUD!
 ```
 
-**Lahendus: Docker Volumes!**
-- Volumes säilitavad andmed väljaspool containerit
-- Container võib kustuda, aga andmed jäävad alles
-- Võid kasutada sama volume'i uue containeriga
-- **Selles harjutuses:** Lisame volumes MÕLEMALE PostgreSQL containerile!
+**Lahendus: Docker Andmehoidlad (Volumes)!**
+- Andmehoidlad (volumes) säilitavad andmed väljaspool konteinerit
+- Konteiner võib kustuda, aga andmed jäävad alles
+- Võid kasutada sama andmehoidlat (volume) uue konteineriga
+- **Selles harjutuses:** Lisame andmehoidlad (volumes) MÕLEMALE PostgreSQL konteinerile!
 
 ---
 
 ## 🎯 Õpieesmärgid
 
-- ✅ Luua named volumes (2 volumes: User Service + Todo Service)
-- ✅ Mount volume containerisse
-- ✅ Testida data persistence (container kustutatakse, andmed jäävad!)
-- ✅ Backup ja restore mitmikut volumes
-- ✅ Inspekteerida volumes
-- ✅ Mõista, miks volumes on kriitiline tootmises
-- ✅ Testida disaster recovery stsenaariumi
+- ✅ Luua nimega andmehoidlad (named volumes) (2 andmehoidlat (volumes): User Teenus (Service) + Todo Teenus (Service))
+- ✅ Paigaldada (mount) andmehoidla (volume) konteinerisse
+- ✅ Testida andmete püsivust (data persistence) (konteiner kustutatakse, andmed jäävad!)
+- ✅ Varundada (backup) ja taastada (restore) mitut andmehoidlat (volumes)
+- ✅ Inspekteerida andmehoidlaid (volumes)
+- ✅ Mõista, miks andmehoidlad (volumes) on kriitilised tootmises
+- ✅ Testida katastroofist taastumise (disaster recovery) stsenaariumi
 
 ---
 
@@ -43,13 +43,13 @@ docker rm postgres-todo postgres-user
 
 ### Samm 1: Demonstreeri Probleemi (10 min)
 
-**Esmalt näitame, mis juhtub ILMA volume'ita - MÕLEMAS andmebaasis:**
+**Esmalt näitame, mis juhtub ILMA andmehoidlateta (volumes) - MÕLEMAS andmebaasis:**
 
 ```bash
-# Kui sul on Harjutus 3 containerid töös, kasuta neid
-# Muidu käivita kaks PostgreSQL containerit (ILMA volumes'ita):
+# Kui sul on Harjutus 3 konteinerid töös, kasuta neid
+# Muidu käivita kaks PostgreSQL konteinerit (ILMA andmehoidlateta (volumes)):
 
-# PostgreSQL User Service'ile (ILMA volume'ita)
+# PostgreSQL User Teenusele (Service) (ILMA andmehoidlata (volume))
 docker run -d \
   --name postgres-user \
   --network todo-network \
@@ -58,7 +58,7 @@ docker run -d \
   -e POSTGRES_DB=user_service_db \
   postgres:16-alpine
 
-# PostgreSQL Todo Service'ile (ILMA volume'ita)
+# PostgreSQL Todo Teenusele (Service) (ILMA andmehoidlata (volume))
 docker run -d \
   --name postgres-todo \
   --network todo-network \
@@ -71,7 +71,7 @@ sleep 5
 
 # Loo tabelid ja lisa testandmed
 
-# User Service andmebaas
+# User Teenuse (Service) andmebaas
 docker exec -i postgres-user psql -U postgres -d user_service_db <<EOF
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
@@ -84,7 +84,7 @@ INSERT INTO users (name, email, password, role) VALUES
 ('Test User', 'test@example.com', 'hashed_password', 'user');
 EOF
 
-# Todo Service andmebaas
+# Todo Teenuse (Service) andmebaas
 docker exec -i postgres-todo psql -U postgres -d todo_service_db <<EOF
 CREATE TABLE todos (
     id BIGSERIAL PRIMARY KEY,
@@ -99,17 +99,17 @@ INSERT INTO todos (user_id, title, description, priority) VALUES
 EOF
 
 # Kontrolli, et andmed on olemas
-echo "=== User Service andmed ==="
+echo "=== User Teenuse (Service) andmed ==="
 docker exec postgres-user psql -U postgres -d user_service_db -c "SELECT * FROM users;"
 
-echo -e "\n=== Todo Service andmed ==="
+echo -e "\n=== Todo Teenuse (Service) andmed ==="
 docker exec postgres-todo psql -U postgres -d todo_service_db -c "SELECT * FROM todos;"
 
-# Nüüd KUSTUTA mõlemad containerid
+# Nüüd KUSTUTA mõlemad konteinerid
 docker stop postgres-user postgres-todo
 docker rm postgres-user postgres-todo
 
-# Käivita UUS PostgreSQL (ILMA volume'ita)
+# Käivita UUS PostgreSQL (ILMA andmehoidlata (volume))
 docker run -d --name postgres-user --network todo-network \
   -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres \
   -e POSTGRES_DB=user_service_db postgres:16-alpine
@@ -121,37 +121,37 @@ docker run -d --name postgres-todo --network todo-network \
 sleep 5
 
 # Proovi andmeid lugeda
-echo "=== Proovi User Service andmeid lugeda ==="
+echo "=== Proovi User Teenuse (Service) andmeid lugeda ==="
 docker exec postgres-user psql -U postgres -d user_service_db -c "SELECT * FROM users;" 2>&1
 # ERROR: relation "users" does not exist
 
-echo -e "\n=== Proovi Todo Service andmeid lugeda ==="
+echo -e "\n=== Proovi Todo Teenuse (Service) andmeid lugeda ==="
 docker exec postgres-todo psql -U postgres -d todo_service_db -c "SELECT * FROM todos;" 2>&1
 # ERROR: relation "todos" does not exist
 
 # KÕIK ANDMED on KADUNUD! 💥
 ```
 
-**See on SUUR PROBLEEM tootmises!** Lahendame selle nüüd volumes'iga.
+**See on SUUR PROBLEEM tootmises!** Lahendame selle nüüd andmehoidlatega (volumes).
 
-### Samm 2: Loo Named Volumes (5 min)
+### Samm 2: Loo Nimega Andmehoidlad (Named Volumes) (5 min)
 
 ```bash
 # Puhasta eelmine test
 docker stop postgres-user postgres-todo 2>/dev/null || true
 docker rm postgres-user postgres-todo 2>/dev/null || true
 
-# Loo KAKS volumes - üks igale andmebaasile!
+# Loo KAKS andmehoidlat (volumes) - üks igale andmebaasile!
 docker volume create postgres-user-data
 docker volume create postgres-todo-data
 
-# Vaata kõiki volumes
+# Vaata kõiki andmehoidlaid (volumes)
 docker volume ls
 # Peaks näitama:
 # - postgres-user-data
 # - postgres-todo-data
 
-# Inspekteeri mõlemat volume'i
+# Inspekteeri mõlemat andmehoidlat (volume)
 docker volume inspect postgres-user-data
 docker volume inspect postgres-todo-data
 
@@ -161,16 +161,16 @@ docker volume inspect postgres-todo-data
 # - Created timestamp
 ```
 
-**Miks kaks volumes?**
-- ✅ Iga mikroteenusel oma andmebaas (mikroteenuste best practice!)
+**Miks kaks andmehoidlat (volumes)?**
+- ✅ Igal mikroteenusel (microservice) oma andmebaas (mikroteenuste (microservices) parim praktika (best practice)!)
 - ✅ Sõltumatu andmete haldamine
-- ✅ Eraldi backup strateegia
+- ✅ Eraldi varundamise (backup) strateegia
 - ✅ Paindlik skaleeritavus
 
-### Samm 3: Käivita MÕLEMAD PostgreSQL Containerid Volume'itega (10 min)
+### Samm 3: Käivita MÕLEMAD PostgreSQL Konteinerid Andmehoidlatega (Volumes) (10 min)
 
 ```bash
-# PostgreSQL User Service'ile volume'iga
+# PostgreSQL User Teenusele (Service) andmehoidlaga (volume)
 docker run -d \
   --name postgres-user \
   --network todo-network \
@@ -180,7 +180,7 @@ docker run -d \
   -v postgres-user-data:/var/lib/postgresql/data \
   postgres:16-alpine
 
-# PostgreSQL Todo Service'ile volume'iga
+# PostgreSQL Todo Teenusele (Service) andmehoidlaga (volume)
 docker run -d \
   --name postgres-todo \
   --network todo-network \
@@ -196,15 +196,15 @@ docker ps | grep postgres
 ```
 
 **Oluline:** `-v postgres-user-data:/var/lib/postgresql/data`
-- `postgres-user-data` = volume nimi
-- `/var/lib/postgresql/data` = PostgreSQL andmete kataloog containeris
-- Docker mount'ib volume sinna kataloogi
+- `postgres-user-data` = andmehoidla (volume) nimi
+- `/var/lib/postgresql/data` = PostgreSQL andmete kataloog konteineris
+- Docker paigaldab (mounts) andmehoidla (volume) sinna kataloogi
 
 **Mida just juhtus?**
-- ✅ Lõime 2 eraldi volumes
-- ✅ Käivitasime 2 PostgreSQL containerit
-- ✅ Iga container kasutab oma volume'i
-- ✅ Andmed salvestatakse nüüd volume'itesse, MITTE containeritesse!
+- ✅ Lõime 2 eraldi andmehoidlat (volumes)
+- ✅ Käivitasime 2 PostgreSQL konteinerit
+- ✅ Iga konteiner kasutab oma andmehoidlat (volume)
+- ✅ Andmed salvestatakse nüüd andmehoidlatesse (volumes), MITTE konteineritesse!
 
 ### Samm 4: Seadista MÕLEMAD Andmebaasid ja Lisa Testandmeid (15 min)
 
@@ -212,7 +212,7 @@ docker ps | grep postgres
 # Oota, et PostgreSQL on valmis
 sleep 5
 
-# === USER SERVICE ANDMEBAAS ===
+# === USER TEENUSE (SERVICE) ANDMEBAAS ===
 # Loo users tabel
 docker exec -i postgres-user psql -U postgres -d user_service_db <<EOF
 CREATE TABLE users (
@@ -226,7 +226,7 @@ CREATE TABLE users (
 );
 EOF
 
-# Lisa testandmed User Service'i
+# Lisa testandmed User Teenusesse (Service)
 docker exec -i postgres-user psql -U postgres -d user_service_db <<EOF
 INSERT INTO users (name, email, password, role) VALUES
 ('Alice Admin', 'alice@example.com', 'hashed_password_1', 'admin'),
@@ -234,13 +234,13 @@ INSERT INTO users (name, email, password, role) VALUES
 ('Charlie User', 'charlie@example.com', 'hashed_password_3', 'user');
 EOF
 
-# Kontrolli User Service andmeid
-echo "=== USER SERVICE ANDMED ==="
+# Kontrolli User Teenuse (Service) andmeid
+echo "=== USER TEENUSE (SERVICE) ANDMED ==="
 docker exec postgres-user psql -U postgres -d user_service_db -c "
 SELECT id, name, email, role FROM users ORDER BY id;"
 # Peaks näitama 3 kasutajat
 
-# === TODO SERVICE ANDMEBAAS ===
+# === TODO TEENUSE (SERVICE) ANDMEBAAS ===
 # Loo todos tabel
 docker exec -i postgres-todo psql -U postgres -d todo_service_db <<EOF
 CREATE TABLE todos (
@@ -256,17 +256,17 @@ CREATE TABLE todos (
 );
 EOF
 
-# Lisa testandmed Todo Service'i
+# Lisa testandmed Todo Teenusesse (Service)
 docker exec -i postgres-todo psql -U postgres -d todo_service_db <<EOF
 INSERT INTO todos (user_id, title, description, priority) VALUES
-(1, 'Õpi Docker Volumes', 'Tee harjutus 4 lõpuni', 'high'),
-(1, 'Testi data persistence', 'Kustuta container ja vaata, kas andmed jäävad alles', 'high'),
-(2, 'Lisa backup strateegia', 'Õpi volume backup tegemist', 'medium'),
-(3, 'Deploy to production', 'Kasuta volumes tootmises', 'high');
+(1, 'Õpi Docker Andmehoidlaid (Volumes)', 'Tee harjutus 4 lõpuni', 'high'),
+(1, 'Testi andmete püsivust (data persistence)', 'Kustuta konteiner ja vaata, kas andmed jäävad alles', 'high'),
+(2, 'Lisa varundamise (backup) strateegia', 'Õpi andmehoidla (volume) varundamist (backup) tegema', 'medium'),
+(3, 'Deploy to production', 'Kasuta andmehoidlaid (volumes) tootmises', 'high');
 EOF
 
-# Kontrolli Todo Service andmeid
-echo -e "\n=== TODO SERVICE ANDMED ==="
+# Kontrolli Todo Teenuse (Service) andmeid
+echo -e "\n=== TODO TEENUSE (SERVICE) ANDMED ==="
 docker exec postgres-todo psql -U postgres -d todo_service_db -c "
 SELECT id, user_id, title, priority, created_at FROM todos ORDER BY id;"
 # Peaks näitama 4 todo'd
@@ -274,31 +274,31 @@ SELECT id, user_id, title, priority, created_at FROM todos ORDER BY id;"
 echo -e "\n✅ Mõlemad andmebaasid on seadistatud ja sisaldavad andmeid!"
 ```
 
-### Samm 5: Testi Data Persistence - KÕIGE OLULISEM TEST! (15 min)
+### Samm 5: Testi Andmete Püsivust (Data Persistence) - KÕIGE OLULISEM TEST! (15 min)
 
-**See on see hetk, kus volume'i väärtus selgub - testime MÕLEMAT teenust!**
+**See on see hetk, kus andmehoidla (volume) väärtus selgub - testime MÕLEMAT teenust (service)!**
 
 ```bash
-# === PART 1: TODO SERVICE PERSISTENCE TEST ===
-echo "=== TESTIB TODO SERVICE DATA PERSISTENCE ==="
+# === PART 1: TODO TEENUSE (SERVICE) PÜSIVUSE (PERSISTENCE) TEST ===
+echo "=== TESTIB TODO TEENUSE (SERVICE) ANDMETE PÜSIVUST (DATA PERSISTENCE) ==="
 
-# 1. Stopp container
+# 1. Stopp konteiner
 docker stop postgres-todo
-echo "✅ Container peatatud"
+echo "✅ Konteiner peatatud"
 
-# 2. KUSTUTA container täielikult
+# 2. KUSTUTA konteiner täielikult
 docker rm postgres-todo
-echo "✅ Container KUSTUTATUD!"
+echo "✅ Konteiner KUSTUTATUD!"
 
-# 3. Kontrolli, et container on tõesti kadunud
+# 3. Kontrolli, et konteiner on tõesti kadunud
 docker ps -a | grep postgres-todo
-echo "✅ Container ei eksisteeri enam!"
+echo "✅ Konteiner ei eksisteeri enam!"
 
-# 4. AGA VOLUME ON ALLES!
+# 4. AGA ANDMEHOIDLA (VOLUME) ON ALLES!
 docker volume ls | grep postgres-todo-data
-echo "✅ Volume on endiselt olemas!"
+echo "✅ Andmehoidla (volume) on endiselt olemas!"
 
-# 5. Käivita TÄIESTI UUS container SAMA volume'iga
+# 5. Käivita TÄIESTI UUS konteiner SAMA andmehoidlaga (volume)
 docker run -d \
   --name postgres-todo \
   --network todo-network \
@@ -311,29 +311,29 @@ docker run -d \
 # Oota, et PostgreSQL käivitub
 sleep 5
 
-# 6. MOMENT OF TRUTH: Kas TODO andmed on alles?
+# 6. TÕE HETK: Kas TODO andmed on alles?
 echo "=== KONTROLLIB TODO ANDMEID ==="
 docker exec postgres-todo psql -U postgres -d todo_service_db -c "
 SELECT id, title, priority FROM todos ORDER BY id;"
 
-echo -e "\n✅ TODO SERVICE ANDMED ON ALLES! 🎉\n"
+echo -e "\n✅ TODO TEENUSE (SERVICE) ANDMED ON ALLES! 🎉\n"
 
-# === PART 2: USER SERVICE PERSISTENCE TEST ===
-echo "=== TESTIB USER SERVICE DATA PERSISTENCE ==="
+# === PART 2: USER TEENUSE (SERVICE) PÜSIVUSE (PERSISTENCE) TEST ===
+echo "=== TESTIB USER TEENUSE (SERVICE) ANDMETE PÜSIVUST (DATA PERSISTENCE) ==="
 
-# 1. Stopp container
+# 1. Stopp konteiner
 docker stop postgres-user
-echo "✅ Container peatatud"
+echo "✅ Konteiner peatatud"
 
-# 2. KUSTUTA container täielikult
+# 2. KUSTUTA konteiner täielikult
 docker rm postgres-user
-echo "✅ Container KUSTUTATUD!"
+echo "✅ Konteiner KUSTUTATUD!"
 
-# 3. AGA VOLUME ON ALLES!
+# 3. AGA ANDMEHOIDLA (VOLUME) ON ALLES!
 docker volume ls | grep postgres-user-data
-echo "✅ Volume on endiselt olemas!"
+echo "✅ Andmehoidla (volume) on endiselt olemas!"
 
-# 4. Käivita TÄIESTI UUS container SAMA volume'iga
+# 4. Käivita TÄIESTI UUS konteiner SAMA andmehoidlaga (volume)
 docker run -d \
   --name postgres-user \
   --network todo-network \
@@ -346,105 +346,105 @@ docker run -d \
 # Oota, et PostgreSQL käivitub
 sleep 5
 
-# 5. MOMENT OF TRUTH: Kas USER andmed on alles?
+# 5. TÕE HETK: Kas USER andmed on alles?
 echo "=== KONTROLLIB USER ANDMEID ==="
 docker exec postgres-user psql -U postgres -d user_service_db -c "
 SELECT id, name, email, role FROM users ORDER BY id;"
 
-echo -e "\n✅ USER SERVICE ANDMED ON ALLES! 🎉\n"
+echo -e "\n✅ USER TEENUSE (SERVICE) ANDMED ON ALLES! 🎉\n"
 ```
 
 **🎉 TULEMUS: MÕLEMAD ANDMEBAASID ON ALLES!**
 
 **Mida see tähendab?**
-- ✅ MÕLEMAD containerid KUSTUTATI täielikult
-- ✅ Uued containerid on TÄIESTI ERALDI instance'd
-- ✅ Aga KÕIK andmed on ALLES, sest need on volumes'ites!
-- ✅ Volumes elavad containeritest sõltumatult!
-- ✅ See on TÄPSELT see, mis tootmises vaja - containers are ephemeral, data is persistent!
+- ✅ MÕLEMAD konteinerid KUSTUTATI täielikult
+- ✅ Uued konteinerid on TÄIESTI ERALDI instantsid
+- ✅ Aga KÕIK andmed on ALLES, sest need on andmehoidlates (volumes)!
+- ✅ Andmehoidlad (volumes) elavad konteineritest sõltumatult!
+- ✅ See on TÄPSELT see, mis tootmises vaja - konteinerid on efemeersed (ephemeral), andmed on püsivad (persistent)!
 
-### Samm 6: Backup MÕLEMAD Volumes (10 min)
+### Samm 6: Varunda (Backup) MÕLEMAD Andmehoidlad (Volumes) (10 min)
 
-**Õpi, kuidas MITMIKUTE volumes'i andmeid backupida paralleelselt:**
+**Õpi, kuidas MITME andmehoidla (volume) andmeid varundada (backup) paralleelselt:**
 
 ```bash
-# === BACKUP USER SERVICE VOLUME ===
-echo "=== Backup User Service volume ==="
+# === VARUNDA (BACKUP) USER TEENUSE (SERVICE) ANDMEHOIDLA (VOLUME) ===
+echo "=== Varundab (backup) User Teenuse (Service) andmehoidlat (volume) ==="
 docker run --rm \
   -v postgres-user-data:/data \
   -v $(pwd):/backup \
   alpine tar czf /backup/postgres-user-backup.tar.gz -C /data .
 
-# === BACKUP TODO SERVICE VOLUME ===
-echo "=== Backup Todo Service volume ==="
+# === VARUNDA (BACKUP) TODO TEENUSE (SERVICE) ANDMEHOIDLA (VOLUME) ===
+echo "=== Varundab (backup) Todo Teenuse (Service) andmehoidlat (volume) ==="
 docker run --rm \
   -v postgres-todo-data:/data \
   -v $(pwd):/backup \
   alpine tar czf /backup/postgres-todo-backup.tar.gz -C /data .
 
-# Kontrolli MÕLEMAT backup faili
-echo -e "\n=== Backup failid ==="
+# Kontrolli MÕLEMAT varukoopia (backup) faili
+echo -e "\n=== Varukoopia (backup) failid ==="
 ls -lh postgres-*-backup.tar.gz
 
 # Oodatud väljund:
 # postgres-user-backup.tar.gz  ~5MB
 # postgres-todo-backup.tar.gz  ~3MB
 
-# Vaata backup sisu (optional)
-echo -e "\n=== User Service backup sisu ==="
+# Vaata varukoopia (backup) sisu (optional)
+echo -e "\n=== User Teenuse (Service) varukoopia (backup) sisu ==="
 tar -tzf postgres-user-backup.tar.gz | head -10
 
-echo -e "\n=== Todo Service backup sisu ==="
+echo -e "\n=== Todo Teenuse (Service) varukoopia (backup) sisu ==="
 tar -tzf postgres-todo-backup.tar.gz | head -10
 ```
 
 **Mida see teeb?**
-- `-v postgres-user-data:/data` - Mount volume containerisse
-- `-v $(pwd):/backup` - Mount praegune kaust containerisse
-- `alpine tar czf` - Kasuta alpine image'i et teha tar.gz archive
-- `--rm` - Kustuta container pärast töö lõppu
+- `-v postgres-user-data:/data` - Paigalda (mount) andmehoidla (volume) konteinerisse
+- `-v $(pwd):/backup` - Paigalda (mount) praegune kaust konteinerisse
+- `alpine tar czf` - Kasuta alpine pilti (image), et teha tar.gz arhiiv
+- `--rm` - Kustuta konteiner pärast töö lõppu
 
-**Miks kaks eraldi backup'i?**
-- ✅ Iga mikroteenusel oma backup strateegia
-- ✅ Saad restore'ida ainult ühe teenuse (kui vaja)
-- ✅ Väiksemad backup failid (kiirem)
+**Miks kaks eraldi varukoopiat (backup)?**
+- ✅ Igal mikroteenusel (microservice) oma varundamise (backup) strateegia
+- ✅ Saad taastada (restore) ainult ühe teenuse (service) (kui vaja)
+- ✅ Väiksemad varukoopia (backup) failid (kiirem)
 
-### Samm 7: Restore Volume Backup'ist - Disaster Recovery (Bonus - 15 min)
+### Samm 7: Taasta (Restore) Andmehoidla (Volume) Varukoopiast (Backup) - Katastroofist Taastumine (Disaster Recovery) (Bonus - 15 min)
 
 **Simuleerime "katastroofist taastumist" (disaster recovery):**
 
 ```bash
-# === DISASTER SCENARIO: Todo Service volume KUSTUB täielikult ===
-echo "=== SIMULEERIB DISASTER: Volume kustutatakse! ==="
+# === KATASTROOFI STSENAARIUM: Todo Teenuse (Service) andmehoidla (volume) KUSTUB täielikult ===
+echo "=== SIMULEERIB KATASTROOFI: Andmehoidla (volume) kustutatakse! ==="
 
-# 1. Stopp ja kustuta container
+# 1. Stopp ja kustuta konteiner
 docker stop postgres-todo
 docker rm postgres-todo
 
-# 2. KUSTUTA VOLUME TÄIELIKULT (simuleerib disk failure)
+# 2. KUSTUTA ANDMEHOIDLA (VOLUME) TÄIELIKULT (simuleerib ketta riket (disk failure))
 docker volume rm postgres-todo-data
-echo "💥 Volume on KADUNUD! (Simuleeritud disk failure)"
+echo "💥 Andmehoidla (volume) on KADUNUD! (Simuleeritud ketta rike (disk failure))"
 
-# 3. Kontrolli, et volume on tõesti kadunud
+# 3. Kontrolli, et andmehoidla (volume) on tõesti kadunud
 docker volume ls | grep postgres-todo-data
-# Tühi - volume on KADUNUD!
+# Tühi - andmehoidla (volume) on KADUNUD!
 
-echo -e "\n=== ALUSTAB DISASTER RECOVERY ==="
+echo -e "\n=== ALUSTAB KATASTROOFIST TAASTUMIST (DISASTER RECOVERY) ==="
 
-# 4. Loo UUS tühi volume
+# 4. Loo UUS tühi andmehoidla (volume)
 docker volume create postgres-todo-data
-echo "✅ Uus tühi volume loodud"
+echo "✅ Uus tühi andmehoidla (volume) loodud"
 
-# 5. RESTORE backup
-echo "=== Restore backup ==="
+# 5. TAASTA (RESTORE) varukoopia (backup)
+echo "=== Taastab (restore) varukoopia (backup) ==="
 docker run --rm \
   -v postgres-todo-data:/data \
   -v $(pwd):/backup \
   alpine tar xzf /backup/postgres-todo-backup.tar.gz -C /data
 
-echo "✅ Backup restored!"
+echo "✅ Varukoopia (backup) taastatud!"
 
-# 6. Käivita PostgreSQL uue (restored) volume'iga
+# 6. Käivita PostgreSQL uue (taastatud (restored)) andmehoidlaga (volume)
 docker run -d \
   --name postgres-todo \
   --network todo-network \
@@ -456,37 +456,37 @@ docker run -d \
 
 sleep 5
 
-# 7. MOMENT OF TRUTH: Kas andmed on TAGASI?
-echo "=== Kontrollib, kas andmed on restored ==="
+# 7. TÕE HETK: Kas andmed on TAGASI?
+echo "=== Kontrollib, kas andmed on taastatud (restored) ==="
 docker exec postgres-todo psql -U postgres -d todo_service_db -c "
 SELECT id, title, priority FROM todos ORDER BY id;"
 
-echo -e "\n🎉 DISASTER RECOVERY ÕNNESTUS! Andmed on TAGASI!"
+echo -e "\n🎉 KATASTROOFIST TAASTUMINE (DISASTER RECOVERY) ÕNNESTUS! Andmed on TAGASI!"
 ```
 
 **Mida sa just õppisid?**
-- ✅ Volume kustutamine on PÖÖRDUMATU
-- ✅ Backup on KRITILINE tootmises
-- ✅ Restore protsess töötab (katastroof ei ole lõplik!)
-- ✅ Alati tee backup ENNE riskantset operatsiooni
+- ✅ Andmehoidla (volume) kustutamine on PÖÖRDUMATU
+- ✅ Varundamine (backup) on KRIITILINE tootmises
+- ✅ Taastamise (restore) protsess töötab (katastroof ei ole lõplik!)
+- ✅ Alati tee varukoopia (backup) ENNE riskantset operatsiooni
 
-### Samm 8: Vaata Volume Detaile (5 min)
+### Samm 8: Vaata Andmehoidla (Volume) Detaile (5 min)
 
 ```bash
-# MÕLEMA volume täielik info
+# MÕLEMA andmehoidla (volume) täielik info
 docker volume inspect postgres-user-data
 docker volume inspect postgres-todo-data
 
-# Kõigi volumes'i suurus
+# Kõigi andmehoidlate (volumes) suurus
 docker system df -v
 
-# Vaata ainult volume'ide sektsiooni
+# Vaata ainult andmehoidlate (volumes) sektsiooni
 docker system df -v | grep -A 15 "Local Volumes"
 ```
 
 **Huvitav fakt:**
 ```bash
-# Volumes asuvad host masinas siin:
+# Andmehoidlad (volumes) asuvad host masinas siin:
 sudo ls -la /var/lib/docker/volumes/postgres-user-data/_data/
 sudo ls -la /var/lib/docker/volumes/postgres-todo-data/_data/
 # Näed PostgreSQL failisüsteemi struktuuri
@@ -498,56 +498,56 @@ sudo ls -la /var/lib/docker/volumes/postgres-todo-data/_data/
 
 Peale selle harjutuse läbimist peaksid omama:
 
-- [x] **2 named volumes** loodud (`docker volume ls`)
+- [x] **2 nimega andmehoidlat (named volumes)** loodud (`docker volume ls`)
   - postgres-user-data
   - postgres-todo-data
-- [x] MÕLEMAD PostgreSQL containerid kasutavad volumes (`-v <volume>:/var/lib/postgresql/data`)
-- [x] **MÕLEMAD andmebaasid jäävad alles pärast container kustutamist!** (KÕIGE OLULISEM! ✨)
-- [x] **2 backup faili** loodud (postgres-user-backup.tar.gz, postgres-todo-backup.tar.gz)
-- [x] Oskad restore'ida backup'ist (disaster recovery)
-- [x] Oskad inspekteerida volumes (`docker volume inspect`)
-- [x] Mõistad, miks volumes on KRIITILISED tootmises
+- [x] MÕLEMAD PostgreSQL konteinerid kasutavad andmehoidlaid (volumes) (`-v <volume>:/var/lib/postgresql/data`)
+- [x] **MÕLEMAD andmebaasid jäävad alles pärast konteineri kustutamist!** (KÕIGE OLULISEM! ✨)
+- [x] **2 varukoopia (backup) faili** loodud (postgres-user-backup.tar.gz, postgres-todo-backup.tar.gz)
+- [x] Oskad taastada (restore) varukoopiast (backup) (katastroofist taastumine (disaster recovery))
+- [x] Oskad inspekteerida andmehoidlaid (volumes) (`docker volume inspect`)
+- [x] Mõistad, miks andmehoidlad (volumes) on KRIITILISED tootmises
 
 ---
 
 ## 🎓 Õpitud Mõisted
 
-### Named Volumes:
-- `docker volume create <nimi>` - Loo volume
-- `docker volume ls` - Näita kõiki volumes
+### Nimega Andmehoidlad (Named Volumes):
+- `docker volume create <nimi>` - Loo andmehoidla (volume)
+- `docker volume ls` - Näita kõiki andmehoidlaid (volumes)
 - `docker volume inspect <nimi>` - Vaata detaile
-- `docker volume rm <nimi>` - Kustuta volume (ettevaatust!)
-- `-v <volume>:<path>` - Mount volume containerisse
+- `docker volume rm <nimi>` - Kustuta andmehoidla (volume) (ettevaatust!)
+- `-v <volume>:<path>` - Paigalda (mount) andmehoidla (volume) konteinerisse
 
-### Data Persistence:
-- **Container on ephemeral (ajutine)** - võib kustuda
-- **Volume on persistent (püsiv)** - jääb alles
-- Container + Volume = Töötav rakendus koos püsivate andmetega
+### Andmete Püsivus (Data Persistence):
+- **Konteiner on efemeerne (ajutine)** - võib kustuda
+- **Andmehoidla (volume) on püsiv (persistent)** - jääb alles
+- Konteiner + Andmehoidla (Volume) = Töötav rakendus (application) koos püsivate andmetega
 
-### Volume Mounting:
-- Named volume: `-v postgres-todo-data:/var/lib/postgresql/data`
-- Bind mount: `-v /host/path:/container/path` (host kausta mount)
-- Anonymous volume: `-v /container/path` (Docker loob automaatselt)
+### Andmehoidla (Volume) Paigaldamine (Mounting):
+- Nimega andmehoidla (named volume): `-v postgres-todo-data:/var/lib/postgresql/data`
+- Siduspaigaldus (bind mount): `-v /host/path:/container/path` (host kausta paigaldamine (mount))
+- Anonüümne andmehoidla (anonymous volume): `-v /container/path` (Docker loob automaatselt)
 
-### Backup Strateegia:
-- Kasuta temporary containerit backup'imiseks
-- `--rm` flag kustutab backup container automaatselt
-- tar.gz on hea formaat PostgreSQL andmete backupiks
+### Varundamise (Backup) Strateegia:
+- Kasuta ajutist konteinerit varundamiseks (backup)
+- `--rm` lipp kustutab varundamise (backup) konteineri automaatselt
+- tar.gz on hea formaat PostgreSQL andmete varundamiseks (backup)
 
 ---
 
-## 💡 Millal Volumes Kasutada?
+## 💡 Millal Andmehoidlaid (Volumes) Kasutada?
 
-✅ **Kasuta volumes kui:**
+✅ **Kasuta andmehoidlaid (volumes) kui:**
 - Andmebaas (PostgreSQL, MySQL, MongoDB)
-- Uploaded failid (user uploads, images)
-- Log failid (kui tahad säilitada)
+- Üleslaaditud failid (kasutajate üleslaadimised (user uploads), pildid (images))
+- Logifailid (kui tahad säilitada)
 - Konfiguratsioonid (mis ei muutu tihti)
 
-❌ **Ära kasuta volumes kui:**
-- Source code (kasuta bind mounts development'il)
-- Secrets (kasuta Docker secrets või environment variables)
-- Temporary data (kasuta `/tmp` containeris)
+❌ **Ära kasuta andmehoidlaid (volumes) kui:**
+- Lähtekood (kasuta siduspaigaldusi (bind mounts) arenduses (development))
+- Saladused (secrets) (kasuta Docker saladusi (secrets) või keskkonna muutujaid (environment variables))
+- Ajutised andmed (kasuta `/tmp` konteineris)
 
 ---
 
@@ -555,47 +555,47 @@ Peale selle harjutuse läbimist peaksid omama:
 
 ### ✅ Tehnilised Oskused
 
-**Docker Volumes:**
-- ✅ Lõid named volumes (`docker volume create`)
-- ✅ Käivitasid containerid volumes'itega (`-v volume:/path`)
-- ✅ Testisid data persistence (container kustutatakse, andmed jäävad!)
-- ✅ Inspekteerisid volumes (`docker volume inspect`)
-- ✅ Backup ja restore strateegia
+**Docker Andmehoidlad (Volumes):**
+- ✅ Lõid nimega andmehoidlad (named volumes) (`docker volume create`)
+- ✅ Käivitasid konteinerid andmehoidlatega (volumes) (`-v volume:/path`)
+- ✅ Testisid andmete püsivust (data persistence) (konteiner kustutatakse, andmed jäävad!)
+- ✅ Inspekteerisid andmehoidlaid (volumes) (`docker volume inspect`)
+- ✅ Varundamise (backup) ja taastamise (restore) strateegia
 
-**Mikroteenuste Data Management:**
-- ✅ Iga mikroteenusel oma volume (postgres-user-data, postgres-todo-data)
+**Mikroteenuste (Microservices) Andmete Haldus:**
+- ✅ Igal mikroteenusel (microservice) oma andmehoidla (volume) (postgres-user-data, postgres-todo-data)
 - ✅ Sõltumatu andmete haldamine
-- ✅ Eraldi backup strateegia igale teenusele
-- ✅ Disaster recovery (restore backup'ist)
+- ✅ Eraldi varundamise (backup) strateegia igale teenusele (service)
+- ✅ Katastroofist taastumine (disaster recovery) (taastamine (restore) varukoopiast (backup))
 
-**Production Best Practices:**
-- ✅ Containers are ephemeral (võivad kustuda)
-- ✅ Data is persistent (volumes säilitavad)
-- ✅ Backup on KRITILINE
-- ✅ Teste disaster recovery regulaarselt
+**Tootmise Parimad Praktikad (Best Practices):**
+- ✅ Konteinerid on efemeersed (ephemeral) (võivad kustuda)
+- ✅ Andmed on püsivad (persistent) (andmehoidlad (volumes) säilitavad)
+- ✅ Varundamine (backup) on KRIITILINE
+- ✅ Testi katastroofist taastumist (disaster recovery) regulaarselt
 
 ### 🔄 Võrreldes Harjutus 3-ga
 
-**Harjutus 3 (ILMA volumes'ita):**
-- ❌ Andmed kaovad kui container kustutatakse
-- ❌ Ei saa teha backup'i
-- ❌ Disaster recovery võimatu
+**Harjutus 3 (ILMA andmehoidlateta (volumes)):**
+- ❌ Andmed kaovad kui konteiner kustutatakse
+- ❌ Ei saa teha varukoopiat (backup)
+- ❌ Katastroofist taastumine (disaster recovery) võimatu
 - ❌ MITTE tootmiseks sobiv!
 
-**Harjutus 4 (volumes'itega):**
-- ✅ Andmed püsivad (containers can fail, data survives!)
-- ✅ Backup/restore strateegia olemas
-- ✅ Disaster recovery võimalik
+**Harjutus 4 (andmehoidlatega (volumes)):**
+- ✅ Andmed püsivad (konteinerid võivad ebaõnnestuda, andmed jäävad alles!)
+- ✅ Varundamise/taastamise (backup/restore) strateegia olemas
+- ✅ Katastroofist taastumine (disaster recovery) võimalik
 - ✅ TOOTMISEKS VALMIS!
 
 ### 🚀 Järgmised Sammud
 
-**Harjutus 5: Optimization** õpetab:
-- Kuidas vähendada image suurust (multi-stage builds)
-- Kuidas kiirendada build protsessi (layer caching)
-- Kuidas lisada security (non-root users)
+**Harjutus 5: Optimeerimine (Optimization)** õpetab:
+- Kuidas vähendada pildi (image) suurust (mitme-sammulised (multi-stage) buildid)
+- Kuidas kiirendada ehitamise (build) protsessi (kihtide vahemälu (layer caching))
+- Kuidas lisada turvalisust (mitte-juurkasutajad (non-root users))
 
-**Jätka:** [Harjutus 5: Optimization](05-optimization.md)
+**Jätka:** [Harjutus 5: Optimeerimine (Optimization)](05-optimization.md)
 
 ---
 
@@ -608,6 +608,6 @@ Peale selle harjutuse läbimist peaksid omama:
 
 ---
 
-**Õnnitleme! Oled loonud production-ready data persistence lahenduse! 🎉**
+**Õnnitleme! Oled loonud production-ready andmete püsivuse (data persistence) lahenduse! 🎉**
 
-**Järgmine:** [Harjutus 5: Optimization](05-optimization.md) - Optimeeri image suurust ja kiirust!
+**Järgmine:** [Harjutus 5: Optimeerimine (Optimization)](05-optimization.md) - Optimeeri pildi (image) suurust ja kiirust!

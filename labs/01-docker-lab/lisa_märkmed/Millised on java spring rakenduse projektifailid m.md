@@ -1,28 +1,28 @@
 <img src="https://r2cdn.perplexity.ai/pplx-full-logo-primary-dark%402x.png" style="height:64px;margin-right:32px"/>
 
-# Millised on java spring rakenduse projektifailid mis on vajalikud kontineriseerimisel
+# Millised on java spring rakenduse (application) projektifailid mis on vajalikud kontineriseerimisel
 
-Java Spring rakenduse konteineriseerimisel on vajalikud järgmised projektifailid, et Dockerimage ehitamine ja konteineri käivitamine oleksid edukad:
+Java Spring rakenduse (application) konteineriseerimisel on vajalikud järgmised projektifailid, et Docker pildi (image) ehitamine (build) ja konteineri käivitamine oleksid edukad:
 
 ***
 
 ### Vajalikud projektifailid konteineriseerimiseks
 
 - **Dockerfile**
-    - Sisaldab juhiseid, kuidas rakenduse konteinerit ehitada ja käivitada.[^1][^2]
+    - Sisaldab juhiseid, kuidas rakenduse (application) konteinerit ehitada (build) ja käivitada.[^1][^2]
 - **Maven projekti puhul:**
-    - `pom.xml` – määratleb kõik sõltuvused, Java versiooni ja build’i konfiguratsiooni.[^3][^4]
+    - `pom.xml` – määratleb kõik sõltuvused (dependencies), Java versiooni ja ehituse (build) konfiguratsiooni.[^3][^4]
 - **Gradle projekti puhul:**
-    - `build.gradle` – sisaldab sõltuvusi ja build’i sätteid.[^5]
+    - `build.gradle` – sisaldab sõltuvusi (dependencies) ja ehituse (build) sätteid.[^5]
     - `settings.gradle` – Gradle konfiguratsioon, eriti suuremates projektides.
 - **Allikakood:**
     - `src/` kataloog (Java lähtekood, tavaliselt failistruktuur nagu `src/main/java`, `src/main/resources`).[^2][^3]
-- **Rakenduse jar fail**
-    - Build’i tulemusena tekib kaustas `target/` (Maven) või `build/libs/` (Gradle) fat/executable JAR fail (nt `app.jar`).[^6][^7]
+- **Rakenduse (application) jar fail**
+    - Ehituse (build) tulemusena tekib kaustas `target/` (Maven) või `build/libs/` (Gradle) fat/executable JAR fail (nt `app.jar`).[^6][^7]
 - **(Soovituslik) .dockerignore**
-    - Välistab buildi/konteinerisse mittevajalikud failid (nt .git, target/).[^6]
+    - Välistab ehitusse/konteinerisse mittevajalikud failid (nt .git, target/).[^6]
 - **Spring Boot eriseaded:**
-    - `application.properties` või `application.yml` (konfiguratsioon, mis peaks toetama välistamist/keskkonnamuutujaid).[^8]
+    - `application.properties` või `application.yml` (konfiguratsioon, mis peaks toetama välistamist/keskkonnamuutujaid (environment variables)).[^8]
 
 
 #### (soovi korral)
@@ -44,7 +44,7 @@ projekt/
 │       ├── java/
 │       └── resources/
 ├── target/
-│   └── app.jar            # Tekib pärast Maven buildi (või build/libs/app.jar Gradle jaoks)
+│   └── app.jar            # Tekib pärast Maven ehitust (build) (või build/libs/app.jar Gradle jaoks)
 ├── application.properties
 └── (docker-compose.yml)   # pole kohustuslik
 ```
@@ -52,7 +52,7 @@ projekt/
 
 ***
 
-Neid faile ja struktuuri järgides on võimalik Spring Boot rakendus edukalt konteineriseerida, tagades, et kõik vajalikud komponendid jõuavad korrektselt Docker image’i ja konteinerisse.[^3][^2][^6]
+Neid faile ja struktuuri järgides on võimalik Spring Boot rakendus (application) edukalt konteineriseerida, tagades, et kõik vajalikud komponendid jõuavad korrektselt Docker pilti (image) ja konteinerisse.[^3][^2][^6]
 <span style="display:none">[^10][^11][^12][^13][^14][^15][^16][^17][^18]</span>
 
 <div align="center">⁂</div>

@@ -1,45 +1,45 @@
-# Optimeeritud Dockerfile Todo Service jaoks (Harjutus 5)
-# Multi-stage build: Gradle build → JRE runtime
-# Eelised: väiksem image, layer caching, non-root user, health check
+# Optimeeritud Dockerfile Todo Teenuse (Service) jaoks (Harjutus 5)
+# Mitme-sammuline (multi-stage) ehitus (build): Gradle ehitus (build) → JRE runtime
+# Eelised: väiksem pilt (image), kihtide vahemälu (layer caching), mitte-juurkasutaja (non-root user), seisukorra kontroll (health check)
 
-# Stage 1: Build
+# 1. etapp: Ehitus (Build)
 FROM gradle:8.5-jdk17-alpine AS builder
 
 WORKDIR /app
 
-# Kopeeri Gradle failid (dependencies caching jaoks)
+# Kopeeri Gradle failid (sõltuvuste (dependencies) vahemälu (caching) jaoks)
 COPY build.gradle settings.gradle ./
 COPY gradle ./gradle
 
-# Download dependencies (cached kui build.gradle ei muutu)
+# Lae alla sõltuvused (dependencies) (on vahemälus (cached), kui build.gradle ei muutu)
 RUN gradle dependencies --no-daemon
 
-# Kopeeri source code ja build JAR
+# Kopeeri lähtekood ja ehita (build) JAR
 COPY src ./src
 RUN gradle bootJar --no-daemon
 
-# Stage 2: Runtime
+# 2. etapp: Runtime
 FROM eclipse-temurin:17-jre-alpine
 
 WORKDIR /app
 
-# Loo non-root user
+# Loo mitte-juurkasutaja (non-root user)
 RUN addgroup -g 1001 -S spring && \
     adduser -S spring -u 1001 -G spring
 
-# Kopeeri ainult JAR fail builder stage'ist
+# Kopeeri ainult JAR fail ehitaja (builder) etapist
 COPY --from=builder --chown=spring:spring /app/build/libs/todo-service.jar app.jar
 
-# Kasuta non-root userit
+# Kasuta mitte-juurkasutajat (non-root user)
 USER spring:spring
 
 EXPOSE 8081
 
-# Health check (kontrollib iga 30s, timeout 3s, start grace period 40s)
+# Seisukorra kontroll (health check) (kontrollib iga 30s, ajalõpp 3s, alguse ooteaeg 40s)
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s \
   CMD wget --no-verbose --tries=1 --spider http://localhost:8081/health || exit 1
 
-# Käivita rakendus JVM memory tuning'uga (container-aware)
+# Käivita rakendus (application) JVM mälu häälestamisega (konteineriteadlik)
 CMD ["java", \
     "-XX:InitialRAMPercentage=80", \
     "-XX:MaxRAMPercentage=80", \

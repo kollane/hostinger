@@ -1,5 +1,5 @@
-# Lihtne Dockerfile Todo Service jaoks (Harjutus 1)
-# Eeldab, et JAR fail on juba build'itud: ./gradlew bootJar
+# Lihtne Dockerfile Todo Teenuse (Service) jaoks (Harjutus 1)
+# Eeldab, et JAR fail on juba ehitatud (built): ./gradlew bootJar
 
 FROM eclipse-temurin:17-jre-alpine
 

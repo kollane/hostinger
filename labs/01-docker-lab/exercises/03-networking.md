@@ -1,41 +1,41 @@
-# Harjutus 3: Docker Networking
+# Harjutus 3: Docker Võrgundus (Networking)
 
 **Kestus:** 45 minutit
-**Eesmärk:** Loo custom network ja ühenda containerid proper networking'uga
+**Eesmärk:** Loo kohandatud võrk (custom network) ja ühenda konteinerid korrektse võrgundusega (proper networking)
 
-**Eeldus:** [Harjutus 2: Multi-Container](02-multi-container.md) läbitud ✅
-💡 **Märkus:** Kui base pildid (images) (`user-service:1.0`, `todo-service:1.0`) puuduvad, käivita `./setup.sh` ja vali `Y`
+**Eeldus:** [Harjutus 2: Mitme-Konteineri (Multi-Container)](02-multi-container.md) läbitud ✅
+💡 **Märkus:** Kui baaspildid (base images) (`user-service:1.0`, `todo-service:1.0`) puuduvad, käivita `./setup.sh` ja vali `Y`
 
 ---
 
 ## 📋 Ülevaade
 
-Eelmises harjutuses kasutasime `--link` et ühendada konteinereid. See toimis, aga Docker soovitab kasutada **custom networks** selle asemel!
+Eelmises harjutuses kasutasime `--link` et ühendada konteinereid. See toimis, aga Docker soovitab kasutada **kohandatud võrke (custom networks)** selle asemel!
 
-**Miks custom networks on paremad kui --link?**
-- ✅ Automaatne DNS resolution (container nimi = hostname)
-- ✅ Network isolation (erinevad projektid erinevates networks)
-- ✅ Turvalisem (--link on deprecated)
-- ✅ Skaaleerib paremini (lihtne lisada/eemaldada containereid)
-- ✅ Tänapäevane best practice
+**Miks kohandatud võrgud (custom networks) on paremad kui --link?**
+- ✅ Automaatne DNS lahendus (resolution) (konteineri nimi = hostname)
+- ✅ Võrgu isolatsioon (network isolation) (erinevad projektid erinevates võrkudes (networks))
+- ✅ Turvalisem (--link on aegunud (deprecated))
+- ✅ Skaaleerib paremini (lihtne lisada/eemaldada konteinereid)
+- ✅ Tänapäevane parim praktika (best practice)
 
 **Selles harjutuses:**
-- Loome custom network `todo-network`
-- Käivitame KÕIK 4 containerit (2 PostgreSQL + User Service + Todo Service)
-- Aga kasutame proper networking'ut (mitte --link!)
-- Testame End-to-End JWT workflow'i custom network'is
+- Loome kohandatud võrgu (custom network) `todo-network`
+- Käivitame KÕIK 4 konteinerit (2 PostgreSQL + User Teenus (Service) + Todo Teenus (Service))
+- Aga kasutame korrektset võrgundust (proper networking) (mitte --link!)
+- Testime End-to-End JWT workflow'i kohandatud võrgus (custom network)
 
 ---
 
 ## 🎯 Õpieesmärgid
 
-- ✅ Luua custom Docker network
-- ✅ Käivitada 4 containerit samas network'is
-- ✅ Kasutada DNS hostname resolution (automaatne!)
-- ✅ Testida teenuste vahelist suhtlust (User Service ↔ Todo Service)
+- ✅ Luua kohandatud (custom) Docker võrk (network)
+- ✅ Käivitada 4 konteinerit samas võrgus (network)
+- ✅ Kasutada DNS hostname lahendust (resolution) (automaatne!)
+- ✅ Testida teenuste (services) vahelist suhtlust (User Teenus (Service) ↔ Todo Teenus (Service))
 - ✅ Testida End-to-End JWT workflow'i
-- ✅ Inspekteerida network konfiguratsiooni
-- ✅ Isoleerida teenused network'idega
+- ✅ Inspekteerida võrgu (network) konfiguratsiooni
+- ✅ Isoleerida teenused (services) võrkudega (networks)
 - ✅ Mõista, miks see on parem kui --link
 
 ---
@@ -45,7 +45,7 @@ Eelmises harjutuses kasutasime `--link` et ühendada konteinereid. See toimis, a
 ### Samm 1: Puhasta Keskkond (5 min)
 
 ```bash
-# Stopp ja eemalda vanad containerid Harjutus 2-st
+# Stopp ja eemalda vanad konteinerid Harjutus 2-st
 docker stop user-service todo-service postgres-user postgres-todo 2>/dev/null || true
 docker rm user-service todo-service postgres-user postgres-todo 2>/dev/null || true
 
@@ -54,13 +54,13 @@ docker ps -a | grep -E 'user-service|todo-service|postgres'
 # Peaks olema tühi
 ```
 
-### Samm 2: Loo Custom Network (5 min)
+### Samm 2: Loo Kohandatud Võrk (Custom Network) (5 min)
 
 ```bash
-# Loo bridge network todo-network
+# Loo silla (bridge) võrk (network) todo-network
 docker network create todo-network
 
-# Vaata kõiki network'e
+# Vaata kõiki võrke (networks)
 docker network ls
 # Peaks näitama:
 # - bridge (default)
@@ -76,14 +76,14 @@ docker network inspect todo-network
 - Network tüüp: bridge
 - Subnet: näiteks 172.18.0.0/16
 - Gateway: näiteks 172.18.0.1
-- Containers: [] (tühi, sest pole veel ühtegi containerit lisatud)
+- Konteinerid: [] (tühi, sest pole veel ühtegi konteinerit lisatud)
 
-### Samm 3: Käivita PostgreSQL Containerid Samas Network'is (10 min)
+### Samm 3: Käivita PostgreSQL Konteinerid Samas Võrgus (Network) (10 min)
 
-**Nüüd käivitame MÕLEMAD PostgreSQL containerit samas custom network'is:**
+**Nüüd käivitame MÕLEMAD PostgreSQL konteinerit samas kohandatud võrgus (custom network):**
 
 ```bash
-# PostgreSQL User Service'ile
+# PostgreSQL User Teenusele (Service)
 docker run -d \
   --name postgres-user \
   --network todo-network \
@@ -92,7 +92,7 @@ docker run -d \
   -e POSTGRES_DB=user_service_db \
   postgres:16-alpine
 
-# PostgreSQL Todo Service'ile
+# PostgreSQL Todo Teenusele (Service)
 docker run -d \
   --name postgres-todo \
   --network todo-network \
@@ -106,12 +106,12 @@ docker ps | grep postgres
 # Peaks näitama mõlemat: postgres-user JA postgres-todo
 ```
 
-**Märka:** EI kasuta `-p` port mapping'ut, sest PostgreSQL on ainult sisemiselt kättesaadav (network isolation!)
+**Märka:** EI kasuta `-p` portide vastendamist (port mapping), sest PostgreSQL on ainult sisemiselt kättesaadav (võrgu isolatsioon (network isolation)!)
 
 ### Samm 4: Seadista Andmebaasid (10 min)
 
 ```bash
-# Loo users tabel User Service andmebaasis
+# Loo users tabel User Teenuse (Service) andmebaasis
 docker exec -i postgres-user psql -U postgres -d user_service_db <<EOF
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
@@ -124,11 +124,11 @@ CREATE TABLE users (
 );
 EOF
 
-# Kontrolli User Service tabel
+# Kontrolli User Teenuse (Service) tabel
 docker exec postgres-user psql -U postgres -d user_service_db -c "\dt"
 # Peaks näitama: users tabel
 
-# Loo todos tabel Todo Service andmebaasis
+# Loo todos tabel Todo Teenuse (Service) andmebaasis
 docker exec -i postgres-todo psql -U postgres -d todo_service_db <<EOF
 CREATE TABLE todos (
     id BIGSERIAL PRIMARY KEY,
@@ -143,14 +143,14 @@ CREATE TABLE todos (
 );
 EOF
 
-# Kontrolli Todo Service tabel
+# Kontrolli Todo Teenuse (Service) tabel
 docker exec postgres-todo psql -U postgres -d todo_service_db -c "\dt"
 # Peaks näitama: todos tabel
 ```
 
 ### Samm 5: Genereeri Jagatud JWT Secret (5 min)
 
-**OLULINE:** Mõlemad teenused peavad kasutama SAMA JWT_SECRET'i!
+**OLULINE:** Mõlemad teenused (services) peavad kasutama SAMA JWT_SECRET'i!
 
 ```bash
 # Genereeri turvaline 256-bitine võti
@@ -164,10 +164,10 @@ export JWT_SECRET
 echo "Kontroll: $JWT_SECRET"
 ```
 
-### Samm 6: Käivita User Service (10 min)
+### Samm 6: Käivita User Teenus (Service) (10 min)
 
 ```bash
-# User Service container samas network'is
+# User Teenuse (Service) konteiner samas võrgus (network)
 docker run -d \
   --name user-service \
   --network todo-network \
@@ -188,14 +188,14 @@ docker logs -f user-service
 # Vajuta Ctrl+C kui näed: "Server running on port 3000"
 ```
 
-**✨ MAAGIA #1:** Kasutame container nime `postgres-user` otse hostname'ina!
+**✨ MAAGIA #1:** Kasutame konteineri nime `postgres-user` otse hostname'ina!
 - ❌ Harjutus 2: Vajasime `--link postgres-user:postgres`
 - ✅ Harjutus 3: Lihtsalt kasuta `DB_HOST=postgres-user` (automaatne DNS!)
 
-### Samm 7: Käivita Todo Service (10 min)
+### Samm 7: Käivita Todo Teenus (Service) (10 min)
 
 ```bash
-# Todo Service container samas network'is
+# Todo Teenuse (Service) konteiner samas võrgus (network)
 docker run -d \
   --name todo-service \
   --network todo-network \
@@ -214,9 +214,9 @@ docker logs -f todo-service
 # Vajuta Ctrl+C kui näed: "Started TodoApplication in X.XX seconds"
 ```
 
-**✨ MAAGIA #2:** Kasutame container nime `postgres-todo` otse hostname'ina!
+**✨ MAAGIA #2:** Kasutame konteineri nime `postgres-todo` otse hostname'ina!
 
-**Kontrolli, et kõik 4 containerit töötavad:**
+**Kontrolli, et kõik 4 konteinerit töötavad:**
 
 ```bash
 docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
@@ -229,29 +229,29 @@ docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 # postgres-user      Up X minutes    5432/tcp (sisemiselt!)
 ```
 
-### Samm 8: Testi DNS Resolution (15 min)
+### Samm 8: Testi DNS Lahendust (Resolution) (15 min)
 
-**See on kõige huvitavam osa!** Vaatame, kuidas Docker automaatselt resolvib container nimesid.
+**See on kõige huvitavam osa!** Vaatame, kuidas Docker automaatselt lahendab (resolves) konteinerite nimesid.
 
-#### 8a. Testi DNS Todo Service'ist
+#### 8a. Testi DNS Todo Teenusest (Service)
 
 ```bash
-# Sisene Todo Service containerisse
+# Sisene Todo Teenuse (Service) konteinerisse
 docker exec -it todo-service sh
 
-# Container sees - testi DNS resolution
-# Installi network tools
+# Konteineri sees - testi DNS lahendust (resolution)
+# Installi võrgu (network) tööriistad
 apk add --no-cache bind-tools curl
 
 # Test 1: Kas näeme PostgreSQL'i?
 nslookup postgres-todo
 # Peaks näitama: Name: postgres-todo, Address: 172.18.0.X
 
-# Test 2: Kas näeme teist teenust (User Service)?
+# Test 2: Kas näeme teist teenust (service) (User Teenus (Service))?
 nslookup user-service
 # Peaks näitama: Name: user-service, Address: 172.18.0.Y
 
-# Test 3: Testi ühendust User Service'iga
+# Test 3: Testi ühendust User Teenusega (Service)
 curl http://user-service:3000/health
 # Oodatud: {"status":"OK","database":"connected"}
 
@@ -262,48 +262,48 @@ cat /etc/resolv.conf
 exit
 ```
 
-#### 8b. Testi DNS User Service'ist
+#### 8b. Testi DNS User Teenusest (Service)
 
 ```bash
-# Sisene User Service containerisse
+# Sisene User Teenuse (Service) konteinerisse
 docker exec -it user-service sh
 
-# Installi network tools
+# Installi võrgu (network) tööriistad
 apk add --no-cache bind-tools curl
 
 # Test 1: Kas näeme oma PostgreSQL'i?
 nslookup postgres-user
 # Peaks näitama: Name: postgres-user, Address: 172.18.0.X
 
-# Test 2: Kas näeme Todo Service'i?
+# Test 2: Kas näeme Todo Teenust (Service)?
 nslookup todo-service
 # Peaks näitama: Name: todo-service, Address: 172.18.0.Z
 
-# Test 3: Testi ühendust Todo Service'iga
+# Test 3: Testi ühendust Todo Teenusega (Service)
 curl http://todo-service:8081/health
 # Oodatud: {"status":"UP"}
 
 exit
 ```
 
-**✨ MAAGIA #3:** Teenused näevad teineteist automaatselt!
-- ✅ User Service ↔ Todo Service suhtlus töötab
-- ✅ Iga teenus näeb oma PostgreSQL'i
-- ✅ DNS resolution on automaatne (container nimi = hostname!)
+**✨ MAAGIA #3:** Teenused (services) näevad teineteist automaatselt!
+- ✅ User Teenus (Service) ↔ Todo Teenus (Service) suhtlus töötab
+- ✅ Iga teenus (service) näeb oma PostgreSQL'i
+- ✅ DNS lahendus (resolution) on automaatne (konteineri nimi = hostname!)
 
 **Mida õppisid?**
-- Docker loob automaatse DNS serveri igale custom networkile (127.0.0.11)
-- Container nimi = automaatne DNS hostname
+- Docker loob automaatse DNS serveri igale kohandatud võrgule (custom network) (127.0.0.11)
+- Konteineri nimi = automaatne DNS hostname
 - Ei vaja --link ega IP aadresse!
-- Teenused saavad omavahel suhelda HTTP kaudu
+- Teenused (services) saavad omavahel suhelda HTTP kaudu
 
-### Samm 9: Inspekteeri Network (5 min)
+### Samm 9: Inspekteeri Võrku (Network) (5 min)
 
 ```bash
 # Vaata todo-network detaile
 docker network inspect todo-network
 
-# Peaks näitama KÕIK 4 containerit:
+# Peaks näitama KÕIK 4 konteinerit:
 # - "Containers": {
 #     "abc123...": {
 #       "Name": "postgres-user",
@@ -323,24 +323,24 @@ docker network inspect todo-network
 #     }
 #   }
 
-# Näita ainult container nimesid ja IP'd
+# Näita ainult konteinerite nimesid ja IP'd
 docker network inspect todo-network | grep -E '"Name"|"IPv4Address"'
 ```
 
 **Vaata:**
-- KÕIK 4 containerit on samas network'is ✅
-- Igal containeril on oma IP aadress ✅
-- Need IP'd on samast subnet'ist (172.18.0.0/16) ✅
-- Network isolation toimib (välismaailm ei näe PostgreSQL porte!) ✅
+- KÕIK 4 konteinerit on samas võrgus (network) ✅
+- Igal konteineril on oma IP aadress ✅
+- Need IP'd on samast alamvõrgust (subnet) (172.18.0.0/16) ✅
+- Võrgu isolatsioon (network isolation) toimib (välismaailm ei näe PostgreSQL porte!) ✅
 
-### Samm 10: Testi Health Check'e (5 min)
+### Samm 10: Testi Seisukorra Kontroll (Health Check) (5 min)
 
 ```bash
-# User Service health check
+# User Teenuse (Service) seisukorra kontroll (health check)
 curl http://localhost:3000/health
 # Oodatud: {"status":"OK","database":"connected"}
 
-# Todo Service health check
+# Todo Teenuse (Service) seisukorra kontroll (health check)
 curl http://localhost:8081/health
 # Oodatud:
 # {
@@ -353,17 +353,17 @@ curl http://localhost:8081/health
 ```
 
 **Kui mõlemad on "OK"/"UP" - SUUREPÄRANE!** 🎉
-- Network on korrektne ✅
+- Võrk (network) on korrektne ✅
 - Mõlemad PostgreSQL'id on kättesaadavad ✅
-- DNS resolution toimib ✅
-- Mõlemad teenused on terved ✅
+- DNS lahendus (resolution) toimib ✅
+- Mõlemad teenused (services) on terved ✅
 
 ### Samm 11: Testi End-to-End JWT Workflow'i (15 min)
 
-**See on KÕIGE OLULISEM TEST!** Testib täielikku mikroteenuste suhtlust custom network'is.
+**See on KÕIGE OLULISEM TEST!** Testib täielikku mikroteenuste (microservices) suhtlust kohandatud võrgus (custom network).
 
 ```bash
-# 1. Registreeri kasutaja User Service'is
+# 1. Registreeri kasutaja User Teenuses (Service)
 curl -X POST http://localhost:3000/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
@@ -391,13 +391,13 @@ TOKEN=$(curl -s -X POST http://localhost:3000/api/auth/login \
 
 echo "JWT Token: $TOKEN"
 
-# 3. Kasuta tokenit Todo Service'is (MIKROTEENUSTE SUHTLUS!)
+# 3. Kasuta tokenit Todo Teenuses (Service) (MIKROTEENUSTE (MICROSERVICES) SUHTLUS!)
 curl -X POST http://localhost:8081/api/todos \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
   -d '{
-    "title": "Õpi Custom Networks",
-    "description": "Docker networking on nüüd selge!",
+    "title": "Õpi Kohandatud Võrke (Custom Networks)",
+    "description": "Docker võrgundus (networking) on nüüd selge!",
     "priority": "high",
     "dueDate": "2025-11-20T18:00:00"
   }' | jq
@@ -406,8 +406,8 @@ curl -X POST http://localhost:8081/api/todos \
 # {
 #   "id": 1,
 #   "userId": 1,  <-- ekstraktitud JWT tokenist!
-#   "title": "Õpi Custom Networks",
-#   "description": "Docker networking on nüüd selge!",
+#   "title": "Õpi Kohandatud Võrke (Custom Networks)",
+#   "description": "Docker võrgundus (networking) on nüüd selge!",
 #   "completed": false,
 #   "priority": "high",
 #   "dueDate": "2025-11-20T18:00:00",
@@ -430,118 +430,118 @@ docker exec postgres-todo psql -U postgres -d todo_service_db -c "SELECT id, use
 **🎉 KUI KÕIK TOIMIS - ÕNNITLEME!**
 
 **Mida sa just saavutasid:**
-1. ✅ User Service genereeris JWT tokeni
-2. ✅ Todo Service valideeris tokenit (SAMA JWT_SECRET!)
-3. ✅ Todo Service ekstraktis userId tokenist (userId: 1)
-4. ✅ CRUD operatsioonid töötasid mikroteenuste vahel
-5. ✅ Custom network võimaldas automaatset DNS resolution'i
-6. ✅ Mõlemad teenused suhtlesid oma andmebaasidega
+1. ✅ User Teenus (Service) genereeris JWT tokeni
+2. ✅ Todo Teenus (Service) valideeris tokenit (SAMA JWT_SECRET!)
+3. ✅ Todo Teenus (Service) ekstraktis userId tokenist (userId: 1)
+4. ✅ CRUD operatsioonid töötasid mikroteenuste (microservices) vahel
+5. ✅ Kohandatud võrk (custom network) võimaldas automaatset DNS lahendust (resolution)
+6. ✅ Mõlemad teenused (services) suhtlesid oma andmebaasidega
 
-**See on täielik mikroteenuste arhitektuur custom network'is!** 🚀
+**See on täielik mikroteenuste (microservices) arhitektuur kohandatud võrgus (custom network)!** 🚀
 
 ---
 
 ## 🎓 Õpitud Mõisted
 
-### Custom Bridge Networks:
-- `docker network create <nimi>` - Loo network
-- `docker network ls` - Näita kõiki network'e
+### Kohandatud Silla (Bridge) Võrgud (Networks):
+- `docker network create <nimi>` - Loo võrk (network)
+- `docker network ls` - Näita kõiki võrke (networks)
 - `docker network inspect <nimi>` - Vaata detaile
-- `--network <nimi>` - Ühenda container network'iga
+- `--network <nimi>` - Ühenda konteiner võrguga (network)
 
-### DNS Resolution:
-- Container nimi = automaatne hostname
+### DNS Lahendus (Resolution):
+- Konteineri nimi = automaatne hostname
 - Docker sisseehitatud DNS server (127.0.0.11)
 - Ei vaja --link ega IP aadresse
 
-### Network Isolation:
-- Erinevad networks = isoleeritud
-- Ainult sama network'i containerid saavad omavahel rääkida
-- Security benefit!
+### Võrgu Isolatsioon (Network Isolation):
+- Erinevad võrgud (networks) = isoleeritud
+- Ainult sama võrgu (network) konteinerid saavad omavahel rääkida
+- Turvalisuse eelis!
 
 ---
 
-## 📊 Võrdlus: --link (Harjutus 2) vs Custom Network (Harjutus 3)
+## 📊 Võrdlus: --link (Harjutus 2) vs Kohandatud Võrk (Custom Network) (Harjutus 3)
 
-| Aspekt | --link (Harjutus 2) | Custom Network (Harjutus 3) |
+| Aspekt | --link (Harjutus 2) | Kohandatud Võrk (Custom Network) (Harjutus 3) |
 |--------|---------------------|----------------------------|
-| **Status** | ❌ Deprecated (aegunud) | ✅ Recommended (soovitatav) |
+| **Staatus** | ❌ Aegunud (deprecated) | ✅ Soovitatav (recommended) |
 | **DNS** | `--link postgres-todo:postgres` (alias) | `DB_HOST=postgres-todo` (automaatne!) |
-| **Isolation** | ❌ Kõik samas default bridge'is | ✅ Eraldi network (todo-network) |
-| **Skaleeritavus** | ❌ --link on 1:1 seos | ✅ Lisa/eemalda containereid lihtsalt |
-| **Teenuste suhtlus** | ❌ Ainult --link'itud containerid | ✅ Kõik sama network'i containerid |
-| **Security** | ❌ Madalam (jagatud default network) | ✅ Kõrgem (isoleeritud network) |
-| **Complexity** | Vajab --link iga ühenduse jaoks | Lihtsalt lisa --network todo-network |
-| **Best practice** | ❌ EI (Docker soovitab mitte kasutada) | ✅ JAH (tänapäevane standard) |
+| **Isolatsioon** | ❌ Kõik samas vaikimisi sillas (default bridge) | ✅ Eraldi võrk (network) (todo-network) |
+| **Skaleeritavus** | ❌ --link on 1:1 seos | ✅ Lisa/eemalda konteinereid lihtsalt |
+| **Teenuste (services) suhtlus** | ❌ Ainult --link'itud konteinerid | ✅ Kõik sama võrgu (network) konteinerid |
+| **Turvalisus** | ❌ Madalam (jagatud vaikimisi võrk (default network)) | ✅ Kõrgem (isoleeritud võrk (network)) |
+| **Keerukus** | Vajab --link iga ühenduse jaoks | Lihtsalt lisa --network todo-network |
+| **Parim praktika (best practice)** | ❌ EI (Docker soovitab mitte kasutada) | ✅ JAH (tänapäevane standard) |
 
-**Järeldus:** Kasuta ALATI custom networks, mitte --link!
+**Järeldus:** Kasuta ALATI kohandatud võrke (custom networks), mitte --link!
 ---
 
 ## 🎉 Õnnitleme! Mida Sa Õppisid?
 
 ### ✅ Tehnilised Oskused
 
-**Custom Docker Networks:**
-- ✅ Lõid custom bridge network'i (`docker network create`)
-- ✅ Käivitasid 4 containerit samas network'is
-- ✅ Kasutasid automaatset DNS resolution'i (container nimi = hostname)
-- ✅ Inspekteerisid network konfiguratsiooni
-- ✅ Testisid teenuste vahelist suhtlust
+**Kohandatud (Custom) Docker Võrgud (Networks):**
+- ✅ Lõid kohandatud silla (bridge) võrgu (network) (`docker network create`)
+- ✅ Käivitasid 4 konteinerit samas võrgus (network)
+- ✅ Kasutasid automaatset DNS lahendust (resolution) (konteineri nimi = hostname)
+- ✅ Inspekteerisid võrgu (network) konfiguratsiooni
+- ✅ Testisid teenuste (services) vahelist suhtlust
 
-**Mikroteenuste Arhitektuur:**
-- ✅ Käivitasid täieliku mikroteenuste süsteemi (2 DB + 2 teenust)
+**Mikroteenuste (Microservices) Arhitektuur:**
+- ✅ Käivitasid täieliku mikroteenuste (microservices) süsteemi (2 DB + 2 teenust (services))
 - ✅ Testisid End-to-End JWT workflow'i
-- ✅ Mõistsid, kuidas teenused omavahel suhtlevad
-- ✅ Kasutasid network isolation'i turvalisuse jaoks
+- ✅ Mõistsid, kuidas teenused (services) omavahel suhtlevad
+- ✅ Kasutasid võrgu isolatsiooni (network isolation) turvalisuse jaoks
 
-**Docker Networking Kontseptsioonid:**
-- ✅ Custom networks vs default bridge
-- ✅ DNS resolution containerite vahel
-- ✅ Network isolation (PostgreSQL ei ole väliselt kättesaadav)
-- ✅ Port mapping (ainult teenused on väliselt kättesaadavad: 3000, 8081)
-- ✅ Container-to-container communication
+**Docker Võrgunduse (Networking) Kontseptsioonid:**
+- ✅ Kohandatud võrgud (custom networks) vs vaikimisi sild (default bridge)
+- ✅ DNS lahendus (resolution) konteinerite vahel
+- ✅ Võrgu isolatsioon (network isolation) (PostgreSQL ei ole väliselt kättesaadav)
+- ✅ Portide vastendamine (port mapping) (ainult teenused (services) on väliselt kättesaadavad: 3000, 8081)
+- ✅ Konteinerite-vaheline (container-to-container) kommunikatsioon
 
 ### 🔄 Võrreldes Harjutus 2-ga
 
 **Mida muutsime:**
-- ❌ `--link postgres-todo:postgres` (deprecated)
+- ❌ `--link postgres-todo:postgres` (aegunud (deprecated))
 - ✅ `--network todo-network` (soovitatav)
 
 **Mida võitsime:**
-- ✅ Automaatne DNS resolution (ei vaja aliaseid)
-- ✅ Parem isolation (eraldi network)
-- ✅ Lihtsam skaleerida (lisa uusi containereid lihtsalt)
-- ✅ Tänapäevane best practice
+- ✅ Automaatne DNS lahendus (resolution) (ei vaja aliaseid)
+- ✅ Parem isolatsioon (eraldi võrk (network))
+- ✅ Lihtsam skaleerida (lisa uusi konteinereid lihtsalt)
+- ✅ Tänapäevane parim praktika (best practice)
 
 ### 🚀 Järgmised Sammud
 
-**Harjutus 4: Volumes** õpetab:
-- Kuidas säilitada andmed pärast container'i kustutamist
-- Miks volumes on kriitilised tootmises
-- Kuidas teha backup/restore
+**Harjutus 4: Andmehoidlad (Volumes)** õpetab:
+- Kuidas säilitada andmed pärast konteineri kustutamist
+- Miks andmehoidlad (volumes) on kriitilised tootmises
+- Kuidas teha varukoopiat/taastada (backup/restore)
 
-**Jätka:** [Harjutus 4: Volumes](04-volumes.md)
+**Jätka:** [Harjutus 4: Andmehoidlad (Volumes)](04-volumes.md)
 
 ---
 
-## 💡 Parimad Tavad
+## 💡 Parimad Praktikad (Best Practices)
 
-**Custom Networks:**
-1. **Kasuta alati custom networks** - Mitte default bridge
-2. **Anna network'ile mõistlik nimi** - `todo-network`, mitte `network1`
-3. **Üks network per projekt/stack** - Isolation!
-4. **Kasuta container nimesid hostname'idena** - Automaatne DNS
-5. **Ära map PostgreSQL porte välismaailma** - Security!
+**Kohandatud Võrgud (Custom Networks):**
+1. **Kasuta alati kohandatud võrke (custom networks)** - Mitte vaikimisi silda (default bridge)
+2. **Anna võrgule (network) mõistlik nimi** - `todo-network`, mitte `network1`
+3. **Üks võrk (network) projekti/stack'i kohta** - Isolatsioon!
+4. **Kasuta konteinerite nimesid hostname'idena** - Automaatne DNS
+5. **Ära vasta PostgreSQL porte välismaailma** - Turvalisus!
 
-**Container Naming:**
+**Konteinerite Nimetamine:**
 1. **Kasuta kirjeldavaid nimesid** - `postgres-user`, mitte `db1`
 2. **Järjepidev nimetamine** - `<service>-<purpose>` (postgres-user, postgres-todo)
-3. **Container nimi = DNS hostname** - Pane tähele!
+3. **Konteineri nimi = DNS hostname** - Pane tähele!
 
-**Security:**
-1. **Network isolation** - Ainult vajalikud containerid samas network'is
-2. **Port mapping** - Ainult väliselt vajalikud portid (3000, 8081)
-3. **Internal services** - PostgreSQL ilma `-p` (ainult sisemiselt kättesaadav)
+**Turvalisus:**
+1. **Võrgu isolatsioon (network isolation)** - Ainult vajalikud konteinerid samas võrgus (network)
+2. **Portide vastendamine (port mapping)** - Ainult väliselt vajalikud portid (3000, 8081)
+3. **Sisemised teenused (internal services)** - PostgreSQL ilma `-p` (ainult sisemiselt kättesaadav)
 
 ---
 
@@ -554,6 +554,6 @@ docker exec postgres-todo psql -U postgres -d todo_service_db -c "SELECT id, use
 
 ---
 
-**Õnnitleme! Oled loonud production-ready network setup'i! 🎉**
+**Õnnitleme! Oled loonud production-ready võrgu seadistuse (network setup)! 🎉**
 
-**Järgmine:** [Harjutus 4: Volumes](04-volumes.md) - Õpi, kuidas säilitada andmed!
+**Järgmine:** [Harjutus 4: Andmehoidlad (Volumes)](04-volumes.md) - Õpi, kuidas säilitada andmed!

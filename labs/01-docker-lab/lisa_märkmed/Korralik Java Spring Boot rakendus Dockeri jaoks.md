@@ -1,45 +1,45 @@
 <img src="https://r2cdn.perplexity.ai/pplx-full-logo-primary-dark%402x.png" style="height:64px;margin-right:32px"/>
 
-## Korralik Java Spring Boot rakendus Dockeri jaoks
+## Korralik Java Spring Boot rakendus (application) Dockeri jaoks
 
-Põhjalik ülevaade, millised peavad olema nõuded arendajale, et Java Spring Boot rakendust saaks lihtsalt ja turvaliselt konteineriseerida.
+Põhjalik ülevaade, millised peavad olema nõuded arendajale, et Java Spring Boot rakendust (application) saaks lihtsalt ja turvaliselt konteineriseerida.
 
 ***
 
-## 1. Rakenduse struktuur ja ehitus
+## 1. Rakenduse (application) struktuur ja ehitus (build)
 
 ### Maven/Gradle konfiguratsioon
 
 **Arendaja peab:**
 
 - Kasutama Maven'it või Gradle'it projektihalduseks[^1][^2]
-- Looma **executable JAR** faili (fat JAR ehk uber JAR), mis sisaldab kõiki sõltuvusi[^3][^4]
+- Looma **executable JAR** faili (fat JAR ehk uber JAR), mis sisaldab kõiki sõltuvusi (dependencies)[^3][^4]
 - Määrama Spring Boot versiooni selgesõnaliselt `pom.xml` või `build.gradle` failis[^5]
 - Lisama vajalikud Spring Boot starter'id (nt `spring-boot-starter-web`)[^6]
 
-**Näide Maven build käsk:**
+**Näide Maven ehituse (build) käsk:**
 
 ```bash
 mvn clean package
-# või production build'i jaoks:
+# või production ehituse (build) jaoks:
 mvn clean install
 ```
 
-**Tulemus:** `target/app.jar` fail, mis on valmis containerisse paigutamiseks.[^4][^3]
+**Tulemus:** `target/app.jar` fail, mis on valmis konteinerisse paigutamiseks.[^4][^3]
 
 ***
 
-## 2. Dockerfile nõuded ja parimad praktikad
+## 2. Dockerfile nõuded ja parimad praktikad (best practices)
 
-### 2.1 Kerge base image
+### 2.1 Kerge baaspilt (base image)
 
 **Kohustuslik:**
 
-- Kasutada **lightweight JRE base image'i**, mitte täielikku JDK'd[^2][^1][^4]
+- Kasutada **kerget (lightweight) JRE baaspilti (base image)**, mitte täielikku JDK'd[^2][^1][^4]
 - Eelistada `eclipse-temurin:17-jre-alpine` või `eclipse-temurin:21-jre-alpine`[^1][^2][^4]
-- **Vältida** raskeid image'e nagu `openjdk` või `ubuntu`[^2]
+- **Vältida** raskeid pilte (images) nagu `openjdk` või `ubuntu`[^2]
 
-**Miks:** Väiksem image suurus (Alpine ~100MB vs Ubuntu ~500MB+), kiirem build ja deploy, väiksem turvarisk.[^4][^2]
+**Miks:** Väiksem pildi (image) suurus (Alpine ~100MB vs Ubuntu ~500MB+), kiirem ehitus (build) ja paigaldus (deploy), väiksem turvarisk.[^4][^2]
 
 ```dockerfile
 # ❌ Halb praktika
@@ -52,17 +52,17 @@ FROM eclipse-temurin:21-jre-alpine
 
 ***
 
-### 2.2 Multi-stage build
+### 2.2 Mitme-sammuline (multi-stage) ehitus (build)
 
 **Kohustuslik production keskkonna jaoks:**
 
-- Kasutada **multi-stage build'i**, kus esimene stage ehitab rakenduse, teine stage sisaldab ainult runtime'i[^7][^8][^1]
-- Vältida build-tools'ide (Maven, Gradle) jõudmist production image'i[^9][^7]
+- Kasutada **mitme-sammulist (multi-stage) ehitust (build)**, kus esimene etapp ehitab rakenduse (application), teine etapp sisaldab ainult runtime'i[^7][^8][^1]
+- Vältida ehitustööriistade (build-tools) (Maven, Gradle) jõudmist tootmispilti (production image)[^9][^7]
 
 **Näide:**
 
 ```dockerfile
-# Stage 1: Build
+# 1. etapp: Ehitus (Build)
 FROM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /app
 COPY pom.xml .
@@ -70,7 +70,7 @@ RUN mvn dependency:go-offline
 COPY src ./src
 RUN mvn clean package -DskipTests
 
-# Stage 2: Runtime
+# 2. etapp: Runtime
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /opt/app
 COPY --from=build /app/target/app.jar app.jar
@@ -78,16 +78,16 @@ EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]
 ```
 
-**Tulemus:** Final image on 70-80% väiksem ja sisaldab ainult runtime komponente.[^8][^7]
+**Tulemus:** Lõplik pilt (image) on 70-80% väiksem ja sisaldab ainult runtime komponente.[^8][^7]
 
 ***
 
-### 2.3 Layering ja cache optimiseerimine
+### 2.3 Kihtide (Layering) ja vahemälu (cache) optimeerimine
 
-**Spring Boot layering nõue:**
+**Spring Boot kihtide (layering) nõue:**
 
-- Kasutada Spring Boot'i **layer index** funktsionaalsust, et eraldada sõltuvused (dependencies), Spring Boot loader, snapshot sõltuvused ja application code erinevatesse layeritesse[^10][^1]
-- See võimaldab Docker'il cache'ida sõltuvusi ja muuta ainult application layer'it, kui kood muutub[^10]
+- Kasutada Spring Boot'i **kihtide indeksi (layer index)** funktsionaalsust, et eraldada sõltuvused (dependencies), Spring Boot laadija (loader), snapshot sõltuvused (dependencies) ja rakenduse (application) kood erinevatesse kihtidesse (layers)[^10][^1]
+- See võimaldab Docker'il vahemällu (cache) salvestada sõltuvusi (dependencies) ja muuta ainult rakenduse (application) kihti (layer), kui kood muutub[^10]
 
 **Kuidas aktiveerida (Maven):**
 
@@ -103,7 +103,7 @@ ENTRYPOINT ["java", "-jar", "app.jar"]
 </plugin>
 ```
 
-**Dockerfile layering näide:**
+**Dockerfile kihtide (layering) näide:**
 
 ```dockerfile
 FROM eclipse-temurin:21-jre-alpine
@@ -114,7 +114,7 @@ RUN java -Djarmode=layertools -jar app.jar extract
 ENTRYPOINT ["java", "org.springframework.boot.loader.launch.JarLauncher"]
 ```
 
-**Tulemus:** Korduvad build'id on 5-10x kiiremad tänu cache'ile.[^1][^10]
+**Tulemus:** Korduvad ehitused (builds) on 5-10x kiiremad tänu vahemälule (cache).[^1][^10]
 
 ***
 
@@ -124,22 +124,22 @@ ENTRYPOINT ["java", "org.springframework.boot.loader.launch.JarLauncher"]
 
 1. **Ära kasuta root user'it**[^2][^4][^1]
     - Loo dedicated user ja group
-    - Kasuta `USER` directive'i Dockerfile'is
+    - Kasuta `USER` direktiivi Dockerfile'is
 ```dockerfile
 RUN addgroup -S javauser && adduser -S -s /usr/sbin/nologin -G javauser javauser
 RUN chown -R javauser:javauser /opt/app
 USER javauser
 ```
 
-2. **Update base image**[^4]
+2. **Uuenda baaspilti (base image)**[^4]
     - Alpine: `apk update && apk upgrade`
     - Patch teadaolevad haavatavused
-3. **Kasuta konkreetseid image tag'e, mitte `latest`**[^8][^2]
+3. **Kasuta konkreetseid pildi (image) tag'e, mitte `latest`**[^8][^2]
     - `eclipse-temurin:21-jre-alpine` ✅
     - `openjdk:latest` ❌
 4. **Minimaalsed privilegeeritud õigused**[^6][^4]
     - Ära installi tarbetuid pakette
-    - Kasuta distroless või minimal image'i
+    - Kasuta distroless või minimaalset pilti (image)
 
 ***
 
@@ -147,8 +147,8 @@ USER javauser
 
 **Arendaja peab:**
 
-- Konfigureerima JVM memory settings container keskkonna jaoks[^2][^4]
-- Kasutama `-XX:MaxRAMPercentage` ja `-XX:InitialRAMPercentage` flagsid[^4]
+- Konfigureerima JVM mälu seadeid konteineri keskkonna jaoks[^2][^4]
+- Kasutama `-XX:MaxRAMPercentage` ja `-XX:InitialRAMPercentage` lippe[^4]
 
 ```dockerfile
 ENTRYPOINT ["java", \
@@ -159,21 +159,21 @@ ENTRYPOINT ["java", \
     "app.jar"]
 ```
 
-**Miks:** Containerite memory limitid erinevad host süsteemist. Vaikimisi JVM settings võivad põhjustada OOM (Out of Memory) errori.[^2][^4]
+**Miks:** Konteinerite mälulimiidid erinevad host süsteemist. Vaikimisi JVM seaded võivad põhjustada OOM (Out of Memory) vea (error).[^2][^4]
 
 ***
 
-## 3. Rakenduse konfiguratsioon
+## 3. Rakenduse (application) konfiguratsioon
 
-### 3.1 Externalized configuration
+### 3.1 Väline (Externalized) konfiguratsioon
 
 **Arendaja peab:**
 
-- Kasutama **environment variables** tundliku info (paroolid, API võtmed, connection stringid) jaoks[^6][^4]
-- Mitte hardcode'ima credential'eid koodi ega `application.properties` faili[^6]
-- Toetama Spring Boot'i profile süsteemi (`application-dev.properties`, `application-prod.properties`)[^3]
+- Kasutama **keskkonna muutujaid (environment variables)** tundliku info (paroolid, API võtmed, ühendusstringid) jaoks[^6][^4]
+- Mitte hoidma mandaate (credentials) koodis ega `application.properties` failis[^6]
+- Toetama Spring Boot'i profiilisüsteemi (`application-dev.properties`, `application-prod.properties`)[^3]
 
-**Näide Docker run command:**
+**Näide Docker run käsk:**
 
 ```bash
 docker run --env-file app.env -p 8080:8080 app:latest
@@ -190,15 +190,15 @@ SPRING_DATASOURCE_PASSWORD=secret
 
 ***
 
-### 3.2 Health checks ja Actuator
+### 3.2 Seisukorra kontrollid (Health checks) ja Actuator
 
 **Kohustuslik production keskkonna jaoks:**
 
-- Lisada **Spring Boot Actuator** dependency[^1][^4]
-- Aktiveerida health endpoint: `/actuator/health`[^1]
+- Lisada **Spring Boot Actuator** sõltuvus (dependency)[^1][^4]
+- Aktiveerida seisukorra (health) lõpp-punkt (endpoint): `/actuator/health`[^1]
 - Konfigureerima **HEALTHCHECK** Dockerfile'is[^1][^2]
 
-**Maven dependency:**
+**Maven sõltuvus (dependency):**
 
 ```xml
 <dependency>
@@ -214,15 +214,15 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:8080/actuator/health || exit 1
 ```
 
-**Miks:** Võimaldab Docker'il ja orchestraatoritel (Kubernetes, Swarm) automaatselt tuvastada, kas rakendus on töökorras.[^11][^1]
+**Miks:** Võimaldab Docker'il ja orkestraatoritel (Kubernetes, Swarm) automaatselt tuvastada, kas rakendus (application) on töökorras.[^11][^1]
 
 ***
 
-### 3.3 Graceful shutdown
+### 3.3 Viisakas sulgemine (Graceful shutdown)
 
 **Arendaja peab:**
 
-- Konfigureerima graceful shutdown'i, et vältida andmete kaotust container'i restart'i ajal[^2]
+- Konfigureerima viisaka sulgemise (graceful shutdown), et vältida andmete kaotust konteineri taaskäivitamise (restart) ajal[^2]
 - Lisama `application.properties`:
 
 ```properties
@@ -237,7 +237,7 @@ spring.lifecycle.timeout-per-shutdown-phase=30s
 
 **Kohustuslik:**
 
-- Luua `.dockerignore` fail projekti root'i[^8][^2]
+- Luua `.dockerignore` fail projekti juurkausta[^8][^2]
 - Välistada tarbetud failid (target/, build/, .git/, .idea/, *.log)[^8]
 
 **Näide .dockerignore:**
@@ -252,7 +252,7 @@ build/
 .DS_Store
 ```
 
-**Miks:** Väiksem build context → kiirem Docker build.[^8]
+**Miks:** Väiksem ehituskontekst (build context) → kiirem Docker ehitus (build).[^8]
 
 ***
 
@@ -260,24 +260,24 @@ build/
 
 | Kategooria | Nõue | Prioriteet |
 | :-- | :-- | :-- |
-| **Build** | Executable JAR (fat JAR) | ✅ Kohustuslik |
-| **Base image** | Lightweight JRE (eclipse-temurin:alpine) | ✅ Kohustuslik |
-| **Multi-stage** | Eraldi build ja runtime stage | ✅ Production jaoks |
-| **Layering** | Spring Boot layering aktiveeritud | ⚠️ Soovituslik |
-| **Security** | Non-root user, konkreetne tag | ✅ Kohustuslik |
-| **JVM** | Memory settings (-XX:MaxRAMPercentage) | ✅ Kohustuslik |
-| **Config** | Environment variables | ✅ Kohustuslik |
-| **Health** | Actuator + HEALTHCHECK | ✅ Production jaoks |
-| **Shutdown** | Graceful shutdown konfig | ⚠️ Soovituslik |
-| **.dockerignore** | Build context optimiseerimine | ⚠️ Soovituslik |
+| **Ehitus (Build)** | Käivitatav JAR (fat JAR) | ✅ Kohustuslik |
+| **Baaspilt (Base image)** | Kerge JRE (eclipse-temurin:alpine) | ✅ Kohustuslik |
+| **Mitme-sammuline (Multi-stage)** | Eraldi ehituse (build) ja runtime etapp | ✅ Production jaoks |
+| **Kihtideks jaotamine (Layering)** | Spring Boot kihtideks jaotamine (layering) aktiveeritud | ⚠️ Soovituslik |
+| **Turvalisus** | Mitte-juurkasutaja (non-root user), konkreetne tag | ✅ Kohustuslik |
+| **JVM** | Mälu seaded (-XX:MaxRAMPercentage) | ✅ Kohustuslik |
+| **Konfiguratsioon** | Keskkonna muutujad (Environment variables) | ✅ Kohustuslik |
+| **Tervis** | Actuator + HEALTHCHECK | ✅ Production jaoks |
+| **Sulgemine (Shutdown)** | Viisakas sulgemine (graceful shutdown) konfig | ⚠️ Soovituslik |
+| **.dockerignore** | Ehituskonteksti (build context) optimeerimine | ⚠️ Soovituslik |
 
 
 ***
 
-## 6. Näidis production-ready Dockerfile
+## 6. Näidis tootmisvalmis (production-ready) Dockerfile
 
 ```dockerfile
-# Stage 1: Build
+# 1. etapp: Ehitus (Build)
 FROM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /app
 COPY pom.xml .
@@ -285,31 +285,31 @@ RUN mvn dependency:go-offline
 COPY src ./src
 RUN mvn clean package -DskipTests
 
-# Stage 2: Runtime
+# 2. etapp: Runtime
 FROM eclipse-temurin:21-jre-alpine
 
-# Update packages
+# Uuenda pakette
 RUN apk update --no-cache && apk upgrade --no-cache
 
-# Create non-root user
+# Loo mitte-juurkasutaja (non-root user)
 RUN addgroup -S javauser && adduser -S -s /usr/sbin/nologin -G javauser javauser
 
-# Set up app directory
+# Seadista rakenduse (app) kataloog
 WORKDIR /opt/app
 COPY --from=build /app/target/app.jar app.jar
 RUN chown -R javauser:javauser /opt/app
 
-# Switch to non-root user
+# Lülitu mitte-juurkasutajale (non-root user)
 USER javauser
 
-# Expose port
+# Paljasta port
 EXPOSE 8080
 
-# Health check
+# Seisukorra kontroll (Health check)
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1
 
-# JVM settings and entrypoint
+# JVM seaded ja sisenemispunkt (entrypoint)
 ENTRYPOINT ["java", \
     "-XX:InitialRAMPercentage=80", \
     "-XX:MaxRAMPercentage=80", \
@@ -320,13 +320,13 @@ ENTRYPOINT ["java", \
 
 ***
 
-## 7. Build ja run käsud
+## 7. Ehituse (build) ja käivitamise (run) käsud
 
 ```bash
-# Build image
+# Ehita (build) pilt (image)
 docker build -t myapp:1.0 .
 
-# Run container
+# Käivita konteiner
 docker run -d \
     --name myapp \
     --env-file app.env \
@@ -334,11 +334,11 @@ docker run -d \
     --memory="512m" \
     myapp:1.0
 
-# Check health
+# Kontrolli tervist
 docker ps
 docker logs myapp
 
-# Stop gracefully
+# Peata viisakalt
 docker stop myapp
 ```
 
@@ -347,18 +347,18 @@ docker stop myapp
 
 ## Kokkuvõte
 
-Korralik konteineriseeritav Spring Boot rakendus nõuab:
+Korralik konteineriseeritav Spring Boot rakendus (application) nõuab:
 
-1. **Executable JAR** Maven/Gradle build'ist
-2. **Lightweight base image** (alpine JRE)
-3. **Multi-stage build** production jaoks
-4. **Non-root user** turvalisuse tagamiseks
-5. **Environment variables** konfiguratsiooniks
-6. **Health checks** monitooringuks
-7. **JVM memory tuning** container keskkonna jaoks
-8. **Layering** kiirema build'i jaoks
+1. **Käivitatav JAR** Maven/Gradle ehitusest (build)
+2. **Kerge baaspilt (base image)** (alpine JRE)
+3. **Mitme-sammuline (multi-stage) ehitus (build)** tootmise jaoks
+4. **Mitte-juurkasutaja (non-root user)** turvalisuse tagamiseks
+5. **Keskkonna muutujad (environment variables)** konfiguratsiooniks
+6. **Seisukorra kontrollid (health checks)** monitooringuks
+7. **JVM mälu häälestamine** konteineri keskkonna jaoks
+8. **Kihtideks jaotamine (Layering)** kiirema ehituse (build) jaoks
 
-Need praktikad tagavad, et rakendus on **kerge, turvaline, jälgitav ja kiiresti deployable**.[^4][^1][^2]
+Need praktikad tagavad, et rakendus (application) on **kerge, turvaline, jälgitav ja kiiresti paigaldatav (deployable)**.[^4][^1][^2]
 <span style="display:none">[^12][^13][^14][^15][^16][^17][^18][^19][^20]</span>
 
 <div align="center">⁂</div>

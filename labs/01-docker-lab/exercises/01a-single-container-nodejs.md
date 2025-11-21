@@ -1,36 +1,36 @@
-# Harjutus 1: Single Container
+# Harjutus 1: Üksik Konteiner (Single Container)
 
 **Kestus:** 45 minutit
-**Eesmärk:** Konteinerise Node.js User Service ja õpi Dockerfile'i loomist
+**Eesmärk:** Konteineriseeri Node.js User teenus (service) ja õpi Dockerfile'i loomist
 
 ---
 
 ## ⚠️ OLULINE: Harjutuse Fookus
 
-**See harjutus keskendub Docker põhitõdede õppimisele, MITTE töötavale rakendusele!**
+**See harjutus keskendub Docker põhitõdede õppimisele, MITTE töötavale rakendusele (application)!**
 
 ✅ **Õpid:**
-- Dockerfile'i loomist Node.js rakendusele
-- Docker pildi (image) ehitamist
+- Dockerfile'i loomist Node.js rakendusele (application)
+- Docker pildi (image) ehitamist (build)
 - Konteineri käivitamist
 - JWT autentimise põhimõtteid
 - Logide vaatamist ja debuggimist
 
-❌ **Rakendus EI TÖÖTA täielikult:**
-- User Service vajab PostgreSQL andmebaasi
+❌ **Rakendus (application) EI TÖÖTA täielikult:**
+- User teenus (service) vajab PostgreSQL andmebaasi
 - Konteiner käivitub, aga hangub kohe (see on **OODATUD**)
-- Töötava rakenduse saad **Harjutus 2**-s (Multi-Container)
+- Töötava rakenduse (application) saad **Harjutus 2**-s (Mitme-Konteineri (Multi-Container))
 
-**User Service roll:**
+**User Teenuse (Service) roll:**
 - Genereerib JWT tokeneid autentimiseks
-- Annab tokene teistele mikroteenustele (nt Todo Service)
+- Annab tokeneid teistele mikroteenustele (microservices) (nt Todo Teenus (Service))
 - Töötava süsteemi saad Harjutus 2-s!
 
 ---
 
 ## 📋 Ülevaade
 
-Selles harjutuses konteineriseerid Node.js User Service rakenduse. Õpid looma Dockerfile'i, ehitama Docker pilti (image) ja käivitama konteinerit (isegi kui see hangub andmebaasi puudumise tõttu).
+Selles harjutuses konteineriseerid Node.js User teenuse (service) rakenduse (application). Õpid looma Dockerfile'i, ehitama (build) Docker pilti (image) ja käivitama konteinerit (isegi kui see hangub andmebaasi puudumise tõttu).
 
 ---
 
@@ -38,10 +38,10 @@ Selles harjutuses konteineriseerid Node.js User Service rakenduse. Õpid looma D
 
 Peale selle harjutuse läbimist oskad:
 
-- ✅ Luua Dockerfile'i Node.js rakendusele
-- ✅ Ehitada Docker pilti (image)
+- ✅ Luua Dockerfile'i Node.js rakendusele (application)
+- ✅ Ehitada (build) Docker pilti (image)
 - ✅ Käivitada ja peatada konteinereid
-- ✅ Kasutada environment variables
+- ✅ Kasutada keskkonna muutujaid (environment variables)
 - ✅ Vaadata konteineri logisid
 - ✅ Debuggida konteineri probleeme
 
@@ -54,8 +54,8 @@ Peale selle harjutuse läbimist oskad:
 │   Docker Konteiner          │
 │                             │
 │  ┌───────────────────────┐  │
-│  │  Node.js Application  │  │
-│  │  User Service         │  │
+│  │  Node.js Rakendus (Application)  │  │
+│  │  User Teenus (Service)         │  │
 │  │  Port: 3000           │  │
 │  └───────────────────────┘  │
 │                             │
@@ -70,11 +70,11 @@ Peale selle harjutuse läbimist oskad:
 
 ## 📝 Sammud
 
-### Samm 1: Tutvu Rakendusega (5 min)
+### Samm 1: Tutvu Rakendusega (Application) (5 min)
 
-**Rakenduse juurkataloog:** `/hostinger/labs/apps/backend-nodejs`
+**Rakenduse (application) juurkataloog:** `/hostinger/labs/apps/backend-nodejs`
 
-Vaata rakenduse "User Service" koodi:
+Vaata rakenduse (application) "User Teenus (Service)" koodi:
 
 ```bash
 cd ../../apps/backend-nodejs
@@ -90,15 +90,15 @@ head -50 server.js
 ```
 
 **Küsimused:**
-- Millise pordiga rakendus käivitub? (3000)
-- Millised sõltuvused on vajalikud? (vaata package.json)
-- Kas rakendus vajab andmebaasi? (Jah, PostgreSQL)
+- Millise pordiga rakendus (application) käivitub? (3000)
+- Millised sõltuvused (dependencies) on vajalikud? (vaata package.json)
+- Kas rakendus (application) vajab andmebaasi? (Jah, PostgreSQL)
 
 ### Samm 2: Loo Dockerfile (15 min)
 
 Loo fail nimega `Dockerfile`:
 
-**⚠️ Oluline:** Dockerfail tuleb luua rakenduse juurkataloogi `/hostinger/labs/apps/backend-nodejs`. 
+**⚠️ Oluline:** Dockerfail tuleb luua rakenduse (application) juurkataloogi `/hostinger/labs/apps/backend-nodejs`. 
 
 ```bash
 vim Dockerfile
@@ -108,10 +108,10 @@ vim Dockerfile
 1. Kasutab Node.js 18 alpine baaspilti (base image)
 2. Seadistab töökataloogiks `/app`
 3. Kopeerib `package*.json` failid
-4. Installib sõltuvused
-5. Kopeerib rakenduse koodi
+4. Installib sõltuvused (dependencies)
+5. Kopeerib rakenduse (application) koodi
 6. Avaldab pordi 3000
-7. Käivitab rakenduse
+7. Käivitab rakenduse (application)
 
 **Vihje:** Vaata Docker dokumentatsiooni või solutions/ kausta!
 
@@ -122,13 +122,13 @@ FROM node:18-slim
 
 WORKDIR /app
 
-# Kopeeri dependency files
+# Kopeeri sõltuvuste (dependency) failid
 COPY package*.json ./
 
-# Paigalda sõltuvused
+# Paigalda sõltuvused (dependencies)
 RUN npm install --production
 
-# Kopeeri rakenduse kood
+# Kopeeri rakenduse (application) kood
 COPY . .
 
 # Avalda port
@@ -142,7 +142,7 @@ CMD ["node", "server.js"]
 
 Loo `.dockerignore` fail, et vältida tarbetute failide kopeerimist:
 
-**⚠️ Oluline:** .dockerignore tuleb luua rakenduse juurkataloogi `/hostinger/labs/apps/backend-nodejs`. 
+**⚠️ Oluline:** .dockerignore tuleb luua rakenduse (application) juurkataloogi `/hostinger/labs/apps/backend-nodejs`. 
 
 ```bash
 vim .dockerignore
@@ -164,19 +164,19 @@ README.md
 - Kiirem ehitamine (build)
 - Turvalisem (ei kopeeri .env faile)
 
-### Samm 4: Ehita Docker pilt (image) (10 min)
+### Samm 4: Ehita (build) Docker pilt (image) (10 min)
 
 **Asukoht:** `/hostinger/labs/apps/backend-nodejs`
 
-Ehita oma esimene Docker pilt (image):
+Ehita (build) oma esimene Docker pilt (image):
 
-**⚠️ Oluline:** Docker pildi (image) ehitamiseks pead olema rakenduse juurkataloogis (kus asub `Dockerfile`).
+**⚠️ Oluline:** Docker pildi (image) ehitamiseks (build) pead olema rakenduse (application) juurkataloogis (kus asub `Dockerfile`).
 
 ```bash
-# Ehita pilt (image) tagiga
+# Ehita (build) pilt (image) tag'iga
 docker build -t user-service:1.0 .
 
-# Vaata ehitamise protsessi
+# Vaata ehitamise (build) protsessi
 # Märka: iga RUN käsk loob uue kihi (layer)
 ```
 
@@ -219,7 +219,7 @@ docker run -it --name user-service-test \
 - `-it` - interactive + tty
 - `--name` - anna konteinerile nimi
 - `-p 3000:3000` - portide vastendamine (port mapping) 3000 host'ist konteinerisse
-- `-e` - environment variable
+- `-e` - keskkonna muutuja (environment variable)
 
 **Oodatud tulemus:**
 ```
@@ -230,16 +230,16 @@ Application failed to start
 
 **See on TÄPSELT see, mida tahame näha!** 🎉
 - Konteiner käivitus ✅
-- Rakendus proovis käivituda ✅
-- Error message näitab probleemi (puuduv DB) ✅
-- Õppisid, kuidas Docker error'eid näeb ✅
+- Rakendus (application) proovis käivituda ✅
+- Vea (error) sõnum näitab probleemi (puuduv DB) ✅
+- Õppisid, kuidas Docker vigu (errors) näeb ✅
 
 Vajuta `Ctrl+C` et peatada.
 
 #### Variant B: Taustal töötav režiim (Detached Mode)
 
 ```bash
-# Käivita taustal (detached mode)
+# Käivita taustal (taustal töötav režiim (detached mode))
 docker run -d --name user-service \
   -p 3000:3000 \
   -e DB_HOST=host.docker.internal \
@@ -273,21 +273,21 @@ docker ps -a
 ```
 
 **Miks konteiner puudub `docker ps` väljundis?**
-- Konteiner käivitus, aga rakendus hangus kohe
+- Konteiner käivitus, aga rakendus (application) hangus kohe
 - Docker peatas hangunud konteineri automaatselt
 - `docker ps` näitab ainult TÖÖTAVAID konteinereid
 - `docker ps -a` näitab KÕIKI konteinereid (ka peatatud)
 
 ### Samm 6: Mõista JWT Tokeni Rolli (10 min)
 
-**Miks User Service on oluline?**
+**Miks User Teenus (Service) on oluline?**
 
-User Service on **autentimise keskus (authentication hub)** mikroteenuste arhitektuuris:
+User Teenus (Service) on **autentimise keskus (authentication hub)** mikroteenuste (microservices) arhitektuuris:
 
 1. **Kasutaja registreerib** → POST /api/auth/register
 2. **Kasutaja logib sisse** → POST /api/auth/login
 3. **Saab JWT tokeni** → `{"token": "eyJhbGci..."}`
-4. **Kasutab tokenit teistes teenustes** → Todo Service, Product Service jne
+4. **Kasutab tokenit teistes teenustes (services)** → Todo Teenus (Service), Product Teenus (Service) jne
 
 **JWT token sisaldab:**
 - `userId` - Kasutaja ID
@@ -313,17 +313,17 @@ curl -X POST http://localhost:3000/api/auth/login \
 #   }
 # }
 
-# See token on nüüd kasutatav Todo Service'is (Harjutus 2!)
+# See token on nüüd kasutatav Todo Teenuses (Service) (Harjutus 2!)
 ```
 
-**Probleam Harjutus 1's:** PostgreSQL puudub, seega ei saa registreerida ega logida!
+**Probleem Harjutus 1's:** PostgreSQL puudub, seega ei saa registreerida ega logida!
 
 **Lahendus:** Harjutus 2 lisab PostgreSQL ja saame töötava süsteemi!
 
 ### Samm 7: Debug ja Troubleshoot (5 min)
 
 ```bash
-# Vaata konteineri statusit
+# Vaata konteineri staatust
 docker ps -a
 
 # Vaata logisid
@@ -341,7 +341,7 @@ exit
 # Inspekteeri konteinerit
 docker inspect user-service
 
-# Vaata resource kasutust
+# Vaata ressursikasutust
 docker stats user-service
 ```
 
@@ -356,7 +356,7 @@ docker stats user-service
    docker run -p 3001:3000 ...
    ```
 
-2. **Rakendus hangub:**
+2. **Rakendus (application) hangub:**
    ```bash
    # Vaata logisid
    docker logs user-service
@@ -384,7 +384,7 @@ Peale selle harjutuse läbimist peaksid omama:
 - [x] **Docker pilt (image)** `user-service:1.0` (vaata `docker images`)
 - [x] **Konteiner** käivitatud (vaata `docker ps`)
 - [x] Mõistad Dockerfile'i struktuuri
-- [x] Oskad ehitada pilti (image)
+- [x] Oskad ehitada (build) pilti (image)
 - [x] Oskad käivitada konteinerit
 - [x] Oskad vaadata logisid
 
@@ -406,7 +406,7 @@ docker ps | grep user-service
 # Peaks näitama töötavat konteinerit
 ```
 
-### Test 3: Kas logid näitavad error messaget? ✅
+### Test 3: Kas logid näitavad vea (error) sõnumit? ✅
 
 ```bash
 docker logs user-service | head -20
@@ -418,8 +418,8 @@ docker logs user-service | head -20
 
 **See on PERFEKTNE!** Sa õppisid:
 - Kuidas vaadata logisid hangunud konteineris
-- Kuidas debuggida error messaget
-- Miks multi-container lahendus on vajalik
+- Kuidas debuggida vea (error) sõnumit
+- Miks mitme-konteineri (multi-container) lahendus on vajalik
 
 ### Test 4: Kas konteiner ei ole `docker ps` väljundis? ✅
 
@@ -442,28 +442,28 @@ docker ps | grep user-service
 - `FROM` - Baaspilt (base image)
 - `WORKDIR` - Töökataloog
 - `COPY` - Kopeeri failid
-- `RUN` - Käivita käsk ehitamise ajal (build)
+- `RUN` - Käivita käsk ehitamise (build) ajal
 - `EXPOSE` - Avalda port
 - `CMD` - Käivita käsk konteineri käivitamisel
 
 ### Docker käsud:
 
-- `docker build` - Ehita pilt (image)
+- `docker build` - Ehita (build) pilt (image)
 - `docker run` - Käivita konteiner
 - `docker ps` - Näita töötavaid konteinereid
 - `docker logs` - Vaata konteineri logisid
 - `docker exec` - Käivita käsk töötavas konteineris
-- `docker inspect` - Vaata konteineri/pildi infot
+- `docker inspect` - Vaata konteineri/pildi (image) infot
 
 ---
 
-## 💡 Parimad Tavad
+## 💡 Parimad Praktikad (Best Practices)
 
 1. **Kasuta `.dockerignore`** - Väldi tarbetute failide kopeerimist
 2. **Kasuta alpine pilte (images)** - Väiksem suurus, kiirem
-3. **RUN npm install --production** - Ära installi dev dependencies
+3. **RUN npm install --production** - Ära installi arenduse sõltuvusi (dev dependencies)
 4. **COPY package.json enne koodi** - Parem kihtide vahemälu (layer cache) kasutamine
-5. **Kasuta EXPOSE** - Dokumenteeri, millist porti rakendus kasutab
+5. **Kasuta EXPOSE** - Dokumenteeri, millist porti rakendus (application) kasutab
 
 ---
 
@@ -471,7 +471,7 @@ docker ps | grep user-service
 
 Järgmises harjutuses lisame PostgreSQL konteineri ja ühendame kaks konteinerit!
 
-**Jätka:** [Harjutus 1B: Single-Container-Java] (https://github.com/kollane/hostinger/blob/master/labs/01-docker-lab/exercises/01b-single-container-java.md)
+**Jätka:** [Harjutus 1B: Üksik-Konteiner-Java (Single-Container-Java)] (https://github.com/kollane/hostinger/blob/master/labs/01-docker-lab/exercises/01b-single-container-java.md)
 
 ---
 
@@ -479,7 +479,7 @@ Järgmises harjutuses lisame PostgreSQL konteineri ja ühendame kaks konteinerit
 
 - [Dockerfile reference](https://docs.docker.com/engine/reference/builder/)
 - [Docker run reference](https://docs.docker.com/engine/reference/run/)
-- [Node.js Docker best practices](https://github.com/nodejs/docker-node/blob/main/docs/BestPractices.md)
+- [Node.js Docker parimad praktikad (best practices)](https://github.com/nodejs/docker-node/blob/main/docs/BestPractices.md)
 
 ---
 

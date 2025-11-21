@@ -1,12 +1,12 @@
-# Lihtne Dockerfile User Service'ile (Harjutus 1)
+# Lihtne Dockerfile User Teenuse (Service) jaoks (Harjutus 1)
 FROM node:18-slim
 
 WORKDIR /app
 
-# Kopeeri dependency files
+# Kopeeri sõltuvuste (dependency) failid
 COPY package*.json ./
 
-# Installi dependencies
+# Installi sõltuvused (dependencies)
 RUN npm install --production
 
 # Kopeeri rakenduse kood

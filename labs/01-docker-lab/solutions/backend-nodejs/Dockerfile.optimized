@@ -1,40 +1,40 @@
-# Optimeeritud Dockerfile User Service'ile (Harjutus 5)
+# Optimeeritud Dockerfile User Teenuse (Service) jaoks (Harjutus 5)
 # MÄRKUS: Kasutame node:18-slim (Debian) node:18-alpine asemel,
-# sest bcrypt native moodulid ei tööta korrektselt Alpine'is.
+# sest bcrypt natiivmoodulid ei tööta korrektselt Alpine'is.
 #
-# Trade-off: Pildi (image) suurus ~305MB (vs ~200MB Alpine),
+# Kompromiss: Pildi (image) suurus ~305MB (vs ~200MB Alpine),
 # AGA bcrypt töötab stabiilselt ilma lisatööriistadeta.
 
-# Stage 1: Dependencies
+# 1. etapp: Sõltuvused (Dependencies)
 FROM node:18-slim AS dependencies
 WORKDIR /app
 
-# Kopeeri dependency files (caching jaoks)
+# Kopeeri sõltuvuste (dependency) failid (vahemälu (caching) jaoks)
 COPY package*.json ./
 
-# Installi AINULT production dependencies
+# Installi AINULT tootmise sõltuvused (production dependencies)
 RUN npm ci --only=production
 
-# Stage 2: Runtime
+# 2. etapp: Runtime
 FROM node:18-slim
 WORKDIR /app
 
-# Loo non-root user
+# Loo mitte-juurkasutaja (non-root user)
 RUN groupadd -g 1001 nodejs && \
     useradd -r -u 1001 -g nodejs nodejs
 
-# Kopeeri dependencies builder stage'ist
+# Kopeeri sõltuvused (dependencies) ehitaja (builder) etapist
 COPY --from=dependencies --chown=nodejs:nodejs /app/node_modules ./node_modules
 
-# Kopeeri application code
+# Kopeeri rakenduse (application) kood
 COPY --chown=nodejs:nodejs . .
 
-# Kasuta non-root userit
+# Kasuta mitte-juurkasutajat (non-root user)
 USER nodejs:nodejs
 
 EXPOSE 3000
 
-# Health check
+# Seisukorra kontroll (Health check)
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s \
   CMD node healthcheck.js || exit 1
 
