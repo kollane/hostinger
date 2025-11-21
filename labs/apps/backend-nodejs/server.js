@@ -512,22 +512,38 @@ app.get('/health', async (req, res) => {
   }
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`🚀 User Service running on port ${PORT}`);
-  console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔐 JWT expiration: ${process.env.JWT_EXPIRES_IN || '1h'}`);
-  console.log(`\n🔗 Available endpoints:`);
-  console.log(`   POST   /api/auth/register`);
-  console.log(`   POST   /api/auth/login`);
-  console.log(`   GET    /api/users (pagination, search, filter)`);
-  console.log(`   GET    /api/users/:id`);
-  console.log(`   POST   /api/users (admin only)`);
-  console.log(`   PUT    /api/users/:id`);
-  console.log(`   DELETE /api/users/:id (admin only)`);
-  console.log(`   GET    /api/users/me`);
-  console.log(`   PUT    /api/users/me`);
-  console.log(`   PUT    /api/users/me/password`);
-  console.log(`   GET    /health\n`);
-});
-// comment
+// Start server with database connection check
+const startServer = async () => {
+  try {
+    // Test the database connection
+    const client = await pool.connect();
+    console.log('✅ Database connection successful');
+    client.release();
+
+    // Start the Express server
+    app.listen(PORT, () => {
+      console.log(`🚀 User Service running on port ${PORT}`);
+      console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`🔐 JWT expiration: ${process.env.JWT_EXPIRES_IN || '1h'}`);
+      console.log(`\n🔗 Available endpoints:`);
+      console.log(`   POST   /api/auth/register`);
+      console.log(`   POST   /api/auth/login`);
+      console.log(`   GET    /api/users (pagination, search, filter)`);
+      console.log(`   GET    /api/users/:id`);
+      console.log(`   POST   /api/users (admin only)`);
+      console.log(`   PUT    /api/users/:id`);
+      console.log(`   DELETE /api/users/:id (admin only)`);
+      console.log(`   GET    /api/users/me`);
+      console.log(`   PUT    /api/users/me`);
+      console.log(`   PUT    /api/users/me/password`);
+      console.log(`   GET    /health\n`);
+    });
+
+  } catch (error) {
+    console.error('❌ Failed to connect to the database');
+    console.error(error.message);
+    process.exit(1); // Exit with a non-zero code to indicate failure
+  }
+};
+
+startServer();
