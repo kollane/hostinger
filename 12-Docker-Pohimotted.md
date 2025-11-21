@@ -413,7 +413,6 @@ EXPOSE 3000
 # Käivitamise käsk
 CMD ["node", "server.js"]
 ```
-
 ---
 
 ### 7.3. Dockerfile Instruktsioonid
@@ -451,8 +450,6 @@ Nüüd alles kopeeritakse kogu ülejäänud kood (`COPY . .`). Nii saab sõltuvu
 ***
 
 Selline järjekord ja tööviis aitab tagada kiire ehituse, korras failisüsteemi ning väikse pildi suuruse. Häid põhjusi on nii kiiruses, turvalisuses kui ka praktilises konteinerite halduses.
-
-***
 
 ---
 
@@ -506,29 +503,29 @@ CMD ["node", "server.js"]
 
 ### 7.4.1 Node.js Rakenduse Dockerfile Instruktsioonid
 
-See multi-stage Dockerfile on veelgi tõhusam ja turvalisem viis Node.js rakenduse konteineriseerimiseks, kus iga osa on mõtestatult lahutatud, et saavutada väiksem lõpp-pilt ja kõrgem turvalisus.[^2][^3][^4]
+See multi-stage Dockerfile on veelgi tõhusam ja turvalisem viis Node.js rakenduse konteineriseerimiseks, kus iga osa on mõtestatult lahutatud, et saavutada väiksem lõpp-pilt ja kõrgem turvalisus.
 
 ### Buildi ja Productioni lahutamine
 
-Esimeses etapis (`Stage 1: Build`) kasutatakse baaspilti ja installitakse vajalikud tootmises sõltuvused (`npm ci --only=production`), et ehitada valmis node_modules (tootmiseks vajalikud moodulid). Selles staadiumis ei kopeerita veel rakenduse lähtekoodi, mis võimaldab sõltuvusi paigaldada kiirelt ja optimaalselt.[^3][^5][^6][^2]
+Esimeses etapis (`Stage 1: Build`) kasutatakse baaspilti ja installitakse vajalikud tootmises sõltuvused (`npm ci --only=production`), et ehitada valmis node_modules (tootmiseks vajalikud moodulid). Selles staadiumis ei kopeerita veel rakenduse lähtekoodi, mis võimaldab sõltuvusi paigaldada kiirelt ja optimaalselt.
 
-Teises etapis (`Stage 2: Production`) alustatakse uue puhta baaspildiga ning kopeeritakse eelmisest build-staadiumist ainult node_modules. See väldib buildi- ja dev-dependencite ning build-tööriistade sattumist lõpliku konteinerisse: lõplik rakendus sisaldab ainult käitamiseks vajalikku.[^4][^5][^2]
+Teises etapis (`Stage 2: Production`) alustatakse uue puhta baaspildiga ning kopeeritakse eelmisest build-staadiumist ainult node_modules. See väldib buildi- ja dev-dependencite ning build-tööriistade sattumist lõpliku konteinerisse: lõplik rakendus sisaldab ainult käitamiseks vajalikku.
 
 ### Failide kopeerimise strateegia
 
-Rakenduse kood kopeeritakse alles lõplikku (production) etappi. See parandab vahemälude kasutust, kiirendab konteineri ehitust ja kindlustab, et build-vahendid ning üleliigsed failid lõpp-konteinerisse ei jõua.[^6][^4]
+Rakenduse kood kopeeritakse alles lõplikku (production) etappi. See parandab vahemälude kasutust, kiirendab konteineri ehitust ja kindlustab, et build-vahendid ning üleliigsed failid lõpp-konteinerisse ei jõua.
 
 ### Turvalisus: non-root kasutaja
 
-Konteineri sees luuakse eraldi kasutaja (`adduser` ja `addgroup`), failide omanik muudetakse sellele kasutajale ning konteiner käivitub non-root user'ina. See on turvalisuse mõttes oluline, kuna root'i kasutamine konteineris avab võimaliku ründepinna: non-root user'iga on piiratud rakenduse ligipääs süsteemile ja rakenduse sees toimuva mõju.[^5][^4]
+Konteineri sees luuakse eraldi kasutaja (`adduser` ja `addgroup`), failide omanik muudetakse sellele kasutajale ning konteiner käivitub non-root user'ina. See on turvalisuse mõttes oluline, kuna root'i kasutamine konteineris avab võimaliku ründepinna: non-root user'iga on piiratud rakenduse ligipääs süsteemile ja rakenduse sees toimuva mõju.
 
 ### Tervislikkuse kontroll (Healthcheck)
 
-Lisatakse tervisekontroll, mis regulaarselt kontrollib rakenduse elusolekut kindlal API-l (`/health`). Kui see ei vasta, märgib Docker konteineri vigaseks. See võimaldab automaatset süsteemi haldamist — näiteks restartimine või info jagamine orkestraatoris nagu Kubernetes.[^4][^5]
+Lisatakse tervisekontroll, mis regulaarselt kontrollib rakenduse elusolekut kindlal API-l (`/health`). Kui see ei vasta, märgib Docker konteineri vigaseks. See võimaldab automaatset süsteemi haldamist — näiteks restartimine või info jagamine orkestraatoris nagu Kubernetes.
 
 ### Pordi avalikustamine ja käivitamine
 
-`EXPOSE 3000` määrab, millist porti rakendus kasutab. `CMD ["node", "server.js"]` käivitab rakenduse Node.js-iga nagu tavaliselt.[^5]
+`EXPOSE 3000` määrab, millist porti rakendus kasutab. `CMD ["node", "server.js"]` käivitab rakenduse Node.js-iga nagu tavaliselt.
 
 ***
 
@@ -537,7 +534,7 @@ Selline multi-stage ehitusviis võimaldab:
 - Teha väiksemaid, kiirust ja turvalisust arvestavaid production konteinerpilte.
 - Vähendada build ja dev tööriistade sattumist productioni.
 - Käivitada rakenduse piiratud õigustega kasutaja alt.
-- Monitoorida rakenduse tervist automaatselt.[^2][^4][^5]
+- Monitoorida rakenduse tervist automaatselt.
 
 ---
 
