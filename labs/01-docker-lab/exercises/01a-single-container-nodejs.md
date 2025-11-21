@@ -223,9 +223,8 @@ docker run -it --name user-service-test \
 
 **Oodatud tulemus:**
 ```
-Error connecting to database
-...
-Application failed to start
+❌ Failed to connect to the database
+connect ECONNREFUSED 127.0.0.1:5432
 ```
 
 **See on TÄPSELT see, mida tahame näha!** 🎉
