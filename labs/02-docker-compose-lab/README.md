@@ -1,52 +1,98 @@
 # Labor 2: Docker Compose
 
-**Kestus:** 3 tundi
-**Eeldused:** Labor 1 läbitud, Peatükk 13 (Docker Compose)
-**Eesmärk:** Ühenda kõik kolm mikroteenust Docker Compose'iga
+**Kestus:** 4 tundi
+**Eeldused:** Labor 1 läbitud (4 optimeeritud konteinerit), Peatükk 13 (Docker Compose)
+**Eesmärk:** Õppida multi-container rakenduste orkestreerimist Docker Compose'iga
 
 ---
 
 ## 📋 Ülevaade
 
-Selles laboris ühendad kõik kolm mikroteenust (**Todo Service, User Service, Frontend**) üheks täisfunktsionaalseks rakenduseks Docker Compose'i abil.
+Selles laboris õpid hallama mitut konteinerit korraga Docker Compose'i abil. **Lähtud Labor 1 lõpuseisust** (4 töötavat optimeeritud konteinerit) ja konverteerid need docker-compose.yml failiks, lisad Frontend teenuse (service) ning õpid parimaid praktikaid production-ready konfiguratsioonide loomiseks.
 
-Lab 2 lõpuks on sul valmis terve süsteem, mida saad Lab 3's Kubernetes'esse deploy'da.
+**Labor 1 vs Labor 2:**
+- **Labor 1:** Käivitasid iga konteineri eraldi käsuga (`docker run`)
+- **Labor 2:** Käivitad kogu süsteemi ühe käsuga (`docker compose up`)
+
+Lab 2 lõpuks on sul valmis terve süsteem docker-compose.yml failiga, mida saad Lab 3's Kubernetes'esse deploy'da.
 
 ---
 
 ## 🏗️ Arhitektuur
 
-**Täielik mikroteenuste süsteem:**
+### Lab 1 Lõpuseisu (Stardipunkt)
+
+Lab 1 lõpus oli sul töötamas **4 konteinerit** (manuaalsete `docker run` käskudega):
 
 ```
-┌──────────────────────────────────────────────────┐
-│           Docker Compose Network                 │
-│                                                  │
-│   ┌─────────────┐                                │
-│   │  Frontend   │  Port: 8080                    │
-│   │  (Nginx)    │  UI for users                  │
-│   └──────┬──────┘                                │
-│          │                                        │
-│     ┌────┴────┐                                  │
-│     │         │                                   │
-│     ▼         ▼                                   │
-│  ┌─────┐   ┌─────┐                               │
-│  │User │   │Todo │                               │
-│  │Svc  │   │Svc  │                               │
-│  │:3000│   │:8081│                               │
-│  └──┬──┘   └──┬──┘                               │
-│     │         │                                   │
-│     ▼         ▼                                   │
-│  ┌─────┐   ┌─────┐                               │
-│  │PG   │   │PG   │                               │
-│  │:5432│   │:5433│                               │
-│  └─────┘   └─────┘                               │
-│   users      todos                                │
-└──────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────┐
+│           todo-network (custom bridge)                     │
+│                                                            │
+│   ┌──────────────────┐         ┌──────────────────┐       │
+│   │  user-service    │         │  todo-service    │       │
+│   │  (Node.js)       │         │  (Java Spring)   │       │
+│   │  Port: 3000      │         │  Port: 8081      │       │
+│   │  Image:          │         │  Image:          │       │
+│   │  user-service:   │         │  todo-service:   │       │
+│   │  1.0-optimized   │         │  1.0-optimized   │       │
+│   └────────┬─────────┘         └────────┬─────────┘       │
+│            │                            │                  │
+│            ▼                            ▼                  │
+│   ┌──────────────────┐         ┌──────────────────┐       │
+│   │  postgres-user   │         │  postgres-todo   │       │
+│   │  Port: 5432      │         │  Port: 5433      │       │
+│   │  Volume:         │         │  Volume:         │       │
+│   │  postgres-user-  │         │  postgres-todo-  │       │
+│   │  data            │         │  data            │       │
+│   └──────────────────┘         └──────────────────┘       │
+└────────────────────────────────────────────────────────────┘
 ```
 
-**Teenused:**
-- **Frontend**: Nginx serving HTML/CSS/JS → Suhtleb mõlema backend'iga
+**Lab 1'st said:**
+- ✅ 2 optimeeritud backend pilti (images) (multi-stage builds)
+- ✅ 2 PostgreSQL andmebaasi (eraldi volumes)
+- ✅ Kohandatud võrk (custom network) (todo-network)
+- ✅ Manuaalsed `docker run` käsud iga konteineri jaoks
+
+### Lab 2 Sihtolek (5 Teenust)
+
+Lab 2 lõpus on sul töötamas **5 teenust (services)** Docker Compose'iga:
+
+```
+               Browser (http://kirjakast:8080)
+                         │
+                         ▼
+        ┌────────────────────────────────┐
+        │  Frontend (Nginx)              │
+        │  Port: 8080                    │
+        │  Static HTML/CSS/JS            │
+        └────┬──────────────────────┬────┘
+             │                      │
+             │ API Calls            │
+             ▼                      ▼
+    ┌─────────────────┐    ┌─────────────────┐
+    │  User Service   │    │  Todo Service   │
+    │  (Node.js)      │    │  (Java Spring)  │
+    │  Port: 3000     │    │  Port: 8081     │
+    └────────┬────────┘    └────────┬────────┘
+             │                      │
+             ▼                      ▼
+    ┌─────────────────┐    ┌─────────────────┐
+    │  PostgreSQL     │    │  PostgreSQL     │
+    │  Port: 5432     │    │  Port: 5433     │
+    │  users DB       │    │  todos DB       │
+    └─────────────────┘    └─────────────────┘
+```
+
+**Lab 2'st saad:**
+- ✅ Kogu süsteemi haldamine ühe docker-compose.yml failiga
+- ✅ Frontend teenus (service) (5. komponent)
+- ✅ .env failid salajaste haldamiseks
+- ✅ Database migration'id Liquibase'iga
+- ✅ Production-ready konfiguratsioonid
+
+**Teenused (services):**
+- **Frontend**: Nginx staatiliste failidega (static files) → Suhtleb mõlema backend'iga
 - **User Service**: Node.js + Express → Autentimine, kasutajate haldus
 - **Todo Service**: Java Spring Boot → Todo CRUD operatsioonid (Lab 1'st)
 - **PostgreSQL x2**: Eraldi andmebaasid users ja todos jaoks
@@ -55,12 +101,15 @@ Lab 2 lõpuks on sul valmis terve süsteem, mida saad Lab 3's Kubernetes'esse de
 
 ## 🎯 Õpieesmärgid
 
-✅ Luua docker-compose.yml kõigi kolme teenuse jaoks
-✅ Hallata mitut teenust korraga
-✅ Konfigureerida networks ja volumes Compose'is
-✅ Ühenda Frontend mõlema backend'iga
-✅ Luua erinevaid keskkonna konfiguratsioone (dev, prod)
-✅ Skaleerida teenuseid
+Peale selle labori läbimist oskad:
+
+✅ Konverteerida mitme-konteineri (multi-container) seadistust Docker Compose failiks
+✅ Kirjutada docker-compose.yml faile järgides parimaid praktikaid
+✅ Hallata keskkonna muutujaid (environment variables) .env failidega
+✅ Kasutada docker-compose.override.yml pattern'i
+✅ Implementeerida database migration'eid Liquibase'iga
+✅ Konfigureerida production patterns (scaling, resource limits, health checks)
+✅ Debuggida multi-container rakendusi
 
 ---
 
@@ -68,16 +117,21 @@ Lab 2 lõpuks on sul valmis terve süsteem, mida saad Lab 3's Kubernetes'esse de
 
 ```
 02-docker-compose-lab/
-├── README.md
-├── exercises/
-│   ├── 01-basic-compose.md
-│   ├── 02-full-stack.md
-│   ├── 03-dev-prod-envs.md
-│   └── 04-scaling.md
-└── solutions/
-    ├── docker-compose.yml
-    ├── docker-compose.dev.yml
-    └── docker-compose.prod.yml
+├── README.md                  # See fail
+├── setup.sh                   # Automaatne seadistus
+├── reset.sh                   # Labori ressursside puhastamine
+├── exercises/                 # Harjutused (5 harjutust)
+│   ├── 01-compose-basics.md           # Lab 1 → docker-compose.yml (4 teenust)
+│   ├── 02-add-frontend.md             # Lisa Frontend (5. teenus)
+│   ├── 03-environment-management.md   # .env failid ja override pattern
+│   ├── 04-database-migrations.md      # Liquibase init container
+│   └── 05-production-patterns.md      # Scaling, limits, health checks
+└── solutions/                 # Lahendused
+    ├── docker-compose.yml             # 4 teenust (Harjutus 1)
+    ├── docker-compose-full.yml        # 5 teenust (Harjutus 2)
+    ├── docker-compose.prod.yml        # Production variant
+    ├── .env.example                   # Environment template
+    └── liquibase/                     # Migration failid
 ```
 
 ---
@@ -87,23 +141,24 @@ Lab 2 lõpuks on sul valmis terve süsteem, mida saad Lab 3's Kubernetes'esse de
 ### Eelnevad labid:
 - [x] **Labor 1: Docker Põhitõed** - KOHUSTUSLIK
   - **PEAB olema Lab 1'st:**
-    - `todo-service:1.0` (Java Spring Boot backend image - LAB 1 PÕHIFOOKUS)
-    - Docker käskude põhitundmine (docker run, docker build)
-    - Networks ja volumes kogemus
-  - **Setup script build'ib automaatselt:**
-    - `user-service:1.0` (Node.js backend image - lisatakse Lab 2's)
-    - `frontend:1.0` (Nginx frontend image - lisatakse Lab 2's)
+    - ✅ `user-service:1.0-optimized` pilt (image) (~50MB, Node.js multi-stage build)
+    - ✅ `todo-service:1.0-optimized` pilt (image) (~180MB, Java multi-stage build)
+    - ✅ `postgres-user-data` andmehoidla (volume) (sisaldab users tabelit)
+    - ✅ `postgres-todo-data` andmehoidla (volume) (sisaldab todos tabelit)
+    - ✅ `todo-network` kohandatud võrk (custom bridge network)
+    - ✅ 4 töötavat konteinerit (user-service, todo-service, 2x postgres)
 
 ### Tööriistad:
 - [x] Docker Compose paigaldatud (`docker compose version` - v2.x)
 - [x] Docker daemon töötab (`docker ps`)
 - [x] Vähemalt 4GB vaba RAM
-- [x] Internet ühendus
+- [x] vim või muu text editor
 
 ### Teadmised:
-- [x] **Labor 1:** Docker põhitõed (image build, containers, networks, volumes)
-- [x] **Peatükk 13:** Docker Compose põhimõtted ja YAML süntaks
+- [x] **Labor 1:** Docker põhitõed (pildid (images), konteinerid, võrgud (networks), andmehoidlad (volumes))
+- [x] **Peatükk 13:** Docker Compose põhimõtted
 - [x] YAML failivorming
+- [x] Keskkonna muutujad (environment variables)
 
 ---
 
@@ -111,11 +166,11 @@ Lab 2 lõpuks on sul valmis terve süsteem, mida saad Lab 3's Kubernetes'esse de
 
 ```
 Labor 1 (Docker)
-  ↓ Docker image'd →
+  ↓ 4 optimeeritud konteinerit →
 Labor 2 (Compose) ← Oled siin
-  ↓ Multi-container kogemus →
+  ↓ docker-compose.yml + 5 teenust →
 Labor 3 (K8s Basics)
-  ↓ K8s manifests + deployed apps →
+  ↓ K8s manifests →
 Labor 4 (K8s Advanced)
   ↓ Ingress + Helm →
 Labor 5 (CI/CD)
@@ -125,27 +180,81 @@ Labor 6 (Monitoring)
 
 ---
 
-## ⚡ Kiirstart Setup
+
+## 📝 Harjutused
+
+### Harjutus 1: Docker Compose Alused (60 min)
+**Fail:** [exercises/01-compose-basics.md](exercises/01-compose-basics.md)
+
+Konverteeri Lab 1 lõpuseisu docker-compose.yml failiks:
+- Loo services blokk 4 teenusele (2x postgres, 2x backend)
+- Defineeri andmehoidlad (volumes) ja võrgud (networks)
+- Kasuta olemasolevaid pilte (images) (user-service:1.0-optimized, todo-service:1.0-optimized)
+- Testi End-to-End workflow
+
+### Harjutus 2: Lisa Frontend Teenus (45 min)
+**Fail:** [exercises/02-add-frontend.md](exercises/02-add-frontend.md)
+
+Lisa Frontend (5. teenus):
+- Loo frontend teenus (service) Nginx'iga
+- Mount staatilised failid (static files) (HTML/CSS/JS)
+- Konfigureeri portide vastendamine (port mapping) (8080:80)
+- Testi brauseris
+
+### Harjutus 3: Environment Management (45 min)
+**Fail:** [exercises/03-environment-management.md](exercises/03-environment-management.md)
+
+Halda keskkonna muutujaid (environment variables):
+- Loo .env fail salajastele (JWT_SECRET, DB_PASSWORD)
+- Kasuta docker-compose.override.yml pattern'i
+- Loo eraldi dev ja prod konfiguratsioonid
+
+### Harjutus 4: Database Migrations Liquibase'iga (60 min)
+**Fail:** [exercises/04-database-migrations.md](exercises/04-database-migrations.md)
+
+Automatiseeri database schema:
+- Loo Liquibase changelog failid
+- Implementeeri init container pattern
+- Käivita migration'id enne backend'i
+- Rollback testimine
+
+### Harjutus 5: Production Patterns (45 min)
+**Fail:** [exercises/05-production-patterns.md](exercises/05-production-patterns.md)
+
+Production-ready konfiguratsioon:
+- Scaling (replicas)
+- Resource limits (CPU, memory)
+- Restart policies
+- Seisukorra kontrollid (health checks) ja dependency management
+- Logging konfiguratsioon
+
+---
+
+## ⚡ Kiirstart Seadistus
 
 ### Variant A: Automaatne Seadistus (Soovitatud)
 
-Käivita setup script, mis kontrollib ja loob kõik vajalikud eeldused:
+Käivita setup script, mis kontrollib Lab 1 eeldusi:
 
 ```bash
-# Käivita setup script
+# Käivita seadistus script
 chmod +x setup.sh
 ./setup.sh
 ```
 
-**Script teeb:**
-- ✅ Kontrollib Docker Compose paigaldust
-- ✅ Kontrollib Lab 1 image'ite olemasolu
-- ✅ Build'ib puuduvad image'd automaatselt
-- ✅ Valmistab ette töökeskkonna
+**Script kontrollib:**
+- ✅ Docker Compose paigaldust
+- ✅ Lab 1 piltide (images) olemasolu (user-service:1.0-optimized, todo-service:1.0-optimized)
+- ✅ Lab 1 andmehoidlate (volumes) olemasolu (postgres-user-data, postgres-todo-data)
+- ✅ Lab 1 võrgu (network) olemasolu (todo-network)
+
+**Kui midagi puudub:**
+- 💡 Script suunab sind tagasi Lab 1 juurde
+- 💡 Või pakub võimalust luua puuduvad ressursid
 
 ---
 
-### Variant B: Manuaalne Seadistus
+### Variant B: Manuaalne Kontroll
 
 #### 1. Kontrolli Docker Compose
 
@@ -153,61 +262,252 @@ chmod +x setup.sh
 # Docker Compose versioon (v2.x)
 docker compose version
 
-# Kui puudub
-sudo apt install docker-compose-plugin
+# Peaks olema: Docker Compose version v2.x.x
 ```
 
-#### 2. Kontrolli Lab 1 Image
+#### 2. Kontrolli Lab 1 Pilte (Images)
 
 ```bash
-# Kontrolli Lab 1 kohustuslikku image'i
-docker images | grep "todo-service"
+# Vaata optimeeritud pilte (images)
+docker images | grep -E "user-service|todo-service"
+
+# Peaksid nägema:
+# user-service    1.0-optimized    abc123    ~50MB
+# todo-service    1.0-optimized    def456    ~180MB
 ```
 
-**Kui todo-service:1.0 puudub:**
+**Kui pildid (images) puuduvad:**
 
 ```bash
-# Todo Service (LAB 1 KOHUSTUSLIK!)
-cd ../apps/backend-java-spring
-docker build -t todo-service:1.0 .
-cd ../../02-docker-compose-lab
+# Mine Lab 1 juurde ja ehita (build) optimeeritud pildid (images)
+cd ../01-docker-lab/
+cat exercises/05-optimization.md
 ```
 
-#### 3. Build'i Täiendavad Image'd Lab 2 Jaoks
-
-Setup script build'ib need automaatselt, aga saad ka käsitsi:
+#### 3. Kontrolli Lab 1 Andmehoidlaid (Volumes)
 
 ```bash
-# User Service (lisame Lab 2's)
-cd ../apps/backend-nodejs
-docker build -t user-service:1.0 .
+# Vaata andmehoidlaid (volumes)
+docker volume ls | grep postgres
 
-# Frontend (lisame Lab 2's)
-cd ../apps/frontend
-docker build -t frontend:1.0 .
-
-# Tagasi Lab 2'sse
-cd ../../02-docker-compose-lab
+# Peaksid nägema:
+# postgres-user-data
+# postgres-todo-data
 ```
 
-#### 4. Alusta Harjutustega
+**Kui andmehoidlad (volumes) puuduvad:**
 
 ```bash
-cat exercises/01-basic-compose.md
+# Mine Lab 1 juurde ja loo andmehoidlad (volumes)
+cd ../01-docker-lab/
+cat exercises/04-volumes.md
+```
+
+#### 4. Kontrolli Lab 1 Võrku (Network)
+
+```bash
+# Vaata võrke (networks)
+docker network ls | grep todo-network
+
+# Peaks nägema:
+# todo-network    bridge
+```
+
+**Kui võrk (network) puudub:**
+
+```bash
+# Loo võrk (network)
+docker network create todo-network
+```
+
+#### 5. Kontrolli Andmebaasi Andmeid
+
+```bash
+# Käivita ajutiselt postgres konteinerid
+docker run -d --name temp-postgres-user \
+  -v postgres-user-data:/var/lib/postgresql/data \
+  -e POSTGRES_PASSWORD=postgres \
+  postgres:16-alpine
+
+# Kontrolli, kas users tabel on olemas
+docker exec temp-postgres-user psql -U postgres -d user_service_db -c "\dt"
+
+# Peata ja eemalda
+docker rm -f temp-postgres-user
+```
+
+#### 6. Alusta Harjutus 1'st
+
+```bash
+# Mine Lab 2 juurde
+cd labs/02-docker-compose-lab
+
+# Alusta harjutusega
+cat exercises/01-compose-basics.md
 ```
 
 ---
 
 ### ⚡ Kiirkontroll: Kas Oled Valmis?
 
+Enne labori alustamist veendu, et kõik Lab 1 ressursid on olemas:
+
 ```bash
-# Kiirkontroll
-docker compose version && \
-docker images | grep -E "user-service|frontend" && \
-echo "✅ Kõik eeldused on täidetud!"
+# Kiirkontroll (kõik peaksid tagastama 0 või rohkem ridu)
+echo "=== Docker Compose ==="
+docker compose version
+
+echo -e "\n=== Lab 1 Pildid (Images) ==="
+docker images | grep -E "user-service.*optimized|todo-service.*optimized"
+
+echo -e "\n=== Lab 1 Andmehoidlad (Volumes) ==="
+docker volume ls | grep -E "postgres-user-data|postgres-todo-data"
+
+echo -e "\n=== Lab 1 Võrk (Network) ==="
+docker network ls | grep todo-network
+
+echo -e "\n✅ Kui kõik ülalpool on olemas, oled valmis!"
 ```
 
 ---
 
-**Staatus:** 📝 Framework valmis, sisu lisatakse
-**Viimane uuendus:** 2025-11-15
+## ✅ Kontrolli Tulemusi
+
+Peale labori läbimist pead omama:
+
+### Docker Compose Failid:
+
+- [ ] `docker-compose.yml` (4 teenust: 2x postgres, 2x backend)
+- [ ] `docker-compose-full.yml` (5 teenust: + frontend)
+- [ ] `docker-compose.prod.yml` (production variant)
+- [ ] `.env` fail (salajased)
+- [ ] `docker-compose.override.yml` (dev overrides)
+
+### Töötavad Teenused (Harjutus 5 lõpus):
+
+- [ ] Frontend (port 8080) - Nginx
+- [ ] User Service (port 3000) - Node.js
+- [ ] Todo Service (port 8081) - Java Spring
+- [ ] PostgreSQL User DB (port 5432)
+- [ ] PostgreSQL Todo DB (port 5433)
+
+### Testimine:
+
+**Frontend:**
+- [ ] `http://kirjakast:8080` - avab login lehte
+- [ ] Login toimib (suhtleb User Service'iga)
+- [ ] Todo list kuvatakse (suhtleb Todo Service'iga)
+
+**Backend API'd:**
+- [ ] `curl http://localhost:3000/health` - User Service OK
+- [ ] `curl http://localhost:8081/health` - Todo Service OK
+- [ ] End-to-End JWT workflow toimib
+
+**Docker Compose:**
+- [ ] `docker compose ps` - kõik teenused UP ja HEALTHY
+- [ ] `docker compose logs` - logid kättesaadavad
+- [ ] Andmed püsivad peale `docker compose down && docker compose up`
+
+---
+
+## 📊 Progressi Jälgimine
+
+- [ ] Harjutus 1: Docker Compose Alused (4 teenust)
+- [ ] Harjutus 2: Lisa Frontend (5 teenust)
+- [ ] Harjutus 3: Environment Management (.env failid)
+- [ ] Harjutus 4: Database Migrations (Liquibase)
+- [ ] Harjutus 5: Production Patterns (scaling, limits)
+
+---
+
+## 🆘 Troubleshooting
+
+### Probleem 1: "Lab 1 pildid (images) puuduvad"
+
+```bash
+# Kontrolli pilte (images)
+docker images | grep optimized
+
+# Kui puuduvad, mine Lab 1 juurde
+cd ../01-docker-lab
+cat exercises/05-optimization.md
+```
+
+### Probleem 2: "Andmehoidlad (volumes) puuduvad või on tühjad"
+
+```bash
+# Kontrolli andmehoidlaid (volumes)
+docker volume ls | grep postgres
+
+# Kui puuduvad, loo need Lab 1's
+cd ../01-docker-lab
+cat exercises/04-volumes.md
+```
+
+### Probleem 3: "docker compose up ebaõnnestub"
+
+```bash
+# Kontrolli YAML syntax'it
+docker compose config
+
+# Vaata detailseid vigu (errors)
+docker compose up --verbose
+```
+
+### Probleem 4: "Port juba kasutusel"
+
+```bash
+# Vaata, mis kasutab porti
+sudo lsof -i :3000
+sudo lsof -i :8081
+sudo lsof -i :8080
+
+# Peata konfliktis olevad konteinerid
+docker ps -a | grep -E "3000|8081|8080"
+docker stop <container-id>
+```
+
+---
+
+## 📚 Viited
+
+### Koolituskava:
+- **Peatükk 13:** Docker Compose
+
+### Docker Dokumentatsioon:
+- [Compose file reference](https://docs.docker.com/compose/compose-file/)
+- [Environment variables](https://docs.docker.com/compose/environment-variables/)
+- [Networking in Compose](https://docs.docker.com/compose/networking/)
+- [Best practices](https://docs.docker.com/compose/production/)
+
+### Labori Materjalid:
+- [TERMINOLOOGIA.md](../TERMINOLOOGIA.md) - Eesti-inglise sõnastik
+- [00-LAB-RAAMISTIK.md](../00-LAB-RAAMISTIK.md) - Laborite üldstruktuur
+- [Labor 1 README](../01-docker-lab/README.md) - Eelduslabor
+
+---
+
+## 🎯 Järgmine Labor
+
+Peale selle labori edukat läbimist, jätka:
+- **Labor 3:** Kubernetes Põhitõed
+
+---
+
+## 🎓 Kokkuvõte
+
+Peale selle labori läbimist oled:
+- ✅ Konverteerinud Lab 1 manuaalsed käsud docker-compose.yml failiks
+- ✅ Lisanud Frontend teenuse (service) ja loonud täieliku 5-tier süsteemi
+- ✅ Õppinud hallama keskkonna muutujaid (environment variables) turvaliselt
+- ✅ Implementeerinud database migration'id Liquibase'iga
+- ✅ Konfigureerinud production-ready Compose seadistused
+- ✅ Debugginud multi-container rakendusi
+- ✅ Valmis Kubernetes'e migreerumiseks (Lab 3)
+
+**Edu laboriga! 🚀**
+
+---
+
+**Staatus:** 🏗️ Ülesehitamisel
+**Viimane uuendus:** 2025-11-21
