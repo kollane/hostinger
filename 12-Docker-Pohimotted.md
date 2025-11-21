@@ -418,8 +418,9 @@ CMD ["node", "server.js"]
 
 ### 7.3. Dockerfile Instruktsioonid
 
-### Baaspilt ja efektiivsus
 Selline Dockerfile on üles ehitatud kindla loogikaga, et hoida konteineri ehitamine puhtana, tõhusana ja hõlpsasti hooldatavana. Allpool on iga sammu põhjendus ja miks neid just nii tehakse.
+
+### Baaspilt ja efektiivsus
 
 Valitakse **node:18-alpine** baaspilt, kuna see on väikese mahuga ja sisaldab vaid olulist Node.js'i käitamiseks. Vähem installitud pakette tähendab väiksemat pinda, turvalisemat konteinerit ja kiirem ehitamine.
 
