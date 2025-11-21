@@ -1,0 +1,140 @@
+# ==========================================================================
+# Docker Compose - Lab 1 Lõpuseisu Konversioon (Harjutus 1 Lahendus)
+# ==========================================================================
+# Käivitab 4 teenust:
+# - 2x PostgreSQL (users ja todos)
+# - User Service (Node.js)
+# - Todo Service (Java Spring Boot)
+#
+# Kasutamine:
+#   docker compose up -d
+#   docker compose ps
+#   docker compose logs
+#   docker compose down
+# ==========================================================================
+
+version: '3.8'
+
+services:
+  # ==========================================================================
+  # PostgreSQL - User Service Database
+  # ==========================================================================
+  postgres-user:
+    image: postgres:16-alpine
+    container_name: postgres-user
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: user_service_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres-user-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - todo-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==========================================================================
+  # PostgreSQL - Todo Service Database
+  # ==========================================================================
+  postgres-todo:
+    image: postgres:16-alpine
+    container_name: postgres-todo
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: todo_service_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres-todo-data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    networks:
+      - todo-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==========================================================================
+  # User Service - Node.js + Express + PostgreSQL
+  # ==========================================================================
+  user-service:
+    image: user-service:1.0-optimized
+    container_name: user-service
+    restart: unless-stopped
+    environment:
+      DB_HOST: postgres-user
+      DB_PORT: 5432
+      DB_NAME: user_service_db
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      JWT_SECRET: shared-secret-key-change-this-in-production-must-be-at-least-256-bits
+      JWT_EXPIRES_IN: 1h
+      PORT: 3000
+      NODE_ENV: production
+    ports:
+      - "3000:3000"
+    networks:
+      - todo-network
+    depends_on:
+      postgres-user:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 40s
+
+  # ==========================================================================
+  # Todo Service - Java Spring Boot + PostgreSQL
+  # ==========================================================================
+  todo-service:
+    image: todo-service:1.0-optimized
+    container_name: todo-service
+    restart: unless-stopped
+    environment:
+      DB_HOST: postgres-todo
+      DB_PORT: 5432
+      DB_NAME: todo_service_db
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      JWT_SECRET: shared-secret-key-change-this-in-production-must-be-at-least-256-bits
+      SPRING_PROFILES_ACTIVE: prod
+      JAVA_OPTS: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
+    ports:
+      - "8081:8081"
+    networks:
+      - todo-network
+    depends_on:
+      postgres-todo:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 60s
+
+# ==========================================================================
+# Volumes - Kasutame Lab 1'st loodud andmehoidlaid
+# ==========================================================================
+volumes:
+  postgres-user-data:
+    external: true  # Kasutame Lab 1'st loodud volume'i
+  postgres-todo-data:
+    external: true  # Kasutame Lab 1'st loodud volume'i
+
+# ==========================================================================
+# Networks - Kasutame Lab 1'st loodud võrku
+# ==========================================================================
+networks:
+  todo-network:
+    external: true  # Kasutame Lab 1'st loodud network'i
