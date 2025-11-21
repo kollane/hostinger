@@ -418,49 +418,39 @@ CMD ["node", "server.js"]
 
 ### 7.3. Dockerfile Instruktsioonid
 
-**FROM:** Base image
-```dockerfile
-FROM node:18-alpine
-```
+### Baaspilt ja efektiivsus
 
-**WORKDIR:** Seadista töökaust
-```dockerfile
-WORKDIR /app
-```
+Valitakse **node:18-alpine** baaspilt, kuna see on väikese mahuga ja sisaldab vaid olulist Node.js'i käitamiseks. Vähem installitud pakette tähendab väiksemat pinda, turvalisemat konteinerit ja kiirem ehitamine.
 
-**COPY:** Kopeeri failid host'ist container'i
-```dockerfile
-COPY package.json ./
-COPY . .
-```
+### Töökataloogi määramine
 
-**RUN:** Käivita käsk image build ajal
-```dockerfile
-RUN npm install
-RUN apt-get update && apt-get install -y curl
-```
+Käsuga `WORKDIR /app` liigub töökeskkond soovitud kataloogi. Kõik järgnevad käsud täidetakse selles kataloogis, mis aitab hoida projekti failid struktureeritult ja väldib segadust erinevate failide asukohtadega.
 
-**ENV:** Seadista environment variable
-```dockerfile
-ENV NODE_ENV=production
-ENV PORT=3000
-```
+### Package failide esmalt kopeerimine
 
-**EXPOSE:** Deklareeri port
-```dockerfile
-EXPOSE 3000
-```
+`COPY package*.json ./` kopeerib ainult package.json ja package-lock.json (või yarn.lock) enne kogu rakenduskoodi kopeerimist. See annab võimaluse järgmises etapis (`RUN npm install`) paigaldada npm-i sõltuvused enne koodifailide lisamist. Nii salvestab Docker ehitusprotsessi vahemälusse ja kui sõltuvused pole muutunud, ei pea iga muudatuse puhul uuesti installima, mis kiirendab ehitamist.
 
-**CMD:** Default käsk container käivitamisel
-```dockerfile
-CMD ["node", "server.js"]
-```
+### Sõltuvuste installimine
 
-**ENTRYPOINT:** Fikseeritud käsk (koos CMD)
-```dockerfile
-ENTRYPOINT ["node"]
-CMD ["server.js"]
-```
+`RUN npm install` paigaldab vajalikud Node.js'i moodulid. Kuna package failid on eraldi kopeeritud, võetakse see pilt tavaliselt vahemälust — kiire ja efektiivne.
+
+### Rakenduse koodi kopeerimine
+
+Nüüd alles kopeeritakse kogu ülejäänud kood (`COPY . .`). Nii saab sõltuvused installida võimalikult vara ja koodimuudatused ei põhjusta npm installi iga ehitusega.
+
+### Pordi avalikustamine
+
+`EXPOSE 3000` väljendab, millist porti rakendus konteineris kasutab, et arendaja teaks, millega ühendada või kuhu pöörata liiklus.
+
+### Käivituskäsk
+
+`CMD ["node", "server.js"]` määrab, millise käsuga konteiner käivitub; siin alustatakse Node.js serverit.
+
+***
+
+Selline järjekord ja tööviis aitab tagada kiire ehituse, korras failisüsteemi ning väikse pildi suuruse. Häid põhjusi on nii kiiruses, turvalisuses kui ka praktilises konteinerite halduses.
+
+***
 
 ---
 
