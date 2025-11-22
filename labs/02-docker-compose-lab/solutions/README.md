@@ -1,405 +1,94 @@
-# Lab 2: Docker Compose - Lahendused
+# Labor 2: Docker Compose - Lahendused
 
-See kaust sisaldab Lab 2 harjutuste lahendusi.
+See kaust sisaldab näidislahendusi kõigile Labor 2 harjutustele.
 
----
+## Failid
 
-## 📂 Failide Ülevaade
+### Harjutus 1: Docker Compose Alused
+- **docker-compose.yml** - 4 teenust (2x PostgreSQL, user-service, todo-service)
+- Konverteerib Lab 1 lõpuseisu docker-compose.yml failiks
+- Kasutab external volumes ja networks
 
-### Docker Compose Failid
+### Harjutus 2: Lisa Frontend
+- **docker-compose-full.yml** - 5 teenust (+ frontend)
+- Lisab Nginx frontend teenuse
+- Mount'ib staatilised failid
 
-| Fail | Harjutus | Kirjeldus |
-|------|----------|-----------|
-| `docker-compose.yml` | 1-2 | Base konfiguratsioon (postgres + backend + frontend) |
-| `docker-compose.dev.yml` | 3 | Development override (hot reload, debug ports) |
-| `docker-compose.prod.yml` | 3 | Production override (optimized, secure, resource limits) |
-| `docker-compose.external-db.yml` | 4 | External PostgreSQL pattern (no postgres service) |
+### Harjutus 3: Environment Management
+- **.env.example** - Environment variables template
+- Näitab, kuidas hallata salajaseid turvaliselt
 
-### Environment Failid
+### Harjutus 4: Database Migrations
+- **liquibase/changelog-master.xml** - Master changelog
+- **liquibase/changelogs/001-create-users-table.xml** - Users tabel
+- **liquibase/changelogs/002-create-todos-table.xml** - Todos tabel
 
-| Fail | Kirjeldus |
-|------|-----------|
-| `.env.example` | Template kõigile environment variables |
-| `.env.dev` | Development environment variables |
-| `.env.prod` | Production environment variables |
-| `.env.external` | External PostgreSQL environment variables |
+### Harjutus 5: Production Patterns
+- **docker-compose.prod.yml** - Production overrides
+- Resource limits, logging, security
 
----
+## Kasutamine
 
-## 🚀 Kasutamine
-
-### Harjutus 1-2: Basic Full Stack
+### Harjutus 1 Lahendus
 
 ```bash
-# Kopeeri environment variables
-cp .env.example .env
-vim .env  # Muuda salasõnad
+# Kopeeri fail töökataloogiacd compose-project
+cp ../solutions/docker-compose.yml .
 
-# Start stack
+# Käivita
 docker compose up -d
-
-# Kontrolli
-docker compose ps
-curl http://localhost:3000/health
-curl http://localhost:8080
-
-# Vaata loge
-docker compose logs -f
-
-# Peata
-docker compose down
 ```
 
----
-
-### Harjutus 3: Development Environment
+### Harjutus 2 Lahendus
 
 ```bash
-# Start development mode
-docker compose -f docker-compose.yml -f docker-compose.dev.yml --env-file .env.dev up -d
+# Kopeeri fail
+cp ../solutions/docker-compose-full.yml .
 
-# Kontrolli
-docker compose -f docker-compose.yml -f docker-compose.dev.yml ps
-
-# Vaata loge (peaks näitama nodemon)
-docker compose -f docker-compose.yml -f docker-compose.dev.yml logs -f backend
-
-# Test hot reload - muuda backend-nodejs/server.js faili
-# Backend peaks automaatselt restartima!
-
-# Peata
-docker compose -f docker-compose.yml -f docker-compose.dev.yml down
+# Käivita
+docker compose -f docker-compose-full.yml up -d
 ```
 
----
-
-### Harjutus 3: Production Environment
+### Harjutus 3 Lahendus
 
 ```bash
-# Start production mode
-docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.prod up -d --build
+# Kopeeri .env template
+cp ../solutions/.env.example .env
 
-# Kontrolli
-docker compose -f docker-compose.yml -f docker-compose.prod.yml ps
+# Muuda salajaseid
+vim .env
 
-# Kontrolli resource usage
-docker stats prod-backend prod-postgres prod-frontend
-
-# Test health checks
-curl http://localhost:3000/health
-
-# Peata
-docker compose -f docker-compose.yml -f docker-compose.prod.yml down
-```
-
----
-
-### Harjutus 4: External PostgreSQL
-
-#### Samm 1: Paigalda PostgreSQL VPS-ile
-
-```bash
-# SSH VPS-i
-ssh janek@kirjakast
-
-# Paigalda PostgreSQL
-sudo apt update
-sudo apt install -y postgresql postgresql-contrib
-
-# Loo andmebaas ja kasutaja
-sudo -u postgres psql
-
-# SQL console:
-CREATE DATABASE user_service_external;
-CREATE USER externaluser WITH PASSWORD 'ExternalPass123!';
-GRANT ALL PRIVILEGES ON DATABASE user_service_external TO externaluser;
-\q
-```
-
-#### Samm 2: Konfigureeri PostgreSQL
-
-```bash
-# Muuda postgresql.conf
-sudo vim /etc/postgresql/16/main/postgresql.conf
-# Muuda: listen_addresses = '*'
-
-# Muuda pg_hba.conf
-sudo vim /etc/postgresql/16/main/pg_hba.conf
-# Lisa: host    user_service_external    externaluser    0.0.0.0/0    scram-sha-256
-
-# Restart
-sudo systemctl restart postgresql
-
-# Kontrolli
-sudo ss -tlnp | grep 5432
-```
-
-#### Samm 3: Start Docker Compose (ilma PostgreSQL-ita)
-
-```bash
-# Start backend + frontend (DB on external)
-docker compose -f docker-compose.external-db.yml --env-file .env.external up -d
-
-# Kontrolli
-docker compose -f docker-compose.external-db.yml ps
-
-# Test
-curl http://localhost:3000/health
-
-# Peata
-docker compose -f docker-compose.external-db.yml down
-```
-
----
-
-## 🔧 Kasulikud Käsud
-
-### Üldised Käsud
-
-```bash
-# Build images
-docker compose build
-
-# Build ilma cache'ita
-docker compose build --no-cache
-
-# Start taustal
+# Käivita docker-compose.yml'iga, mis kasutab ${VARIABLE} süntaksit
 docker compose up -d
-
-# Start ja jälgi loge
-docker compose up
-
-# Peata
-docker compose stop
-
-# Start uuesti
-docker compose start
-
-# Restart
-docker compose restart
-
-# Peata ja eemalda konteinerid
-docker compose down
-
-# Peata ja eemalda konteinerid + volumes
-docker compose down -v
-
-# Vaata staatust
-docker compose ps
-
-# Vaata loge
-docker compose logs
-docker compose logs -f backend
-docker compose logs --tail=100 backend
 ```
 
-### Debug Käsud
+### Harjutus 4 Lahendus
 
 ```bash
-# Sisene konteinerisse
-docker compose exec backend sh
-docker compose exec postgres psql -U appuser -d user_service_db
+# Kopeeri Liquibase failid
+cp -r ../solutions/liquibase .
 
-# Vaata konfiguratsioon
-docker compose config
-
-# Valideeri compose fail
-docker compose config --quiet
-
-# Kontrolli network't
-docker network ls
-docker network inspect <network-name>
-
-# Kontrolli volume'id
-docker volume ls
-docker volume inspect <volume-name>
+# Käivita koos Liquibase teenustega
+docker compose up -d
 ```
 
-### Backup ja Restore
-
-#### PostgreSQL Backup (Containerized)
+### Harjutus 5 Lahendus
 
 ```bash
-# Backup database
-docker compose exec postgres pg_dump -U appuser -d user_service_db > backup.sql
+# Kopeeri production override
+cp ../solutions/docker-compose.prod.yml .
 
-# Backup volume
-docker run --rm \
-  -v <project>_postgres-data:/data \
-  -v $(pwd):/backup \
-  alpine tar czf /backup/postgres-data-backup.tar.gz -C /data .
-
-# Restore database
-cat backup.sql | docker compose exec -T postgres psql -U appuser -d user_service_db
-
-# Restore volume
-docker run --rm \
-  -v <project>_postgres-data:/data \
-  -v $(pwd):/backup \
-  alpine sh -c "cd /data && tar xzf /backup/postgres-data-backup.tar.gz"
+# Käivita production mode's
+docker compose -f docker-compose-full.yml -f docker-compose.prod.yml up -d
 ```
 
-#### PostgreSQL Backup (External)
+## Märkused
 
-```bash
-# Backup
-pg_dump -h 93.127.213.242 -U externaluser -d user_service_external > backup.sql
+- **TÄHTIS:** Need on näidislahendused. Proovi esmalt ise lahendada!
+- Kõik failid kasutavad external volumes ja networks (Lab 1'st)
+- Production failid kasutavad resource limits ja security seadistusi
+- Liquibase changelog failid loovad users ja todos tabelid
 
-# Restore
-psql -h 93.127.213.242 -U externaluser -d user_service_external < backup.sql
-```
+## Vead ja Troubleshooting
 
----
-
-## 📊 Võrdlus: Dev vs Prod
-
-| Aspekt | Development | Production |
-|--------|-------------|------------|
-| **Volumes** | ✅ Mounted (hot reload) | ❌ No volumes |
-| **Ports** | ✅ Exposed (9229 debug) | ⚠️  Only necessary |
-| **Restart** | `unless-stopped` | `always` |
-| **Security** | Minimal | Max (read-only, no-new-privileges) |
-| **Resources** | Unlimited | Limited (CPU/Memory) |
-| **Logging** | Verbose (debug) | Minimal (info/warn/error) |
-| **Build** | Development target | Production target (optimized) |
-
----
-
-## 📊 Võrdlus: Containerized vs External PostgreSQL
-
-| Aspekt | Containerized | External |
-|--------|---------------|----------|
-| **Setup** | ✅ Lihtne | ⚠️  Keerulisem |
-| **Deployment** | `docker compose up` | Eraldi PostgreSQL paigaldus |
-| **Data Persistence** | Docker volume | VPS disk / Cloud storage |
-| **Backup** | Volume backup, pg_dump | pg_dump, WAL archiving |
-| **Scaling** | StatefulSet (K8s) | Managed DB (RDS, CloudSQL) |
-| **Cost** | ✅ Madal (sama VPS) | ⚠️  Kõrgem (dedicated DB) |
-| **Use Case** | Microservices, DevOps | Large production, DBA teams |
-
----
-
-## 🛡️ Turvalisus
-
-### Environment Variables
-
-❌ **MITTE KUNAGI:**
-```yaml
-environment:
-  DB_PASSWORD: hardcoded123  # NEVER!
-```
-
-✅ **ALATI:**
-```yaml
-environment:
-  DB_PASSWORD: ${DB_PASSWORD}  # From .env file
-```
-
-```bash
-# .gitignore
-.env
-.env.*
-!.env.example
-```
-
-### Production Best Practices
-
-```yaml
-# docker-compose.prod.yml
-services:
-  backend:
-    restart: always
-    read_only: true  # Read-only filesystem
-    security_opt:
-      - no-new-privileges:true
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 256M
-```
-
----
-
-## 🐛 Troubleshooting
-
-### Probleem: Port already in use
-
-```bash
-# Kontrolli, mis kasutab porti
-sudo lsof -i :3000
-sudo lsof -i :8080
-
-# Muuda port compose fail'is
-ports:
-  - "3001:3000"  # Kasuta 3001 asemel
-```
-
-### Probleem: Can't connect to database
-
-```bash
-# Kontrolli DB_HOST
-docker compose config | grep DB_HOST
-# Peaks olema service nimi (postgres), mitte localhost!
-
-# Kontrolli postgres health
-docker compose ps postgres
-
-# Vaata postgres loge
-docker compose logs postgres
-```
-
-### Probleem: Changes not reflected
-
-```bash
-# Rebuild images
-docker compose up --build -d
-
-# Force recreate
-docker compose up -d --force-recreate
-```
-
-### Probleem: Permission denied (volumes)
-
-```bash
-# Kontrolli permissions
-ls -la ../../apps/backend-nodejs
-
-# Exclude node_modules
-volumes:
-  - ../../apps/backend-nodejs:/app
-  - /app/node_modules  # Important!
-```
-
----
-
-## 📚 Ressursid
-
-- [Docker Compose dokumentatsioon](https://docs.docker.com/compose/)
-- [Compose file reference](https://docs.docker.com/compose/compose-file/)
-- [Best practices](https://docs.docker.com/compose/production/)
-- [Networking](https://docs.docker.com/compose/networking/)
-- [PostgreSQL Docker](https://hub.docker.com/_/postgres)
-
----
-
-## ✅ Checklist
-
-Peale Lab 2 läbimist peaksid oskama:
-
-- [ ] Kirjutada `docker-compose.yml` faile
-- [ ] Defineerida services, networks, volumes
-- [ ] Kasutada environment variables't
-- [ ] Luua dev ja prod keskkondi
-- [ ] Hallata containerized PostgreSQL-i
-- [ ] Konfigureerida external PostgreSQL-i
-- [ ] Teha backup'e ja restore'e
-- [ ] Debuggida multi-container rakendusi
-- [ ] Mõista Docker Compose override pattern'i
-- [ ] Rakendada production best practices't
-
----
-
-**Labor 2 Lahendused Valmis! 🎉**
-
-**Järgmine Labor:** [Lab 3: Kubernetes Basics](../../03-kubernetes-basics-lab/README.md)
+Kui leiad vea lahenduses, vaata harjutuste troubleshooting sektsioone.

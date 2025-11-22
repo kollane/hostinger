@@ -1,16 +1,14 @@
 # ==========================================================================
-# Docker Compose - Lab 1 Lõpuseisu Konversioon (Harjutus 1 Lahendus)
+# Docker Compose - Full Stack (Harjutus 2 Lahendus)
 # ==========================================================================
-# Käivitab 4 teenust:
+# Käivitab 5 teenust:
 # - 2x PostgreSQL (users ja todos)
 # - User Service (Node.js)
 # - Todo Service (Java Spring Boot)
+# - Frontend (Nginx)
 #
 # Kasutamine:
-#   docker compose up -d
-#   docker compose ps
-#   docker compose logs
-#   docker compose down
+#   docker compose -f docker-compose-full.yml up -d
 # ==========================================================================
 
 version: '3.8'
@@ -123,18 +121,41 @@ services:
       retries: 3
       start_period: 60s
 
+  # ==========================================================================
+  # Frontend - Nginx Static Files
+  # ==========================================================================
+  frontend:
+    image: nginx:alpine
+    container_name: frontend
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      # Mount frontend failid (read-only)
+      - ../apps/frontend:/usr/share/nginx/html:ro
+    networks:
+      - todo-network
+    depends_on:
+      - user-service
+      - todo-service
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+
 # ==========================================================================
-# Volumes - Kasutame Lab 1'st loodud andmehoidlaid
+# Volumes
 # ==========================================================================
 volumes:
   postgres-user-data:
-    external: true  # Kasutame Lab 1'st loodud volume'i
+    external: true
   postgres-todo-data:
-    external: true  # Kasutame Lab 1'st loodud volume'i
+    external: true
 
 # ==========================================================================
-# Networks - Kasutame Lab 1'st loodud võrku
+# Networks
 # ==========================================================================
 networks:
   todo-network:
-    external: true  # Kasutame Lab 1'st loodud network'i
+    external: true
