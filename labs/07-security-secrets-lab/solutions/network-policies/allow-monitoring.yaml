@@ -1,0 +1,236 @@
+# Allow Monitoring (Prometheus) Network Policy
+# Reference solution for Exercise 3
+#
+# Allow Prometheus (monitoring namespace) to scrape /metrics endpoints
+# Required for Lab 6 monitoring integration
+
+---
+# =======================================================================
+# Allow Prometheus to scrape metrics from all pods
+# =======================================================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-prometheus-scrape
+  namespace: production
+  labels:
+    policy-type: allow
+    security: monitoring
+  annotations:
+    description: "Allow Prometheus to scrape /metrics endpoints from all pods"
+spec:
+  # Apply to ALL pods in production namespace
+  podSelector: {}
+
+  # Policy type
+  policyTypes:
+    - Ingress
+
+  # Ingress rules
+  ingress:
+    # =================================================================
+    # Allow from Prometheus (monitoring namespace)
+    # =================================================================
+    - from:
+        # Source: monitoring namespace
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring
+          # AND source: Prometheus pods
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus
+      ports:
+        # Common metrics ports
+        - protocol: TCP
+          port: 9090  # Prometheus itself
+        - protocol: TCP
+          port: 3000  # User-service metrics endpoint
+        - protocol: TCP
+          port: 8081  # Todo-service metrics endpoint
+        - protocol: TCP
+          port: 9187  # PostgreSQL exporter
+
+---
+# =======================================================================
+# Allow Prometheus to scrape specific pods only (Alternative)
+# =======================================================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-prometheus-scrape-specific
+  namespace: production
+  labels:
+    policy-type: allow
+    security: monitoring-specific
+  annotations:
+    description: "Allow Prometheus to scrape only pods with metrics=enabled label"
+spec:
+  # Apply ONLY to pods with label metrics=enabled
+  podSelector:
+    matchLabels:
+      metrics: enabled
+
+  # Policy type
+  policyTypes:
+    - Ingress
+
+  # Ingress rules
+  ingress:
+    # Allow from Prometheus
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus
+      ports:
+        # Metrics port (varies by app)
+        - protocol: TCP
+          port: 9090
+
+---
+# =======================================================================
+# Allow Grafana to access datasources
+# =======================================================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-grafana-datasources
+  namespace: production
+  labels:
+    policy-type: allow
+    security: monitoring
+  annotations:
+    description: "Allow Grafana to access Prometheus and other datasources"
+spec:
+  # Apply to Prometheus pod
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: prometheus
+
+  # Policy type
+  policyTypes:
+    - Ingress
+
+  # Ingress rules
+  ingress:
+    # Allow from Grafana
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: grafana
+      ports:
+        - protocol: TCP
+          port: 9090
+
+---
+# =======================================================================
+# Egress: Allow apps to report metrics to external services (Optional)
+# =======================================================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-external-metrics
+  namespace: production
+  labels:
+    policy-type: allow
+    security: monitoring-egress
+  annotations:
+    description: "Allow apps to send metrics to external monitoring services"
+spec:
+  # Apply to all pods
+  podSelector: {}
+
+  # Policy type
+  policyTypes:
+    - Egress
+
+  # Egress rules
+  egress:
+    # =================================================================
+    # Allow to external monitoring services (e.g., Datadog, New Relic)
+    # =================================================================
+    - to:
+        # Example: Datadog agent
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 169.254.169.254/32  # Block AWS metadata
+              - 10.0.0.0/8          # Block internal networks
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+      ports:
+        - protocol: TCP
+          port: 443  # HTTPS
+
+---
+# =======================================================================
+# USAGE NOTES
+# =======================================================================
+#
+# Apply:
+# kubectl apply -f allow-monitoring.yaml
+#
+# Verify:
+# kubectl get networkpolicy -n production
+# kubectl describe networkpolicy allow-prometheus-scrape -n production
+#
+# Test Prometheus scraping:
+# # Check Prometheus targets
+# kubectl port-forward -n monitoring svc/prometheus 9090:9090
+# # Open http://localhost:9090/targets
+# # Verify production namespace targets are UP
+#
+# Test connectivity:
+# # From Prometheus pod to user-service metrics (should SUCCEED)
+# kubectl exec -n monitoring -it <prometheus-pod> -- wget -O- http://user-service.production:3000/metrics
+#
+# # From random pod to metrics (should FAIL if using specific policy)
+# kubectl run test-pod --image=busybox --rm -it -n default -- wget -O- http://user-service.production:3000/metrics
+#
+# How it works:
+# 1. namespaceSelector: name=monitoring → Allows traffic from monitoring namespace
+# 2. podSelector: app.kubernetes.io/name=prometheus → Only Prometheus pods
+# 3. ports: 3000, 8081, 9187 → Metrics endpoints
+#
+# Security Benefits:
+# ✅ Only Prometheus can scrape metrics (not any pod)
+# ✅ Cross-namespace access controlled
+# ✅ Specific ports only (not all traffic)
+# ✅ Prevents metrics data leakage
+#
+# Label monitoring namespace:
+# kubectl label namespace monitoring name=monitoring
+#
+# Verify Prometheus labels:
+# kubectl get pods -n monitoring -l app.kubernetes.io/name=prometheus --show-labels
+#
+# Add metrics label to pods:
+# In Deployment:
+# metadata:
+#   labels:
+#     metrics: enabled
+#
+# Common metrics ports:
+# - 3000: Node.js/Express (user-service)
+# - 8081: Java Spring Boot (todo-service)
+# - 9187: PostgreSQL exporter
+# - 9090: Prometheus
+# - 9100: Node exporter
+# - 9093: Alertmanager
+#
+# Troubleshooting:
+# - Prometheus can't scrape targets → Check NetworkPolicy and namespace labels
+# - Targets show as DOWN → Verify pod labels and ports
+# - Cross-namespace communication blocked → Check namespaceSelector
+#
+# Verify namespace labels:
+# kubectl get namespace monitoring --show-labels
+# kubectl label namespace monitoring name=monitoring  # If missing
+#
+# =======================================================================

@@ -1,0 +1,309 @@
+# Trivy Security Scanning CronJob
+# Reference solution for Exercise 4
+#
+# Automated periodic scanning of all container images in cluster
+# Sends alerts if Critical/High vulnerabilities found
+
+---
+# =======================================================================
+# ConfigMap for Trivy scan script
+# =======================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: trivy-scan-script
+  namespace: monitoring
+  labels:
+    app: trivy-scanner
+data:
+  scan.sh: |
+    #!/bin/sh
+    set -e
+
+    echo "=================================================="
+    echo "Trivy Security Scan - $(date)"
+    echo "=================================================="
+    echo ""
+
+    # Get all unique images in production namespace
+    IMAGES=$(kubectl get pods -n production -o jsonpath='{.items[*].spec.containers[*].image}' | tr ' ' '\n' | sort -u)
+
+    CRITICAL_COUNT=0
+    HIGH_COUNT=0
+    TOTAL_IMAGES=0
+
+    for IMAGE in $IMAGES; do
+      echo "--------------------------------------------------"
+      echo "Scanning: $IMAGE"
+      echo "--------------------------------------------------"
+
+      # Scan image
+      trivy image \
+        --severity CRITICAL,HIGH \
+        --exit-code 0 \
+        --no-progress \
+        --format json \
+        --output /tmp/trivy-${TOTAL_IMAGES}.json \
+        "$IMAGE"
+
+      # Parse results
+      CRITICAL=$(cat /tmp/trivy-${TOTAL_IMAGES}.json | jq '[.Results[]?.Vulnerabilities[]? | select(.Severity=="CRITICAL")] | length')
+      HIGH=$(cat /tmp/trivy-${TOTAL_IMAGES}.json | jq '[.Results[]?.Vulnerabilities[]? | select(.Severity=="HIGH")] | length')
+
+      echo "Found: $CRITICAL CRITICAL, $HIGH HIGH vulnerabilities"
+
+      CRITICAL_COUNT=$((CRITICAL_COUNT + CRITICAL))
+      HIGH_COUNT=$((HIGH_COUNT + HIGH))
+      TOTAL_IMAGES=$((TOTAL_IMAGES + 1))
+
+      # Generate report
+      echo ""
+      echo "Summary for $IMAGE:"
+      trivy image --severity CRITICAL,HIGH --no-progress "$IMAGE"
+      echo ""
+    done
+
+    echo "=================================================="
+    echo "SCAN SUMMARY"
+    echo "=================================================="
+    echo "Total images scanned: $TOTAL_IMAGES"
+    echo "CRITICAL vulnerabilities: $CRITICAL_COUNT"
+    echo "HIGH vulnerabilities: $HIGH_COUNT"
+    echo ""
+
+    # Alert if critical vulnerabilities found
+    if [ "$CRITICAL_COUNT" -gt 0 ]; then
+      echo "❌ ALERT: Critical vulnerabilities found!"
+      echo "Action required: Update images within 24 hours"
+
+      # Send Slack notification (optional)
+      # curl -X POST -H 'Content-type: application/json' \
+      #   --data "{\"text\":\"🔴 CRITICAL: $CRITICAL_COUNT critical vulnerabilities found in production images!\"}" \
+      #   $SLACK_WEBHOOK_URL
+
+      exit 1
+    elif [ "$HIGH_COUNT" -gt 10 ]; then
+      echo "⚠️  WARNING: High number of HIGH vulnerabilities ($HIGH_COUNT)"
+      exit 0
+    else
+      echo "✅ PASS: No critical vulnerabilities found"
+      exit 0
+    fi
+
+---
+# =======================================================================
+# ServiceAccount for Trivy Scanner
+# =======================================================================
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: trivy-scanner
+  namespace: monitoring
+  labels:
+    app: trivy-scanner
+
+---
+# =======================================================================
+# ClusterRole for Trivy Scanner
+# =======================================================================
+# Needs to read pods from all namespaces
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: trivy-scanner
+  labels:
+    app: trivy-scanner
+rules:
+  # Read pods (to get image names)
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+
+  # Read deployments (to get image names)
+  - apiGroups: ["apps"]
+    resources: ["deployments", "statefulsets", "daemonsets"]
+    verbs: ["get", "list"]
+
+---
+# =======================================================================
+# ClusterRoleBinding for Trivy Scanner
+# =======================================================================
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: trivy-scanner
+  labels:
+    app: trivy-scanner
+subjects:
+  - kind: ServiceAccount
+    name: trivy-scanner
+    namespace: monitoring
+roleRef:
+  kind: ClusterRole
+  name: trivy-scanner
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# =======================================================================
+# CronJob for Trivy Scanning
+# =======================================================================
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: trivy-scanner
+  namespace: monitoring
+  labels:
+    app: trivy-scanner
+spec:
+  # Schedule: Every day at 2 AM UTC
+  schedule: "0 2 * * *"
+
+  # Keep last 3 successful and 1 failed job
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+
+  # Job template
+  jobTemplate:
+    metadata:
+      labels:
+        app: trivy-scanner
+    spec:
+      # Allow 1 hour for scan to complete
+      activeDeadlineSeconds: 3600
+
+      template:
+        metadata:
+          labels:
+            app: trivy-scanner
+        spec:
+          serviceAccountName: trivy-scanner
+
+          # Security context
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            fsGroup: 1000
+
+          # Restart policy
+          restartPolicy: OnFailure
+
+          containers:
+            - name: trivy-scanner
+              image: aquasec/trivy:latest
+              imagePullPolicy: Always
+
+              # Command
+              command: ["/bin/sh", "-c"]
+              args:
+                - |
+                  # Install kubectl
+                  apk add --no-cache curl jq
+                  curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+                  chmod +x kubectl
+                  mv kubectl /usr/local/bin/
+
+                  # Update Trivy DB
+                  trivy image --download-db-only
+
+                  # Run scan script
+                  sh /scripts/scan.sh
+
+              # Environment variables
+              env:
+                # Trivy configuration
+                - name: TRIVY_CACHE_DIR
+                  value: /tmp/trivy-cache
+                - name: TRIVY_TIMEOUT
+                  value: "10m"
+
+                # Slack webhook (optional)
+                # - name: SLACK_WEBHOOK_URL
+                #   valueFrom:
+                #     secretKeyRef:
+                #       name: trivy-alerts
+                #       key: slack-webhook-url
+
+              # Volume mounts
+              volumeMounts:
+                - name: scan-script
+                  mountPath: /scripts
+                - name: cache
+                  mountPath: /tmp
+
+              # Resources
+              resources:
+                requests:
+                  cpu: 500m
+                  memory: 512Mi
+                limits:
+                  cpu: 2000m
+                  memory: 2Gi
+
+          # Volumes
+          volumes:
+            - name: scan-script
+              configMap:
+                name: trivy-scan-script
+                defaultMode: 0755
+            - name: cache
+              emptyDir: {}
+
+---
+# =======================================================================
+# USAGE NOTES
+# =======================================================================
+#
+# Apply:
+# kubectl apply -f trivy-cronjob.yaml
+#
+# Verify CronJob:
+# kubectl get cronjob -n monitoring
+# kubectl describe cronjob trivy-scanner -n monitoring
+#
+# Manually trigger scan (for testing):
+# kubectl create job --from=cronjob/trivy-scanner trivy-scan-manual -n monitoring
+#
+# Check job status:
+# kubectl get jobs -n monitoring
+# kubectl logs -n monitoring job/trivy-scan-manual
+#
+# View scan results:
+# kubectl logs -n monitoring job/trivy-scan-manual
+#
+# Cleanup manual job:
+# kubectl delete job trivy-scan-manual -n monitoring
+#
+# Configure Slack alerts:
+# 1. Create Slack webhook URL
+# 2. Create secret:
+#    kubectl create secret generic trivy-alerts \
+#      --from-literal=slack-webhook-url=https://hooks.slack.com/services/YOUR/WEBHOOK/URL \
+#      -n monitoring
+# 3. Uncomment SLACK_WEBHOOK_URL env var in CronJob
+#
+# Schedule options:
+# - Daily at 2 AM:   "0 2 * * *"
+# - Twice daily:     "0 2,14 * * *"
+# - Every 6 hours:   "0 */6 * * *"
+# - Weekly (Monday): "0 2 * * 1"
+#
+# Troubleshooting:
+# - CronJob not running → Check schedule format
+# - Job fails → Check logs: kubectl logs -n monitoring <job-pod>
+# - Out of memory → Increase memory limits
+# - Timeout → Increase activeDeadlineSeconds
+#
+# Monitoring:
+# - Alert on job failures (Prometheus AlertManager)
+# - Track vulnerability trends over time
+# - Set SLA for remediation (Critical: 24h, High: 7 days)
+#
+# Production Recommendations:
+# ✅ Run daily (or more frequently)
+# ✅ Send alerts to Slack/Teams/Email
+# ✅ Store reports in S3/GCS for audit trail
+# ✅ Integrate with ticketing system (Jira)
+# ✅ Block deployments with Critical CVEs (CI/CD)
+# ✅ Regular Trivy DB updates
+#
+# =======================================================================

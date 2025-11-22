@@ -1,0 +1,157 @@
+# Read-Only Role
+# Reference solution for Exercise 2
+#
+# Grants read-only access for:
+# - Support team members
+# - Monitoring users
+# - Auditors
+#
+# NO write permissions, NO exec, NO delete
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: readonly
+  namespace: production
+  labels:
+    role-type: readonly
+    tier: user-role
+rules:
+  # =======================================================================
+  # Pods (Read-Only)
+  # =======================================================================
+  - apiGroups: [""]
+    resources: ["pods", "pods/log"]
+    verbs: ["get", "list", "watch"]
+
+  # NO exec, NO port-forward, NO delete
+
+  # =======================================================================
+  # Services (Read-Only)
+  # =======================================================================
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get", "list", "watch"]
+
+  # =======================================================================
+  # Deployments, ReplicaSets, StatefulSets (Read-Only)
+  # =======================================================================
+  - apiGroups: ["apps"]
+    resources: ["deployments", "replicasets", "statefulsets", "daemonsets"]
+    verbs: ["get", "list", "watch"]
+
+  # =======================================================================
+  # ConfigMaps (Read-Only)
+  # =======================================================================
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch"]
+
+  # =======================================================================
+  # Secrets (NO ACCESS)
+  # =======================================================================
+  # Intentionally omitted - even read-only users shouldn't see secrets
+
+  # =======================================================================
+  # Events (Read-Only)
+  # =======================================================================
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["get", "list", "watch"]
+
+  # =======================================================================
+  # Jobs, CronJobs (Read-Only)
+  # =======================================================================
+  - apiGroups: ["batch"]
+    resources: ["jobs", "cronjobs"]
+    verbs: ["get", "list", "watch"]
+
+  # =======================================================================
+  # Ingress (Read-Only)
+  # =======================================================================
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingresses"]
+    verbs: ["get", "list", "watch"]
+
+  # =======================================================================
+  # HorizontalPodAutoscaler (Read-Only)
+  # =======================================================================
+  - apiGroups: ["autoscaling"]
+    resources: ["horizontalpodautoscalers"]
+    verbs: ["get", "list", "watch"]
+
+  # =======================================================================
+  # PersistentVolumeClaims (Read-Only)
+  # =======================================================================
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims"]
+    verbs: ["get", "list", "watch"]
+
+  # =======================================================================
+  # NetworkPolicies (Read-Only)
+  # =======================================================================
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["networkpolicies"]
+    verbs: ["get", "list", "watch"]
+
+---
+# =======================================================================
+# RoleBinding for Read-Only User
+# =======================================================================
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: readonly-binding
+  namespace: production
+  labels:
+    role-type: readonly
+subjects:
+  # User example (replace with actual username)
+  - kind: User
+    name: support@company.com
+    apiGroup: rbac.authorization.k8s.io
+
+  # Group example (all support team)
+  # - kind: Group
+  #   name: support-team
+  #   apiGroup: rbac.authorization.k8s.io
+
+roleRef:
+  kind: Role
+  name: readonly
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# =======================================================================
+# USAGE NOTES
+# =======================================================================
+#
+# Apply:
+# kubectl apply -f readonly-role.yaml
+#
+# Test permissions:
+# kubectl auth can-i get pods --as=support@company.com -n production
+# kubectl auth can-i delete pods --as=support@company.com -n production
+# kubectl auth can-i exec pods --as=support@company.com -n production
+# kubectl auth can-i get secrets --as=support@company.com -n production
+#
+# Expected results:
+# - get pods: yes
+# - delete pods: no
+# - exec pods: no
+# - get secrets: no
+#
+# Verify role:
+# kubectl describe role readonly -n production
+#
+# Verify binding:
+# kubectl describe rolebinding readonly-binding -n production
+#
+# Use Cases:
+# - Support team viewing application status
+# - Monitoring users checking metrics
+# - Auditors reviewing configurations
+# - Stakeholders viewing deployment status
+#
+# =======================================================================

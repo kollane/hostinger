@@ -1,0 +1,158 @@
+# Developer Role
+# Reference solution for Exercise 2
+#
+# Grants developers ability to:
+# - View and manage pods, deployments, services
+# - View logs and exec into pods (debugging)
+# - View ConfigMaps (read-only)
+# - NO access to Secrets (use Vault instead)
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: developer
+  namespace: production
+  labels:
+    role-type: developer
+    tier: user-role
+rules:
+  # =======================================================================
+  # Pods
+  # =======================================================================
+  - apiGroups: [""]
+    resources: ["pods", "pods/log"]
+    verbs: ["get", "list", "watch"]
+
+  # Exec into pods (debugging)
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
+
+  # Port-forward (debugging)
+  - apiGroups: [""]
+    resources: ["pods/portforward"]
+    verbs: ["create"]
+
+  # =======================================================================
+  # Services
+  # =======================================================================
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get", "list", "watch"]
+
+  # =======================================================================
+  # Deployments, ReplicaSets, StatefulSets
+  # =======================================================================
+  - apiGroups: ["apps"]
+    resources: ["deployments", "replicasets", "statefulsets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+
+  # Deployment scale
+  - apiGroups: ["apps"]
+    resources: ["deployments/scale"]
+    verbs: ["get", "update"]
+
+  # =======================================================================
+  # ConfigMaps (Read-Only)
+  # =======================================================================
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list"]
+
+  # =======================================================================
+  # Secrets (NO ACCESS - use Vault!)
+  # =======================================================================
+  # Intentionally omitted for security
+  # Use Vault for secrets management
+
+  # =======================================================================
+  # Events (Debugging)
+  # =======================================================================
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["get", "list", "watch"]
+
+  # =======================================================================
+  # Jobs, CronJobs
+  # =======================================================================
+  - apiGroups: ["batch"]
+    resources: ["jobs", "cronjobs"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+
+  # =======================================================================
+  # Ingress
+  # =======================================================================
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingresses"]
+    verbs: ["get", "list", "watch"]
+
+  # =======================================================================
+  # HorizontalPodAutoscaler
+  # =======================================================================
+  - apiGroups: ["autoscaling"]
+    resources: ["horizontalpodautoscalers"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+
+  # =======================================================================
+  # PersistentVolumeClaims
+  # =======================================================================
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims"]
+    verbs: ["get", "list", "watch"]
+
+---
+# =======================================================================
+# RoleBinding for Developer User
+# =======================================================================
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: developer-binding
+  namespace: production
+  labels:
+    role-type: developer
+subjects:
+  # User example (replace with actual username)
+  - kind: User
+    name: developer@company.com
+    apiGroup: rbac.authorization.k8s.io
+
+  # Group example (all developers)
+  # - kind: Group
+  #   name: developers
+  #   apiGroup: rbac.authorization.k8s.io
+
+roleRef:
+  kind: Role
+  name: developer
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# =======================================================================
+# USAGE NOTES
+# =======================================================================
+#
+# Apply:
+# kubectl apply -f developer-role.yaml
+#
+# Test permissions:
+# kubectl auth can-i get pods --as=developer@company.com -n production
+# kubectl auth can-i delete pods --as=developer@company.com -n production
+# kubectl auth can-i get secrets --as=developer@company.com -n production
+#
+# Expected results:
+# - get pods: yes
+# - delete pods: no
+# - get secrets: no (use Vault!)
+#
+# Verify role:
+# kubectl describe role developer -n production
+#
+# Verify binding:
+# kubectl describe rolebinding developer-binding -n production
+#
+# List permissions:
+# kubectl describe role developer -n production
+#
+# =======================================================================

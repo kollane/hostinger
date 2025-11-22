@@ -1,0 +1,98 @@
+# Allow DNS Network Policy
+# Reference solution for Exercise 3
+#
+# Allow ALL pods to access CoreDNS (kube-system namespace)
+# Required for DNS resolution (service discovery)
+#
+# ⚠️ Apply IMMEDIATELY after default-deny-all, or pods can't resolve names!
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns
+  namespace: production
+  labels:
+    policy-type: allow
+    security: essential
+  annotations:
+    description: "Allow all pods to access CoreDNS for name resolution"
+spec:
+  # Apply to ALL pods in namespace
+  podSelector: {}
+
+  # Policy type
+  policyTypes:
+    - Egress
+
+  # Egress rules
+  egress:
+    # =================================================================
+    # Allow DNS to kube-system namespace (CoreDNS)
+    # =================================================================
+    - to:
+        # CoreDNS is in kube-system namespace
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        # DNS over UDP (primary)
+        - protocol: UDP
+          port: 53
+        # DNS over TCP (fallback for large queries)
+        - protocol: TCP
+          port: 53
+
+---
+# =======================================================================
+# USAGE NOTES
+# =======================================================================
+#
+# Apply:
+# kubectl apply -f allow-dns.yaml
+#
+# Verify:
+# kubectl get networkpolicy allow-dns -n production
+# kubectl describe networkpolicy allow-dns -n production
+#
+# Test DNS resolution:
+# kubectl run test-dns --image=busybox --rm -it -n production -- nslookup kubernetes.default.svc.cluster.local
+# (Expected: Should resolve successfully)
+#
+# Why DNS is needed:
+# - Service discovery (user-service.production.svc.cluster.local)
+# - External domain resolution (if allowed)
+# - K8s API communication (kubernetes.default)
+#
+# Security Notes:
+# ✅ Only allows DNS traffic (ports 53 UDP/TCP)
+# ✅ Only to kube-system namespace (CoreDNS)
+# ✅ Does NOT allow general internet access
+# ✅ Does NOT allow pod-to-pod communication
+#
+# Common Issues:
+# - Pods can't resolve service names → Check this policy is applied
+# - DNS timeout → Check CoreDNS is running in kube-system
+# - "Temporary failure in name resolution" → Check namespace selector
+#
+# Alternative: Allow DNS to specific CoreDNS pods
+# spec:
+#   egress:
+#     - to:
+#         - namespaceSelector:
+#             matchLabels:
+#               kubernetes.io/metadata.name: kube-system
+#           podSelector:
+#             matchLabels:
+#               k8s-app: kube-dns
+#       ports:
+#         - protocol: UDP
+#           port: 53
+#         - protocol: TCP
+#           port: 53
+#
+# Troubleshooting:
+# kubectl get pods -n kube-system -l k8s-app=kube-dns
+# kubectl logs -n kube-system <coredns-pod>
+#
+# =======================================================================

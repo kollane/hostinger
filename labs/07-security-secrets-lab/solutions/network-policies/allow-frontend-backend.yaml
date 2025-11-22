@@ -1,0 +1,134 @@
+# Allow Frontend to Backend Network Policy
+# Reference solution for Exercise 3
+#
+# Allow frontend pods to communicate with user-service backend
+# Only on port 3000 (HTTP API)
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-frontend-to-backend
+  namespace: production
+  labels:
+    policy-type: allow
+    security: application
+  annotations:
+    description: "Allow frontend to access user-service backend on port 3000"
+spec:
+  # Apply to user-service pods (target)
+  podSelector:
+    matchLabels:
+      app: user-service
+
+  # Policy type
+  policyTypes:
+    - Ingress
+
+  # Ingress rules
+  ingress:
+    # =================================================================
+    # Allow from frontend pods
+    # =================================================================
+    - from:
+        # Source: frontend pods
+        - podSelector:
+            matchLabels:
+              app: frontend
+      ports:
+        # Only allow HTTP on port 3000
+        - protocol: TCP
+          port: 3000
+
+---
+# =======================================================================
+# Allow Frontend to Todo Service (Optional)
+# =======================================================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-frontend-to-todoservice
+  namespace: production
+  labels:
+    policy-type: allow
+    security: application
+  annotations:
+    description: "Allow frontend to access todo-service backend on port 8081"
+spec:
+  # Apply to todo-service pods (target)
+  podSelector:
+    matchLabels:
+      app: todo-service
+
+  # Policy type
+  policyTypes:
+    - Ingress
+
+  # Ingress rules
+  ingress:
+    # Allow from frontend pods
+    - from:
+        - podSelector:
+            matchLabels:
+              app: frontend
+      ports:
+        # Only allow HTTP on port 8081
+        - protocol: TCP
+          port: 8081
+
+---
+# =======================================================================
+# USAGE NOTES
+# =======================================================================
+#
+# Apply:
+# kubectl apply -f allow-frontend-backend.yaml
+#
+# Verify:
+# kubectl get networkpolicy -n production
+# kubectl describe networkpolicy allow-frontend-to-backend -n production
+#
+# Test connectivity:
+# # From frontend pod to user-service (should SUCCEED)
+# kubectl exec -n production -it <frontend-pod> -- wget -O- http://user-service:3000/health
+#
+# # From random pod to user-service (should FAIL)
+# kubectl run test-pod --image=busybox --rm -it -n production -- wget -O- http://user-service:3000/health
+# (Expected: timeout/connection refused - not allowed by policy)
+#
+# How it works:
+# 1. podSelector: app=user-service → Applies policy to user-service pods
+# 2. ingress.from.podSelector: app=frontend → Only allows traffic from frontend
+# 3. ports: TCP 3000 → Only allows HTTP API port
+#
+# Security Benefits:
+# ✅ Only frontend can access backend (no direct access from other pods)
+# ✅ Only specific port allowed (3000)
+# ✅ Prevents lateral movement (attacker in random pod can't access backend)
+# ✅ Defense in depth (even if one pod compromised, others protected)
+#
+# Extend to multiple namespaces:
+# ingress:
+#   - from:
+#       - namespaceSelector:
+#           matchLabels:
+#             name: frontend-namespace
+#         podSelector:
+#           matchLabels:
+#             app: frontend
+#
+# Troubleshooting:
+# - Frontend can't reach backend → Check pod labels match policy
+# - Connection timeout → Check policy is applied (kubectl get netpol)
+# - Wrong port → Verify backend is listening on port 3000
+#
+# Verify pod labels:
+# kubectl get pods -n production --show-labels
+# kubectl get pods -n production -l app=frontend
+# kubectl get pods -n production -l app=user-service
+#
+# Debug NetworkPolicy:
+# kubectl describe networkpolicy allow-frontend-to-backend -n production
+# kubectl logs -n kube-system <calico-node-pod>  # If using Calico
+#
+# =======================================================================

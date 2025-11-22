@@ -1,0 +1,215 @@
+# CI/CD Role and ServiceAccount
+# Reference solution for Exercise 2
+#
+# Grants CI/CD pipeline ability to:
+# - Deploy applications (create/update deployments)
+# - Manage services, configmaps
+# - View pod status
+# - NO interactive access (no exec)
+
+---
+# =======================================================================
+# ServiceAccount for CI/CD
+# =======================================================================
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cicd-deployer
+  namespace: production
+  labels:
+    app: cicd
+    tier: automation
+  annotations:
+    description: "ServiceAccount for CI/CD deployments"
+automountServiceAccountToken: true
+
+---
+# =======================================================================
+# Role for CI/CD
+# =======================================================================
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: cicd-deployer
+  namespace: production
+  labels:
+    role-type: cicd
+    tier: automation-role
+rules:
+  # =======================================================================
+  # Deployments
+  # =======================================================================
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+  # Deployment rollout status
+  - apiGroups: ["apps"]
+    resources: ["deployments/status"]
+    verbs: ["get"]
+
+  # Deployment rollback
+  - apiGroups: ["apps"]
+    resources: ["deployments/rollback"]
+    verbs: ["create"]
+
+  # Deployment scale
+  - apiGroups: ["apps"]
+    resources: ["deployments/scale"]
+    verbs: ["get", "update"]
+
+  # =======================================================================
+  # ReplicaSets (created by Deployments)
+  # =======================================================================
+  - apiGroups: ["apps"]
+    resources: ["replicasets"]
+    verbs: ["get", "list", "watch", "update", "patch", "delete"]
+
+  # =======================================================================
+  # Pods (View Only - for status checking)
+  # =======================================================================
+  - apiGroups: [""]
+    resources: ["pods", "pods/log"]
+    verbs: ["get", "list", "watch"]
+
+  # NO exec, NO port-forward (security)
+
+  # =======================================================================
+  # Services
+  # =======================================================================
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+  # =======================================================================
+  # ConfigMaps
+  # =======================================================================
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+  # =======================================================================
+  # Secrets (Use Vault for secrets, but allow reading for deployments)
+  # =======================================================================
+  # Limited to imagePullSecrets only
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list"]
+    resourceNames: ["docker-registry-secret"]  # Specific secret only
+
+  # =======================================================================
+  # Ingress
+  # =======================================================================
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingresses"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+  # =======================================================================
+  # HorizontalPodAutoscaler
+  # =======================================================================
+  - apiGroups: ["autoscaling"]
+    resources: ["horizontalpodautoscalers"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+  # =======================================================================
+  # Jobs, CronJobs
+  # =======================================================================
+  - apiGroups: ["batch"]
+    resources: ["jobs", "cronjobs"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+  # =======================================================================
+  # Events (for deployment status)
+  # =======================================================================
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["get", "list", "watch"]
+
+---
+# =======================================================================
+# RoleBinding for CI/CD ServiceAccount
+# =======================================================================
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: cicd-deployer-binding
+  namespace: production
+  labels:
+    role-type: cicd
+subjects:
+  - kind: ServiceAccount
+    name: cicd-deployer
+    namespace: production
+roleRef:
+  kind: Role
+  name: cicd-deployer
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# =======================================================================
+# Secret for ServiceAccount Token (Kubernetes 1.24+)
+# =======================================================================
+# Kubernetes 1.24+ doesn't auto-create tokens, create manually
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cicd-deployer-token
+  namespace: production
+  labels:
+    app: cicd
+  annotations:
+    kubernetes.io/service-account.name: cicd-deployer
+type: kubernetes.io/service-account-token
+
+---
+# =======================================================================
+# USAGE NOTES
+# =======================================================================
+#
+# Apply:
+# kubectl apply -f cicd-role.yaml
+#
+# Get ServiceAccount token (for GitHub Actions):
+# kubectl get secret cicd-deployer-token -n production -o jsonpath='{.data.token}' | base64 -d
+#
+# Test permissions:
+# kubectl auth can-i create deployments --as=system:serviceaccount:production:cicd-deployer -n production
+# kubectl auth can-i delete pods --as=system:serviceaccount:production:cicd-deployer -n production
+# kubectl auth can-i exec pods --as=system:serviceaccount:production:cicd-deployer -n production
+#
+# Expected results:
+# - create deployments: yes
+# - delete pods: no (deployments manage pods)
+# - exec pods: no (security - no interactive access)
+#
+# GitHub Actions Integration:
+#
+# 1. Get token:
+#    TOKEN=$(kubectl get secret cicd-deployer-token -n production -o jsonpath='{.data.token}' | base64 -d)
+#
+# 2. Get CA cert:
+#    kubectl get secret cicd-deployer-token -n production -o jsonpath='{.data.ca\.crt}' | base64 -d > ca.crt
+#
+# 3. Add to GitHub Secrets:
+#    - KUBE_TOKEN (ServiceAccount token)
+#    - KUBE_CA_CERT (CA certificate)
+#    - KUBE_SERVER (cluster API server URL)
+#
+# 4. Use in workflow:
+#    - name: Deploy to Kubernetes
+#      uses: azure/k8s-deploy@v1
+#      with:
+#        manifests: deployment.yaml
+#        kubeconfig: ${{ secrets.KUBE_CONFIG }}
+#
+# Verify deployment:
+# kubectl describe role cicd-deployer -n production
+# kubectl describe rolebinding cicd-deployer-binding -n production
+#
+# Security Notes:
+# - NO exec permissions (prevents interactive access)
+# - NO secret creation (use Vault for secrets)
+# - Limited to production namespace only
+# - Token should be rotated regularly (90 days)
+#
+# =======================================================================

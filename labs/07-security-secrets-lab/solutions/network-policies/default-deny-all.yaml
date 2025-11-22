@@ -1,0 +1,107 @@
+# Default Deny All Network Policy
+# Reference solution for Exercise 3
+#
+# Zero-Trust Baseline: Block ALL traffic by default
+# Then create explicit allow policies for necessary communication
+#
+# ⚠️ WARNING: After applying this, NO pods can communicate!
+# You MUST apply allow policies (DNS, app-to-app, etc.)
+
+---
+# =======================================================================
+# Default Deny All Ingress Traffic
+# =======================================================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  namespace: production
+  labels:
+    policy-type: baseline
+    security: zero-trust
+  annotations:
+    description: "Deny all incoming traffic by default (zero-trust baseline)"
+spec:
+  # Apply to ALL pods in namespace
+  podSelector: {}
+
+  # Policy types
+  policyTypes:
+    - Ingress
+
+  # Empty ingress rules = deny all
+  # (No ingress rules means no traffic allowed)
+  ingress: []
+
+---
+# =======================================================================
+# Default Deny All Egress Traffic
+# =======================================================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-egress
+  namespace: production
+  labels:
+    policy-type: baseline
+    security: zero-trust
+  annotations:
+    description: "Deny all outgoing traffic by default (zero-trust baseline)"
+spec:
+  # Apply to ALL pods in namespace
+  podSelector: {}
+
+  # Policy types
+  policyTypes:
+    - Egress
+
+  # Empty egress rules = deny all
+  # (No egress rules means no traffic allowed)
+  egress: []
+
+---
+# =======================================================================
+# USAGE NOTES
+# =======================================================================
+#
+# Apply:
+# kubectl apply -f default-deny-all.yaml
+#
+# Verify:
+# kubectl get networkpolicy -n production
+# kubectl describe networkpolicy default-deny-ingress -n production
+#
+# ⚠️ CRITICAL: After applying, you MUST create allow policies:
+# 1. allow-dns.yaml (DNS resolution)
+# 2. allow-frontend-backend.yaml (app communication)
+# 3. allow-backend-db.yaml (database access)
+# 4. allow-monitoring.yaml (Prometheus scraping)
+#
+# Test connectivity (should FAIL after deny-all):
+# kubectl run test-pod --image=busybox --rm -it -n production -- wget -O- http://user-service:3000
+# (Expected: timeout/connection refused)
+#
+# Zero-Trust Principle:
+# ✅ Default deny all traffic
+# ✅ Explicit allow only necessary communication
+# ✅ Minimize attack surface
+# ✅ Prevent lateral movement
+#
+# Production Deployment Order:
+# 1. Apply default-deny-all.yaml
+# 2. Apply allow-dns.yaml (immediately, or pods can't resolve names)
+# 3. Apply application-specific allow policies
+# 4. Test connectivity
+# 5. Monitor NetworkPolicy metrics
+#
+# Troubleshooting:
+# - If pods can't communicate, check NetworkPolicy rules
+# - Use kubectl describe networkpolicy <name>
+# - Check pod labels match policy selectors
+# - Verify CNI supports NetworkPolicy (Calico, Cilium, Weave)
+#
+# Remove policy (emergency):
+# kubectl delete networkpolicy default-deny-ingress -n production
+# kubectl delete networkpolicy default-deny-egress -n production
+#
+# =======================================================================

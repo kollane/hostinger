@@ -1,0 +1,193 @@
+# Allow Backend to Database Network Policy
+# Reference solution for Exercise 3
+#
+# Allow backend pods (user-service, todo-service) to access PostgreSQL
+# Only on port 5432/5433 (PostgreSQL)
+
+---
+# =======================================================================
+# Allow user-service to PostgreSQL (port 5432)
+# =======================================================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-userservice-to-postgres
+  namespace: production
+  labels:
+    policy-type: allow
+    security: database
+  annotations:
+    description: "Allow user-service to access PostgreSQL on port 5432"
+spec:
+  # Apply to PostgreSQL pod (target)
+  podSelector:
+    matchLabels:
+      app: postgres
+
+  # Policy types
+  policyTypes:
+    - Ingress
+
+  # Ingress rules
+  ingress:
+    # =================================================================
+    # Allow from user-service pods
+    # =================================================================
+    - from:
+        # Source: user-service pods
+        - podSelector:
+            matchLabels:
+              app: user-service
+      ports:
+        # PostgreSQL default port
+        - protocol: TCP
+          port: 5432
+
+---
+# =======================================================================
+# Allow todo-service to PostgreSQL (port 5433)
+# =======================================================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-todoservice-to-postgres
+  namespace: production
+  labels:
+    policy-type: allow
+    security: database
+  annotations:
+    description: "Allow todo-service to access PostgreSQL on port 5433"
+spec:
+  # Apply to PostgreSQL pod (target)
+  podSelector:
+    matchLabels:
+      app: postgres-todo
+
+  # Policy types
+  policyTypes:
+    - Ingress
+
+  # Ingress rules
+  ingress:
+    # Allow from todo-service pods
+    - from:
+        - podSelector:
+            matchLabels:
+              app: todo-service
+      ports:
+        # PostgreSQL port for todo-service
+        - protocol: TCP
+          port: 5433
+
+---
+# =======================================================================
+# Egress: Allow backend to reach database
+# =======================================================================
+# This is the outbound rule (from backend perspective)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-backend-db-egress
+  namespace: production
+  labels:
+    policy-type: allow
+    security: database-egress
+  annotations:
+    description: "Allow backend pods to connect to PostgreSQL databases"
+spec:
+  # Apply to backend pods
+  podSelector:
+    matchExpressions:
+      # Match user-service OR todo-service
+      - key: app
+        operator: In
+        values:
+          - user-service
+          - todo-service
+
+  # Policy types
+  policyTypes:
+    - Egress
+
+  # Egress rules
+  egress:
+    # =================================================================
+    # Allow to PostgreSQL pods
+    # =================================================================
+    - to:
+        # Target: PostgreSQL pods
+        - podSelector:
+            matchExpressions:
+              - key: app
+                operator: In
+                values:
+                  - postgres
+                  - postgres-todo
+      ports:
+        # PostgreSQL ports
+        - protocol: TCP
+          port: 5432
+        - protocol: TCP
+          port: 5433
+
+---
+# =======================================================================
+# USAGE NOTES
+# =======================================================================
+#
+# Apply:
+# kubectl apply -f allow-backend-db.yaml
+#
+# Verify:
+# kubectl get networkpolicy -n production
+# kubectl describe networkpolicy allow-userservice-to-postgres -n production
+#
+# Test connectivity:
+# # From user-service to PostgreSQL (should SUCCEED)
+# kubectl exec -n production -it <user-service-pod> -- nc -zv postgres 5432
+#
+# # From frontend to PostgreSQL (should FAIL)
+# kubectl exec -n production -it <frontend-pod> -- nc -zv postgres 5432
+# (Expected: timeout - not allowed by policy)
+#
+# How it works:
+# 1. Ingress policy on postgres pod → Only allows traffic from user-service
+# 2. Egress policy on user-service → Only allows traffic to postgres
+# 3. Both policies must allow for traffic to flow
+#
+# Security Benefits:
+# ✅ Only backend can access database (frontend CANNOT directly access DB)
+# ✅ Prevents SQL injection bypass (frontend can't bypass backend validation)
+# ✅ Database isolation (only authorized apps can connect)
+# ✅ Prevents lateral movement (attacker in frontend can't access DB)
+#
+# External PostgreSQL (outside cluster):
+# If PostgreSQL is external (not in cluster), use egress to external IP:
+#
+# spec:
+#   egress:
+#     - to:
+#         - ipBlock:
+#             cidr: 93.127.213.242/32  # VPS IP
+#       ports:
+#         - protocol: TCP
+#           port: 5432
+#
+# Verify pod labels:
+# kubectl get pods -n production --show-labels
+# kubectl get pods -n production -l app=postgres
+# kubectl get pods -n production -l app=user-service
+#
+# Troubleshooting:
+# - Backend can't connect to DB → Check both ingress and egress policies
+# - Connection timeout → Verify PostgreSQL is running
+# - Wrong port → Check PostgreSQL service port (5432 vs 5433)
+# - Label mismatch → Verify pod labels match policy selectors
+#
+# Debug connectivity:
+# kubectl exec -n production -it <user-service-pod> -- /bin/sh
+# nc -zv postgres 5432
+# nslookup postgres
+# psql -h postgres -U username -d database
+#
+# =======================================================================

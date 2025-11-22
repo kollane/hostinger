@@ -1,0 +1,176 @@
+# Vault Helm Chart Values
+# Reference solution for Exercise 1
+# Version: Vault 1.15+
+
+# =============================================================================
+# DEVELOPMENT MODE (Lab Environment)
+# =============================================================================
+# WARNING: DO NOT USE IN PRODUCTION!
+# Dev mode features:
+# - Auto-unseal (no manual unseal required)
+# - In-memory storage (data lost on restart)
+# - Single replica
+# - Root token = "root"
+# =============================================================================
+
+server:
+  # Dev mode configuration
+  dev:
+    enabled: true  # ⚠️ DISABLE IN PRODUCTION!
+    devRootToken: "root"  # Default root token for dev mode
+
+  # Resources
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  # Standalone mode (not HA)
+  standalone:
+    enabled: true
+    config: |
+      ui = true
+
+      listener "tcp" {
+        tls_disable = 1
+        address = "[::]:8200"
+        cluster_address = "[::]:8201"
+      }
+
+      storage "file" {
+        path = "/vault/data"
+      }
+
+  # Service configuration
+  service:
+    enabled: true
+    type: ClusterIP
+    port: 8200
+    targetPort: 8200
+    annotations: {}
+
+  # Data storage (disabled in dev mode)
+  dataStorage:
+    enabled: false
+    size: 10Gi
+    storageClass: null
+    accessMode: ReadWriteOnce
+
+  # Audit storage (disabled in dev mode)
+  auditStorage:
+    enabled: false
+
+# =============================================================================
+# Vault Agent Injector
+# =============================================================================
+# Enables sidecar injection for secrets
+
+injector:
+  enabled: true
+
+  # Replicas
+  replicas: 1
+
+  # Resources
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi
+
+  # Webhook configuration
+  port: 8080
+
+  # Failure policy
+  failurePolicy: Ignore
+
+  # Namespace selector (inject in all namespaces)
+  namespaceSelector: {}
+
+# =============================================================================
+# Vault UI
+# =============================================================================
+
+ui:
+  enabled: true
+  serviceType: ClusterIP
+  serviceNodePort: null
+  externalPort: 8200
+
+# =============================================================================
+# Global settings
+# =============================================================================
+
+global:
+  enabled: true
+
+  # TLS (disabled for lab)
+  tlsDisable: true  # ⚠️ ENABLE IN PRODUCTION!
+
+  # Namespace
+  namespace: "vault"
+
+# =============================================================================
+# PRODUCTION MODE EXAMPLE (Commented Out)
+# =============================================================================
+# Uncomment and customize for production use
+
+# server:
+#   dev:
+#     enabled: false  # ✅ Disable dev mode
+#
+#   ha:
+#     enabled: true   # ✅ High availability
+#     replicas: 3     # ✅ 3+ replicas for HA
+#
+#     config: |
+#       ui = true
+#
+#       listener "tcp" {
+#         tls_disable = 0  # ✅ Enable TLS
+#         address = "[::]:8200"
+#         cluster_address = "[::]:8201"
+#         tls_cert_file = "/vault/tls/tls.crt"
+#         tls_key_file = "/vault/tls/tls.key"
+#       }
+#
+#       storage "raft" {
+#         path = "/vault/data"
+#
+#         retry_join {
+#           leader_api_addr = "http://vault-0.vault-internal:8200"
+#         }
+#         retry_join {
+#           leader_api_addr = "http://vault-1.vault-internal:8200"
+#         }
+#         retry_join {
+#           leader_api_addr = "http://vault-2.vault-internal:8200"
+#         }
+#       }
+#
+#       service_registration "kubernetes" {}
+#
+#       # Auto-unseal with cloud KMS
+#       seal "awskms" {
+#         region     = "us-east-1"
+#         kms_key_id = "your-kms-key-id"
+#       }
+#
+#   dataStorage:
+#     enabled: true
+#     size: 10Gi
+#     storageClass: "fast-ssd"
+#     accessMode: ReadWriteOnce
+#
+#   auditStorage:
+#     enabled: true
+#     size: 10Gi
+#     storageClass: "standard"
+
+# global:
+#   tlsDisable: false  # ✅ Enable TLS

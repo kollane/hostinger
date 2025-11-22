@@ -1,0 +1,219 @@
+# Vault Integration with Kubernetes
+# Reference solution for Exercise 1
+#
+# This file contains:
+# 1. ServiceAccount for user-service
+# 2. Deployment with Vault Agent Injector annotations
+# 3. Example secret injection
+
+---
+# =============================================================================
+# ServiceAccount
+# =============================================================================
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: user-service
+  namespace: production
+  labels:
+    app: user-service
+    tier: backend
+automountServiceAccountToken: true
+
+---
+# =============================================================================
+# Deployment with Vault Agent Injection
+# =============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+  namespace: production
+  labels:
+    app: user-service
+    tier: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+        tier: backend
+      annotations:
+        # =================================================================
+        # Vault Agent Injector Annotations
+        # =================================================================
+
+        # Enable injection
+        vault.hashicorp.com/agent-inject: "true"
+
+        # Vault role (must match Vault role name)
+        vault.hashicorp.com/role: "user-service"
+
+        # Vault address (optional, defaults to http://vault.vault:8200)
+        vault.hashicorp.com/agent-inject-service: "http://vault.vault:8200"
+
+        # =================================================================
+        # Database Password Secret
+        # =================================================================
+
+        # Inject database password
+        vault.hashicorp.com/agent-inject-secret-db-password: "secret/data/db"
+
+        # Template for database password
+        # Renders to /vault/secrets/db-password
+        vault.hashicorp.com/agent-inject-template-db-password: |
+          {{- with secret "secret/data/db" -}}
+          export DB_PASSWORD="{{ .Data.data.password }}"
+          export DB_USERNAME="{{ .Data.data.username }}"
+          export DB_HOST="{{ .Data.data.host }}"
+          export DB_PORT="{{ .Data.data.port }}"
+          export DB_DATABASE="{{ .Data.data.database }}"
+          {{- end -}}
+
+        # =================================================================
+        # JWT Secret (Optional)
+        # =================================================================
+
+        # Inject JWT secret
+        vault.hashicorp.com/agent-inject-secret-jwt: "secret/data/jwt"
+
+        # Template for JWT secret
+        vault.hashicorp.com/agent-inject-template-jwt: |
+          {{- with secret "secret/data/jwt" -}}
+          export JWT_SECRET="{{ .Data.data.secret }}"
+          export JWT_EXPIRES_IN="{{ .Data.data.expiresIn }}"
+          {{- end -}}
+
+        # =================================================================
+        # Vault Agent Configuration
+        # =================================================================
+
+        # Preserve case in secret names
+        vault.hashicorp.com/preserve-secret-case: "true"
+
+        # Agent cache (optional)
+        # vault.hashicorp.com/agent-cache-enable: "true"
+
+        # Log level
+        vault.hashicorp.com/log-level: "info"
+
+    spec:
+      # Use dedicated ServiceAccount
+      serviceAccountName: user-service
+
+      containers:
+        - name: user-service
+          image: your-dockerhub-username/user-service:latest
+          ports:
+            - containerPort: 3000
+              name: http
+
+          # Source secrets before starting app
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              echo "Loading secrets from Vault..."
+              source /vault/secrets/db-password
+              source /vault/secrets/jwt
+              echo "Secrets loaded successfully"
+              node server.js
+
+          # Environment variables (non-sensitive)
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: PORT
+              value: "3000"
+            - name: LOG_LEVEL
+              value: "info"
+
+          # Resources
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+
+          # Liveness probe
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          # Readiness probe
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+
+          # Security context
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop:
+                - ALL
+
+---
+# =============================================================================
+# Service
+# =============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service
+  namespace: production
+  labels:
+    app: user-service
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3000
+      targetPort: 3000
+      protocol: TCP
+      name: http
+  selector:
+    app: user-service
+
+---
+# =============================================================================
+# NOTES
+# =============================================================================
+#
+# Vault Agent Injector creates:
+# 1. Init container (vault-agent-init) - Fetches secrets before app starts
+# 2. Sidecar container (vault-agent) - Keeps secrets updated
+#
+# Secrets location:
+# - /vault/secrets/db-password - Database credentials
+# - /vault/secrets/jwt - JWT secret
+#
+# Verify injection:
+# kubectl get pod -n production -l app=user-service -o jsonpath='{.items[0].spec.containers[*].name}'
+# Output should be: vault-agent user-service
+#
+# Check secrets:
+# kubectl exec -n production -it <pod-name> -c user-service -- cat /vault/secrets/db-password
+#
+# Troubleshooting:
+# - Check vault-agent logs: kubectl logs -n production <pod-name> -c vault-agent
+# - Verify Vault role: vault read auth/kubernetes/role/user-service
+# - Verify policy: vault policy read user-service
+#
+# =============================================================================

@@ -1,0 +1,281 @@
+# Allow External Egress Network Policy
+# Reference solution for Exercise 3
+#
+# Allow pods to access external services (internet, external APIs)
+# While blocking access to internal/private networks
+
+---
+# =======================================================================
+# Allow egress to external internet (HTTPS)
+# =======================================================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-external-https
+  namespace: production
+  labels:
+    policy-type: allow
+    security: external-egress
+  annotations:
+    description: "Allow pods to access external HTTPS endpoints (APIs, package registries)"
+spec:
+  # Apply to pods that need external access
+  podSelector:
+    matchLabels:
+      external-access: enabled
+
+  # Policy type
+  policyTypes:
+    - Egress
+
+  # Egress rules
+  egress:
+    # =================================================================
+    # Allow HTTPS to internet (0.0.0.0/0)
+    # Except private/internal networks
+    # =================================================================
+    - to:
+        - ipBlock:
+            # Allow all IPs
+            cidr: 0.0.0.0/0
+            except:
+              # Block AWS/GCP/Azure metadata services
+              - 169.254.169.254/32   # AWS/Azure metadata
+              - 169.254.0.0/16       # Link-local
+
+              # Block private networks (RFC 1918)
+              - 10.0.0.0/8           # Private network
+              - 172.16.0.0/12        # Private network
+              - 192.168.0.0/16       # Private network
+
+              # Block localhost
+              - 127.0.0.0/8          # Loopback
+      ports:
+        # HTTPS
+        - protocol: TCP
+          port: 443
+
+---
+# =======================================================================
+# Allow egress to specific external APIs
+# =======================================================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-specific-external-apis
+  namespace: production
+  labels:
+    policy-type: allow
+    security: external-api
+  annotations:
+    description: "Allow pods to access specific external APIs (GitHub, Stripe, etc.)"
+spec:
+  # Apply to backend pods
+  podSelector:
+    matchLabels:
+      app: user-service
+
+  # Policy type
+  policyTypes:
+    - Egress
+
+  # Egress rules
+  egress:
+    # =================================================================
+    # GitHub API (for OAuth, webhooks)
+    # =================================================================
+    - to:
+        - ipBlock:
+            cidr: 140.82.112.0/20  # GitHub IP range
+      ports:
+        - protocol: TCP
+          port: 443
+
+    # =================================================================
+    # Stripe API (for payments)
+    # =================================================================
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0  # Stripe uses CDN, hard to specify exact IPs
+      ports:
+        - protocol: TCP
+          port: 443
+
+---
+# =======================================================================
+# Allow egress to external database (External PostgreSQL on VPS)
+# =======================================================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-external-postgres
+  namespace: production
+  labels:
+    policy-type: allow
+    security: external-database
+  annotations:
+    description: "Allow backend to access external PostgreSQL on VPS"
+spec:
+  # Apply to backend pods
+  podSelector:
+    matchLabels:
+      app: user-service
+
+  # Policy type
+  policyTypes:
+    - Egress
+
+  # Egress rules
+  egress:
+    # =================================================================
+    # Allow to VPS PostgreSQL
+    # =================================================================
+    - to:
+        - ipBlock:
+            cidr: 93.127.213.242/32  # VPS IP (kirjakast)
+      ports:
+        # PostgreSQL
+        - protocol: TCP
+          port: 5432
+
+---
+# =======================================================================
+# Allow HTTP/HTTPS for package managers (npm, apt, pip)
+# =======================================================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-package-registries
+  namespace: production
+  labels:
+    policy-type: allow
+    security: package-registry
+  annotations:
+    description: "Allow pods to access package registries (npm, Docker Hub, apt)"
+spec:
+  # Apply to pods with label package-install=enabled
+  podSelector:
+    matchLabels:
+      package-install: enabled
+
+  # Policy type
+  policyTypes:
+    - Egress
+
+  # Egress rules
+  egress:
+    # HTTP and HTTPS for package managers
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 169.254.169.254/32
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+      ports:
+        - protocol: TCP
+          port: 80   # HTTP (apt, npm)
+        - protocol: TCP
+          port: 443  # HTTPS
+
+---
+# =======================================================================
+# Allow NTP (time sync)
+# =======================================================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ntp
+  namespace: production
+  labels:
+    policy-type: allow
+    security: time-sync
+  annotations:
+    description: "Allow pods to sync time with NTP servers"
+spec:
+  # Apply to all pods
+  podSelector: {}
+
+  # Policy type
+  policyTypes:
+    - Egress
+
+  # Egress rules
+  egress:
+    # NTP servers
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        # NTP
+        - protocol: UDP
+          port: 123
+
+---
+# =======================================================================
+# USAGE NOTES
+# =======================================================================
+#
+# Apply:
+# kubectl apply -f allow-external-egress.yaml
+#
+# Verify:
+# kubectl get networkpolicy -n production
+# kubectl describe networkpolicy allow-external-https -n production
+#
+# Label pods for external access:
+# In Deployment:
+# metadata:
+#   labels:
+#     external-access: enabled
+#
+# Test external connectivity:
+# # From labeled pod to internet (should SUCCEED)
+# kubectl exec -n production -it <user-service-pod> -- wget -O- https://api.github.com
+#
+# # From unlabeled pod to internet (should FAIL)
+# kubectl run test-pod --image=busybox --rm -it -n production -- wget -O- https://google.com
+#
+# Security Benefits:
+# ✅ Only specific pods can access internet (not all)
+# ✅ Blocks access to cloud metadata services (prevents credential theft)
+# ✅ Blocks access to internal networks (prevents SSRF attacks)
+# ✅ Limits attack surface (compromised pod can't scan internal networks)
+#
+# Common External Services:
+# - GitHub API: 140.82.112.0/20
+# - Stripe API: Use 0.0.0.0/0 (CDN)
+# - AWS services: Use specific CIDR blocks
+# - External PostgreSQL: 93.127.213.242/32 (VPS)
+#
+# Blocked by default:
+# - Cloud metadata: 169.254.169.254 (AWS/Azure)
+# - Private networks: 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16
+# - Localhost: 127.0.0.0/8
+#
+# Troubleshooting:
+# - Can't access external API → Check pod label (external-access=enabled)
+# - Timeout to external service → Check ipBlock CIDR and ports
+# - Package install fails → Check allow-package-registries policy
+# - Time drift → Check allow-ntp policy
+#
+# Find external service IP:
+# nslookup api.github.com
+# dig +short api.stripe.com
+#
+# Security Audit:
+# # Find pods with external access
+# kubectl get pods -n production -l external-access=enabled
+#
+# # Check what IPs are being accessed (requires CNI logging)
+# kubectl logs -n kube-system <calico-node-pod> | grep "allow-external"
+#
+# Production Recommendations:
+# ✅ Use specific IP ranges when possible (not 0.0.0.0/0)
+# ✅ Document all external dependencies
+# ✅ Monitor external traffic (Prometheus NetworkPolicy metrics)
+# ✅ Regularly audit external access labels
+# ✅ Use egress gateway for centralized logging/monitoring
+#
+# =======================================================================
