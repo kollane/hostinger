@@ -522,7 +522,77 @@ read_only: true  # Kui võimalik
 
 ## 🐛 Levinud Probleemid
 
-### Probleem 1: "OOM Killed" (Out of Memory)
+### Probleem 1: "Replicas ei tööta docker compose up'iga"
+
+```bash
+# docker-compose.prod.yml sisaldab:
+deploy:
+  replicas: 2
+
+# Aga käivitades:
+docker compose -f docker-compose-full.yml -f docker-compose.prod.yml up -d
+
+# Näed ainult 1 konteinerit, mitte 2
+docker compose ps
+# NAME            STATUS
+# user-service    Up
+```
+
+**Põhjus:**
+- `deploy.replicas` töötab AINULT Docker Swarm või Kubernetes'es
+- `docker compose up` käsk IGNOREERIB `replicas` seadistust
+- See on Docker Compose piirang
+
+**Lahendus 1: Kasuta docker compose --scale (Development/Testing)**
+
+```bash
+# Käivita 2 user-service instance'i
+docker compose up -d --scale user-service=2
+
+# Kontrolli
+docker compose ps
+# NAME                 STATUS
+# user-service-1       Up
+# user-service-2       Up
+```
+
+**Probleem --scale'iga:**
+- ❌ Ei saa kasutada `container_name` (konflikt)
+- ❌ Port mapping konfliktib (nt. mõlemad tahavad 3000:3000)
+
+**Lahendus 2: Kasuta Docker Swarm (Production)**
+
+```bash
+# Initseeri Swarm
+docker swarm init
+
+# Deploy stack
+docker stack deploy -c docker-compose-full.yml -c docker-compose.prod.yml myapp
+
+# Kontrolli
+docker stack services myapp
+# NAME                  REPLICAS
+# myapp_user-service    2/2
+# myapp_todo-service    2/2
+```
+
+**Lahendus 3: Kasuta Kubernetes (Soovitatud Production)**
+
+```yaml
+# Kubernetes Deployment (Lab 3)
+spec:
+  replicas: 2
+  template:
+    spec:
+      containers:
+      - name: user-service
+```
+
+**MÄRKUS:** Lab 3 õpetab Kubernetes'e, kus `replicas` töötab ideaalselt!
+
+---
+
+### Probleem 2: "OOM Killed" (Out of Memory)
 
 ```bash
 # Konteiner crashib memory limiti tõttu

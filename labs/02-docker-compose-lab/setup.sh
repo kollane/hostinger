@@ -137,8 +137,51 @@ else
 fi
 echo ""
 
-# 5. Check exercises directory
-echo "5️⃣  Kontrollin harjutusi..."
+# 5. Check Lab 1 volumes
+echo "5️⃣  Kontrollin Lab 1 andmehoidlaid (volumes)..."
+MISSING_VOLUMES=()
+
+if ! docker volume ls | grep -q "postgres-user-data"; then
+    MISSING_VOLUMES+=("postgres-user-data")
+fi
+
+if ! docker volume ls | grep -q "postgres-todo-data"; then
+    MISSING_VOLUMES+=("postgres-todo-data")
+fi
+
+if [ ${#MISSING_VOLUMES[@]} -eq 0 ]; then
+    echo -e "${GREEN}✅ Kõik Lab 1 volume'd on olemas:${NC}"
+    docker volume ls | grep -E "postgres-user-data|postgres-todo-data"
+else
+    warn "Puuduvad volume'd (Lab 1'st): ${MISSING_VOLUMES[*]}"
+    echo ""
+    echo -e "${YELLOW}Docker Compose loob need automaatselt Harjutus 1's, aga kui soovid neid ette luua:${NC}"
+    echo ""
+    echo "docker volume create postgres-user-data"
+    echo "docker volume create postgres-todo-data"
+    echo ""
+    info "Jätka Harjutus 1'ga - compose loob external volume'd kui neid pole"
+fi
+echo ""
+
+# 6. Check Lab 1 network
+echo "6️⃣  Kontrollin Lab 1 võrku (network)..."
+if docker network ls | grep -q "todo-network"; then
+    echo -e "${GREEN}✅ todo-network on olemas (Lab 1'st)${NC}"
+    docker network ls | grep todo-network
+else
+    warn "todo-network puudub (Lab 1'st)"
+    echo ""
+    echo -e "${YELLOW}Docker Compose loob selle automaatselt Harjutus 1's, aga kui soovid ette luua:${NC}"
+    echo ""
+    echo "docker network create todo-network"
+    echo ""
+    info "Jätka Harjutus 1'ga - compose loob external network'i kui seda pole"
+fi
+echo ""
+
+# 7. Check exercises directory
+echo "7️⃣  Kontrollin harjutusi..."
 if [ -d "exercises" ]; then
     EXERCISE_COUNT=$(ls exercises/*.md 2>/dev/null | wc -l)
     echo -e "${GREEN}✅ Harjutused on kättesaadavad ($EXERCISE_COUNT harjutust)${NC}"

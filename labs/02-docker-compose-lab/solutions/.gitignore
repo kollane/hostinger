@@ -1,0 +1,58 @@
+# ==========================================================================
+# .gitignore - Lab 2 Solutions
+# ==========================================================================
+# See fail kaitseb salajaseid andmeid juhuslikult Git'i commit'imise eest
+# ==========================================================================
+
+# Environment Files (sisaldavad salajaseid andmeid)
+.env
+.env.local
+.env.*.local
+*.env
+
+# Erandid: Template failid võivad olla commit'itud
+!.env.example
+!.env.dev
+!.env.prod
+!.env.external
+
+# Docker Compose Override Files (kui sisaldavad lokaalseid seadistusi)
+docker-compose.override.yml
+
+# Temporary Files
+*.tmp
+*.log
+*.swp
+*~
+
+# IDE Files
+.vscode/
+.idea/
+*.iml
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Backup Files
+*.backup
+*.bak
+*.tar.gz
+
+# ==========================================================================
+# TÄHTIS MÄRKUSED:
+# ==========================================================================
+# 1. .env failid sisaldavad SALAJASEID andmeid (paroolid, JWT secrets)
+#    → EI TOHI KUNAGI commit'ida Git'i!
+#
+# 2. .env.example on TEMPLATE
+#    → Saab commit'ida, ei sisalda päris salajaseid
+#
+# 3. Kui juhuslikult commit'isid .env faili:
+#    git rm --cached .env
+#    git commit -m "Remove accidentally committed .env file"
+#
+# 4. Kontroll enne commit'i:
+#    git status
+#    git diff --cached
+# ==========================================================================
