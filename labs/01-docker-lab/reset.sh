@@ -15,6 +15,46 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
+# ============================================================================
+# MULTI-USER ENVIRONMENT WARNING
+# ============================================================================
+if [ -f ~/.env-lab ]; then
+    source ~/.env-lab
+    echo ""
+    echo -e "${RED}╔════════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${RED}║  ⚠️  MULTI-USER KESKKOND TUVASTATUD  ⚠️                       ║${NC}"
+    echo -e "${RED}╚════════════════════════════════════════════════════════════════╝${NC}"
+    echo ""
+    echo -e "${YELLOW}HOIATUS: See skript (reset.sh) on mõeldud SINGLE-USER keskkonnale!${NC}"
+    echo ""
+    echo -e "${RED}❌ OHTLIK: reset.sh kustutab KÕIGI kasutajate ressursid:${NC}"
+    echo "   - Kõigi kasutajate konteinerid (user-service, todo-service, postgres-*)"
+    echo "   - Kõigi kasutajate image'id (user-service:*, todo-service:*)"
+    echo "   - Kõigi kasutajate võrgud (todo-network)"
+    echo "   - Kõigi kasutajate volumes (postgres-*-data) - ANDMED KADUVAD!"
+    echo ""
+    echo -e "${GREEN}✅ TURVALINE: Multi-user keskkonnas kasuta selle asemel:${NC}"
+    echo "   d-cleanup           - Kustutab AINULT sinu (${USER_PREFIX}) ressursid"
+    echo "   dc-down             - Peatab sinu teenused (andmed säilivad)"
+    echo "   bash reset-multiuser.sh  - User-safe reset (kui olemas)"
+    echo ""
+    echo -e "${YELLOW}Sinu kasutaja: ${USER_PREFIX}${NC}"
+    echo -e "${YELLOW}Sinu pordid: PostgreSQL ${POSTGRES_PORT}, Backend ${BACKEND_PORT}${NC}"
+    echo ""
+    echo -e "${RED}═══════════════════════════════════════════════════════════════${NC}"
+    echo ""
+    read -p "Kas oled KINDEL, et soovid jätkata ja kustutada KÕIGI ressursid? (yes/NO) " -r CONFIRM_MULTIUSER
+    echo ""
+
+    if [[ ! "$CONFIRM_MULTIUSER" == "yes" ]]; then
+        echo -e "${GREEN}✅ Tühistatud. Kasuta 'd-cleanup' turvaliseks cleanup'iks.${NC}"
+        exit 0
+    fi
+
+    echo -e "${YELLOW}⚠️  Jätkame hard reset'iga (KÕIK kasutajad mõjutatud!)...${NC}"
+    echo ""
+fi
+
 # Kontrolli, kas Docker töötab
 if ! docker info > /dev/null 2>&1; then
     echo -e "${RED}❌ Docker ei tööta! Palun käivita Docker esmalt.${NC}"

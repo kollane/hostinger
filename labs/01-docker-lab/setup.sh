@@ -17,6 +17,41 @@ RED='\033[0;31m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
+# ============================================================================
+# MULTI-USER SUPPORT CHECK
+# ============================================================================
+# Kontrolli, kas multi-user environment on seadistatud
+if [ -f ~/.env-lab ]; then
+    source ~/.env-lab
+    echo -e "${GREEN}✅ Multi-user keskkond tuvastatud${NC}"
+    echo -e "   Kasutaja: ${YELLOW}${USER_PREFIX}${NC}"
+    echo -e "   Pordid: PostgreSQL ${YELLOW}${POSTGRES_PORT}${NC}, Backend ${YELLOW}${BACKEND_PORT}${NC}, Frontend ${YELLOW}${FRONTEND_PORT}${NC}"
+    echo ""
+    echo -e "${YELLOW}💡 Kasutatavad aliased:${NC}"
+    echo "   dc-up      - Start services (docker compose)"
+    echo "   dc-down    - Stop services"
+    echo "   dc-ps      - Check status"
+    echo "   dc-logs    - View logs"
+    echo "   d-cleanup  - Full cleanup (SAFE - ainult sinu ressursid)"
+    echo ""
+    echo -e "${YELLOW}⚠️  OLULINE: Multi-user keskkonnas:${NC}"
+    echo "   - Kasuta 'dc-up' ja 'dc-down' aliaseid"
+    echo "   - Cleanup: kasuta 'd-cleanup' (MITTE 'bash reset.sh')"
+    echo "   - reset.sh kustutab KÕIGI kasutajate ressursid!"
+    echo ""
+    MULTIUSER_MODE=true
+else
+    echo -e "${YELLOW}ℹ️  Single-user režiim${NC}"
+    echo ""
+    echo -e "${YELLOW}💡 Multi-user keskkonna jaoks:${NC}"
+    echo "   1. Käivita: source labs/multi-user-setup.sh"
+    echo "   2. Reload: source ~/.bashrc"
+    echo "   3. Kasuta aliaseid: dc-up, dc-down, d-cleanup"
+    echo ""
+    MULTIUSER_MODE=false
+fi
+echo ""
+
 # Loo ajutine kataloog logide jaoks (mitme kasutaja tugi)
 LOGDIR=$(mktemp -d /tmp/docker-lab.XXXXXX)
 CLEANUP_LOGS=true
