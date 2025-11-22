@@ -105,7 +105,7 @@ vim Dockerfile
 ```
 
 **Ülesanne:** Kirjuta Dockerfile, mis:
-1. Kasutab Java 17 JRE alpine baaspilti (base image)
+1. Kasutab Java 21 JRE alpine baaspilti (base image)
 2. Seadistab töökataloogiks `/app`
 3. Kopeerib JAR faili (eeldab, et ehitamine (build) on tehtud)
 4. Avaldab pordi 8081
@@ -120,7 +120,7 @@ vim Dockerfile
 **💡 Näpunäide: Dockerfile struktuur**
 
 ```dockerfile
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:21-jre-alpine
 
 WORKDIR /app
 
