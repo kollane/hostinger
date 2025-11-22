@@ -1,0 +1,86 @@
+# Multi-User Docker Compose Template
+# Usage: docker compose -p $(whoami) --env-file ~/.env-lab -f docker-compose.multi-user.yml up -d
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ${USER_PREFIX:-default}-postgres
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-userdb}
+    ports:
+      # Uses user-specific port from .env-lab
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      # Volume gets user prefix automatically via compose project name
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ../apps/backend-nodejs
+      dockerfile: Dockerfile
+    container_name: ${USER_PREFIX:-default}-backend
+    environment:
+      # Database connection (uses container name from same compose project)
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-userdb}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+
+      # Application config
+      PORT: 3000
+      NODE_ENV: ${NODE_ENV:-development}
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-key-change-in-production}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-24h}
+    ports:
+      # Uses user-specific port from .env-lab
+      - "${BACKEND_PORT:-3000}:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ../apps/frontend
+      dockerfile: Dockerfile
+    container_name: ${USER_PREFIX:-default}-frontend
+    environment:
+      # Points to user-specific backend port on host
+      API_URL: http://localhost:${BACKEND_PORT:-3000}
+    ports:
+      # Uses user-specific port from .env-lab
+      - "${FRONTEND_PORT:-8080}:80"
+    depends_on:
+      - backend
+    networks:
+      - app-network
+    restart: unless-stopped
+
+networks:
+  app-network:
+    # Network gets user prefix automatically via compose project name
+    driver: bridge
+
+volumes:
+  postgres-data:
+    # Volume gets user prefix automatically via compose project name
+    driver: local
