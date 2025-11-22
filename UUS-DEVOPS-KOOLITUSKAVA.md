@@ -1,10 +1,36 @@
 # UUS DevOps ADMINISTRAATORI KOOLITUSKAVA
 
-**Versioon:** 2.0 DevOps-First
+**Versioon:** 2.0 DevOps-First (Restructured)
 **Kuupäev:** 2025-01-22
 **Fookus:** DevOps Administraator (mitte Full-Stack Arendaja)
-**Kestus:** ~65-75 tundi (vs praegune 93h)
+**Kestus:** ~69-79 tundi (vs praegune 93h)
 **Põhimõte:** Praktiline, hands-on, labipõhine õpe
+
+---
+
+## ⚠️ OLULINE STRUKTUURILINE MUUDATUS
+
+**PostgreSQL peatükk on LIIGUTATUD:**
+- ❌ **VANA:** Peatükk 3 (enne Docker'it)
+- ✅ **UUS:** Peatükk 6 (pärast Docker põhimõtteid ja Dockerfile'e)
+
+**MIKS?**
+1. **Pedagoogiline järjekord:** Ei saa õpetada "PostgreSQL konteineris" enne, kui õpilased teavad, mis on Docker!
+2. **DevOps-first lähenemine:** Konteinerid on prioriteet, seega õpime Docker'i KOHE (peatükk 4)
+3. **Praktiline mõistmine:** Kui õpilased jõuavad PostgreSQL'i, nad juba:
+   - Teavad, mis on image ja container
+   - Teavad, kuidas volume'e kasutada (data persistence)
+   - On juba käivitanud Nginx ja Node.js konteinereid
+   - Mõistavad environment variables kontseptsiooni
+
+**Uus õppejärjekord:**
+```
+Peatükk 1-2: VPS ja Linux basics (8h)
+Peatükk 3: Git (2h)
+Peatükk 4: Docker põhimõtted (4h) ← Õpime konteinereid!
+Peatükk 5: Dockerfile loomine (4h) ← Õpime image'ite loomist!
+Peatükk 6: PostgreSQL konteinerites (2-4h) ← SIIS õpime DB administreerimist!
+```
 
 ---
 
@@ -36,16 +62,25 @@ Moodulid 4-7: Docker + Kubernetes + CI/CD + Production
 
 ```
 Moodul 1: Linux & VPS Alused
-└─ 8-10 tundi (13%)
-   ├─ Ainult infrastruktuuri alused
-   └─ PostgreSQL administraatori vaatenurgast
+└─ 8 tundi (12%)
+   ├─ VPS setup ja Linux basics
+   ├─ Git põhitõed
+   └─ PostgreSQL PÄRAST Docker'it (ei ole siin!)
 
-Moodulid 2-6: Docker → Kubernetes → CI/CD → Production
-└─ 57-65 tundi (87%)
-   ├─ KOHE Docker ja konteinerid
-   ├─ Kasutame VALMIS rakendusi labides
-   ├─ Backend/Frontend ainult "mõistmise" tasemel
-   └─ Fookus: infrastruktuur, orkestratsioon, automatiseerimine
+Moodul 2: Docker ja PostgreSQL
+└─ 16-20 tundi (25%)
+   ├─ KOHE Docker põhimõtted (peatükk 4)
+   ├─ Dockerfile loomine (peatükk 5)
+   ├─ PostgreSQL konteinerites (peatükk 6) ← MOVED!
+   ├─ Docker Compose (peatükk 7)
+   └─ Docker Registry (peatükk 8)
+
+Moodulid 3-6: Kubernetes → CI/CD → Monitoring → Production
+└─ 45-51 tundi (63%)
+   ├─ Kubernetes (peatükk 9-14)
+   ├─ CI/CD (peatükk 15-17)
+   ├─ Monitoring/Security (peatükk 18-22)
+   └─ Production Ops (peatükk 23-25)
 ```
 
 **Lahendus:**
@@ -78,10 +113,10 @@ Moodulid 2-6: Docker → Kubernetes → CI/CD → Production
 - systemd teenuste haldamine
 
 **Praktilised harjutused:**
-- VPS kirjakast @ 93.127.213.242 setup
+- VPS setup (Ubuntu 24.04 LTS)
 - SSH key-based autentimine
 - UFW reeglite loomine
-- Kasutaja janek konfigureerimine
+- Kasutaja konfigureerimine
 
 **Kestus:** 3 tundi
 
@@ -108,58 +143,7 @@ Moodulid 2-6: Docker → Kubernetes → CI/CD → Production
 
 ---
 
-#### **Peatükk 3: PostgreSQL Administraator Perspektiivist** (2-4h)
-
-**OLULINE:** Ei õpeta PostgreSQL ARENDUST, vaid ADMINISTREERIMIST
-
-**Sisu:**
-
-**3.1 Miks PostgreSQL DevOps kontekstis?**
-- Rakendused vajab andmebaasi (user-service, todo-service)
-- DevOps administraator HALDAB andmebaasi, ei arenda
-- Konteineriseeritud vs väline DB
-
-**3.2 PostgreSQL Konteineris (Docker) - PRIMAARNE**
-- Docker PostgreSQL image käivitamine
-- Port mapping ja volumes
-- Environment variables (POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB)
-- psql kliendi põhikäsud (\l, \c, \dt, \d)
-- Database ja user'i loomine
-- Backup ja restore (pg_dump, pg_restore)
-- Logide vaatamine (docker logs)
-
-**3.3 PostgreSQL Väline (Traditsiooniline) - ALTERNATIIV**
-- APT paigaldus
-- systemd teenuse haldamine
-- pg_hba.conf (client authentication)
-- postgresql.conf (basic tuning)
-- Backup cron job
-
-**3.4 DevOps Vaatenurk:**
-```bash
-# DevOps administraator PEAB teadma:
-✅ Kuidas PostgreSQL konteinerit käivitada
-✅ Kuidas ühendust testida
-✅ Kuidas backup'e teha
-✅ Kuidas logisid vaadata
-✅ Kuidas performance'i monitoorida (pg_stat_statements)
-
-❌ EI PEA teadma:
-❌ SQL päringute kirjutamist (see on arendaja töö)
-❌ Database schema disaini
-❌ ORM'ide kasutamist
-```
-
-**Praktilised harjutused:**
-- PostgreSQL Docker konteiner
-- Backup ja restore
-- Performance monitoring (pg_stat_activity)
-
-**Kestus:** 2-4 tundi
-
----
-
-#### **Peatükk 4: Git DevOps Töövoos** (2h)
+#### **Peatükk 3: Git DevOps Töövoos** (2h)
 
 **Sisu:**
 - Git põhikäsud (clone, pull, commit, push)
@@ -180,13 +164,13 @@ Moodulid 2-6: Docker → Kubernetes → CI/CD → Production
 
 ---
 
-### **MOODUL 2: DOCKER JA KONTEINERISATSIOON** (14-16h)
+### **MOODUL 2: DOCKER JA KONTEINERISATSIOON** (16-20h)
 
 **Eesmärk:** Valdada Docker'i täielikult - pildid, konteinerid, võrgud, andmehoidlad
 
 ---
 
-#### **Peatükk 5: Docker Põhimõtted** (4h)
+#### **Peatükk 4: Docker Põhimõtted** (4h)
 
 **Sisu:**
 - Konteinerite vs VM'ide erinevused
@@ -210,7 +194,7 @@ Moodulid 2-6: Docker → Kubernetes → CI/CD → Production
 
 ---
 
-#### **Peatükk 6: Dockerfile ja Image Loomine** (4h)
+#### **Peatükk 5: Dockerfile ja Image Loomine** (4h)
 
 **Sisu:**
 - Dockerfile süntaks
@@ -234,6 +218,64 @@ Kasutame VALMIS rakendusi (`labs/apps/backend-nodejs`, `labs/apps/frontend`)
 **Kestus:** 4 tundi
 
 **Viide labidele:** Labor 1 Harjutus 1-5
+
+---
+
+#### **Peatükk 6: PostgreSQL Konteinerites** (2-4h)
+
+**OLULINE:** Nüüd õpilased juba teavad, mis on Docker ja konteinerid!
+
+**Sisu:**
+
+**6.1 Miks PostgreSQL DevOps kontekstis?**
+- Rakendused vajavad andmebaasi (user-service, todo-service)
+- DevOps administraator HALDAB andmebaasi, ei arenda
+- Konteineriseeritud vs väline DB
+
+**6.2 PostgreSQL Docker Konteineris - PRIMAARNE**
+- Docker PostgreSQL image käivitamine
+- Port mapping ja volumes (data persistence!)
+- Environment variables (POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB)
+- Volume lifecycle (konteiner kustub → data jääb alles)
+- psql kliendi põhikäsud (\l, \c, \dt, \d)
+- Database ja user'i loomine
+- Backup ja restore (pg_dump, pg_restore)
+- Logide vaatamine (docker logs postgres)
+- Performance monitoring (pg_stat_activity)
+
+**6.3 PostgreSQL Traditsiooniline Install - ALTERNATIIV**
+- APT paigaldus Ubuntu's
+- systemd teenuse haldamine
+- pg_hba.conf (client authentication)
+- postgresql.conf (basic tuning)
+- Backup cron job
+
+**6.4 DevOps Vaatenurk:**
+```bash
+# DevOps administraator PEAB teadma:
+✅ Kuidas PostgreSQL konteinerit käivitada
+✅ Kuidas volume'e hallata (data persistence)
+✅ Kuidas ühendust testida (psql, connection string)
+✅ Kuidas backup'e teha (pg_dump konteineris)
+✅ Kuidas logisid vaadata
+✅ Kuidas performance'i monitoorida (pg_stat_statements)
+
+❌ EI PEA teadma:
+❌ SQL päringute kirjutamist (see on arendaja töö)
+❌ Database schema disaini
+❌ ORM'ide kasutamist (Hibernate, TypeORM)
+```
+
+**Praktiline harjutus:**
+- PostgreSQL Docker konteiner volume'iga
+- psql kliendi kasutamine
+- Backup ja restore test
+- Performance monitoring (pg_stat_activity)
+- Konteinerit restart → data peab jääma alles!
+
+**Kestus:** 2-4 tundi
+
+**Viide labidele:** Labor 1 Harjutus 2 (PostgreSQL konteiner)
 
 ---
 
@@ -835,12 +877,13 @@ COPY js/ /usr/share/nginx/html/js/
 
 | Aspekt | Praegune Kava (v1.0) | Uus DevOps Kava (v2.0) |
 |--------|---------------------|------------------------|
-| **Kogukestus** | 93 tundi | 65-75 tundi |
+| **Kogukestus** | 93 tundi | 69-79 tundi |
 | **Backend Arendus** | 17h (Node.js, Express, REST API, JWT) | 0h (kasutame valmis rakendusi) |
 | **Frontend Arendus** | 11h (HTML, CSS, JavaScript) | 0h (kasutame valmis frontend'i) |
-| **DevOps/Infrastruktuur** | 65h (70%) | 65-75h (100%) |
-| **Docker algus** | Peatükk 12 (pärast 44h) | Peatükk 5 (pärast 10h) |
-| **Kubernetes algus** | Peatükk 15 (pärast 56h) | Peatükk 9 (pärast 24h) |
+| **DevOps/Infrastruktuur** | 65h (70%) | 69-79h (100%) |
+| **PostgreSQL peatükk** | Peatükk 3 (ENNE Docker'it!) | Peatükk 6 (PÄRAST Docker'it!) |
+| **Docker algus** | Peatükk 12 (pärast 44h) | Peatükk 4 (pärast 8h) |
+| **Kubernetes algus** | Peatükk 15 (pärast 56h) | Peatükk 9 (pärast 26h) |
 | **Praktiline fookus** | Full-stack arendaja | DevOps administraator |
 | **Labide kasutamine** | Lab 1-6 | Lab 1-6 (SAMA, kuid erinev lähenemine) |
 
