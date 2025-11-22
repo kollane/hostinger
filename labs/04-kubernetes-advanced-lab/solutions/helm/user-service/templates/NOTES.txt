@@ -1,0 +1,49 @@
+🎉 User Service installed successfully!
+
+Release Name: {{ .Release.Name }}
+Namespace: {{ .Release.Namespace }}
+Chart Version: {{ .Chart.Version }}
+App Version: {{ .Chart.AppVersion }}
+
+To access your application:
+
+{{- if .Values.ingress.enabled }}
+  Ingress URL: http://{{ .Values.ingress.host }}{{ .Values.ingress.path }}
+{{- else }}
+  Service: kubectl port-forward svc/{{ .Release.Name }} 3000:{{ .Values.service.port }}
+  Then access: http://localhost:3000
+{{- end }}
+
+Health check:
+{{- if .Values.ingress.enabled }}
+  curl http://{{ .Values.ingress.host }}{{ .Values.ingress.path }}/health
+{{- else }}
+  kubectl exec -it $(kubectl get pod -l release={{ .Release.Name }} -o jsonpath='{.items[0].metadata.name}') -- wget -q -O- http://localhost:3000/health
+{{- end }}
+
+View resources:
+  kubectl get all -l release={{ .Release.Name }}
+
+View pods:
+  kubectl get pods -l release={{ .Release.Name }}
+
+View logs:
+  kubectl logs -l release={{ .Release.Name }} --tail=50 -f
+
+{{- if .Values.autoscaling.enabled }}
+
+Autoscaling is ENABLED:
+  kubectl get hpa {{ .Release.Name }}
+  kubectl describe hpa {{ .Release.Name }}
+{{- end }}
+
+Upgrade:
+  helm upgrade {{ .Release.Name }} .
+
+Rollback:
+  helm rollback {{ .Release.Name }}
+
+Uninstall:
+  helm uninstall {{ .Release.Name }}
+
+For more information, visit: https://github.com/kollane/hostinger
