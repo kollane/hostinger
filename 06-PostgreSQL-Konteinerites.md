@@ -10,877 +10,833 @@
 
 Pärast selle peatüki läbimist oskad:
 
-1. ✅ Käivitada PostgreSQL Docker konteineris
-2. ✅ Hallata andmete püsivust (volumes)
-3. ✅ Seadistada PostgreSQL environment variables
-4. ✅ Kasutada psql klienti containeris
-5. ✅ Teha backup'e ja restore'e
-6. ✅ Monitoorida PostgreSQL performance'i
-7. ✅ Debuggida ühenduse probleeme
-8. ✅ Mõista konteineriseeritud vs väline PostgreSQL
+1. ✅ Selgitada stateful vs stateless rakenduste erinevusi
+2. ✅ Mõista volume lifecycle management'i andmebaasidele
+3. ✅ Selgitada PostgreSQL konteineriseerimise eeliseid ja kompromisse
+4. ✅ Mõista data persistence strateegiaid
+5. ✅ Selgitada backup/restore arhitektuure
+6. ✅ Rakendada observability PostgreSQL'ile (connections, queries, size)
+7. ✅ Debuggida ühenduse probleeme (network, authentication)
+8. ✅ Mõista containerized vs external PostgreSQL trade-off'e
 
 ---
 
-## 🎯 1. Miks PostgreSQL DevOps Kontekstis?
+## 🎯 1. Stateful Applications: PostgreSQL DevOps Kontekstis
 
-### 1.1 PostgreSQL Rakenduses
+### 1.1 Stateless vs Stateful Applications
 
-**Meie mikroteenused:**
+**Stateless (Frontend, Backend API):**
+- Ei hoia state'i (iga request on independent)
+- Container restart → no data loss
+- Scalable: 10 identical replicas
+
+ (load balance)
+- Ephemeral filesystem OK
+
+**Stateful (Database):**
+- Hoiab critical state (database files)
+- Container restart → **PEAB SÄILITAMA DATA**
+- Scaling: complex (replication, sharding)
+- **REQUIRES persistent storage (volumes)**
+
+**Miks see on oluline DevOps'ile?**
+
+Stateless apps: "Cattle" - identne, asendatav, skaleeritav
+Stateful apps: "Pets" - unique, hooldust vajav, data on critical
+
+**PostgreSQL in our architecture:**
+
 ```
-Frontend (Port 8080)
-    │
-    ├──> User Service (Node.js:3000) ──> PostgreSQL (5432)
-    └──> Todo Service (Java:8081) ──> PostgreSQL (5433)
+Frontend (Stateless) → Backend (Stateless) → PostgreSQL (Stateful)
+   ↓                        ↓                      ↓
+Ei vaja volume          Ei vaja volume        VOLUME KRITILINE!
 ```
-
-**Miks PostgreSQL?**
-- ✅ Open-source ja tasuta
-- ✅ ACID compliance (reliable)
-- ✅ Rich features (JSON, full-text search)
-- ✅ Excellent Docker support
-- ✅ Industry standard (Twitter, Instagram, Spotify)
 
 ---
 
-### 1.2 DevOps Administraatori Roll
+### 1.2 DevOps Administraatori Roll PostgreSQL'i Jaoks
 
-**Mida DevOps Administraator TEEB:**
-```bash
-✅ Käivitab PostgreSQL konteinereid
-✅ Haldab volumes (data persistence)
-✅ Seadistab environment variables
-✅ Teeb backup'e ja restore'e
-✅ Monitoorib performance'i (connections, queries)
-✅ Debuggib ühenduse probleeme
-✅ Skaleerib andmebaasi (replicas, sharding - advanced)
+**DevOps responsibilities:**
+
+1. **Infrastructure management:**
+   - Provision PostgreSQL containers/servers
+   - Configure networking (port mapping, DNS)
+   - Manage volumes (create, backup, restore)
+
+2. **Operational tasks:**
+   - Monitor performance (connections, query times, disk usage)
+   - Execute backups (automated schedules)
+   - Troubleshoot connectivity (network, authentication)
+   - Scale (replicas, read-only slaves)
+
+3. **Security:**
+   - Manage credentials (environment variables, secrets)
+   - Configure access control (pg_hba.conf)
+   - SSL/TLS for connections
+
+**DevOps EI TEE:**
+- ❌ SQL query writing (developer responsibility)
+- ❌ Schema design (developer/DBA responsibility)
+- ❌ ORM configuration (developer responsibility)
+- ❌ Query optimization (DBA/developer responsibility)
+
+**Analogy:**
+
 ```
+DevOps : PostgreSQL = Datacenter Engineer : Server Hardware
 
-**Mida DevOps Administraator EI TEE:**
-```bash
-❌ Ei kirjuta SQL päringuid (arendaja töö)
-❌ Ei disaini database skeeme (arendaja/DBA töö)
-❌ Ei implementeeri ORM logic'ut (arendaja töö)
-```
-
-**Analoogia:**
-```
-DevOps Administraator : PostgreSQL = Automehhaanik : Mootor
-
-Mehhaanik:
-✅ Hooldab mootorit
-✅ Vahetab õli
-✅ Debuggib probleeme
-❌ Ei disaini mootorit
-❌ Ei tooda mootorit
+Datacenter Engineer:
+- Provisions servers
+- Monitors power, cooling, network
+- Replaces failed hardware
+- Does NOT write software
 
 DevOps:
-✅ Haldab PostgreSQL konteinerit
-✅ Teeb backup'e
-✅ Monitoorib performance'i
-❌ Ei kirjuta SQL päringuid
-❌ Ei disaini skeeme
+- Provisions PostgreSQL containers
+- Monitors connections, performance
+- Manages backups, restores
+- Does NOT write SQL queries
 ```
 
 ---
 
-## 🐳 2. PostgreSQL Docker Konteineris - PRIMAARNE Lähenemine
+## 🐳 2. PostgreSQL Containerization: Architecture and Trade-offs
 
 ### 2.1 Miks Konteineriseerida PostgreSQL?
 
-**Eelised:**
-- ✅ Kiire setup (1 käsk vs mitu sammu)
-- ✅ Isolatsioon (eraldi konteinerid dev/test/prod)
-- ✅ Portability (töötab kõikjal)
-- ✅ Easy cleanup (docker rm = kõik kadunud)
-- ✅ Version management (postgres:14, postgres:15, postgres:16)
+**Benefits:**
 
-**Millal MITTE kasutada:**
-- ❌ VÄGA suur production database (TB'id)
-- ❌ Legacy systeem ilma containeriteta
-- ❌ Spetsiifilised performance requirements (dedicated hardware)
+1. **Rapid provisioning:**
+   - Traditional: Install PostgreSQL, configure, initialize (hours)
+   - Container: One command (seconds)
+
+2. **Environment consistency:**
+   - Dev PostgreSQL 16 = Staging PostgreSQL 16 = Prod PostgreSQL 16
+   - Same configuration (postgresql.conf as code)
+
+3. **Isolation:**
+   - Multiple PostgreSQL versions on same host (different containers)
+   - User Service DB (port 5432) + Todo Service DB (port 5433)
+
+4. **Version management:**
+   - Easy upgrades: `postgres:14` → `postgres:16`
+   - Rollback: Keep old container stopped (failover)
+
+5. **Resource limits:**
+   - cgroups enforce memory/CPU limits
+   - Prevents runaway queries from killing host
+
+**Trade-offs:**
+
+1. **Performance overhead:**
+   - Container layer adds ~2-5% overhead (minimal)
+   - Volume I/O slightly slower than native filesystem (minimal in practice)
+
+2. **Operational complexity:**
+   - Must manage volumes separately (data persists beyond container)
+   - Backup/restore workflow different from traditional
+
+3. **Not suitable for all scenarios:**
+   - Very large databases (multi-TB) - dedicated hardware better
+   - Specialized hardware requirements (NVMe, RAID controllers)
+   - Legacy systems without container orchestration
 
 ---
 
-### 2.2 Lihtne PostgreSQL Container (Testimiseks)
+### 2.2 Volume Architecture: Data Persistence
 
-```bash
-# ⚠️ EPHEMERAL - Data kaob pärast container'i kustutamist!
-docker run -d \
-  --name postgres-test \
-  -e POSTGRES_PASSWORD=mysecret \
-  -p 5432:5432 \
-  postgres:16-alpine
+**Container ephemeral filesystem problem:**
 
-# Test connection
-docker exec -it postgres-test psql -U postgres
-# postgres=# \l
-# postgres=# \q
-
-# ❌ PROBLEEM: Kui container kustutatakse, DATA KAOB!
-docker rm -f postgres-test  # Kõik data KADUNUD!
+```
+Container: /var/lib/postgresql/data (inside container layer)
+    ↓
+Container deleted → Data LOST!
 ```
 
----
+**Solution: Volume mounting**
 
-### 2.3 PostgreSQL Container Volume'iga (SOOVITATUD)
+```
+Host Volume: /var/lib/docker/volumes/pgdata/_data
+    ↓ (mount)
+Container: /var/lib/postgresql/data
+    ↓
+Container deleted → Volume PERSISTS!
+```
 
 **Volume lifecycle:**
+
+1. **Create:** `docker volume create pgdata` (one-time)
+2. **Mount:** Container starts, mounts volume to `/var/lib/postgresql/data`
+3. **Use:** PostgreSQL writes data files to volume
+4. **Persist:** Container stops/deleted → volume remains
+5. **Reuse:** New container mounts same volume → data intact
+
+**Why this architecture?**
+
+- **Decoupling:** Storage lifecycle independent of container lifecycle
+- **Portability:** Volume can be backed up, migrated to another host
+- **Kubernetes alignment:** PersistentVolume (PV) + PersistentVolumeClaim (PVC) same pattern
+
+---
+
+### 2.3 PostgreSQL Configuration via Environment Variables
+
+**12-Factor App: Configuration as environment variables**
+
+**PostgreSQL image environment variables:**
+
 ```
-Container (ephemeral)  ←→  Volume (persistent)
-     ↓                           ↓
-Container kustub          Volume jääb alles!
+POSTGRES_PASSWORD (required)    - Superuser password
+POSTGRES_USER (optional)        - Custom superuser name (default: postgres)
+POSTGRES_DB (optional)          - Initial database name (default: $POSTGRES_USER)
+POSTGRES_INITDB_ARGS (optional) - initdb arguments (encoding, locale)
 ```
 
-**Loo volume ja käivita PostgreSQL:**
-```bash
-# 1. Loo dedicated volume
-docker volume create pgdata
+**Why environment variables?**
 
-# 2. Käivita PostgreSQL volume'iga
-docker run -d \
-  --name postgres \
-  -e POSTGRES_USER=appuser \
-  -e POSTGRES_PASSWORD=secret123 \
-  -e POSTGRES_DB=myapp_db \
-  -v pgdata:/var/lib/postgresql/data \
-  -p 5432:5432 \
-  postgres:16-alpine
+1. **No hardcoded secrets:** Password not in Dockerfile (security)
+2. **Environment parity:** Same image, different config (dev vs prod)
+3. **Orchestration-friendly:** Kubernetes ConfigMap/Secret integration
+4. **Immutable containers:** Config change = restart container (not rebuild image)
 
-# 3. Verify running
-docker ps | grep postgres
+**Configuration hierarchy:**
 
-# 4. Loo test data
-docker exec -it postgres psql -U appuser -d myapp_db <<EOF
-CREATE TABLE users (id SERIAL PRIMARY KEY, name TEXT);
-INSERT INTO users (name) VALUES ('Alice'), ('Bob'), ('Charlie');
-SELECT * FROM users;
-EOF
+```
+1. Dockerfile ENV (defaults)
+2. docker run -e (runtime override)
+3. Docker Compose environment section
+4. Kubernetes ConfigMap/Secret
+```
 
-# 5. Kustuta container (aga mitte volume!)
-docker rm -f postgres
+**Example use case:**
 
-# 6. Käivita UUS container SAMA volume'iga
-docker run -d \
-  --name postgres-new \
-  -e POSTGRES_USER=appuser \
-  -e POSTGRES_PASSWORD=secret123 \
-  -e POSTGRES_DB=myapp_db \
-  -v pgdata:/var/lib/postgresql/data \
-  -p 5432:5432 \
-  postgres:16-alpine
+```
+Development: POSTGRES_PASSWORD=dev123
+Staging: POSTGRES_PASSWORD=staging-secret-from-vault
+Production: POSTGRES_PASSWORD=<injected from AWS Secrets Manager>
+```
 
-# 7. Kontrolli, et data säilis
-docker exec -it postgres-new psql -U appuser -d myapp_db \
-  -c "SELECT * FROM users;"
+📖 **Praktika:** Labor 2, Harjutus 1 - PostgreSQL container setup
 
-# ✅ Alice, Bob, Charlie on olemas! DATA SÄILIS!
+---
+
+### 2.4 Networking: Port Mapping and DNS Resolution
+
+**Port mapping for external access:**
+
+```
+Host port 5432 → Container port 5432
+    ↓
+psql -h localhost -p 5432 (from host)
+    ↓
+NAT (Docker daemon iptables rules)
+    ↓
+Container PostgreSQL on 172.17.0.2:5432
+```
+
+**Multiple PostgreSQL containers:**
+
+```
+Container 1: Host 5432 → Container 5432 (User Service DB)
+Container 2: Host 5433 → Container 5432 (Todo Service DB)
+```
+
+**Custom network for container-to-container communication:**
+
+```
+Backend container:
+DB_HOST=postgres (container name)
+DB_PORT=5432
+
+Docker DNS:
+postgres → 172.18.0.2 (automatic resolution)
+
+Backend connects to 172.18.0.2:5432 (PostgreSQL container)
+```
+
+**Why custom network?**
+
+- **DNS resolution:** Container names resolve automatically
+- **Isolation:** Backend and DB in private network (frontend cannot access DB directly)
+- **Security:** Defense in depth (network segmentation)
+
+📖 **Praktika:** Labor 2, Harjutus 2 - Multi-container networking
+
+---
+
+## 🔧 3. PostgreSQL Client (psql): Observability Interface
+
+### 3.1 psql Role in DevOps Workflow
+
+**psql is the interactive terminal for PostgreSQL.**
+
+**DevOps use cases:**
+
+1. **Verification:**
+   - Database created? (`\l`)
+   - Tables exist? (`\dt`)
+   - User permissions correct? (`\du`)
+
+2. **Troubleshooting:**
+   - Active connections? (`SELECT * FROM pg_stat_activity`)
+   - Lock contention? (`SELECT * FROM pg_locks`)
+   - Query performance? (pg_stat_statements)
+
+3. **Operational tasks:**
+   - Create databases/users
+   - Grant permissions
+   - Reset passwords
+
+**psql access methods:**
+
+1. **Inside container:** `docker exec -it postgres psql -U postgres`
+2. **From host:** `psql -h localhost -p 5432 -U postgres` (requires psql installed)
+3. **Scripted:** `docker exec postgres psql -U postgres -c "SELECT 1;"`
+
+**Meta-commands (DevOps essentials):**
+
+```
+\l              - List databases (verify DB exists)
+\c <database>   - Connect to database (switch context)
+\dt             - List tables (verify schema applied)
+\d <table>      - Describe table (check columns, indexes)
+\du             - List users/roles (verify permissions)
 ```
 
 ---
 
-### 2.4 PostgreSQL Environment Variables
+### 3.2 Connection Management
 
-**Põhilised environment variables:**
+**Active connections monitoring:**
 
-```bash
-# Kohustuslikud:
-POSTGRES_PASSWORD=secret123       # Superuser (postgres) parool
-
-# Soovi valikud (muidu defaults):
-POSTGRES_USER=appuser            # Custom user (default: postgres)
-POSTGRES_DB=myapp_db             # Initial database (default: $POSTGRES_USER)
-
-# Täiendavad:
-POSTGRES_INITDB_ARGS="--encoding=UTF8 --locale=en_US.UTF-8"
-PGDATA=/var/lib/postgresql/data  # Data directory (default)
-```
-
-**Näide koos kõigiga:**
-```bash
-docker run -d \
-  --name postgres \
-  -e POSTGRES_USER=appuser \
-  -e POSTGRES_PASSWORD=very-secret-password \
-  -e POSTGRES_DB=production_db \
-  -e POSTGRES_INITDB_ARGS="--encoding=UTF8" \
-  -v pgdata:/var/lib/postgresql/data \
-  -p 5432:5432 \
-  postgres:16-alpine
-```
-
----
-
-### 2.5 PostgreSQL Ports ja Networking
-
-**Port mapping:**
-```bash
-# Host port 5432 → Container port 5432
-docker run -p 5432:5432 postgres:16-alpine
-
-# Mitu PostgreSQL konteinerit? Erinev host port!
-docker run -p 5432:5432 --name pg1 postgres:16-alpine  # User Service DB
-docker run -p 5433:5432 --name pg2 postgres:16-alpine  # Todo Service DB
-                 ↑
-           Erinev host port
-```
-
-**Custom network (multi-container):**
-```bash
-# 1. Loo network
-docker network create app-network
-
-# 2. PostgreSQL samas network'is
-docker run -d \
-  --name postgres \
-  --network app-network \
-  -e POSTGRES_PASSWORD=secret \
-  postgres:16-alpine
-
-# 3. Backend ühendub "postgres" hostname'i järgi
-docker run -d \
-  --name backend \
-  --network app-network \
-  -e DB_HOST=postgres \   # ← Hostname = container name!
-  -e DB_PORT=5432 \
-  backend-app
-
-# 4. Test network connection
-docker exec backend ping -c 3 postgres  # ✅ Töötab!
-```
-
----
-
-## 🔧 3. psql Klient - PostgreSQL CLI
-
-### 3.1 psql Põhikäsud
-
-**Ühenda PostgreSQL'iga (containeris):**
-```bash
-# Variant 1: exec -it
-docker exec -it postgres psql -U appuser -d myapp_db
-
-# Variant 2: exec ilma -it (scripting)
-docker exec postgres psql -U appuser -d myapp_db -c "SELECT * FROM users;"
-
-# Variant 3: Kui psql on host'is installitud
-psql -h localhost -p 5432 -U appuser -d myapp_db
-```
-
-**psql meta-käsud:**
 ```sql
--- List databases
-\l
-
--- Connect to database
-\c myapp_db
-
--- List tables
-\dt
-
--- Describe table
-\d users
-
--- List users/roles
-\du
-
--- Quit
-\q
-
--- Help
-\?
-```
-
----
-
-### 3.2 Praktilised psql Näited
-
-**Create database:**
-```bash
-docker exec -it postgres psql -U postgres <<EOF
-CREATE DATABASE user_service_db;
-CREATE DATABASE todo_service_db;
-\l
-EOF
-```
-
-**Create user and grant permissions:**
-```bash
-docker exec -it postgres psql -U postgres <<EOF
-CREATE USER appuser WITH PASSWORD 'secret123';
-GRANT ALL PRIVILEGES ON DATABASE myapp_db TO appuser;
-\du
-EOF
-```
-
-**Check connections:**
-```bash
-docker exec postgres psql -U postgres -c \
-  "SELECT pid, usename, application_name, client_addr, state
-   FROM pg_stat_activity
-   WHERE datname = 'myapp_db';"
-```
-
----
-
-## 💾 4. Backup ja Restore
-
-### 4.1 pg_dump - Logical Backup
-
-**Single database backup:**
-```bash
-# 1. Loo backup
-docker exec postgres pg_dump -U appuser myapp_db > backup.sql
-
-# 2. Verify backup
-ls -lh backup.sql
-# -rw-r--r-- 1 user staff  1.5M  backup.sql
-
-# 3. Vaata sisu (optional)
-head -n 20 backup.sql
-```
-
-**Backup koos kompressiooniga:**
-```bash
-# Gzip compression
-docker exec postgres pg_dump -U appuser myapp_db | gzip > backup.sql.gz
-
-# Output: backup.sql.gz (10x väiksem!)
-```
-
-**Custom format (recommended):**
-```bash
-# Custom format (fast restore, parallel)
-docker exec postgres pg_dump -U appuser -Fc myapp_db > backup.dump
-
-# -Fc = custom format
-# -Ft = tar format
-# -Fp = plain SQL (default)
-```
-
----
-
-### 4.2 Restore
-
-**Plain SQL restore:**
-```bash
-# 1. Loo uus database
-docker exec postgres psql -U postgres -c "CREATE DATABASE myapp_db_restore;"
-
-# 2. Restore backup
-docker exec -i postgres psql -U appuser myapp_db_restore < backup.sql
-
-# 3. Verify
-docker exec postgres psql -U appuser myapp_db_restore -c "\dt"
-```
-
-**Custom format restore:**
-```bash
-# pg_restore with custom format
-cat backup.dump | docker exec -i postgres pg_restore -U appuser -d myapp_db_restore
-
-# Parallel restore (faster!)
-cat backup.dump | docker exec -i postgres pg_restore -U appuser -d myapp_db_restore -j 4
-
-# -j 4 = 4 parallel jobs
-```
-
----
-
-### 4.3 Automated Backup (Cron Job)
-
-**Host machine cron job:**
-```bash
-# 1. Loo backup script
-cat > /usr/local/bin/postgres-backup.sh <<'EOF'
-#!/bin/bash
-DATE=$(date +%Y%m%d_%H%M%S)
-BACKUP_DIR=/backups/postgres
-mkdir -p $BACKUP_DIR
-
-docker exec postgres pg_dump -U appuser myapp_db | \
-  gzip > $BACKUP_DIR/myapp_db_$DATE.sql.gz
-
-# Keep only last 7 days
-find $BACKUP_DIR -name "*.sql.gz" -mtime +7 -delete
-
-echo "Backup completed: myapp_db_$DATE.sql.gz"
-EOF
-
-chmod +x /usr/local/bin/postgres-backup.sh
-
-# 2. Lisa crontab (iga päev 2AM)
-crontab -e
-# 0 2 * * * /usr/local/bin/postgres-backup.sh >> /var/log/postgres-backup.log 2>&1
-
-# 3. Test
-/usr/local/bin/postgres-backup.sh
-ls -lh /backups/postgres/
-```
-
----
-
-## 📊 5. Performance Monitoring
-
-### 5.1 pg_stat_activity - Active Connections
-
-```bash
-# Vaata active connections
-docker exec postgres psql -U postgres <<EOF
-SELECT
-  pid,
-  usename,
-  application_name,
-  client_addr,
-  state,
-  query_start,
-  LEFT(query, 50) as query
+SELECT pid, usename, application_name, client_addr, state, query
 FROM pg_stat_activity
-WHERE state != 'idle'
-ORDER BY query_start;
-EOF
+WHERE state != 'idle';
 ```
+
+**Why monitor connections?**
+
+1. **Capacity planning:** How many connections does app need?
+2. **Troubleshooting:** "Too many connections" error → identify leak
+3. **Performance:** Idle connections consume resources
+
+**max_connections configuration:**
+
+- Default: 100 connections
+- Each connection consumes ~10MB RAM
+- Formula: max_connections = (Available RAM - Shared Buffers) / 10MB
+
+**Connection pooling (application-side):**
+
+- **Problem:** Opening connection = expensive (auth, SSL handshake)
+- **Solution:** Connection pool (HikariCP for Java, pg-pool for Node.js)
+- Pool maintains N connections, reuses them
+
+**DevOps responsibility:**
+
+- Configure max_connections based on workload
+- Monitor connection usage (pg_stat_activity)
+- Alert on >80% capacity
 
 ---
 
-### 5.2 Database Size
+## 💾 4. Backup and Restore: Data Protection Strategies
 
-```bash
-# Vaata database suurusi
-docker exec postgres psql -U postgres -c \
-  "SELECT
-     pg_database.datname,
-     pg_size_pretty(pg_database_size(pg_database.datname)) AS size
-   FROM pg_database
-   ORDER BY pg_database_size(pg_database.datname) DESC;"
+### 4.1 Backup Architecture: Logical vs Physical
 
-# Output:
-#     datname      |  size
-# -----------------+---------
-#  myapp_db        | 15 MB
-#  postgres        | 8537 kB
-#  template1       | 8393 kB
+**Logical backups (pg_dump):**
+
 ```
+Database → pg_dump → SQL file → Restore with psql
+```
+
+**Characteristics:**
+- **Portable:** SQL is database-agnostic (can restore to different PostgreSQL version)
+- **Selective:** Can backup single table, schema, or database
+- **Slow:** Dumps data row-by-row
+- **Use case:** Development, small databases, cross-version migration
+
+**Physical backups (pg_basebackup):**
+
+```
+Database file directory → Copy files → Restore by replacing data directory
+```
+
+**Characteristics:**
+- **Fast:** File-level copy (no SQL parsing)
+- **Version-specific:** Must restore to same PostgreSQL version
+- **All-or-nothing:** Cannot restore single table
+- **Use case:** Production, large databases, PITR (Point-In-Time Recovery)
+
+**DevOps choice:**
+
+- **Development/testing:** Logical backups (pg_dump) - flexibility
+- **Production:** Physical backups (pg_basebackup) - speed, PITR
 
 ---
 
-### 5.3 Table Sizes
+### 4.2 Backup Strategies
 
-```bash
-# Vaata table suurusi
-docker exec postgres psql -U appuser -d myapp_db -c \
-  "SELECT
-     schemaname,
-     tablename,
-     pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) AS size
-   FROM pg_tables
-   WHERE schemaname NOT IN ('pg_catalog', 'information_schema')
-   ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC;"
+**Full backup:**
+
 ```
+pg_dump entire database → backup.sql (or backup.dump)
+```
+
+**Incremental backup:**
+
+```
+WAL (Write-Ahead Logging) files → Archive WAL segments
+```
+
+**PITR (Point-In-Time Recovery):**
+
+```
+Full backup (Sunday) + WAL archive (Monday-Saturday)
+    ↓
+Can restore to ANY point in time (e.g., Thursday 14:35)
+```
+
+**Backup schedule (production example):**
+
+```
+Daily: Full backup (2 AM)
+Continuous: WAL archiving (every 16MB WAL segment)
+Weekly: Offsite copy (S3, cloud storage)
+Retention: 7 days local, 30 days offsite
+```
+
+**Automation:**
+
+- **Cron:** Host-level scheduled backups
+- **Kubernetes CronJob:** Cluster-level backup jobs
+- **Managed services:** AWS RDS automated backups
 
 ---
 
-### 5.4 Slow Queries (pg_stat_statements)
+### 4.3 Restore Scenarios
 
-**Enable pg_stat_statements:**
-```bash
-# 1. Restart PostgreSQL with shared_preload_libraries
-docker run -d \
-  --name postgres \
-  -e POSTGRES_PASSWORD=secret \
-  -e POSTGRES_INITDB_ARGS="-c shared_preload_libraries=pg_stat_statements" \
-  postgres:16-alpine
+**Scenario 1: Database corruption**
 
-# 2. Enable extension
-docker exec postgres psql -U postgres -c \
-  "CREATE EXTENSION IF NOT EXISTS pg_stat_statements;"
-
-# 3. Vaata slow queries
-docker exec postgres psql -U postgres -c \
-  "SELECT
-     calls,
-     total_exec_time,
-     mean_exec_time,
-     LEFT(query, 60) as query
-   FROM pg_stat_statements
-   ORDER BY mean_exec_time DESC
-   LIMIT 10;"
 ```
+Problem: Table deleted accidentally
+Solution: Restore from last night's backup (lose today's changes)
+```
+
+**Scenario 2: Application bug deployed**
+
+```
+Problem: Bug corrupted data at 14:30
+Solution: PITR to 14:29 (recover everything before corruption)
+```
+
+**Scenario 3: Disaster recovery**
+
+```
+Problem: Server crashed, volume lost
+Solution: Restore backup to new server, resume from last backup point
+```
+
+**RTO (Recovery Time Objective):**
+- How quickly can you restore? (e.g., 1 hour)
+- Depends on: Backup size, network speed, storage I/O
+
+**RPO (Recovery Point Objective):**
+- How much data can you afford to lose? (e.g., 1 hour of transactions)
+- Depends on: Backup frequency, WAL archiving
+
+**DevOps responsibility:**
+
+- Define RTO/RPO requirements (with business stakeholders)
+- Implement backup strategy meeting RTO/RPO
+- **TEST RESTORES REGULARLY** (backup is useless if restore fails!)
+
+📖 **Praktika:** Labor 2, Harjutus 3 - Backup and restore workflow
 
 ---
 
-## 🐛 6. Troubleshooting
+## 📊 5. Observability: Performance and Capacity Monitoring
 
-### 6.1 "Connection Refused"
+### 5.1 Key Metrics for PostgreSQL
 
-**Probleem:**
-```bash
-docker logs backend
-# Error: connect ECONNREFUSED postgres:5432
-```
+**1. Connection metrics:**
+- **active_connections:** Currently executing queries
+- **idle_connections:** Connected but not executing
+- **max_connections:** Configured limit
 
-**Troubleshooting sammud:**
+**Why important:** Too many connections → "too many clients" error
 
-```bash
-# 1. Kontrolli, et PostgreSQL töötab
-docker ps | grep postgres
+**2. Query performance:**
+- **mean_exec_time:** Average query execution time
+- **total_exec_time:** Total time spent in queries
+- **calls:** Number of times query executed
 
-# 2. Kontrolli PostgreSQL logisid
-docker logs postgres
+**Why important:** Slow queries → application timeouts, poor UX
 
-# 3. Testi connection host'ist
-docker exec postgres psql -U postgres -c "SELECT 1;"
+**3. Database size:**
+- **database_size:** Total database size (GB)
+- **table_size:** Individual table sizes
 
-# 4. Kontrolli network'i
-docker network inspect app-network | grep postgres
+**Why important:** Disk space planning, backup duration estimation
 
-# 5. Testi DNS resolution
-docker exec backend ping -c 3 postgres
-docker exec backend nslookup postgres
+**4. Cache hit ratio:**
+- **cache_hit_ratio:** % of data served from RAM vs disk
+- Target: >99% (if <90%, increase shared_buffers)
 
-# Levinud põhjused:
-# - PostgreSQL pole veel valmis (kasuta healthcheck)
-# - Vale hostname (peaks olema container name)
-# - Eri network'id (peavad olema samas network'is)
-```
+**Why important:** Low cache hit = slow queries (disk I/O bottleneck)
 
 ---
 
-### 6.2 "Password Authentication Failed"
+### 5.2 pg_stat_activity: Real-Time Connection View
 
-**Probleem:**
-```bash
+**What it shows:**
+
+- PID of backend process
+- Connected user and database
+- Client IP address
+- Current query being executed
+- State (active, idle, idle in transaction)
+- Query start time
+
+**DevOps use cases:**
+
+1. **Troubleshoot "too many connections":**
+   - Query pg_stat_activity → count connections
+   - Identify which app/user consuming connections
+
+2. **Find long-running queries:**
+   - Filter by query_start > 1 minute ago
+   - Identify slow queries blocking others
+
+3. **Detect connection leaks:**
+   - "Idle in transaction" for long time = app not closing transactions
+   - Fix: Application connection pool configuration
+
+---
+
+### 5.3 pg_stat_statements: Query Performance Analysis
+
+**What it tracks:**
+
+- Every unique query (normalized)
+- Execution count (calls)
+- Total execution time
+- Mean execution time
+- Rows returned/affected
+
+**Example insight:**
+
+```
+Query: SELECT * FROM users WHERE email = ?
+Calls: 10,000
+Mean exec time: 500ms
+Total time: 5,000,000ms (5000 seconds!)
+
+Action: Add index on email column → mean exec time drops to 5ms
+```
+
+**DevOps responsibility:**
+
+- Enable pg_stat_statements extension
+- Monitor top slow queries
+- **Collaborate with developers:** "Query X is slow, can you optimize?"
+
+📖 **Praktika:** Labor 2, Harjutus 4 - Performance monitoring
+
+---
+
+## 🐛 6. Troubleshooting Common Issues
+
+### 6.1 Connection Refused
+
+**Symptom:**
+
+```
+Application logs: Error: connect ECONNREFUSED postgres:5432
+```
+
+**Diagnostic workflow:**
+
+1. **Is PostgreSQL running?**
+   - `docker ps | grep postgres` → Container status
+   - `docker logs postgres` → Check startup errors
+
+2. **Is PostgreSQL ready?**
+   - PostgreSQL takes 5-10 seconds to initialize
+   - Use HEALTHCHECK in Dockerfile (wait for readiness)
+
+3. **Network connectivity?**
+   - `docker exec backend ping postgres` → DNS resolution works?
+   - Are containers in same network? (`docker network inspect`)
+
+4. **Port mapping correct?**
+   - Host: `psql -h localhost -p 5432` works?
+   - Container: Different port mapping? (5432 vs 5433)
+
+**Common causes:**
+
+- PostgreSQL not ready yet (startup race condition)
+- Wrong hostname (typo: "postgre" instead of "postgres")
+- Different networks (backend in app-network, DB in default bridge)
+
+**Solution:**
+
+- Add healthcheck to PostgreSQL container
+- Use `depends_on` + `condition: service_healthy` (Docker Compose)
+
+---
+
+### 6.2 Authentication Failed
+
+**Symptom:**
+
+```
 psql: error: FATAL: password authentication failed for user "appuser"
 ```
 
-**Lahendus:**
-```bash
-# 1. Kontrolli environment variables
-docker inspect postgres | grep POSTGRES
+**Causes:**
 
-# 2. Kontrolli pg_hba.conf
-docker exec postgres cat /var/lib/postgresql/data/pg_hba.conf | tail -5
+1. **Wrong password:**
+   - Environment variable typo (POSTGRES_PASSWORD vs DB_PASSWORD)
+   - Password changed, app config not updated
 
-# 3. Reset password
-docker exec postgres psql -U postgres -c \
-  "ALTER USER appuser WITH PASSWORD 'new-password';"
+2. **User doesn't exist:**
+   - Database initialized without custom user
+   - Check: `docker exec postgres psql -U postgres -c "\du"`
 
-# 4. Test
-docker exec postgres psql -U appuser -c "SELECT 1;"
+3. **pg_hba.conf restrictions:**
+   - PostgreSQL access control file
+   - Default: Allow all from Docker network
+   - Custom config: May block certain IPs/users
+
+**Diagnostic:**
+
 ```
+1. Verify env vars: docker inspect postgres | grep POSTGRES
+2. List users: \du (check user exists)
+3. Check pg_hba.conf: docker exec postgres cat /var/lib/postgresql/data/pg_hba.conf
+```
+
+**Solution:**
+
+- Correct environment variables
+- Create user if missing
+- Adjust pg_hba.conf (allow host IP range)
 
 ---
 
-### 6.3 "Too Many Connections"
+### 6.3 Too Many Connections
 
-**Probleem:**
-```bash
+**Symptom:**
+
+```
 FATAL: sorry, too many clients already
 ```
 
-**Lahendus:**
-```bash
-# 1. Vaata current connections
-docker exec postgres psql -U postgres -c \
-  "SELECT count(*) FROM pg_stat_activity;"
+**Root cause analysis:**
 
-# 2. Vaata max_connections
-docker exec postgres psql -U postgres -c "SHOW max_connections;"
-# max_connections: 100 (default)
+1. **Application connection leak:**
+   - App opens connections but doesn't close them
+   - Verify: `SELECT count(*) FROM pg_stat_activity WHERE application_name = 'myapp';`
 
-# 3. Suurenda max_connections
-# Variant A: Environment variable
-docker run -d \
-  --name postgres \
-  -e POSTGRES_PASSWORD=secret \
-  -c max_connections=200 \
-  postgres:16-alpine
+2. **Insufficient max_connections:**
+   - Default: 100
+   - Calculate needed: (App replicas × Connections per replica) + Admin connections
 
-# Variant B: Custom postgresql.conf (advanced)
-# - Mount custom conf file
+3. **No connection pooling:**
+   - Every request opens new connection (expensive!)
+   - Solution: Use connection pool (HikariCP, pg-pool)
+
+**Solutions:**
+
+1. **Fix application leak:** Ensure connections closed after use
+2. **Increase max_connections:**
+   - Trade-off: More RAM usage (10MB per connection)
+   - Better: Fix leak first, then increase if needed
+3. **Implement connection pooling:** Reuse connections (faster, less overhead)
+
+📖 **Praktika:** Labor 2, Harjutus 5 - Troubleshooting scenarios
+
+---
+
+## 🎓 7. Containerized vs External PostgreSQL
+
+### 7.1 Containerized PostgreSQL (Taught in This Chapter)
+
+**Architecture:**
+
+```
+Kubernetes Pod:
+  ├── Backend Container
+  └── PostgreSQL Container (StatefulSet)
+      └── PersistentVolume
 ```
 
-**Parem lahendus: Connection pooling (PgBouncer)** - Hiljem Kubernetes peatükis!
+**Pros:**
+- ✅ Infrastructure as Code (declarative YAML)
+- ✅ Auto-scaling, self-healing (Kubernetes)
+- ✅ Easy dev/staging environments (spin up quickly)
+- ✅ Version management (postgres:14 → postgres:16 upgrade)
+
+**Cons:**
+- ❌ Volume management complexity (PV provisioning)
+- ❌ Backup orchestration (CronJobs, external storage)
+- ❌ Not ideal for multi-TB databases
+
+**Use cases:**
+- Microservices architectures
+- Cloud-native applications
+- Development/staging environments
+- Small-to-medium production databases
 
 ---
 
-## 🆚 7. Konteineriseeritud vs Väline PostgreSQL
+### 7.2 External PostgreSQL (Production Pattern)
 
-### 7.1 Konteineriseeritud PostgreSQL (PRIMARY)
+**Architecture:**
 
-**Millal kasutada:**
-- ✅ Mikroteenused (iga service oma DB)
-- ✅ Development ja testing
-- ✅ Kubernetes orkestratsioon (StatefulSet)
-- ✅ Cloud-native rakendused
-- ✅ Auto-scaling environments
-
-**Plussid:**
-- ✅ Kiire setup ja cleanup
-- ✅ Isolatsioon
-- ✅ Version control (image tags)
-- ✅ Portability
-
-**Miinused:**
-- ❌ Volume management (NFS, cloud storage)
-- ❌ Performance overhead (volume drivers)
-
----
-
-### 7.2 Väline PostgreSQL (ALTERNATIVE)
-
-**Millal kasutada:**
-- ✅ Legacy süsteemid
-- ✅ Väga suur database (TB'id)
-- ✅ Dedicated DBA team
-- ✅ Spetsiifilised compliance requirements
-
-**Setup:**
-```bash
-# 1. Install PostgreSQL host'is
-sudo apt install postgresql-16 -y
-
-# 2. Configure
-sudo vim /etc/postgresql/16/main/postgresql.conf
-# listen_addresses = '*'
-
-sudo vim /etc/postgresql/16/main/pg_hba.conf
-# host  all  all  0.0.0.0/0  scram-sha-256
-
-# 3. Restart
-sudo systemctl restart postgresql
-
-# 4. Backend ühendub IP'ga
-docker run -d \
-  --name backend \
-  -e DB_HOST=YOUR_VPS_IP \
-  -e DB_PORT=5432 \
-  backend-app
+```
+Kubernetes Cluster:
+  ├── Backend Pods
+  └── ExternalName Service → External PostgreSQL (VPS/AWS RDS)
 ```
 
+**External PostgreSQL deployment options:**
+
+1. **Dedicated VPS:**
+   - PostgreSQL installed on Ubuntu server (traditional)
+   - DevOps manages: OS, PostgreSQL config, backups
+
+2. **Managed service (AWS RDS, Azure Database, GCP Cloud SQL):**
+   - Cloud provider manages: OS, backups, HA, patches
+   - DevOps manages: Connection config, monitoring
+
+**Pros:**
+- ✅ Better performance (dedicated hardware, tuned OS)
+- ✅ Managed backups (automated, tested restores)
+- ✅ High availability (multi-AZ replication)
+- ✅ Less operational overhead (for managed services)
+
+**Cons:**
+- ❌ Higher cost (managed services expensive)
+- ❌ Less portability (vendor lock-in)
+- ❌ Separation from application (network latency)
+
+**Use cases:**
+- Large production databases (>100GB)
+- Regulated industries (need managed backups, compliance)
+- Legacy applications (already using external DB)
+
 ---
 
-## 📝 8. Praktilised Harjutused
+### 7.3 Hybrid Approach (Common in Practice)
 
-### Harjutus 1: PostgreSQL Volume Lifecycle (30 min)
+**Strategy:**
 
-**Eesmärk:** Õpi volume'ite kasutamist
-
-**Sammud:**
-```bash
-# 1. Loo volume
-docker volume create mydata
-
-# 2. Käivita PostgreSQL
-docker run -d --name db1 \
-  -e POSTGRES_PASSWORD=secret \
-  -v mydata:/var/lib/postgresql/data \
-  postgres:16-alpine
-
-# 3. Loo data
-docker exec db1 psql -U postgres -c \
-  "CREATE TABLE test (id INT, name TEXT); \
-   INSERT INTO test VALUES (1, 'Alice');"
-
-# 4. Kustuta container
-docker rm -f db1
-
-# 5. Käivita UUS container sama volume'iga
-docker run -d --name db2 \
-  -e POSTGRES_PASSWORD=secret \
-  -v mydata:/var/lib/postgresql/data \
-  postgres:16-alpine
-
-# 6. Verify data säilis
-docker exec db2 psql -U postgres -c "SELECT * FROM test;"
+```
+Development: Containerized PostgreSQL (docker-compose)
+Staging: Containerized PostgreSQL (Kubernetes StatefulSet)
+Production: External PostgreSQL (AWS RDS)
 ```
 
-**Kontrolli:**
-- [ ] Data säilis pärast container'i kustutamist
-- [ ] Uus container näeb vana data
-- [ ] Volume jääb alles pärast rm
+**Why hybrid?**
 
----
+- **Dev/staging:** Speed, cost (spin up/down easily)
+- **Production:** Reliability, managed backups, HA
 
-### Harjutus 2: Multi-Database Setup (30 min)
+**Connection configuration:**
 
-**Eesmärk:** Loo 2 eraldi PostgreSQL instantsi
+```
+# Development/Staging
+DB_HOST=postgres (container name)
 
-**Sammud:**
-```bash
-# 1. User Service DB
-docker run -d \
-  --name postgres-user \
-  -e POSTGRES_DB=user_service_db \
-  -e POSTGRES_USER=userapp \
-  -e POSTGRES_PASSWORD=secret1 \
-  -v pgdata-user:/var/lib/postgresql/data \
-  -p 5432:5432 \
-  postgres:16-alpine
-
-# 2. Todo Service DB
-docker run -d \
-  --name postgres-todo \
-  -e POSTGRES_DB=todo_service_db \
-  -e POSTGRES_USER=todoapp \
-  -e POSTGRES_PASSWORD=secret2 \
-  -v pgdata-todo:/var/lib/postgresql/data \
-  -p 5433:5432 \
-  postgres:16-alpine
-
-# 3. Test mõlemat
-docker exec postgres-user psql -U userapp -d user_service_db -c "SELECT version();"
-docker exec postgres-todo psql -U todoapp -d todo_service_db -c "SELECT version();"
-
-# 4. Vaata porte
-docker ps | grep postgres
+# Production
+DB_HOST=prod-db.us-east-1.rds.amazonaws.com (external DNS)
 ```
 
-**Kontrolli:**
-- [ ] Kaks eraldi PostgreSQL konteinerit
-- [ ] Erinevad host portid (5432, 5433)
-- [ ] Erinevad volumes
+**Same application code, different config** (12-Factor App principle III)
 
 ---
 
-### Harjutus 3: Backup ja Restore (40 min)
+## 🎓 8. Mida Sa Õppisid?
 
-**Eesmärk:** Õpi backup/restore workflow
+### Põhilised Kontseptsioonid
 
-**Sammud:**
-```bash
-# 1. Loo test data
-docker exec postgres psql -U postgres -c \
-  "CREATE DATABASE testdb; \
-   \c testdb \
-   CREATE TABLE products (id SERIAL, name TEXT, price DECIMAL); \
-   INSERT INTO products (name, price) VALUES ('Laptop', 999.99), ('Mouse', 29.99);"
+✅ **Stateful Applications:**
+- Stateless vs stateful architecture erinevused
+- Volume lifecycle management (create, mount, persist, reuse)
+- Data persistence beyond container lifecycle
 
-# 2. Backup
-docker exec postgres pg_dump -U postgres testdb > testdb_backup.sql
-ls -lh testdb_backup.sql
+✅ **PostgreSQL Containerization:**
+- Containerization benefits (rapid provisioning, consistency, isolation)
+- Trade-offs (performance overhead, operational complexity)
+- Volume architecture (decoupled storage)
 
-# 3. "Kustuta" database
-docker exec postgres psql -U postgres -c "DROP DATABASE testdb;"
+✅ **Configuration:**
+- Environment variables (12-Factor App config)
+- Port mapping ja networking (DNS resolution)
+- Connection management (max_connections, pooling)
 
-# 4. Verify kustutatud
-docker exec postgres psql -U postgres -c "\l" | grep testdb
-# Ei peaks leidma!
+✅ **Backup and Restore:**
+- Logical vs physical backups (pg_dump vs pg_basebackup)
+- Backup strategies (full, incremental, PITR)
+- RTO/RPO requirements
 
-# 5. Restore
-docker exec postgres psql -U postgres -c "CREATE DATABASE testdb;"
-docker exec -i postgres psql -U postgres testdb < testdb_backup.sql
-
-# 6. Verify restored
-docker exec postgres psql -U postgres testdb -c "SELECT * FROM products;"
-```
-
-**Kontrolli:**
-- [ ] Backup fail on loodud
-- [ ] Restore töötab
-- [ ] Data on täpselt sama
-
----
-
-### Harjutus 4: Performance Monitoring (30 min)
-
-**Eesmärk:** Õpi monitoorima PostgreSQL'i
-
-**Sammud:**
-```bash
-# 1. Enable pg_stat_statements
-docker exec postgres psql -U postgres -c \
-  "CREATE EXTENSION IF NOT EXISTS pg_stat_statements;"
-
-# 2. Genereeri fake load
-for i in {1..100}; do
-  docker exec postgres psql -U postgres -c \
-    "SELECT * FROM pg_database;" > /dev/null
-done
-
-# 3. Vaata connections
-docker exec postgres psql -U postgres -c \
-  "SELECT count(*), state FROM pg_stat_activity GROUP BY state;"
-
-# 4. Vaata database sizes
-docker exec postgres psql -U postgres -c \
-  "SELECT datname, pg_size_pretty(pg_database_size(datname))
-   FROM pg_database
-   ORDER BY pg_database_size(datname) DESC;"
-
-# 5. Vaata slow queries
-docker exec postgres psql -U postgres -c \
-  "SELECT calls, mean_exec_time, LEFT(query, 50)
-   FROM pg_stat_statements
-   ORDER BY mean_exec_time DESC
-   LIMIT 5;"
-```
-
-**Kontrolli:**
-- [ ] pg_stat_statements on enabled
-- [ ] Oskad vaadata active connections
-- [ ] Oskad vaadata database sizes
-- [ ] Oskad analüüsida slow queries
-
----
-
-## 🎓 9. Mida Sa Õppisid?
-
-✅ **PostgreSQL Konteineriseerimise:**
-- Docker run with environment variables
-- Volume lifecycle ja data persistence
-- Port mapping (5432:5432)
-- Multi-database setup
-
-✅ **psql Klient:**
-- Meta-käsud (\l, \dt, \d, \du)
-- SQL päringute käivitamine
-- Scripting (exec -i)
-
-✅ **Backup ja Restore:**
-- pg_dump (logical backup)
-- pg_restore (custom format)
-- Automated backups (cron)
-- Compression (gzip)
-
-✅ **Performance Monitoring:**
-- pg_stat_activity (connections)
-- Database sizes
-- Table sizes
-- pg_stat_statements (slow queries)
+✅ **Observability:**
+- Key metrics (connections, query performance, database size, cache hit ratio)
+- pg_stat_activity (real-time connection view)
+- pg_stat_statements (query performance analysis)
 
 ✅ **Troubleshooting:**
-- Connection refused
-- Authentication failed
-- Too many connections
-- Network debugging
+- Connection refused (readiness, networking)
+- Authentication failed (credentials, pg_hba.conf)
+- Too many connections (leaks, max_connections, pooling)
+
+✅ **Deployment Patterns:**
+- Containerized PostgreSQL (Kubernetes StatefulSet)
+- External PostgreSQL (dedicated VPS, managed service)
+- Hybrid approach (dev/staging containerized, prod external)
 
 ---
 
-## 🚀 10. Järgmised Sammud
+## 🚀 9. Järgmised Sammud
 
 **Peatükk 7: Docker Compose** 🐳
-- Multi-container orchestration
-- Frontend + Backend + PostgreSQL koos
-- Networks ja service discovery
-- depends_on ja healthchecks
-- **LIHTSAM VIIS MITME KONTEINERI HALDAMISEKS!**
+
+Nüüd kui mõistad, kuidas PostgreSQL containeris töötab, on aeg õppida **multi-container orchestration**:
+
+- Declarative multi-container applications
+- Service dependencies (backend depends_on postgres)
+- Shared networks and volumes
+- Environment variable management
+- docker-compose.yml as Infrastructure as Code
 
 **Peatükk 9: Kubernetes Alused** ☸️
-- PostgreSQL StatefulSet
-- PersistentVolumeClaims
-- Production-ready database deployment
+
+Järgmine evolutsioon konteinerite orkestreerimisel:
+
+- Kubernetes vs Docker Compose
+- StatefulSets for databases
+- PersistentVolumes and PersistentVolumeClaims
+- Services and DNS
+- Auto-scaling, self-healing
+
+📖 **Praktika:** Labor 2 pakub hands-on harjutusi PostgreSQL containers'i, volumes'i, networking'u ja backup/restore workflow'de kohta.
 
 ---
 
 ## ✅ Kontrolli Ennast
 
-- [ ] Oskad käivitada PostgreSQL Docker konteineris
-- [ ] Mõistad volume lifecycle'i ja data persistence
-- [ ] Oskad kasutada psql klienti
-- [ ] Oskad teha backup'e ja restore'e
-- [ ] Oskad monitoorida PostgreSQL performance'i
-- [ ] Oskad debuggida ühenduse probleeme
-- [ ] Oled läbinud kõik 4 praktilist harjutust
+Enne järgmisele peatükile liikumist, veendu et:
+
+- [ ] Mõistad stateful vs stateless application erinevusi
+- [ ] Oskad selgitada volume lifecycle management'i (create, mount, persist, reuse)
+- [ ] Mõistad PostgreSQL containerization benefits ja trade-offs
+- [ ] Oskad selgitada backup/restore strategies (logical vs physical)
+- [ ] Mõistad observability metrics (connections, query performance)
+- [ ] Oskad diagnosteerida connection probleeme (refused, auth failed)
+- [ ] Mõistad containerized vs external PostgreSQL deployment patterns
 
 **Kui kõik on ✅, oled valmis Peatükiks 7!** 🚀
 
@@ -888,5 +844,3 @@ docker exec postgres psql -U postgres -c \
 
 **Peatükk 6 lõpp**
 **Järgmine:** Peatükk 7 - Docker Compose
-
-**Õnnitleme!** Oskad nüüd hallata PostgreSQL'i konteinerites! 🐘🐳

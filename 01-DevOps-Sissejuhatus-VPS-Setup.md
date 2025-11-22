@@ -3,990 +3,371 @@
 **Kestus:** 3 tundi
 **Tase:** Algaja
 **Eeldused:** Baasteadmised arvutitest ja internetist
+**Labid:** Lab 0 - VPS Setup (detailsed juhised)
 
 ---
 
 ## 📋 Õpieesmärgid
 
-Pärast selle peatüki läbimist oskad:
+Pärast selle peatüki läbimist mõistad:
 
-1. ✅ Selgitada DevOps kultuuri ja põhimõtteid
-2. ✅ Mõista Infrastructure as Code (IaC) kontseptsiooni
-3. ✅ Eristada VPS, Cloud ja On-Premise lahendusi
-4. ✅ Seadistada turvalist SSH ligipääsu võtmetega
-5. ✅ Konfigureerida UFW firewalli põhireegleid
-6. ✅ Hallata kasutajaid ja sudo õigusi
-7. ✅ Käivitada ja jälgida systemd teenuseid
-
----
-
-## 🎯 1. DevOps: Mis See On ja Miks Me Seda Vajame?
-
-### 1.1 Traditsiooniline IT vs DevOps
-
-**Vana maailm (Waterfall):**
-```
-Arendajad (Dev) → Kood valmis → "Viska üle seina" → Operaatorid (Ops)
-   ↓                                                        ↓
-"Minu masinas töötab!"                            "See ei tööta production'is!"
-   ↓                                                        ↓
-Conflict ⚡                                         Süüdistamine 😠
-```
-
-**Probleem:**
-- ❌ Aeglane tarkvara väljalaskmine (kuud/aastad)
-- ❌ Arendajad ja operaatorid eraldi "siilobuses"
-- ❌ "See ei ole minu probleem" mentaliteet
-- ❌ Käsitsi deploy'mine → vigu, inimlikke eksimusi
-- ❌ Production'i probleemid → pikk debug aeg
+1. ✅ DevOps kultuuri ja selle tähtsust tänapäevases IT-s
+2. ✅ Infrastructure as Code (IaC) kontseptsiooni ja eeliseid
+3. ✅ VPS, Cloud ja On-Premise lahenduste erinevusi
+4. ✅ Turvalise serveri juurdepääsu põhimõtteid
+5. ✅ Firewall'i rolli süsteemi turvalisuses
+6. ✅ Kasutajahalduse ja õiguste tähtsust
+7. ✅ Teenuste haldamise põhimõtteid
 
 ---
 
-**Uus maailm (DevOps):**
-```
-Arendajad + Operaatorid = ÜKS MEESKOND
-   ↓
-Automatiseerimine (CI/CD)
-   ↓
-Kiire, sagedane, turvaline tarkvara väljalaskmine
-   ↓
-Järjepidev parendamine (Continuous Improvement)
-```
+## 🎯 1. DevOps Filosoofia
 
-**Lahendus:**
-- ✅ Kiire tarkvara väljalaskmine (päevad/tunnid)
-- ✅ Ühine vastutus kvaliteedi eest
-- ✅ Automatiseeritud protsessid
-- ✅ Infrastruktuur kui kood (reproducible)
-- ✅ Kiirem vigade avastamine ja parandamine
+### 1.1 Traditsioonilise IT Probleem
 
----
+Enne DevOps'i domineeris organisatsioonides **siilomudel** (silo model): arendajad ja operaatorid töötasid eraldi, erinevate eesmärkidega.
 
-### 1.2 DevOps Põhimõtted
+**Arendajad (Dev):** Eesmärk on luua uusi funktsionaalsusi kiiresti.
+**Operaatorid (Ops):** Eesmärk on hoida süsteem stabiilsena.
 
-**1. Kultuur (Culture):**
-- Koostöö arendajate ja operaatorite vahel
-- Jagatud vastutus
-- Ebaõnnestumistest õppimine (blameless postmortems)
-- Pidev parendamine
+See tekitas **põhimõttelise konflikti:**
+- Uued funktsioonid = muudatused = potentsiaalne ebastabiilsus
+- Arendajad tahavad deploy'da tihti
+- Operaatorid tahavad muudatusi harva
 
-**2. Automatiseerimine (Automation):**
-- Build, test, deploy automatiseerimine
-- Infrastruktuuri haldamine koodiga (IaC)
-- Monitoring ja alerting automaatne
+**Tagajärjed:**
+- Pikad release tsüklid (kuud või isegi aastad)
+- "Üle seina viskamine" - arendajad annavad koodi üle, Ops peab hakkama saama
+- Vastastikused süüdistused vigade korral
+- Käsitsi protsessid, mis on vigu täis
+- Aeglane reageerimine probleemidele
 
-**3. Mõõtmine (Measurement):**
-- Metrikad ja logid
-- Performance monitoring
-- User feedback
+### 1.2 DevOps Lahendus
 
-**4. Jagamine (Sharing):**
-- Teadmiste jagamine
-- Dokumentatsioon
-- Avatud kommunikatsioon
+DevOps on **kultuuriline liikumine**, mis ühendab arenduse ja operatsioonid üheks meeskonnaks ühise eesmärgiga: **kiire, kvaliteetne ja turvaline tarkvara kohaletoimetamine**.
 
-**Akronüüm:** **CAMS** (Culture, Automation, Measurement, Sharing)
+**CAMS Raamistik:**
 
----
+**Culture (Kultuur):**
+Koostöö, usalduus, jagatud vastutus. "Blameless postmortems" - kui midagi läheb valesti, õpime sellest, ei süüdista inimesi.
 
-### 1.3 DevOps Administraatori Roll
+**Automation (Automatiseerimine):**
+Kõik, mida saab automatiseerida, PEAKS olema automatiseeritud. Build, test, deploy, monitoring, scaling.
 
-**Mida DevOps administraator TEEB:**
+**Measurement (Mõõtmine):**
+"What gets measured gets improved." Jälgime metrikaid, logisid, kasutaja tagasisidet.
 
-```bash
-# DevOps administraator on "infrastruktuuri arhitekt"
+**Sharing (Jagamine):**
+Teadmiste ja kogemuste jagamine meeskonnas. Dokumentatsioon, pair programming, knowledge sharing sessions.
 
-✅ Haldab servereid ja konteinereid
-✅ Seadistab orkestreerimist (Kubernetes)
-✅ Automatiseerib deploy'mise (CI/CD)
-✅ Monitoorib süsteeme (Prometheus, Grafana)
-✅ Tagab turvalisuse (SSL, firewalls, secrets)
-✅ Backup'ib andmeid ja taastab süsteeme
-✅ Debuggib production'i probleeme
-✅ Kirjutab Infrastructure as Code (Terraform, Kubernetes YAML)
-```
+### 1.3 DevOps Administraatori Roll Selles Maailmas
 
-**Mida DevOps administraator EI TEE:**
+DevOps administraator ei ole lihtsalt "süsteemiadministraator uues kuues". See roll nõuab:
 
-```bash
-❌ Ei kirjuta rakenduste koodi (Node.js, Java)
-❌ Ei disaini andmebaasi skeeme
-❌ Ei implementeeri business logic'ut
-❌ Ei loo frontend UI komponente
+**Infrastruktuuri haldamist kui koodi:**
+Serverid, võrgud, load balancerid - kõik kirjeldatakse koodiga (YAML, Terraform), mitte ei seadistata käsitsi. See tähendab versionikontrolli, code review'd, automatiseeritud testimist.
 
-# Analoogia:
-# Arendaja = Autotootja (loob auto)
-# DevOps = Mehhaanik + Logistik (hooldab, transpordib, monitoorib)
-```
+**Orkestreerimise mõistmist:**
+Kuidas hallata sadu või tuhandeid konteinereid? Kuidas tagada, et kui üks server kukub välja, rakendus jätkab töötamist?
+
+**Monitoring ja observability:**
+Mitte lihtsalt "kas server töötab", vaid "kuidas rakendus käitub, kus on kitsaskohad, mida kasutajad teevad".
+
+**Security automation:**
+Turvalisus ei ole afterthought, vaid built-in. Secrets management, network policies, image scanning.
+
+**Continuous improvement:**
+Pidev õppimine, uute tööriistade katsetamine, protsesside optimeerimine.
 
 ---
 
 ## 🏗️ 2. Infrastructure as Code (IaC)
 
-### 2.1 Mis On IaC?
+### 2.1 Mis On IaC ja Miks See On Revolutsiooniline?
 
-**Definitsioon:**
-Infrastructure as Code (IaC) on praktika, kus infrastruktuur (serverid, võrgud, load balancers) hallatakse ja proviseeritakse läbi koodi, mitte käsitsi konfiguratsiooni kaudu.
+Traditsiooniline lähenemine: sisene serverisse SSH kaudu, käivita käsud käsitsi, muuda konfiguratsioonifaile vim'iga, tee screenshot, et meeles pidada, mida tegid. Korda teises serveris. Ja kolmandas. Ja neljandas...
 
-**Traditsiooniline viis (ClickOps):**
-```bash
-# Administraator:
-1. Logi sisse serverisse SSH'ga
-2. Käivita käsud käsitsi:
-   sudo apt install nginx
-   sudo systemctl start nginx
-3. Muuda konfiguratsioonifaile käsitsi vim'iga
-4. Tee screenshot'e, et meeles pidada, mida tegid
-5. Korda samu samme teisel serveril 😓
+**IaC põhimõte:** Infrastruktuur kirjeldatakse koodina, mida saab:
+- Versiooni hallata (Git)
+- Review'da (pull requests)
+- Testida (automated tests)
+- Korrata (reproducible)
+- Rollback'ida (kui midagi läheb valesti)
 
-# Probleem:
-- ❌ Aeganõudev ja igav
-- ❌ Inimlikud vead
-- ❌ Ei ole reproducible (ei saa korrata)
-- ❌ Ei ole versioned (git puudub)
-```
+**Näide kontseptuaalselt:**
+Traditsiooniline viis: "Logi sisse, installi Nginx, seadista port 80, kopeeri SSL sertifikaat..."
+IaC viis: "Kirjelda YAML failis: 'Tahan Nginx teenust, port 80, SSL enabled'. Käivita üks käsk. Done."
 
-**IaC viis:**
-```yaml
-# Kood (näiteks Kubernetes manifest):
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: nginx
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: nginx
-  template:
-    metadata:
-      labels:
-        app: nginx
-    spec:
-      containers:
-      - name: nginx
-        image: nginx:1.25-alpine
-        ports:
-        - containerPort: 80
-```
+**IaC eelised:**
 
-```bash
-# Rakendamine:
-kubectl apply -f nginx-deployment.yaml
+**Reproducibility:** Sama kood toodab sama tulemuse alati. Ei ole "aga minu masinas töötab" probleemi.
 
-# Plussid:
-✅ Kiire ja reproducible
-✅ Versioned Git'is
-✅ Code review võimalik
-✅ Automated testing võimalik
-✅ Üks käsk → kogu infrastruktuur valmis
-```
+**Version control:** Git hoiab kõike. Saad vaadata, kes, millal, mida muutis. Saad tagasi kerida.
+
+**Documentation as code:** Kood ON dokumentatsioon. Kui keegi tahab teada, kuidas infrastruktuur töötab, vaata koodi.
+
+**Testability:** Saad testida infrastruktuuri muudatusi enne production'i. Test environment = kopeeri sama kood.
+
+**Collaboration:** Code review'd, approval process, mitme inimese panus.
+
+### 2.2 IaC Tööriistad Maastikul
+
+**Konfiguratsioonihaldus (Configuration Management):**
+Ansible, Chef, Puppet - serveri seadistamine (installi tarkvara, seadista failid).
+
+**Provisioneerimine (Provisioning):**
+Terraform, Pulumi - infrastruktuuri loomine (serverid, võrgud, cloud ressursid).
+
+**Orkestratsioon (Orchestration):**
+Kubernetes, Docker Compose - konteinerite haldamine ja orkestratsioon.
+
+**CI/CD:**
+GitHub Actions, GitLab CI, Jenkins - automatiseerimine.
+
+Selles koolituses keskendume **konteinerite orkestratsioonile** (Docker, Kubernetes), mis on 2025. aasta DevOps'i tuum.
 
 ---
 
-### 2.2 IaC Tööriistad
+## 🖥️ 3. VPS, Cloud ja On-Premise - Õige Valiku Tegemine
 
-**Kategooriad:**
+### 3.1 Mis On VPS?
 
-| Kategooria | Tööriist | Kasutus |
-|-----------|----------|---------|
-| **Konfiguratsioon** | Ansible, Chef, Puppet | Serverite seadistamine |
-| **Provisioneerimine** | Terraform, Pulumi | Cloud ressursside loomine |
-| **Orkestratsioon** | Kubernetes, Docker Compose | Konteinerite haldamine |
-| **CI/CD** | GitHub Actions, GitLab CI | Automatiseerimine |
+Virtual Private Server - virtuaalserver, mis jagab füüsilist riista teiste VPS'idega, kuid on isoleeritud. Saad root access'i, installid mida tahad, konfigureed kuidas tahad.
 
-**Selles koolituskavas kasutame:**
-- ✅ **Docker** - konteinerisatsioon
-- ✅ **Docker Compose** - multi-container orkestratsioon
-- ✅ **Kubernetes (K3s)** - production orkestratsioon
-- ✅ **GitHub Actions** - CI/CD automatiseerimine
+**VPS tugevused:**
+- Fikseeritud hind (ennustatav eelarve)
+- Lihtne (SSH sisse, apt install, done)
+- Hea õppimiseks ja väikestele projektidele
+- Root access = täielik kontroll
 
----
+**VPS piirangud:**
+- Skaleerumine piiratud (kui vajad rohkem võimsust, uuenda VPS plaani või lisa uus server)
+- Single point of failure (kui VPS kukub välja, kõik on maas)
+- Käsitsi haldamine (sina vastutad kõige eest)
 
-## 🖥️ 3. VPS vs Cloud vs On-Premise
+### 3.2 Cloud (IaaS) - AWS, Azure, GCP
 
-### 3.1 Võrdlus
+Cloud on "VPS steroididel". API-põhine, infinite scalability, pay-as-you-go.
 
-| Aspekt | VPS | Cloud (IaaS) | On-Premise |
-|--------|-----|--------------|------------|
-| **Definitsioon** | Virtual Private Server | Pay-as-you-go infrastruktuur | Oma serverid firmas |
-| **Hind** | 5-50€/kuu (fikseeritud) | Kasutusepõhine (muutuv) | Suur algsinvesteering |
-| **Skaleeruvus** | Piiratud (upgrade VPS) | Peaaegu lõpmatu | Aeglane (osta riist) |
-| **Kontrolli tase** | Root access | API kaudu | Täielik kontroll |
-| **Maintenance** | Provider hooldab riista | Provider hooldab riista | Sina hooldad kõike |
-| **Setup aeg** | Minutid | Sekundid (API) | Nädalad/kuud |
-| **Näited** | Hetzner, DigitalOcean, Linode | AWS, Azure, GCP | Oma serveriruum |
+**Miks cloud?**
 
----
+**Elasticity:** Vaja rohkem servereid? API call, 30 sekundit, done. Ei vaja enam? Delete, maksa ainult selle aja eest, kui kasutasid.
 
-### 3.2 Millal Kasutada?
+**Managed services:** RDS (database as a service), EKS (Kubernetes as a service), S3 (storage). Ei pea ise PostgreSQL'i tuunima, backupe tegema - provider teeb.
 
-**VPS (meie valik koolituskavas):**
-```
-✅ Kasuta kui:
-- Väike/keskmine projekt (1-10 serverit)
-- Eelarve on piiratud (5-50€/kuu)
-- Lihtne setup (SSH + apt)
-- Stabiilne koormus (ei vaja autoscaling'ut)
+**Global reach:** Tahan serveid USAs, Euroopas, Aasias? Mõne klikiga.
 
-❌ Ära kasuta kui:
-- Vajad kiiresti 100+ serverit
-- Vajad managed teenuseid (RDS, EKS)
-- Vajad globaalset CDN'i
-```
+**Disadvantages:**
+- Hind (võib olla kallis, kui ei optimeeri)
+- Komplekssus (tuhandeid teenuseid, keeruline pricing)
+- Vendor lock-in (raske migreerida teisele providerile)
 
-**Cloud (AWS, Azure, GCP):**
-```
-✅ Kasuta kui:
-- Suur projekt (enterprise)
-- Vajad autoscaling'ut
-- Vajad managed teenuseid
-- Vajad globaalset infrastruktuuri
+**Millal kasutada:** Enterprise projektid, mis vajavad scalability't, high availability'd, global presence.
 
-❌ Ära kasuta kui:
-- Väga piiratud eelarve
-- Lihtne projekt
-- Ei taha cloud vendor lock-in'i
-```
+### 3.3 On-Premise
 
-**On-Premise:**
-```
-✅ Kasuta kui:
-- Ranged compliance nõuded
-- Tundlikud andmed (pangad, valitsus)
-- Väga suur skaala (Google, Facebook)
+Oma füüsilised serverid oma serverruumis.
 
-❌ Ära kasuta kui:
-- Väike ettevõte
-- Puudub serveriruum
-- Puudub IT personal riista haldamiseks
-```
+**Miks keegi seda veel teeb?**
 
-**💡 Meie strateegia:**
-Õpime **VPS'il**, kuid kõik oskused on ülekantavad **Cloud'i** ja **On-Premise**.
+**Compliance:** Pangad, tervishoiusüsteemid, valitsusasutused - ranged andmekaitse nõuded.
 
-📖 **Lisalugemine:** `LISA-PEATUKK-Cloud-Providers.md` (detailne IaaS/PaaS/SaaS selgitus)
+**Scale:** Kui oled Google'i suurune, on odavam oma data center kui cloud.
+
+**Control:** 100% kontroll kõige üle.
+
+**Disadvantages:** Suur algsinvesteering, vajad serverruumi, jahutust, IT personali riista haldamiseks, aeglane skaleerumine.
+
+### 3.4 Meie Valik: VPS Õppimiseks, Põhimõtted Kehtivad Kõikjal
+
+Koolituses kasutame VPS'i, sest:
+- Lihtne alustada
+- Odav
+- Annab täielik
+
+u kontrolli (õppimine)
+- **KUID:** Kõik, mida õpid, kehtib ka cloud'is ja on-premise'is
+
+Docker on Docker, Kubernetes on Kubernetes - ei ole vahet, kas töötad VPS'is, AWS'is või oma serverruumis.
 
 ---
 
-## 🔐 4. SSH ja Turvalisus
+## 🔐 4. Turvalisus: SSH, Firewalls, Kasutajahaldus
 
-### 4.1 Mis On SSH?
+### 4.1 Miks Turvalisus On DevOps'i Osa?
 
-**SSH (Secure Shell)** on krüpteeritud protokoll, mida kasutatakse turvaliseks serverisse sisselogimiseks üle interneti.
+**DevSecOps** - security ei ole afterthought, vaid built-in.
 
-```bash
-# Baasskeem:
-Sinu arvuti → SSH (krüpteeritud) → VPS server
-   ↓                                     ↓
-Private key                         Public key
-```
+Traditsiooniline: "Teeme rakenduse valmis, siis küsime security teamilt, kas OK."
+DevSecOps: "Security on osa arendusest algusest peale."
 
----
+### 4.2 SSH - Turvalist Ligipääsu Mõistmine
 
-### 4.2 SSH Võtmete Genereerimine
+**Probleem:** Kui sinu server on internetis, siis tuhandeid botte proovivad SSH parooli ära arvata. Brute force attack.
 
-**Parooli-põhine autentimine (EI SOOVITATA):**
-```bash
-# PROBLEEM:
-ssh root@YOUR_VPS_IP
-Password: *******
+**Lahendus: SSH võtmete autentimine**
 
-❌ Paroole saab brute-force'ida
-❌ Paroolid lekivad
-❌ Ebamugav (peab meeles pidama)
-```
+**Kontseptsioonid:**
 
-**Võtme-põhine autentimine (SOOVITATUD):**
-```bash
-# Lokaalne arvuti - Genereeri SSH võtmepaar
-ssh-keygen -t ed25519 -C "your-email@example.com"
+**Public-key cryptography:** Sul on kaks võtit - private (saladus) ja public (võid jagada). Kui midagi on encrypted public key'ga, saab dekryptida ainult private key'ga.
 
-# Väljund:
-# Generating public/private ed25519 key pair.
-# Enter file in which to save the key (/home/you/.ssh/id_ed25519): [Enter]
-# Enter passphrase (empty for no passphrase): [Sisesta turvaline parool]
-# Enter same passphrase again: [Korda]
+**SSH võtmete autentimine:**
+1. Genererid võtmepaari (private + public)
+2. Public key paned serverisse
+3. Kui ühendad, server küsib: "Tõesta, et sul on private key"
+4. Sinu SSH client tõestab (matemaatika)
+5. Ühendus lubatud
 
-# Loodud failid:
-# ~/.ssh/id_ed25519        ← PRIVATE key (ÄRA JAGA!)
-# ~/.ssh/id_ed25519.pub    ← PUBLIC key (safe to share)
-```
+**Miks see on parem kui parool?**
+- Private key ei lähe kunagi üle võrgu (ei saa sniff'ida)
+- Brute force on praktiliselt võimatu (2048-bit või 256-bit võti)
+- Võid keelata parooli autentimise täielikult
 
-**Miks ed25519?**
-- ✅ Kiirem kui RSA
-- ✅ Turvalisem (256-bit security)
-- ✅ Väiksem võtme suurus
-- ✅ Industry standard 2025
+**SSH serveri turvalisuse parandamine:**
 
----
+**PermitRootLogin no** - Root login SSH kaudu on julgeolekurisk. Kui keegi saab root access'i, on kogu server kompromiteeritud.
 
-### 4.3 Public Key'i Ülespanek Serverisse
+**PasswordAuthentication no** - Keela paroolid, luba ainult võtmed.
 
-**Variant 1: ssh-copy-id (lihtsaim):**
-```bash
-# Lokaalne arvuti
-ssh-copy-id your-username@YOUR_VPS_IP
+**Port change (valikuline)** - Vaikimisi port 22, kuid saad muuta (nt 2222). Vähendab bot'ide  traffic'ut, kuid ei ole "real security" (security through obscurity).
 
-# Sisesta VPS parool viimast korda
-# Public key kopeeritakse automaatselt → ~/.ssh/authorized_keys
-```
+📖 **Praktika:** Labor 0, Harjutus 1-2 - SSH võtmete genereerimine ja seadistamine
 
-**Variant 2: Käsitsi (kui ssh-copy-id puudub):**
-```bash
-# 1. Lokaalne arvuti - Kopeeri public key
-cat ~/.ssh/id_ed25519.pub
+### 4.3 Firewall - Võrguliikluse Kontroll
 
-# 2. VPS - Lisa public key authorized_keys faili
-mkdir -p ~/.ssh
-chmod 700 ~/.ssh
-vim ~/.ssh/authorized_keys  # Paste public key siia
-chmod 600 ~/.ssh/authorized_keys
-```
+**Mis on firewall?** Värav, mis otsustab, milline võrguliiklus on lubatud ja milline mitte.
 
-**Test:**
-```bash
-# Lokaalne arvuti - Logi sisse ILMA paroolita
-ssh your-username@YOUR_VPS_IP
+**UFW (Uncomplicated Firewall) põhimõte:**
 
-# Kui küsib passphrase'd (mitte parooli), siis töötab! ✅
-```
+**Default policy:** Keela kogu sissetulev liiklus, luba väljuv.
 
----
+Miks? Kui sa ei luba eksplitsiitselt, siis ei ole ligipääsu. Defense in depth.
 
-### 4.4 SSH Serveri Turvalisuse Parandamine
+**Reeglid:** "Luba SSH (port 22)" - ainult see on avatud. Kõik muu blokeeritud.
 
-**Keela root login ja parooli-autentimine:**
-```bash
-# VPS
-sudo vim /etc/ssh/sshd_config
+**Miks see on kriitiline?**
+Kui sul on PostgreSQL port 5432 avatud internetile ja nõrk parool, keegi leiab selle üles ja logib sisse. Firewall on esimene kaitsekiht.
 
-# Muuda järgmised read:
-PermitRootLogin no                    # Keela root SSH
-PasswordAuthentication no             # Keela paroolid
-PubkeyAuthentication yes              # Luba ainult SSH võtmed
-Port 22                               # Võid muuta (nt 2222), kuid 22 on standard
+**Firewall ei ole ainuke kaitse:** Defense in depth - firewall + tugev autentimine + encryption + monitoring.
 
-# Salvesta ja taaskäivita SSH
-sudo systemctl restart sshd
+📖 **Praktika:** Labor 0, Harjutus 3 - UFW seadistamine
 
-# Test (teises terminalis, et mitte lukustada ennast välja!):
-ssh your-username@YOUR_VPS_IP
-```
+### 4.4 Kasutajahaldus ja Õigused
 
-**⚠️ HOIATUS:**
-Enne SSH serveri taaskäivitamist, **testi uues terminalis**, et sa ei lukusta ennast välja!
+**Miks me ei kasuta root'i igapäevaseks tööks?**
+
+**Root = superuser = täielik kontroll.** Üks viga (`rm -rf /`) ja kogu süsteem on kadunud.
+
+**Least Privilege Principle:** Anna kasutajale ainult need õigused, mida ta vajab. Mitte rohkem.
+
+**sudo mehhanism:**
+Tavaline kasutaja teeb igapäevast tööd. Kui vajab admin õigusi, kasutab `sudo` (Super User DO). Iga sudo käsk logitakse - auditability.
+
+**Miks see on parem?**
+- Saad kontrollida, kes mida teeb
+- Logid näitavad, kes millal sudo kasutav (accountability)
+- Väiksem risk juhuslikuks erroriks
+- Multi-user environment: erinevad kasutajad, erinevad õigused
+
+📖 **Praktika:** Labor 0, Harjutus 4 - Kasutajate loomine ja sudo konfig
+
+### 4.5 Systemd - Teenuste Haldamine
+
+**Mis on systemd?** Linux init süsteem - haldab, milliseid teenuseid käivitatakse, kuidas, millal.
+
+**Miks see on oluline DevOps'is?**
+
+**Service management:** Docker, Nginx, PostgreSQL - kõik on systemd teenused. Pead teadma, kuidas neid käivitada, peatada, enableda.
+
+**Boot sequence:** Mis käivitub automaatselt, kui server restartib? systemd otsustab.
+
+**Dependency management:** Service A vajab Service B'd. systemd teab seda ja käivitab õiges järjekorras.
+
+**Logging:** journalctl - systemd logid. Kõik teenused logivalad sinna.
+
+**Kontseptsioonid:**
+
+**Service unit:** Fail, mis kirjeldab teenust. Kus binary asub, kuidas käivitada, mis on dependencies.
+
+**Enable vs Start:**
+`start` = käivita kohe
+`enable` = käivita boot'imisel automaatselt
+
+**Restart policy:** Kui teenus crashib, kas restart'ida automaatselt? Systemd saab seda.
+
+📖 **Praktika:** Labor 0, Harjutus 5-6 - Systemd teenuste haldamine
 
 ---
 
-## 🔥 5. UFW Firewall
+## 🎓 5. Mida Sa Õppisid?
 
-### 5.1 Mis On Firewall?
+### Kontseptuaalsed Teadmised
 
-**Firewall** on võrgututvamüür, mis kontrollib sissetulevat ja väljuvat liiklust.
+**DevOps kultuur:** Miks DevOps on tekkinud, mis probleemi see lahendab. CAMS raamistik. DevOps administraatori roll.
 
-```bash
-# Skeem:
-Internet → Firewall → VPS
-             ↓
-        Allow/Deny reeglid
-```
+**Infrastructure as Code:** Miks infrastruktuur kui kood on revolutsiooniline. Reproducibility, version control, testability, collaboration.
 
-**UFW (Uncomplicated Firewall)** on Ubuntu's sisseehitatud firewall tööriist.
+**VPS vs Cloud vs On-Premise:** Iga lähenemise tugevused, nõrkused, kasutusviisid. Miks me õpime VPS'il, aga põhimõtted kehtivad kõikjal.
 
----
+**Turvaline juurdepääs:** SSH võtmete autentimine, miks see on parem kui paroolid. Public-key cryptography põhimõte.
 
-### 5.2 UFW Põhikäsud
+**Firewall:** Default deny, explicit allow. Defense in depth.
 
-**Installi UFW (kui puudub):**
-```bash
-sudo apt update
-sudo apt install ufw -y
-```
+**Kasutajahaldus:** Least privilege principle. Root vs tavaline kasutaja + sudo.
 
-**Kontrolli staatust:**
-```bash
-sudo ufw status
-# Status: inactive
-```
+**Systemd:** Teenuste haldamine, boot sequence, logging.
 
-**⚠️ ENNE LUBAMIST: LUBA SSH!**
-```bash
-# KRIITILISELT OLULINE - vastasel juhul lukustad ennast välja!
-sudo ufw allow 22/tcp comment 'SSH'
+### Praktilised Oskused
 
-# VÕI kui muutsid SSH porti:
-sudo ufw allow 2222/tcp comment 'SSH custom port'
-```
+Praktilised oskused omandatakse **Labor 0** läbimise käigus:
+- VPS setup ja initial configuration
+- SSH võtmete genereerimine ja konfigureerimine
+- UFW firewall'i seadistamine
+- Kasutajate haldamine ja sudo konfig
+- Systemd teenuste käivitamine ja monitoorimine
 
-**Luba firewall:**
-```bash
-sudo ufw enable
-
-# Warning: This may disrupt existing ssh connections. Proceed with operation (y|n)? y
-# Firewall is active and enabled on system startup
-```
-
-**Kontrolli:**
-```bash
-sudo ufw status verbose
-
-# Output:
-# Status: active
-# Logging: on (low)
-# Default: deny (incoming), allow (outgoing), disabled (routed)
-#
-# To                         Action      From
-# --                         ------      ----
-# 22/tcp                     ALLOW IN    Anywhere                  # SSH
-```
+📁 **Labori asukoht:** `labs/00-vps-setup-lab/`
 
 ---
 
-### 5.3 Liikluse Lubamine
-
-**Luba HTTP ja HTTPS (veebiserver):**
-```bash
-sudo ufw allow 80/tcp comment 'HTTP'
-sudo ufw allow 443/tcp comment 'HTTPS'
-```
-
-**Luba PostgreSQL (ainult localhost'ist):**
-```bash
-# RANGE limit:
-sudo ufw allow from 10.0.0.0/8 to any port 5432 comment 'PostgreSQL local'
-
-# VÕI ainult localhost:
-sudo ufw allow from 127.0.0.1 to any port 5432
-```
-
-**Luba NodePort (Kubernetes):**
-```bash
-# Kubernetes NodePort range
-sudo ufw allow 30000:32767/tcp comment 'K8s NodePort'
-```
-
----
-
-### 5.4 Reeglite Kustutamine
-
-**Vaata reeglite numbreid:**
-```bash
-sudo ufw status numbered
-
-# Output:
-# [ 1] 22/tcp         ALLOW IN    Anywhere
-# [ 2] 80/tcp         ALLOW IN    Anywhere
-# [ 3] 443/tcp        ALLOW IN    Anywhere
-```
-
-**Kustuta reegel numbri järgi:**
-```bash
-sudo ufw delete 2  # Kustutab HTTP reegli
-```
-
-**Kustuta reegel käsu järgi:**
-```bash
-sudo ufw delete allow 80/tcp
-```
-
----
-
-### 5.5 UFW Default Policies
-
-**Kontrolli default police:**
-```bash
-sudo ufw status verbose
-
-# Default: deny (incoming), allow (outgoing)
-```
-
-**Muuda default police (harv):**
-```bash
-# Keela KÕIK sissetulev liiklus (peale lubatud reeglite)
-sudo ufw default deny incoming
-
-# Luba KÕIK väljuv liiklus
-sudo ufw default allow outgoing
-```
-
-**See on TURVALINE default:** deny incoming, allow outgoing ✅
-
----
-
-## 👤 6. Kasutajate ja Sudo Haldamine
-
-### 6.1 Root vs Tavalise Kasutaja
-
-**Root kasutaja:**
-```bash
-# Root = "superuser" = täielik kontroll
-# OHTLIK - üks viga võib hävitada kogu süsteemi
-
-❌ ÄRA kasuta root'i igapäevaseks tööks
-✅ Kasuta tavalist kasutajat + sudo
-```
-
-**Tavaline kasutaja + sudo:**
-```bash
-# Tavaline kasutaja ei saa teha süsteemse muudatusi
-# sudo = "Super User DO" = ajutine root õigus
-
-✅ Turvalisem (peab sudo parooli sisestama)
-✅ Auditeeritud (sudo logib kõik käsud)
-✅ Best practice
-```
-
----
-
-### 6.2 Uue Kasutaja Loomine
-
-**Loo uus kasutaja:**
-```bash
-# Root või sudo kasutajana
-sudo adduser student
-
-# Küsitakse:
-# Enter new UNIX password: ********
-# Retype new UNIX password: ********
-# Full Name []: Student User
-# Room Number []: [Enter]
-# ... [Enter kõigile]
-```
-
-**Lisa sudo gruppi:**
-```bash
-sudo usermod -aG sudo student
-
-# -a = append (lisa)
-# -G = groups
-# sudo = grupi nimi
-```
-
-**Kontrolli:**
-```bash
-# Vaata kasutaja gruppe
-groups student
-# student : student sudo
-
-# Test sudo õigusi
-su - student
-sudo whoami
-# root ← Töötab! ✅
-```
-
----
-
-### 6.3 Sudo Konfiguratsioon
-
-**Sudo config file:**
-```bash
-sudo visudo  # KASUTA ALATI visudo, mitte vim /etc/sudoers!
-
-# Fail: /etc/sudoers
-```
-
-**Luba kasutajal sudo ILMA paroolita (OPTIONAL, test env):**
-```bash
-sudo visudo
-
-# Lisa faili lõppu:
-student ALL=(ALL) NOPASSWD:ALL
-
-# Salvesta ja välju
-```
-
-**⚠️ HOIATUS:**
-`NOPASSWD` on mugav arenduseks, kuid **EBATURVALINE production'is**!
-
----
-
-### 6.4 SSH Võtmete Kopeerimine Uuele Kasutajale
-
-**Probleem:**
-Lõid uue kasutaja `student`, kuid SSH võtmed on `root` all.
-
-**Lahendus - Kopeeri authorized_keys:**
-```bash
-# Root kasutajana
-mkdir -p /home/student/.ssh
-cp /root/.ssh/authorized_keys /home/student/.ssh/
-chown -R student:student /home/student/.ssh
-chmod 700 /home/student/.ssh
-chmod 600 /home/student/.ssh/authorized_keys
-```
-
-**Test:**
-```bash
-# Lokaalne arvuti
-ssh student@YOUR_VPS_IP
-# Töötab ilma paroolita! ✅
-```
-
----
-
-## ⚙️ 7. Systemd Teenuste Haldamine
-
-### 7.1 Mis On Systemd?
-
-**Systemd** on Ubuntu (ja enamiku Linux distributsioonide) init süsteem, mis haldab teenuseid (services).
-
-```bash
-# Näited teenustest:
-- sshd (SSH server)
-- docker (Docker daemon)
-- nginx (veebiserver)
-- postgresql (andmebaas)
-```
-
----
-
-### 7.2 Systemctl Põhikäsud
-
-**Vaata teenuse staatust:**
-```bash
-sudo systemctl status ssh
-
-# Output:
-# ● ssh.service - OpenBSD Secure Shell server
-#    Loaded: loaded (/lib/systemd/system/ssh.service; enabled)
-#    Active: active (running) since Mon 2025-01-22 10:00:00 UTC; 2h ago
-#      Docs: man:sshd(8)
-#  Main PID: 1234 (sshd)
-#     Tasks: 1 (limit: 4915)
-#    Memory: 5.2M
-#    CGroup: /system.slice/ssh.service
-#            └─1234 /usr/sbin/sshd -D
-```
-
-**Käivita teenus:**
-```bash
-sudo systemctl start nginx
-```
-
-**Peata teenus:**
-```bash
-sudo systemctl stop nginx
-```
-
-**Taaskäivita teenus:**
-```bash
-sudo systemctl restart nginx
-```
-
-**Luba teenus käivituma boot'imisel:**
-```bash
-sudo systemctl enable nginx
-
-# Created symlink /etc/systemd/system/multi-user.target.wants/nginx.service
-```
-
-**Keela teenus boot'imisel:**
-```bash
-sudo systemctl disable nginx
-```
-
----
-
-### 7.3 Systemd Unit Fail (Enda Teenus)
-
-**Näide - Loo lihtne teenus:**
-```bash
-# Loome bash skripti, mis logib iga 10 sekundi järel
-sudo vim /usr/local/bin/hello-service.sh
-```
-
-```bash
-#!/bin/bash
-while true; do
-    echo "$(date): Hello from custom service!" >> /var/log/hello-service.log
-    sleep 10
-done
-```
-
-```bash
-# Tee käivitatavaks
-sudo chmod +x /usr/local/bin/hello-service.sh
-```
-
-**Loo systemd unit fail:**
-```bash
-sudo vim /etc/systemd/system/hello.service
-```
-
-```ini
-[Unit]
-Description=Hello Custom Service
-After=network.target
-
-[Service]
-Type=simple
-ExecStart=/usr/local/bin/hello-service.sh
-Restart=always
-RestartSec=10
-StandardOutput=journal
-StandardError=journal
-
-[Install]
-WantedBy=multi-user.target
-```
-
-**Käivita teenus:**
-```bash
-# Laadi systemd config uuesti
-sudo systemctl daemon-reload
-
-# Käivita teenus
-sudo systemctl start hello
-
-# Kontrolli staatust
-sudo systemctl status hello
-
-# Luba boot'imisel
-sudo systemctl enable hello
-```
-
-**Vaata logisid:**
-```bash
-# Reaalajas
-sudo journalctl -u hello -f
-
-# Viimased 50 rida
-sudo journalctl -u hello -n 50
-
-# VÕI vaata faili
-sudo tail -f /var/log/hello-service.log
-```
-
----
-
-## 📝 8. Praktilised Harjutused
-
-### Harjutus 1: VPS Algne Seadistamine (30 min)
-
-**Eesmärk:** Seadista VPS turvaliselt
-
-**Sammud:**
-1. Logi VPS'i sisse root'ina (esimene kord)
-2. Uuenda süsteemi:
-   ```bash
-   sudo apt update && sudo apt upgrade -y
-   ```
-3. Loo uus kasutaja `devops`:
-   ```bash
-   sudo adduser devops
-   sudo usermod -aG sudo devops
-   ```
-4. Genereeri SSH võtmepaar lokaalselt (kui puudub)
-5. Kopeeri public key uuele kasutajale
-6. Logi sisse uue kasutajana ja testi sudo
-7. Keela root login SSH config'us
-
-**Kontrolli:**
-- [ ] Uus kasutaja on loodud
-- [ ] Kasutajal on sudo õigused
-- [ ] SSH võtme autentimine töötab
-- [ ] Root login on keelatud
-
----
-
-### Harjutus 2: UFW Firewall Seadistamine (20 min)
-
-**Eesmärk:** Seadista firewall veebiserveri jaoks
-
-**Sammud:**
-1. Installi UFW
-2. Luba SSH (port 22)
-3. Luba HTTP (port 80) ja HTTPS (port 443)
-4. Luba firewall
-5. Kontrolli reegleid
-6. Testi, et SSH ühendus jääb toimima
-
-**Kontrolli:**
-- [ ] UFW on aktiivne
-- [ ] SSH on lubatud
-- [ ] HTTP ja HTTPS on lubatud
-- [ ] Default policy on `deny incoming`
-
----
-
-### Harjutus 3: Nginx Teenuse Haldamine (30 min)
-
-**Eesmärk:** Installi ja halda Nginx veebiserveri teenust
-
-**Sammud:**
-1. Installi Nginx:
-   ```bash
-   sudo apt install nginx -y
-   ```
-2. Kontrolli teenuse staatust
-3. Testi veebilehte: `curl http://localhost`
-4. Peata teenus
-5. Käivita uuesti
-6. Luba boot'imisel
-7. Vaata Nginx logisid:
-   ```bash
-   sudo journalctl -u nginx -f
-   ```
-
-**Kontrolli:**
-- [ ] Nginx on paigaldatud
-- [ ] Teenus käivitub boot'imisel
-- [ ] Nginx vastab localhost'il
-- [ ] Oskad vaadata logisid
-
----
-
-### Harjutus 4: Kohandatud Systemd Teenus (40 min)
-
-**Eesmärk:** Loo oma systemd teenus
-
-**Sammud:**
-1. Loo bash skript `/usr/local/bin/disk-monitor.sh`:
-   ```bash
-   #!/bin/bash
-   while true; do
-       df -h / | tail -1 >> /var/log/disk-usage.log
-       date >> /var/log/disk-usage.log
-       sleep 60
-   done
-   ```
-2. Tee käivitatavaks
-3. Loo systemd unit fail `/etc/systemd/system/disk-monitor.service`
-4. Käivita teenus
-5. Kontrolli, et logifail täitub
-6. Testi teenuse restart'imist
-
-**Kontrolli:**
-- [ ] Skript on loodud ja käivitatav
-- [ ] Systemd teenus on loodud
-- [ ] Teenus logib `/var/log/disk-usage.log` faili
-- [ ] Teenus käivitub pärast restart'i
-
----
-
-### Harjutus 5: Troubleshooting (Valikuline, 30 min)
-
-**Eesmärk:** Õpi debuggima systemd teenuseid
-
-**Probleemne teenus:**
-```bash
-# Loo VIGANE teenus
-sudo vim /etc/systemd/system/broken.service
-```
-
-```ini
-[Unit]
-Description=Broken Service
-
-[Service]
-ExecStart=/usr/bin/nonexistent-command
-
-[Install]
-WantedBy=multi-user.target
-```
-
-**Sinu ülesanne:**
-1. Proovi teenust käivitada
-2. Vaata, mis viga tuleb
-3. Kasuta `journalctl -u broken` logide vaatamiseks
-4. Paranda teenus (muuda ExecStart'i)
-5. Käivita edukalt
-
-**Õpitud oskused:**
-- systemctl status lugemine
-- journalctl kasutamine
-- systemd teenuste debuggimine
-
----
-
-## 🎓 9. Mida Sa Õppisid?
-
-### Omandatud Teadmised
-
-✅ **DevOps Kontseptsioonid:**
-- DevOps kultuur: Dev + Ops koostöö
-- CAMS põhimõtted (Culture, Automation, Measurement, Sharing)
-- Infrastructure as Code (IaC) tähtsus
-- DevOps administraatori roll vs arendaja roll
-
-✅ **VPS ja Infrastruktuur:**
-- VPS vs Cloud vs On-Premise eristamine
-- Millal kasutada VPS'i vs Cloud'i
-- VPS seadistamise alused
-
-✅ **SSH Turvalisus:**
-- SSH võtmete genereerimine (ed25519)
-- Public/Private key paari kasutamine
-- SSH serveri turvalise konfigureerimise
-- Parooli-autentimise keelamine
-
-✅ **Firewall (UFW):**
-- UFW reeglite loomine
-- Portide lubamine/keelamine
-- Default policy seadistamine
-- Firewall'i debuggimine
-
-✅ **Kasutajate Haldamine:**
-- Uute kasutajate loomine
-- Sudo õiguste andmine
-- Kasutajate gruppide haldamine
-- Root kasutaja vs tavaline kasutaja
-
-✅ **Systemd:**
-- Teenuste käivitamine/peatamine
-- Teenuste logide vaatamine (journalctl)
-- Kohandatud systemd unit failide loomine
-- Teenuste debuggimine
-
----
-
-## 📚 10. Järgmised Sammud
+## 🚀 6. Järgmised Sammud
 
 **Peatükk 2: Linux Põhitõed DevOps Kontekstis**
-- Failisüsteemi struktuur
-- Protsesside haldamine
-- Võrgu debugging
-- Cron jobs
+Failisüsteem, protsessid, võrk, logid - kõik DevOps administraatori perspektiivist.
 
 **Peatükk 3: Git DevOps Töövoos**
-- Git põhikäsud
-- Infrastructure as Code repositories
-- GitOps kontseptsioon
+Version control, GitOps, Infrastructure as Code repositories.
 
 **Peatükk 4: Docker Põhimõtted** 🐳
-- Konteinerid vs VM'id
-- Docker lifecycle
-- Images ja containers
-- **SIIT ALGAB MEIE DEVOPS TEEKOND!**
+Konteinerite maailm algab - see on meie DevOps teekonna tuum!
 
 ---
 
-## 📖 Lisaressursid
+## 📖 Lisamaterjalid
 
-**Dokumentatsioon:**
-- [DevOps Roadmap 2025](https://roadmap.sh/devops)
-- [Ubuntu Server Guide](https://ubuntu.com/server/docs)
-- [SSH Best Practices](https://www.ssh.com/academy/ssh/keygen)
-- [Systemd Documentation](https://systemd.io/)
+**Soovitatud lugemine:**
+- "The Phoenix Project" - DevOps põhimõtted romaani vormis
+- "The DevOps Handbook" - praktiline juhend
+- [DevOps Roadmap 2025](https://roadmap.sh/devops) - skill tree
 
 **Lisapeatükid:**
-- `LISA-PEATUKK-Cloud-Providers.md` - IaaS/PaaS/SaaS, AWS, Azure, GCP
+- `LISA-PEATUKK-Cloud-Providers.md` - IaaS/PaaS/SaaS, AWS vs Azure vs GCP
 - `DEVOPS-KOOLITUSKAVA-PLAAN-2025.md` - 2025 best practices
 
 ---
 
 ## ✅ Kontrolli Ennast
 
-Enne järgmisele peatükile liikumist, veendu et:
+Enne järgmisele peatükile liikumist, veendu et mõistad:
 
-- [ ] Mõistad DevOps kultuuri ja CAMS põhimõtteid
-- [ ] Oskad selgitada IaC kontseptsiooni ja eeliseid
-- [ ] Oled seadistanud turvalist SSH ligipääsu võtmetega
-- [ ] Oskad konfigureerida UFW firewall'i
-- [ ] Oskad hallata kasutajaid ja sudo õigusi
-- [ ] Oskad hallata systemd teenuseid
-- [ ] Oled läbinud kõik praktilised harjutused
+- [ ] DevOps kultuuri ja CAMS põhimõtteid
+- [ ] Miks Infrastructure as Code on oluline
+- [ ] VPS, Cloud ja On-Premise erinevusi
+- [ ] SSH võtmete autentimise kontseptsiooni
+- [ ] Firewall'i rolli turvalisuses
+- [ ] Kasutajahalduse ja sudo tähtsust
+- [ ] Systemd teenuste haldamise põhimõtteid
+- [ ] Oled läbinud Labor 0 (VPS Setup)
 
 **Kui kõik on ✅, oled valmis Peatükiks 2!** 🚀
 
