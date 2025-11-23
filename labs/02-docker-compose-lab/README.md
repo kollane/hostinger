@@ -395,7 +395,6 @@ docker stop <container-id>
 
 ### Labori Materjalid:
 - [TERMINOLOOGIA.md](../TERMINOLOOGIA.md) - Eesti-inglise sõnastik
-- [00-LAB-RAAMISTIK.md](../00-LAB-RAAMISTIK.md) - Laborite üldstruktuur
 - [Labor 1 README](../01-docker-lab/README.md) - Eelduslabor
 
 ---
