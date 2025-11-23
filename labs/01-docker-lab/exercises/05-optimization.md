@@ -5,7 +5,7 @@
 
 ---
 
-## ⚠️ Enne Alustamist: Kontrolli Eeldusi
+## ⚠️ Enne alustamist kontrolli eeldusi.
 
 **Veendu, et süsteem on valmis:**
 
