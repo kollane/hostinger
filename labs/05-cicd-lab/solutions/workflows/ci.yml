@@ -1,0 +1,227 @@
+# ==========================================================================
+# CI Workflow - User Service
+# ==========================================================================
+# Continuous Integration pipeline:
+# - Lint code (ESLint)
+# - Test (Node 20 + 22 matrix)
+# - Build Docker image
+# - Security scan (Docker Scout + Trivy)
+# ==========================================================================
+
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - staging
+  pull_request:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+
+env:
+  DOCKER_IMAGE: ${{ secrets.DOCKER_USERNAME }}/user-service
+
+jobs:
+  # ==========================================================================
+  # Job 1: Lint Code
+  # ==========================================================================
+  lint:
+    name: Lint Code (ESLint)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint
+
+  # ==========================================================================
+  # Job 2: Test (Multi-version Matrix)
+  # ==========================================================================
+  test:
+    name: Test (Node ${{ matrix.node-version }})
+    runs-on: ubuntu-latest
+    needs: lint
+
+    strategy:
+      matrix:
+        node-version: [20, 22]
+      fail-fast: false
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests with coverage
+        run: npm test -- --coverage --coverageReporters=json-summary --coverageReporters=text
+
+      - name: Check coverage threshold
+        run: |
+          COVERAGE=$(cat coverage/coverage-summary.json | jq '.total.lines.pct')
+          echo "Coverage: $COVERAGE%"
+
+          if (( $(echo "$COVERAGE < 80" | bc -l) )); then
+            echo "❌ Coverage is below 80% threshold"
+            exit 1
+          fi
+
+          echo "✅ Coverage meets 80% threshold"
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: matrix.node-version == '20'
+        with:
+          name: coverage-report
+          path: coverage/
+
+  # ==========================================================================
+  # Job 3: Build Docker Image
+  # ==========================================================================
+  build:
+    name: Build & Push Docker Image
+    runs-on: ubuntu-latest
+    needs: test
+
+    outputs:
+      image-tag: ${{ steps.meta.outputs.tags }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKER_IMAGE }}
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Docker Scout scan
+        uses: docker/scout-action@v1
+        if: github.event_name == 'pull_request'
+        with:
+          command: cves
+          image: ${{ env.DOCKER_IMAGE }}:${{ github.sha }}
+          sarif-file: scout-report.sarif
+          summary: true
+
+      - name: Upload Scout SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        if: github.event_name == 'pull_request'
+        with:
+          sarif_file: scout-report.sarif
+
+  # ==========================================================================
+  # Job 4: Security Scan (Trivy)
+  # ==========================================================================
+  security:
+    name: Security Scan (Trivy)
+    runs-on: ubuntu-latest
+    needs: build
+
+    permissions:
+      security-events: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.DOCKER_IMAGE }}:${{ github.ref_name }}-${{ github.sha }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Run Trivy for summary
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.DOCKER_IMAGE }}:${{ github.ref_name }}-${{ github.sha }}
+          format: 'table'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '1'
+
+  # ==========================================================================
+  # Job 5: Summary
+  # ==========================================================================
+  summary:
+    name: CI Summary
+    runs-on: ubuntu-latest
+    needs: [lint, test, build, security]
+    if: always()
+
+    steps:
+      - name: Check job results
+        run: |
+          echo "## CI Pipeline Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Lint | ${{ needs.lint.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Test | ${{ needs.test.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build | ${{ needs.build.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Security | ${{ needs.security.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [[ "${{ needs.lint.result }}" == "success" ]] && \
+             [[ "${{ needs.test.result }}" == "success" ]] && \
+             [[ "${{ needs.build.result }}" == "success" ]] && \
+             [[ "${{ needs.security.result }}" == "success" ]]; then
+            echo "✅ **All CI checks passed!**" >> $GITHUB_STEP_SUMMARY
+            exit 0
+          else
+            echo "❌ **CI pipeline failed!**" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi

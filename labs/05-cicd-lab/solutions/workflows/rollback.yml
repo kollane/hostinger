@@ -1,0 +1,237 @@
+# ==========================================================================
+# Rollback Workflow - User Service
+# ==========================================================================
+# Manual rollback to previous Helm release
+# Usage: Actions tab → Rollback Deployment → Run workflow
+# ==========================================================================
+
+name: Rollback Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to rollback'
+        required: true
+        type: choice
+        options:
+          - development
+          - staging
+          - production
+      revision:
+        description: 'Revision to rollback to (0 = previous, 1 = before that, etc.)'
+        required: false
+        default: '0'
+        type: string
+
+jobs:
+  # ==========================================================================
+  # Job 1: Confirm Rollback
+  # ==========================================================================
+  confirm:
+    name: Confirm Rollback
+    runs-on: ubuntu-latest
+
+    environment:
+      name: ${{ inputs.environment }}
+
+    steps:
+      - name: Display rollback info
+        run: |
+          echo "## Rollback Configuration" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Parameter | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Environment | ${{ inputs.environment }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Revision | ${{ inputs.revision }} (0 = previous release) |" >> $GITHUB_STEP_SUMMARY
+          echo "| Triggered by | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "⚠️ **This will rollback the deployment!**" >> $GITHUB_STEP_SUMMARY
+
+  # ==========================================================================
+  # Job 2: Rollback
+  # ==========================================================================
+  rollback:
+    name: Rollback to Previous Release
+    runs-on: ubuntu-latest
+    needs: confirm
+
+    environment:
+      name: ${{ inputs.environment }}
+
+    steps:
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: '3.14.0'
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: '1.29.0'
+
+      - name: Configure kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBECONFIG }}" | base64 -d > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
+
+      - name: Verify cluster connection
+        run: |
+          kubectl cluster-info
+          kubectl get nodes
+
+      - name: Check Helm release history
+        run: |
+          echo "## Helm Release History" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          helm history user-service -n ${{ inputs.environment }} >> $GITHUB_STEP_SUMMARY || echo "No release history found" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+      - name: Get current deployment info
+        run: |
+          echo "## Current Deployment" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Get current image
+          CURRENT_IMAGE=$(kubectl get deployment user-service \
+            -n ${{ inputs.environment }} \
+            -o jsonpath='{.spec.template.spec.containers[0].image}' 2>/dev/null || echo "N/A")
+
+          # Get current replicas
+          CURRENT_REPLICAS=$(kubectl get deployment user-service \
+            -n ${{ inputs.environment }} \
+            -o jsonpath='{.spec.replicas}' 2>/dev/null || echo "N/A")
+
+          echo "- **Image:** $CURRENT_IMAGE" >> $GITHUB_STEP_SUMMARY
+          echo "- **Replicas:** $CURRENT_REPLICAS" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+      - name: Perform rollback
+        id: rollback
+        run: |
+          echo "⏪ Rolling back to revision ${{ inputs.revision }}..."
+
+          helm rollback user-service ${{ inputs.revision }} \
+            -n ${{ inputs.environment }} \
+            --wait \
+            --timeout 5m
+
+          echo "✅ Rollback completed successfully!"
+
+      - name: Wait for rollout
+        run: |
+          kubectl rollout status deployment/user-service \
+            -n ${{ inputs.environment }} \
+            --timeout=5m
+
+      - name: Verify rollback
+        run: |
+          echo "## Post-Rollback Status" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Get new image
+          NEW_IMAGE=$(kubectl get deployment user-service \
+            -n ${{ inputs.environment }} \
+            -o jsonpath='{.spec.template.spec.containers[0].image}')
+
+          # Get new replicas
+          NEW_REPLICAS=$(kubectl get deployment user-service \
+            -n ${{ inputs.environment }} \
+            -o jsonpath='{.spec.replicas}')
+
+          echo "- **Image:** $NEW_IMAGE" >> $GITHUB_STEP_SUMMARY
+          echo "- **Replicas:** $NEW_REPLICAS" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Get pod status
+          echo "### Pods:" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          kubectl get pods -n ${{ inputs.environment }} -l app=user-service >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+      - name: Health check
+        run: |
+          # Get service endpoint
+          if [[ "${{ inputs.environment }}" == "production" ]]; then
+            ENDPOINT="https://kirjakast.cloud/api/users/health"
+          else
+            ENDPOINT="https://${{ inputs.environment }}.kirjakast.cloud/api/users/health"
+          fi
+
+          echo "Testing endpoint: $ENDPOINT"
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Health Check" >> $GITHUB_STEP_SUMMARY
+
+          # Wait for endpoint (max 2 min)
+          for i in {1..24}; do
+            if curl -f -s -o /dev/null "$ENDPOINT"; then
+              echo "✅ Health check passed after rollback!" >> $GITHUB_STEP_SUMMARY
+              exit 0
+            fi
+            echo "Attempt $i/24: Endpoint not ready yet..."
+            sleep 5
+          done
+
+          echo "❌ Health check failed after rollback" >> $GITHUB_STEP_SUMMARY
+          exit 1
+
+      - name: Notify Slack
+        if: always()
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        run: |
+          if [[ -n "$SLACK_WEBHOOK" ]]; then
+            STATUS_ICON="${{ steps.rollback.outcome == 'success' && '✅' || '❌' }}"
+            STATUS_TEXT="${{ steps.rollback.outcome == 'success' && 'Successful' || 'Failed' }}"
+
+            curl -X POST "$SLACK_WEBHOOK" \
+              -H 'Content-Type: application/json' \
+              -d "{
+                \"text\": \"${STATUS_ICON} Rollback ${STATUS_TEXT}!\",
+                \"blocks\": [
+                  {
+                    \"type\": \"section\",
+                    \"text\": {
+                      \"type\": \"mrkdwn\",
+                      \"text\": \"*Rollback ${STATUS_TEXT}* ${STATUS_ICON}\n*Environment:* ${{ inputs.environment }}\n*Revision:* ${{ inputs.revision }}\n*Triggered by:* ${{ github.actor }}\n*Workflow:* <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View logs>\"
+                    }
+                  }
+                ]
+              }"
+          fi
+
+  # ==========================================================================
+  # Job 3: Summary
+  # ==========================================================================
+  summary:
+    name: Rollback Summary
+    runs-on: ubuntu-latest
+    needs: [confirm, rollback]
+    if: always()
+
+    steps:
+      - name: Generate summary
+        run: |
+          echo "## Rollback Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Parameter | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Environment | ${{ inputs.environment }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Revision | ${{ inputs.revision }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Status | ${{ needs.rollback.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Triggered by | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [[ "${{ needs.rollback.result }}" == "success" ]]; then
+            echo "### ✅ Rollback Successful!" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "The service has been rolled back to the previous release." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ❌ Rollback Failed!" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Please check the logs and try again or deploy manually." >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi

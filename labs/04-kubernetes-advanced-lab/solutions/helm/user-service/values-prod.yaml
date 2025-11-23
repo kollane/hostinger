@@ -1,0 +1,82 @@
+# ==========================================================================
+# Production Environment Values
+# ==========================================================================
+# Override: helm upgrade --install user-service . -f values-prod.yaml
+# ==========================================================================
+
+replicaCount: 3
+
+image:
+  repository: user-service
+  tag: "latest"
+  pullPolicy: IfNotPresent  # Use cached images in prod for consistency
+
+service:
+  type: ClusterIP
+  port: 3000
+
+ingress:
+  enabled: true
+  className: nginx
+  host: kirjakast.cloud
+  path: /api/users
+  pathType: Prefix
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+
+resources:
+  requests:
+    cpu: 200m
+    memory: 256Mi
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 20
+  targetCPUUtilizationPercentage: 50
+  targetMemoryUtilizationPercentage: 70
+
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 3000
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /ready
+    port: 3000
+  initialDelaySeconds: 5
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 2
+
+env:
+  DB_HOST: postgres-user
+  DB_PORT: "5432"
+  DB_NAME: user_service_prod
+  DB_USER: postgres
+  NODE_ENV: production
+  PORT: "3000"
+  JWT_EXPIRES_IN: "24h"
+
+secrets:
+  # ⚠️ WARNING: CHANGE THESE IN PRODUCTION!
+  # Use: kubectl create secret generic app-secrets --from-literal=jwt-secret=...
+  jwtSecret: "CHANGE-ME-IN-PRODUCTION"
+  dbPassword: "CHANGE-ME-IN-PRODUCTION"
+
+# Pod Disruption Budget for production
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 2
+
+# Resource quotas (optional, set via namespace)
+# See: kubectl apply -f resource-quota.yaml

@@ -1,0 +1,57 @@
+# ==========================================================================
+# Development Environment Values
+# ==========================================================================
+# Override: helm upgrade --install user-service . -f values-dev.yaml
+# ==========================================================================
+
+replicaCount: 1
+
+image:
+  repository: user-service
+  tag: "dev"
+  pullPolicy: Always  # Always pull in dev
+
+service:
+  type: ClusterIP
+  port: 3000
+
+ingress:
+  enabled: false  # Disable Ingress in dev (use port-forward)
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi
+
+autoscaling:
+  enabled: false  # Disable HPA in dev
+
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 3000
+  initialDelaySeconds: 10
+  periodSeconds: 10
+
+readinessProbe:
+  httpGet:
+    path: /ready
+    port: 3000
+  initialDelaySeconds: 5
+  periodSeconds: 5
+
+env:
+  DB_HOST: postgres-user
+  DB_PORT: "5432"
+  DB_NAME: user_service_dev
+  DB_USER: postgres
+  NODE_ENV: development
+  PORT: "3000"
+  JWT_EXPIRES_IN: "24h"
+
+secrets:
+  jwtSecret: "dev-jwt-secret"
+  dbPassword: "postgres"

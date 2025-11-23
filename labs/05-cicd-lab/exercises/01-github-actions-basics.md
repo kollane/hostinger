@@ -1,324 +1,247 @@
 # Harjutus 1: GitHub Actions Põhitõed
 
-**Kestus:** 45 minutit
-**Eesmärk:** Õppida GitHub Actions workflow'de loomist ja GitHub Secrets'ide kasutamist
+**Kestus:** 60 minutit
+**Eesmärk:** Õppida GitHub Actions workflow'de loomist ja põhikontseptsioone
 
 ---
 
 ## 📋 Ülevaade
 
-Selles harjutuses tutvud **GitHub Actions**'iga - GitHub'i integreeritud CI/CD platvormiga. Õpid looma workflow'sid, mis käivituvad automaatselt koodi muutuste peale.
+Selles harjutuses **lood oma esimese GitHub Actions workflow'i** ja õpid GitHub Actions põhimõisteid. Seadistad repository, GitHub Secrets'id ja käivitad esimese automated workflow'i.
 
-**GitHub Actions** võimaldab automatiseerida build, test ja deploy protsesse otse GitHub repositooriumi sees. Iga workflow koosneb job'idest, mis koosnevad step'idest, kus käivitatakse käske või kasutatakse valmis action'eid.
+**GitHub Actions = GitHub'i integreeritud CI/CD platvorm**
+- Workflow'id käivituvad automaatselt (push, PR, schedule)
+- Töötab GitHub'i serverites (runners)
+- YAML-based konfiguratsioon
+- Tasuta tier: 2000 minutit/kuu (public repos unlimited)
 
 ---
 
 ## 🎯 Õpieesmärgid
 
-Peale selle harjutuse läbimist oskad:
-
-- ✅ Luua GitHub Actions workflow YAML faile
-- ✅ Mõista workflow struktuuri (triggers, jobs, steps)
-- ✅ Kasutada GitHub Actions marketplace'i
+- ✅ Mõista GitHub Actions arhitektuuri
+- ✅ Luua esimene workflow YAML fail
 - ✅ Seadistada GitHub Secrets
-- ✅ Käivitada workflow'sid automaatselt ja manuaalselt
-- ✅ Vaadata workflow logisid ja debuggida
-- ✅ Kasutada environment variable'eid
+- ✅ Kasutada triggers'eid (push, pull_request, workflow_dispatch)
+- ✅ Debuggida workflow'sid
 
 ---
 
 ## 🏗️ Arhitektuur
 
 ```
-┌────────────────────────────────────────────────┐
-│         GitHub Repository                      │
-│                                                │
-│  Developer push/PR                             │
-│         │                                      │
-│         ▼                                      │
-│  ┌────────────────────────────────────────┐   │
-│  │  .github/workflows/hello.yml          │   │
-│  │                                        │   │
-│  │  on: [push, pull_request]             │   │
-│  │                                        │   │
-│  │  jobs:                                 │   │
-│  │    hello:                              │   │
-│  │      runs-on: ubuntu-latest            │   │
-│  │      steps:                            │   │
-│  │        - checkout code                 │   │
-│  │        - run commands                  │   │
-│  └────────────────┬───────────────────────┘   │
-│                   │                            │
-│                   ▼                            │
-│  ┌────────────────────────────────────────┐   │
-│  │    GitHub Actions Runner               │   │
-│  │    (Ubuntu 22.04 VM)                   │   │
-│  │                                        │   │
-│  │    [Executing workflow...]             │   │
-│  │    ✅ Step 1: Checkout                 │   │
-│  │    ✅ Step 2: Run script               │   │
-│  └────────────────────────────────────────┘   │
-│                                                │
-└────────────────────────────────────────────────┘
+GitHub Repository
+   │
+   ├── .github/workflows/hello.yml
+   │
+   │   Workflow Triggers:
+   │   ├─ push (automaatne)
+   │   ├─ pull_request (automaatne)
+   │   └─ workflow_dispatch (manuaalne)
+   │
+   ▼
+GitHub Actions Runner (ubuntu-latest)
+   │
+   ├─ Job 1: Greet
+   │   ├─ Step 1: Checkout code
+   │   ├─ Step 2: Run script
+   │   └─ Step 3: Use secret
+   │
+   └─ Logs (visible in GitHub UI)
 ```
 
 ---
 
 ## 📝 Sammud
 
-### Samm 1: Loo GitHub Repository (5 min)
+### Samm 1: Loo GitHub Repository (10 min)
 
-**1. Loo uus repository või kasuta olemasolevat:**
+**1a. Loo uus repository:**
+
+GitHub UI'st:
+- Mine: https://github.com/new
+- Nimi: `user-service-cicd` (või mis tahes)
+- Vali: **Public** (tasuta GitHub Actions)
+- ✅ Add README
+- Create repository
+
+**1b. Clone local'i:**
 
 ```bash
-# Variant A: Loo uus repo GitHub UI's
-# https://github.com/new
-# Nimi: user-service-cicd
-# Avalik või privaatne
-
-# Variant B: Kasuta GitHub CLI
-gh repo create user-service-cicd --public --clone
-
+git clone https://github.com/YOUR-USERNAME/user-service-cicd.git
 cd user-service-cicd
 ```
 
-**2. Kopeeri User Service rakendus:**
+### Samm 2: Esimene Workflow - Hello World (15 min)
+
+**2a. Loo workflow directory:**
 
 ```bash
-# Kopeeri backend-nodejs kood
-cp -r ../../../apps/backend-nodejs/* .
-
-# Kontrolli
-ls -la
-
-# Peaks näitama:
-# package.json
-# server.js
-# routes/
-# middleware/
-# ...
-
-# Commit ja push
-git add .
-git commit -m "Initial commit: User Service"
-git push origin main
-```
-
----
-
-### Samm 2: Loo Esimene Workflow (10 min)
-
-**Loo kataloog ja workflow fail:**
-
-```bash
-# Loo workflow directory
 mkdir -p .github/workflows
-
-# Loo esimene workflow
-vim .github/workflows/hello.yml
 ```
 
-**`.github/workflows/hello.yml`:**
+**2b. Loo workflow fail:**
+
+`.github/workflows/hello.yml`:
 
 ```yaml
+# Esimene GitHub Actions Workflow
 name: Hello World
 
 # Triggers - millal workflow käivitub
 on:
   push:
-    branches: [main, develop]
+    branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch:  # Manual trigger
 
-# Jobs - paralleelsed tööd
+# Jobs - paralleelsed tööülesanded
 jobs:
-  hello:
-    runs-on: ubuntu-latest
-
+  greet:
+    name: 👋 Greet
+    runs-on: ubuntu-latest  # GitHub-hosted runner
+    
     steps:
       # Step 1: Checkout code
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      # Step 2: Print environment info
-      - name: Print environment
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      # Step 2: Print hello
+      - name: 👋 Say hello
         run: |
-          echo "🚀 Workflow triggered by: ${{ github.event_name }}"
-          echo "📁 Repository: ${{ github.repository }}"
-          echo "🌿 Branch: ${{ github.ref_name }}"
-          echo "👤 Actor: ${{ github.actor }}"
-          echo "💻 Runner OS: ${{ runner.os }}"
-
-      # Step 3: List files
-      - name: List files
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "Hello from GitHub Actions!"
+          echo "Repository: ${{ github.repository }}"
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Commit: ${{ github.sha }}"
+          echo "Actor: ${{ github.actor }}"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+      
+      # Step 3: System info
+      - name: 🖥️ System info
         run: |
-          echo "📂 Repository contents:"
-          ls -la
-
-      # Step 4: Node.js version
-      - name: Check Node.js version
-        run: |
-          node --version
-          npm --version
+          echo "OS: $(uname -a)"
+          echo "CPU: $(nproc) cores"
+          echo "Memory: $(free -h | grep Mem | awk '{print $2}')"
+          echo "Disk: $(df -h / | tail -1 | awk '{print $4}') free"
 ```
 
-**Workflow struktuuri selgitus:**
-
-- **name:** Workflow nimi (nähtav GitHub UI's)
-- **on:** Trigger events (push, PR, manual)
-- **jobs:** Tööde kollektsioon (võivad joosta paralleelselt)
-- **runs-on:** Runner OS (ubuntu-latest, windows-latest, macos-latest)
-- **steps:** Sammud job'i sees (järjekordne)
-- **uses:** Valmis action marketplace'ist
-- **run:** Shell käsud
-
-**Commit ja push:**
+**2c. Commit ja push:**
 
 ```bash
 git add .github/workflows/hello.yml
-git commit -m "Add GitHub Actions hello world workflow"
-git push origin main
+git commit -m "Add Hello World workflow"
+git push
 ```
 
----
+**2d. Vaata workflow'i:**
 
-### Samm 3: Vaata Workflow Käivitumist (5 min)
+- Mine: https://github.com/YOUR-USERNAME/user-service-cicd/actions
+- Kliki workflow "Hello World"
+- Vaata logs'e
 
-**GitHub UI's:**
+✅ **Kontrolli:** Workflow peaks olema roheline (success)
 
-1. Mine oma repository → **Actions** tab
-2. Peaks näitama workflow "Hello World" käivitumas
-3. Kliki workflow run'ile → vaata job'e
-4. Kliki "hello" job'ile → vaata iga step'i logisid
+### Samm 3: Mõista Workflow Süntaksi (10 min)
 
-**Oodatud väljund:**
-
-```
-✅ Checkout code
-✅ Print environment
-   🚀 Workflow triggered by: push
-   📁 Repository: your-username/user-service-cicd
-   🌿 Branch: main
-   👤 Actor: your-username
-   💻 Runner OS: Linux
-
-✅ List files
-   📂 Repository contents:
-   drwxr-xr-x    .github/
-   -rw-r--r--    package.json
-   -rw-r--r--    server.js
-   ...
-
-✅ Check Node.js version
-   v18.x.x
-   9.x.x
-```
-
-**GitHub CLI kaudu:**
-
-```bash
-# Vaata workflow runs
-gh run list
-
-# Vaata viimase run'i logisid
-gh run view --log
-```
-
----
-
-### Samm 4: Käivita Workflow Manuaalselt (5 min)
-
-**workflow_dispatch** võimaldab manuaalset käivitamist.
-
-**GitHub UI's:**
-
-1. Actions tab → "Hello World" workflow
-2. Kliki "Run workflow" → vali branch → "Run workflow"
-
-**GitHub CLI kaudu:**
-
-```bash
-# Käivita workflow manuaalselt
-gh workflow run hello.yml --ref main
-
-# Vaata staatust
-gh run list --workflow=hello.yml
-```
-
----
-
-### Samm 5: Lisa GitHub Secrets (10 min)
-
-**Secrets** = turvaliselt salvestatud muutujad (API keys, passwords, tokens).
-
-**Loo secrets GitHub UI's:**
-
-1. Repository → **Settings** → **Secrets and variables** → **Actions**
-2. Kliki **New repository secret**
-3. Nimi: `SUPER_SECRET`
-4. Value: `my-secret-value-12345`
-5. Kliki **Add secret**
-
-**Loo veel üks:**
-- Nimi: `API_KEY`
-- Value: `test-api-key-xyz`
-
-**Kasuta secret'eid workflow's:**
-
-Muuda `hello.yml`:
+**Workflow anatomy:**
 
 ```yaml
-name: Hello World
+name: Workflow Name              # UI'st nähtav nimi
+
+on:                              # Triggers
+  push:                          # Git push event
+    branches: [main]             # Ainult main branch
+  workflow_dispatch:             # Manual trigger
+
+jobs:                            # Paralleelsed job'id
+  build:                         # Job ID
+    runs-on: ubuntu-latest       # Runner environment
+    
+    steps:                       # Järjestikused sammud
+      - uses: actions/checkout@v4  # Use action
+      - run: echo "Hello"          # Run command
+```
+
+**Context variables:**
+
+```yaml
+${{ github.repository }}    # owner/repo
+${{ github.ref_name }}      # Branch name
+${{ github.sha }}           # Commit SHA
+${{ github.actor }}         # User who triggered
+${{ github.event_name }}    # Event type (push, pull_request)
+```
+
+### Samm 4: Seadista GitHub Secrets (15 min)
+
+**4a. Generate Docker Hub token:**
+
+1. Mine: https://hub.docker.com/settings/security
+2. New Access Token
+3. Nimi: `github-actions`
+4. Permissions: Read, Write, Delete
+5. Generate & copy token
+
+**4b. Lisa GitHub Secrets:**
+
+GitHub repository → Settings → Secrets and variables → Actions → New repository secret:
+
+```
+Name: DOCKER_USERNAME
+Secret: your-dockerhub-username
+```
+
+```
+Name: DOCKER_PASSWORD
+Secret: <paste Docker Hub token>
+```
+
+**4c. Test secrets workflow'is:**
+
+`.github/workflows/test-secrets.yml`:
+
+```yaml
+name: Test Secrets
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 jobs:
-  hello:
+  test:
     runs-on: ubuntu-latest
-
+    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Use secrets
+      - name: 🔐 Test Docker Hub secret
         run: |
-          echo "🔐 Secret length: ${#SUPER_SECRET}"
-          echo "🔑 API key starts with: ${API_KEY:0:4}..."
-          echo "⚠️  Full secrets are NEVER printed in logs!"
-        env:
-          SUPER_SECRET: ${{ secrets.SUPER_SECRET }}
-          API_KEY: ${{ secrets.API_KEY }}
-
-      - name: Conditional step (using secrets)
-        if: secrets.API_KEY != ''
-        run: |
-          echo "✅ API key is configured!"
+          # Secrets are masked in logs
+          echo "Docker username: ${{ secrets.DOCKER_USERNAME }}"
+          echo "Docker password: ***"  # Never print secrets!
+          
+          # Test Docker Hub login
+          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+          
+          echo "✅ Docker Hub authentication successful!"
 ```
 
-**Commit ja push:**
+**4d. Push ja käivita:**
 
 ```bash
-git add .github/workflows/hello.yml
-git commit -m "Add secrets usage to workflow"
-git push origin main
+git add .github/workflows/test-secrets.yml
+git commit -m "Add secrets test workflow"
+git push
 ```
 
-**Kontrolli logisid:**
+GitHub UI → Actions → "Test Secrets" → Run workflow → Run workflow
 
-- Secrets'id on GitHub'i poolt automaatselt maskeeritud
-- Kui printid `${{ secrets.SUPER_SECRET }}`, näed `***`
+✅ **Kontrolli:** Login peaks õnnestuma
 
----
+### Samm 5: Multi-Job Workflow (10 min)
 
-### Samm 6: Loo Multi-Job Workflow (5 min)
+**Loo workflow mitme job'iga:**
 
-**Loo uus workflow mitme job'iga:**
-
-Loo fail `.github/workflows/multi-job.yml`:
+`.github/workflows/multi-job.yml`:
 
 ```yaml
 name: Multi-Job Example
@@ -327,340 +250,170 @@ on:
   workflow_dispatch:
 
 jobs:
-  # Job 1: Build
-  build:
+  # Job 1: Lint
+  lint:
+    name: 🔍 Lint
     runs-on: ubuntu-latest
+    
     steps:
-      - uses: actions/checkout@v3
-      - name: Build step
-        run: |
-          echo "🔨 Building application..."
-          sleep 2
-          echo "✅ Build complete!"
-
-  # Job 2: Test (depends on build)
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Run lint
+        run: echo "✅ Lint passed"
+  
+  # Job 2: Test (depends on lint)
   test:
+    name: 🧪 Test
     runs-on: ubuntu-latest
-    needs: build  # Käivitub alles peale build'i
+    needs: lint  # Wait for lint to complete
+    
+    strategy:
+      matrix:
+        version: [20, 22]  # Test on Node 20 and 22
+    
     steps:
-      - uses: actions/checkout@v3
-      - name: Test step
-        run: |
-          echo "🧪 Running tests..."
-          sleep 2
-          echo "✅ Tests passed!"
-
-  # Job 3: Deploy (depends on test)
-  deploy:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Node ${{ matrix.version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.version }}
+      
+      - name: Node version
+        run: node --version
+  
+  # Job 3: Build (depends on test)
+  build:
+    name: 🐳 Build
     runs-on: ubuntu-latest
-    needs: test  # Käivitub alles peale test'i
+    needs: test
+    
     steps:
-      - name: Deploy step
-        run: |
-          echo "🚀 Deploying..."
-          sleep 2
-          echo "✅ Deployed!"
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Simulate build
+        run: echo "✅ Build completed"
 ```
 
-**needs** võimaldab defineerida sõltuvusi job'ide vahel:
-
-```
-build → test → deploy
-```
-
-**Commit ja testi:**
+**Push ja käivita:**
 
 ```bash
 git add .github/workflows/multi-job.yml
-git commit -m "Add multi-job workflow example"
-git push origin main
-
-# Käivita manuaalselt
-gh workflow run multi-job.yml --ref main
-
-# Vaata progressi
-gh run watch
+git commit -m "Add multi-job workflow"
+git push
 ```
 
----
-
-### Samm 7: Kasuta Actions Marketplace (5 min)
-
-**GitHub Actions Marketplace** sisaldab tuhandeid valmis action'eid.
-
-**Näide: Setup Node.js action:**
-
-Loo fail `.github/workflows/nodejs.yml`:
-
-```yaml
-name: Node.js Setup
-
-on:
-  workflow_dispatch:
-
-jobs:
-  setup-node:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v3
-
-      # Setup Node.js
-      - name: Setup Node.js 18
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-          cache: 'npm'
-
-      # Install dependencies
-      - name: Install dependencies
-        run: npm ci
-
-      # Run script
-      - name: Run script
-        run: npm run --if-present start &
-```
-
-**Populaarsed action'id:**
-
-- `actions/checkout@v3` - Checkout code
-- `actions/setup-node@v3` - Setup Node.js
-- `actions/setup-python@v4` - Setup Python
-- `docker/build-push-action@v4` - Build/push Docker image
-- `actions/upload-artifact@v3` - Upload artifacts
-- `actions/download-artifact@v3` - Download artifacts
-
-**Otsi marketplace'ist:**
-https://github.com/marketplace?type=actions
+✅ **Kontrolli:** 
+- lint käivitub esimesena
+- test käivitub 2x (Node 20 + 22) paralleelselt
+- build käivitub viimasena
 
 ---
 
 ## ✅ Kontrolli Tulemusi
 
-Peale selle harjutuse läbimist peaksid omama:
-
-- [ ] **GitHub repository:**
-  - [ ] User Service kood
-  - [ ] `.github/workflows/` kataloog
-
-- [ ] **Workflows:**
-  - [ ] `hello.yml` - basic workflow
-  - [ ] `multi-job.yml` - job dependencies
-  - [ ] `nodejs.yml` - marketplace actions
-
-- [ ] **GitHub Secrets:**
-  - [ ] `SUPER_SECRET`
-  - [ ] `API_KEY`
-
-- [ ] **Workflow runs:**
-  - [ ] Vähemalt 1 edukas workflow run
-  - [ ] Logid nähtavad Actions tab'is
-
-- [ ] **Mõistad:**
-  - [ ] Triggers (push, PR, workflow_dispatch)
-  - [ ] Jobs ja steps
-  - [ ] Secrets kasutamist
-  - [ ] Marketplace actions
-
----
-
-## 🐛 Troubleshooting
-
-### Probleem 1: Workflow ei käivitu
-
-**Sümptom:**
-```bash
-git push origin main
-# Aga workflow ei käivitu GitHub Actions tab'is
-```
-
-**Diagnoos:**
-
-1. **Kontrolli workflow faili asukohta:**
-
-```bash
-# Peab olema täpselt:
-.github/workflows/hello.yml
-
-# MITTE:
-github/workflows/hello.yml  # Vale!
-.github/workflow/hello.yml  # Vale (puudub 's')
-```
-
-2. **Kontrolli YAML syntax:**
-
-```bash
-# GitHub Actions tab → workflow → "Invalid workflow file"
-# Vaata vea sõnumit
-
-# Või kasuta online validator:
-# https://www.yamllint.com/
-```
-
-3. **Kontrolli trigger'it:**
-
-```yaml
-on:
-  push:
-    branches: [main]  # Kas push'isid main branch'i?
-```
-
-**Lahendus:**
-
-```bash
-# Paranda YAML syntax
-vim .github/workflows/hello.yml
-
-# Commit uuesti
-git add .github/workflows/hello.yml
-git commit -m "Fix workflow syntax"
-git push origin main
-```
-
----
-
-### Probleem 2: Secret ei ole defineeritud
-
-**Sümptom:**
-```yaml
-env:
-  API_KEY: ${{ secrets.API_KEY }}
-```
-
-**Workflow logis:**
-```
-⚠️  Warning: The 'API_KEY' environment variable is not set.
-```
-
-**Diagnoos:**
-
-```bash
-# Kontrolli, kas secret on loodud:
-# Settings → Secrets → Actions
-```
-
-**Lahendus:**
-
-1. Mine repository → Settings → Secrets and variables → Actions
-2. Kliki "New repository secret"
-3. Lisa `API_KEY` secret
-4. Käivita workflow uuesti (Re-run jobs)
-
----
-
-### Probleem 3: Job ebaõnnestub
-
-**Sümptom:**
-```
-❌ Test step
-   Error: Command failed with exit code 1
-```
-
-**Diagnoos:**
-
-```yaml
-- name: Test step
-  run: |
-    npm test  # Kui test'e pole, see failib
-```
-
-**Vaata logisid:**
-
-1. Actions tab → workflow run → failed job
-2. Kliki samm, mis failis
-3. Loe error message
-
-**Lahendus:**
-
-```yaml
-# Variant A: Paranda käsk
-- name: Test step
-  run: |
-    npm run --if-present test  # Fail'ib ainult kui script olemas JA failib
-
-# Variant B: Ignoreeri error
-- name: Test step
-  continue-on-error: true
-  run: |
-    npm test
-```
+- [ ] GitHub repository loodud
+- [ ] Esimene workflow käivitus edukas
+- [ ] GitHub Secrets seadistatud (DOCKER_USERNAME, DOCKER_PASSWORD)
+- [ ] Secrets test workflow edukas
+- [ ] Multi-job workflow töötab õigesti
+- [ ] Mõistad workflow süntaksi
 
 ---
 
 ## 🎓 Õpitud Mõisted
 
-### GitHub Actions:
-- **Workflow:** Automatiseeritud protsess (YAML fail `.github/workflows/` kaustas)
-- **Trigger:** Event, mis käivitab workflow (push, PR, schedule, manual)
-- **Job:** Tööde kogum, mis käivituvad runner'il
-- **Step:** Individuaalne käsk või action job'i sees
-- **Runner:** Virtuaalne masin, mis käivitab workflow'sid (Ubuntu, Windows, macOS)
-- **Action:** Reusable step (marketplace või custom)
+**Workflow:**
+- YAML fail `.github/workflows/` kataloogis
+- Defineerib automated tasks
+- Käivitub triggers'i peale
 
-### Triggers:
-- **push:** Koodi push repository'sse
-- **pull_request:** PR loomine või update
-- **workflow_dispatch:** Manuaalne käivitamine
-- **schedule:** Cron-based (nt iga päev kell 2:00)
-- **release:** GitHub release loomine
+**Job:**
+- Paralleelne tööülesanne
+- Töötab eraldi runner'is
+- Võib sõltuda teistest job'idest (`needs`)
 
-### Secrets:
-- **Repository secret:** Saadaval kõigile workflow'dele
-- **Environment secret:** Specific environment'ile (dev, prod)
-- **Organization secret:** Jagatud mitme repo vahel
+**Step:**
+- Järjestikuline samm job'is
+- Kas `run` (bash command) või `uses` (action)
 
-### Workflow Syntax:
-- **on:** Trigger definitsioon
-- **jobs:** Job'ide kollektsioon
-- **runs-on:** Runner OS
-- **needs:** Job sõltuvused
-- **if:** Conditional execution
-- **env:** Environment variables
-- **uses:** Action kasutamine
-- **run:** Shell käsk
+**Runner:**
+- GitHub-hosted VM (ubuntu-latest, windows-latest, macos-latest)
+- Self-hosted runner (oma server)
+
+**Secrets:**
+- Turvaliselt salvestatud väärtused
+- Masked logides
+- Access: `${{ secrets.SECRET_NAME }}`
+
+**Matrix:**
+- Parallel runs erinevate väärtustega
+- Näide: test mitmel Node versioonil
 
 ---
 
-## 💡 Parimad Tavad
+## 💡 Best Practices
 
-1. **Nimeta workflow'sid selgelt** - Kasuta kirjeldavaid nimesid (`CI`, `Deploy Production`)
-2. **Kasuta secrets'eid** - Ära kunagi harda-code API key'sid YAML'is
-3. **Määra timeout** - `timeout-minutes: 10` (vältimaks kinni jäänud job'e)
-4. **Kasuta cache'i** - `actions/cache@v3` (kiirenda dependency install'i)
-5. **Fail fast** - `fail-fast: true` (stop teised job'id kui üks failib)
-6. **Kasuta matrix** - Testi mitme Node.js versiooniga paralleelselt
-7. **Lisa badge** - Repository README'sse: `![CI](https://github.com/user/repo/workflows/CI/badge.svg)`
-8. **Versiooni actions** - `actions/checkout@v3` (mitte `@main`)
-9. **Documenti workflow'sid** - Lisa kommentaarid YAML'is
-10. **Testi local** - Kasuta [act](https://github.com/nektos/act) tool'i local testimiseks
+1. **Kasuta semantic workflow names** - "CI Pipeline" mitte "test.yml"
+2. **Job dependencies** - Use `needs` logical järjestuse jaoks
+3. **Never log secrets** - GitHub maskib automaatselt, aga ära printi
+4. **Matrix strategy** - Test mitmel versioonil paralleelselt
+5. **Manual triggers** - Lisa `workflow_dispatch` debugging'uks
+6. **Descriptive step names** - Use emojis ja clear descriptions
+
+---
+
+## 🐛 Troubleshooting
+
+### Workflow ei käivitu?
+
+```bash
+# Kontrolli:
+# 1. Fail on .github/workflows/ kataloogis
+# 2. YAML syntax on korrektne (use YAML validator)
+# 3. Trigger on seadistatud (on: push)
+```
+
+### "Invalid workflow file"?
+
+```bash
+# YAML syntax error
+# Kasuta YAML lint'i või GitHub UI
+# Common errors:
+# - Indentation (use 2 spaces, not tabs)
+# - Missing colons
+# - Wrong quotes
+```
+
+### Secret ei tööta?
+
+```bash
+# Kontrolli:
+# 1. Secret name on korrektne (case-sensitive)
+# 2. Secret on repository level (not organization)
+# 3. Secret on seadistatud enne workflow run'i
+```
 
 ---
 
 ## 🔗 Järgmine Samm
 
-Nüüd oskad luua GitHub Actions workflow'sid! Järgmises harjutuses automatiseerime **Docker image build'i ja push'i Docker Hub'i**.
+Järgmises harjutuses ehitad **täieliku CI pipeline'i** linting, testing ja Docker build'iga!
 
-**Jätka:** [Harjutus 2: Docker Build ja Push](02-docker-build-push.md)
+**Jätka:** [Harjutus 2: CI Pipeline](02-ci-pipeline.md)
 
 ---
 
 ## 📚 Viited
 
-### GitHub Actions Dokumentatsioon:
-- [GitHub Actions](https://docs.github.com/en/actions)
-- [Workflow syntax](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions)
-- [Events that trigger workflows](https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows)
-- [Using secrets](https://docs.github.com/en/actions/security-guides/encrypted-secrets)
-
-### Marketplace:
-- [Actions Marketplace](https://github.com/marketplace?type=actions)
-- [actions/checkout](https://github.com/actions/checkout)
-- [actions/setup-node](https://github.com/actions/setup-node)
-
-### Tools:
-- [act - Run GitHub Actions locally](https://github.com/nektos/act)
-- [actionlint - Workflow linter](https://github.com/rhysd/actionlint)
+- [GitHub Actions Documentation](https://docs.github.com/en/actions)
+- [Workflow Syntax](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions)
+- [GitHub-hosted Runners](https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners)
+- [Encrypted Secrets](https://docs.github.com/en/actions/security-guides/encrypted-secrets)
 
 ---
 
-**Õnnitleme! Oled loonud oma esimesed GitHub Actions workflow'd! 🎉**
+**Õnnitleme! Oled loonud oma esimese GitHub Actions workflow'i! 🎉**

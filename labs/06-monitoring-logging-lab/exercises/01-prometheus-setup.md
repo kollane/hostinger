@@ -1,15 +1,19 @@
 # Harjutus 1: Prometheus Setup
 
 **Kestus:** 60 minutit
-**Eesmärk:** Paigaldada ja seadistada Prometheus Kubernetes cluster'is
+**Eesmärk:** Paigalda Prometheus Kubernetes cluster'i ja õpi basic metrics collection.
 
 ---
 
 ## 📋 Ülevaade
 
-Selles harjutuses õpid paigaldama **Prometheus** - avatud lähtekoodiga monitoring ja alerting süsteemi. Prometheus kogub metrics'eid Kubernetes cluster'ist, pod'idest ja rakendustest ning salvestab need time-series andmebaasis.
+Selles harjutuses paigaldad **Prometheus** - avatud lähtekoodiga monitoring ja alerting süsteemi. Prometheus on Cloud Native Computing Foundation (CNCF) graduated project ja de facto standard Kubernetes monitoring'uks.
 
-**Prometheus** on Cloud Native Computing Foundation (CNCF) projekt ja de facto standard Kubernetes monitoring'uks. See kasutab pull-based mudelit - scrape'ib endpoints'e regulaarselt ja kogub metrics'eid.
+**Prometheus peamised komponendid:**
+- **Prometheus Server** - Time-series database ja scraping engine
+- **kube-state-metrics** - Kubernetes object metrics
+- **node-exporter** - Hardware ja OS metrics
+- **AlertManager** - Alert routing (kasutatakse Exercise 4's)
 
 ---
 
@@ -17,119 +21,127 @@ Selles harjutuses õpid paigaldama **Prometheus** - avatud lähtekoodiga monitor
 
 Peale selle harjutuse läbimist oskad:
 
-- ✅ Paigaldada Prometheus Helm Chart'iga
-- ✅ Konfigureerida Prometheus scrape targets
-- ✅ Vaadata Prometheus UI'd
-- ✅ Kirjutada PromQL päringuid
-- ✅ Seadistada ServiceMonitor'eid
-- ✅ Mõista Prometheus arhitektuuri
-- ✅ Debuggida metrics collection'i
+✅ Paigaldada Prometheus kube-prometheus-stack Helm chart'iga
+✅ Mõista Prometheus arhitektuuri
+✅ Navigeerida Prometheus UI's
+✅ Kirjutada basic PromQL queries
+✅ Kontrollida scrape targets'e
+✅ Verificeerida metrics collection'i
 
 ---
 
-## 🏗️ Arhitektuur
+## 🏗️ Prometheus Arhitektuur
 
 ```
-┌────────────────────────────────────────────────────┐
-│         Kubernetes Cluster                         │
-│                                                    │
-│  ┌──────────────────────────────────────────────┐ │
-│  │  Prometheus Server                           │ │
-│  │  - Time-series DB                            │ │
-│  │  - Scrape targets                            │ │
-│  │  - PromQL query engine                       │ │
-│  └────────┬─────────────────────────────────────┘ │
-│           │ scrapes (HTTP pull)                   │
-│           ▼                                        │
-│  ┌─────────────────┐  ┌─────────────────┐        │
-│  │ kube-state-     │  │ node-exporter   │        │
-│  │ metrics         │  │ (host metrics)  │        │
-│  │ (K8s objects)   │  └─────────────────┘        │
-│  └─────────────────┘                              │
-│           │                                        │
-│           ▼                                        │
-│  ┌─────────────────────────────────────────────┐  │
-│  │ Application Pods                            │  │
-│  │ - user-service:3000/metrics                 │  │
-│  │ - todo-service:8081/metrics                 │  │
-│  └─────────────────────────────────────────────┘  │
-└────────────────────────────────────────────────────┘
-
-Prometheus scrapes all targets every 15s (configurable)
+┌─────────────────────────────────────────────────────────────┐
+│                  Kubernetes Cluster                         │
+│                                                             │
+│  ┌────────────────────────────────────────────────────┐    │
+│  │  Prometheus Server (monitoring namespace)          │    │
+│  │  - Time-series database                            │    │
+│  │  - HTTP server (UI + API)                          │    │
+│  │  - Scraper (pulls metrics every 30s)               │    │
+│  │  - Alert evaluation engine                         │    │
+│  └────────┬───────────────────────────────────────────┘    │
+│           │ scrapes (HTTP GET /metrics)                    │
+│           │                                                │
+│           ▼                                                │
+│  ┌─────────────────┐  ┌─────────────────┐                 │
+│  │ kube-state-     │  │ node-exporter   │                 │
+│  │ metrics         │  │ (DaemonSet)     │                 │
+│  │                 │  │                 │                 │
+│  │ Exposes K8s     │  │ Exposes node    │                 │
+│  │ object metrics: │  │ metrics:        │                 │
+│  │ - Deployments   │  │ - CPU usage     │                 │
+│  │ - Pods          │  │ - Memory usage  │                 │
+│  │ - Services      │  │ - Disk I/O      │                 │
+│  │ - ConfigMaps    │  │ - Network       │                 │
+│  └─────────────────┘  └─────────────────┘                 │
+│                                                             │
+│  User accesses:                                            │
+│  http://localhost:9090 (via port-forward)                  │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
 ## 📝 Sammud
 
-### Samm 1: Loo Monitoring Namespace (5 min)
+### Samm 1: Loo Monitoring Namespace
 
-**Loo eraldi namespace monitoring'uks:**
+Kõik monitoring komponendid (Prometheus, Grafana, Loki) pannakse `monitoring` namespace'i.
 
 ```bash
-# Loo monitoring namespace
+# Loo namespace
 kubectl create namespace monitoring
 
-# Lisa label (Prometheus operator kasutab seda)
-kubectl label namespace monitoring name=monitoring
-
 # Kontrolli
-kubectl get namespaces monitoring --show-labels
+kubectl get namespaces | grep monitoring
+```
 
-# Peaks näitama:
-# NAME         STATUS   AGE   LABELS
-# monitoring   Active   10s   name=monitoring
+**Oodatav väljund:**
+```
+monitoring   Active   5s
 ```
 
 ---
 
-### Samm 2: Lisa Prometheus Helm Repository (5 min)
+### Samm 2: Lisa Prometheus Helm Repository
 
-**Lisa Prometheus Community Helm repo:**
+Kasutame `prometheus-community/kube-prometheus-stack` chart'i, mis sisaldab:
+- Prometheus Server
+- Grafana
+- kube-state-metrics
+- node-exporter
+- AlertManager
+- Prometheus Operator (CRD'd nagu ServiceMonitor, PrometheusRule)
 
 ```bash
 # Lisa Helm repository
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 
-# Update repo
+# Uuenda repositories
 helm repo update
 
-# Otsi Prometheus charts
-helm search repo prometheus-community | grep -E "kube-prometheus-stack"
-
-# Peaks näitama:
-# prometheus-community/kube-prometheus-stack    Latest    Full Prometheus stack...
-
-# Vaata chart detaile
-helm show chart prometheus-community/kube-prometheus-stack
+# Kontrolli chart'i olemasolu
+helm search repo prometheus-community/kube-prometheus-stack
 ```
 
-**kube-prometheus-stack** sisaldab:
-- Prometheus Operator
-- Prometheus server
-- Alertmanager
-- Grafana (integration)
-- kube-state-metrics
-- node-exporter
-- Default dashboards ja alerts
+**Oodatav väljund:**
+```
+NAME                                              CHART VERSION  APP VERSION
+prometheus-community/kube-prometheus-stack        55.5.0         v0.70.0
+```
 
 ---
 
-### Samm 3: Loo Prometheus Values File (10 min)
+### Samm 3: Loo Custom Values Fail
 
-**Loo custom Helm values fail:**
+Loome custom values faili, et konfigureerida Prometheus meie vajadusteks:
+- Persistence disabled (development jaoks)
+- Smaller resource requests
+- Port-forward friendly configuration
 
 Loo fail `prometheus-values.yaml`:
 
+```bash
+vim prometheus-values.yaml
+```
+
+**Fail sisu:**
+
 ```yaml
-# Prometheus Operator Configuration
+# Prometheus Values for Lab 6
+# kube-prometheus-stack Helm chart
+
+# Prometheus configuration
 prometheus:
   prometheusSpec:
-    # Retention period
+    # Retention
     retention: 7d
     retentionSize: "10GB"
 
-    # Resources
+    # Resources (adjust based on cluster size)
     resources:
       requests:
         cpu: 200m
@@ -138,29 +150,25 @@ prometheus:
         cpu: 1000m
         memory: 2Gi
 
-    # Storage
-    storageSpec:
-      volumeClaimTemplate:
-        spec:
-          accessModes: ["ReadWriteOnce"]
-          resources:
-            requests:
-              storage: 10Gi
+    # Storage (disable persistence for lab)
+    storageSpec: {}
 
-    # ServiceMonitor selector
+    # ServiceMonitor selector (collect all ServiceMonitors)
     serviceMonitorSelectorNilUsesHelmValues: false
-    serviceMonitorSelector: {}
-    podMonitorSelector: {}
 
-# Grafana (included)
+    # PodMonitor selector
+    podMonitorSelectorNilUsesHelmValues: false
+
+# Grafana configuration
 grafana:
   enabled: true
-  adminPassword: "admin"  # Change in production!
 
-  # Persistent storage
+  # Admin credentials
+  adminPassword: admin123  # Change in production!
+
+  # Persistence disabled for lab
   persistence:
-    enabled: true
-    size: 5Gi
+    enabled: false
 
   # Resources
   resources:
@@ -171,475 +179,391 @@ grafana:
       cpu: 500m
       memory: 512Mi
 
-# Alertmanager
+# AlertManager configuration
 alertmanager:
+  enabled: true
+
+  # Persistence disabled
   alertmanagerSpec:
-    storage:
-      volumeClaimTemplate:
-        spec:
-          accessModes: ["ReadWriteOnce"]
-          resources:
-            requests:
-              storage: 5Gi
+    storage: {}
 
-# kube-state-metrics (K8s object metrics)
-kube-state-metrics:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+
+# kube-state-metrics
+kubeStateMetrics:
   enabled: true
 
-# node-exporter (host metrics)
-prometheus-node-exporter:
+# node-exporter (DaemonSet)
+nodeExporter:
   enabled: true
 
-# Default ServiceMonitors
-defaultRules:
-  create: true
-  rules:
-    alertmanager: true
-    etcd: false  # Ei kasuta kui cluster pole self-hosted
-    kubeApiserver: true
-    kubeScheduler: false
-    kubeStateMetrics: true
-    kubelet: true
-    kubernetesApps: true
-    kubernetesResources: true
-    kubernetesStorage: true
-    kubernetesSystem: true
-    node: true
-    prometheus: true
+# Prometheus Operator
+prometheusOperator:
+  enabled: true
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
 ```
 
-**Values file selgitus:**
-
-- **retention:** Kui kaua metrics'eid säilitada (7 päeva)
-- **storageSpec:** Persistent volume metrics'ide jaoks (10GB)
-- **serviceMonitorSelector:** Automaatne ServiceMonitor'ite discovery
-- **grafana.enabled:** Kaasas Grafana (automaatne integration)
-- **defaultRules:** Built-in alerting rules
+**Salvesta ja välju:** `Esc`, `:wq`, `Enter`
 
 ---
 
-### Samm 4: Paigalda Prometheus Stack (10 min)
-
-**Install Prometheus kube-prometheus-stack Helm chart'iga:**
+### Samm 4: Installi Prometheus Stack
 
 ```bash
-# Install Prometheus stack
+# Installi Helm chart
 helm install prometheus prometheus-community/kube-prometheus-stack \
   --namespace monitoring \
-  --values prometheus-values.yaml
+  --values prometheus-values.yaml \
+  --wait \
+  --timeout 10m
 
-# Peaks näitama:
-# NAME: prometheus
-# LAST DEPLOYED: ...
-# NAMESPACE: monitoring
-# STATUS: deployed
-# REVISION: 1
-
-# Kontrolli pod'e
+# Kontrolli installatsiooni
 kubectl get pods -n monitoring
-
-# Oodatud pod'id:
-# NAME                                                   READY   STATUS
-# prometheus-kube-prometheus-operator-xxxxx              1/1     Running
-# prometheus-prometheus-kube-prometheus-prometheus-0     2/2     Running
-# prometheus-grafana-xxxxx                               3/3     Running
-# prometheus-kube-state-metrics-xxxxx                    1/1     Running
-# prometheus-prometheus-node-exporter-xxxxx              1/1     Running
-# alertmanager-prometheus-kube-prometheus-alertmanager-0 2/2     Running
-
-# Kontrolli services
-kubectl get svc -n monitoring
-
-# Oodatud services:
-# NAME                                      TYPE        CLUSTER-IP      PORT(S)
-# prometheus-kube-prometheus-prometheus     ClusterIP   10.x.x.x        9090/TCP
-# prometheus-grafana                        ClusterIP   10.x.x.x        80/TCP
-# alertmanager-operated                     ClusterIP   None            9093,9094,9094/TCP
 ```
 
-**Paigaldus võtab ~2-3 minutit**, kuni kõik pod'id on Running.
+**Oodatav väljund (kõik pods RUNNING):**
+```
+NAME                                                   READY   STATUS    AGE
+prometheus-kube-prometheus-operator-...                1/1     Running   2m
+prometheus-kube-state-metrics-...                      1/1     Running   2m
+prometheus-prometheus-node-exporter-...                1/1     Running   2m
+prometheus-grafana-...                                 2/2     Running   2m
+alertmanager-prometheus-kube-prometheus-alertmanager-0 2/2     Running   2m
+prometheus-prometheus-kube-prometheus-prometheus-0     2/2     Running   2m
+```
+
+**Märkused:**
+- Install võib võtta 3-5 minutit
+- Node-exporter on DaemonSet (1 pod per node)
+- Prometheus ja AlertManager on StatefulSet (persistent identity)
 
 ---
 
-### Samm 5: Ava Prometheus UI (5 min)
-
-**Port forward Prometheus UI'le:**
+### Samm 5: Kontrolli Prometheus Services
 
 ```bash
-# Port forward Prometheus UI
+# Näita kõiki services monitoring namespace'is
+kubectl get services -n monitoring
+```
+
+**Oodatav väljund:**
+```
+NAME                                      TYPE        CLUSTER-IP      PORT(S)
+prometheus-kube-prometheus-prometheus     ClusterIP   10.96.x.x       9090/TCP
+prometheus-kube-prometheus-alertmanager   ClusterIP   10.96.x.x       9093/TCP
+prometheus-grafana                        ClusterIP   10.96.x.x       80/TCP
+prometheus-kube-state-metrics             ClusterIP   10.96.x.x       8080/TCP
+prometheus-prometheus-node-exporter       ClusterIP   10.96.x.x       9100/TCP
+```
+
+---
+
+### Samm 6: Ligipääs Prometheus UI'le
+
+Prometheus UI on kättesaadav port-forward kaudu:
+
+```bash
+# Port-forward Prometheus service
 kubectl port-forward -n monitoring svc/prometheus-kube-prometheus-prometheus 9090:9090
-
-# Ava brauseris:
-# http://localhost:9090
 ```
 
-**Prometheus UI'is:**
+**Ava brauseris:** `http://localhost:9090`
 
-1. **Status → Targets** - Vaata kõiki scrape targets
-   - Peaks näitama: kube-state-metrics, node-exporter, Prometheus, Alertmanager, kubelet, jne
-   - Status: UP (roheline)
+**Prometheus UI komponendid:**
+- **Graph** - PromQL queries ja visualization
+- **Alerts** - Active alerts
+- **Status → Targets** - Scrape targets ja nende status
+- **Status → Configuration** - Prometheus config
+- **Status → Service Discovery** - Discovered targets
 
-2. **Graph tab** - Testi PromQL päringuid:
-   ```promql
-   # Kõik metrics
-   {__name__=~".+"}
-
-   # Node CPU usage
-   node_cpu_seconds_total
-
-   # Pod memory usage
-   container_memory_usage_bytes
-
-   # HTTP requests (kui app metrics on)
-   http_requests_total
-   ```
-
-3. **Status → Configuration** - Vaata Prometheus config'i
+**Jäta port-forward käima ja ava uus terminal harjutuse jätkamiseks.**
 
 ---
 
-### Samm 6: Testi PromQL Päringuid (10 min)
+### Samm 7: Kontrolli Scrape Targets
 
-**Prometheus Query Language (PromQL) näited:**
+Targets on endpoints, kust Prometheus kogub metrics'eid.
 
-**1. Node CPU kasutus (%):**
+**Prometheus UI:**
+1. Ava `http://localhost:9090`
+2. Kliki `Status` → `Targets`
 
-```promql
-100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)
-```
+**Peaks nägema:**
+- **kube-state-metrics** - State UP (1/1)
+- **node-exporter** - State UP (1/1 või rohkem kui multi-node cluster)
+- **prometheus** - State UP (self-monitoring)
+- **alertmanager** - State UP (1/1)
 
-**2. Pod memory kasutus (MB):**
-
-```promql
-sum(container_memory_usage_bytes{pod=~"user-service.*"}) / 1024 / 1024
-```
-
-**3. Pod restart count:**
-
-```promql
-kube_pod_container_status_restarts_total
-```
-
-**4. Disk space vaba (%):**
-
-```promql
-node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"} * 100
-```
-
-**5. HTTP request rate:**
-
-```promql
-rate(http_requests_total[5m])
-```
-
-**Testi Prometheus UI's:**
-
-1. Mine Graph tab → sisesta query → Execute
-2. Vaata Graph või Table view
-3. Proovi erinevaid PromQL funktsioone:
-   - `rate()` - per-second rate
-   - `sum()` - summation
-   - `avg()` - average
-   - `by (label)` - group by label
-
----
-
-### Samm 7: Loo ServiceMonitor (10 min)
-
-**ServiceMonitor** = Prometheus Operator CRD, mis automaatselt konfigureerib scrape target'id.
-
-**Näide: ServiceMonitor user-service'ile:**
-
-Loo fail `servicemonitor-user-service.yaml`:
-
-```yaml
-apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
-metadata:
-  name: user-service-monitor
-  namespace: default
-  labels:
-    app: user-service
-spec:
-  selector:
-    matchLabels:
-      app: user-service
-  endpoints:
-  - port: http
-    path: /metrics
-    interval: 15s
-    scrapeTimeout: 10s
-```
-
-**ServiceMonitor selgitus:**
-
-- **selector:** Leia Service label'i järgi (`app=user-service`)
-- **endpoints.port:** Service port nimi (mitte number!)
-- **path:** Metrics endpoint (`/metrics`)
-- **interval:** Scrape interval (15s)
-
-**Apply ServiceMonitor:**
+**CLI kaudu:**
 
 ```bash
-# Apply ServiceMonitor
-kubectl apply -f servicemonitor-user-service.yaml
-
-# Kontrolli
-kubectl get servicemonitor -n default
-
-# NAME                   AGE
-# user-service-monitor   10s
-
-# Vaata Prometheus UI's:
-# Status → Targets → servicemonitor/default/user-service-monitor
+# Prometheus API kaudu
+curl -s http://localhost:9090/api/v1/targets | jq '.data.activeTargets[] | {job: .labels.job, health: .health}'
 ```
 
-**NB:** Rakendus peab eksponeerima `/metrics` endpoint'i (järgmises harjutuses lisame).
+**Oodatav väljund:**
+```json
+{"job": "prometheus-kube-prometheus-prometheus", "health": "up"}
+{"job": "prometheus-kube-state-metrics", "health": "up"}
+{"job": "prometheus-prometheus-node-exporter", "health": "up"}
+```
 
 ---
 
-### Samm 8: Kontrolli Metrics Collection (5 min)
+### Samm 8: Esimesed PromQL Queries
 
-**Kontrolli, et Prometheus kogub metrics'eid:**
+PromQL (Prometheus Query Language) on võimas query keel metrics'te pärimiseks.
 
-```bash
-# Prometheus UI
-# http://localhost:9090
+**Prometheus UI → Graph:**
 
-# Graph tab:
-# Sisesta query:
+#### Query 1: Kontrolli, kas metrics tulevad
+
+```promql
 up
-
-# Peaks näitama kõiki targets'e:
-# up{job="prometheus"} 1
-# up{job="kube-state-metrics"} 1
-# up{job="node-exporter"} 1
-# up{job="kubelet"} 1
 ```
 
-**up=1** → target on UP ja scraping toimib
-**up=0** → target on DOWN või unreachable
-
-**Kontrolli specific target:**
-
-```promql
-up{job="kube-state-metrics"}
-```
-
-**Kontrolli scrape duration:**
-
-```promql
-scrape_duration_seconds
-```
+**Tulemus:** Kõik targets peaksid olema `1` (up)
 
 ---
 
-## ✅ Kontrolli Tulemusi
+#### Query 2: Kubernetes node CPU usage
 
-Peale selle harjutuse läbimist peaksid omama:
+```promql
+sum by (node) (rate(node_cpu_seconds_total{mode!="idle"}[5m]))
+```
 
-- [ ] **Prometheus stack:**
-  - [ ] Prometheus server (pod running)
-  - [ ] Grafana (pod running)
-  - [ ] Alertmanager (pod running)
-  - [ ] kube-state-metrics (pod running)
-  - [ ] node-exporter (pod running)
+**Selgitus:**
+- `node_cpu_seconds_total` - Node CPU kasutus sekundites
+- `{mode!="idle"}` - Kõik režiimid välja arvatud idle
+- `rate([5m])` - Kasv viimase 5 minuti jooksul
+- `sum by (node)` - Summeeri node kaupa
 
-- [ ] **Prometheus UI:**
-  - [ ] Accessible (port-forward 9090)
-  - [ ] Status → Targets (all UP)
-  - [ ] Graph tab (PromQL queries work)
-
-- [ ] **Persistent storage:**
-  - [ ] PVC created (10GB prometheus)
-  - [ ] PVC created (5GB grafana)
-
-- [ ] **ServiceMonitor:**
-  - [ ] Created (user-service-monitor)
-  - [ ] Visible Prometheus targets
+**Tulemus:** CPU kasutus (0.0 - 1.0 = 0% - 100%) per node
 
 ---
 
-## 🐛 Troubleshooting
+#### Query 3: Memory kasutus namespace kaupa
 
-### Probleem 1: Prometheus pod ei käivitu - Pending
+```promql
+sum by (namespace) (container_memory_usage_bytes)
+```
 
-**Sümptom:**
+**Selgitus:**
+- `container_memory_usage_bytes` - Container memory kasutus
+- `sum by (namespace)` - Summeeri namespace kaupa
+
+**Tulemus:** Memory kasutus baitides per namespace
+
+---
+
+#### Query 4: Pod restart count
+
+```promql
+sum by (namespace, pod) (kube_pod_container_status_restarts_total)
+```
+
+**Tulemus:** Restart count per pod
+
+---
+
+#### Query 5: Available pods per deployment
+
+```promql
+kube_deployment_status_replicas_available
+```
+
+**Tulemus:** Mitu pod'i on saadaval per deployment
+
+---
+
+### Samm 9: Metrics Exploration
+
+Prometheus kogub tuhandeid metrics'eid. Õpi neid leidma:
+
+**Prometheus UI → Graph:**
+
+1. Kliki "Metrics Explorer" (hamburgeri ikoon query välja kõrval)
+2. Filtreeri metrics'e: `node_`, `kube_`, `container_`
+3. Vali metric ja vaata autocomplete suggestions'id
+
+**Kasulikud metric prefixid:**
+- `node_*` - Node/host metrics (CPU, memory, disk, network)
+- `kube_*` - Kubernetes object metrics (deployments, pods, services)
+- `container_*` - Container metrics (CPU, memory)
+
+---
+
+### Samm 10: Time-Series Visualization
+
+Proovi graafikute loomist:
+
+**Prometheus UI → Graph:**
+
+1. Query: `rate(node_cpu_seconds_total{mode="system"}[5m])`
+2. Kliki **Graph** tab (mitte Console)
+3. Vaata CPU kasutuse graafikut aja jooksul
+
+**Visualiseerimise nupud:**
+- **Add Panel** - Lisa uus graafik
+- **Stacked** - Stack multiple series
+- **Time range** - Muuda time window (1h, 6h, 1d, etc)
+- **Resolution** - Query resolution (step size)
+
+---
+
+## ✅ Kontrolli Oma Edusamme
+
+### Checklist
+
+- [ ] Monitoring namespace loodud
+- [ ] Prometheus Helm chart installitud
+- [ ] Kõik pods on RUNNING state'is
+- [ ] Prometheus UI accessible `http://localhost:9090`
+- [ ] Targets on UP state'is (kube-state-metrics, node-exporter)
+- [ ] PromQL query `up` returns 1 for all targets
+- [ ] CPU usage query töötab
+- [ ] Memory usage query töötab
+- [ ] Metrics explorer töötab
+
+### Verifitseerimine CLI'ga
+
 ```bash
+# 1. Kontrolli pods
 kubectl get pods -n monitoring
-# NAME                                   READY   STATUS    RESTARTS   AGE
-# prometheus-prometheus-0                0/2     Pending   0          5m
+
+# 2. Kontrolli Prometheus ready state
+kubectl get statefulset -n monitoring prometheus-prometheus-kube-prometheus-prometheus
+
+# 3. Test PromQL API
+curl -s http://localhost:9090/api/v1/query?query=up | jq '.data.result[] | {metric: .metric.job, value: .value[1]}'
+
+# 4. Kontrolli targets health
+curl -s http://localhost:9090/api/v1/targets | jq '[.data.activeTargets[] | {job: .labels.job, health: .health}]'
 ```
 
-**Põhjus:** PVC ei saa bind'i (storage class puudub).
+---
 
-**Diagnoos:**
+## 🔍 Troubleshooting
 
-```bash
-kubectl get pvc -n monitoring
+### Probleem: Pods ei käivitu (Pending state)
 
-# NAME                                 STATUS    VOLUME   STORAGECLASS
-# prometheus-prometheus-db-0           Pending            manual
-```
+**Põhjus:** Insufficient resources (CPU/memory)
 
 **Lahendus:**
-
-**Variant A: Kasuta local-path (Minikube/K3s):**
-
 ```bash
-# Minikube
-minikube addons enable storage-provisioner
+# Kontrolli pod events
+kubectl describe pod -n monitoring <pod-name>
 
-# K3s (local-path juba olemas)
-kubectl get storageclass
-
-# Peaks näitama:
-# NAME                 PROVISIONER
-# local-path (default) rancher.io/local-path
-```
-
-**Variant B: Disable persistence (testing):**
-
-```yaml
-# prometheus-values.yaml
-prometheus:
-  prometheusSpec:
-    storageSpec: null  # Disable persistence
+# Vähenda resource requests
+vim prometheus-values.yaml  # Vähenda requests: cpu ja memory
+helm upgrade prometheus prometheus-community/kube-prometheus-stack \
+  --namespace monitoring \
+  --values prometheus-values.yaml
 ```
 
 ---
 
-### Probleem 2: ServiceMonitor ei ilmu Prometheus targets'is
+### Probleem: Targets on DOWN state'is
 
-**Sümptom:**
-
-ServiceMonitor created, aga pole näha Prometheus UI → Status → Targets.
-
-**Diagnoos:**
-
-```bash
-# Kontrolli ServiceMonitor
-kubectl get servicemonitor -n default user-service-monitor -o yaml
-
-# Kontrolli, kas Service eksisteerib
-kubectl get svc user-service -n default
-
-# Kontrolli, kas label match
-kubectl get svc user-service -n default --show-labels
-```
+**Põhjus:** Service discovery või network issues
 
 **Lahendus:**
+```bash
+# Kontrolli target pod'e
+kubectl get pods -n monitoring -l app.kubernetes.io/name=kube-state-metrics
+kubectl get pods -n monitoring -l app.kubernetes.io/name=node-exporter
 
-1. **Service peab eksisteerima:**
+# Kontrolli service
+kubectl get svc -n monitoring prometheus-kube-state-metrics
 
-```yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: user-service
-  labels:
-    app: user-service  # Must match ServiceMonitor selector
-spec:
-  ports:
-  - name: http  # Must match ServiceMonitor endpoints.port
-    port: 80
-    targetPort: 3000
-  selector:
-    app: user-service
+# Kontrolli endpoint
+kubectl get endpoints -n monitoring prometheus-kube-state-metrics
+
+# Test metrics endpoint
+kubectl port-forward -n monitoring svc/prometheus-kube-state-metrics 8080:8080
+curl http://localhost:8080/metrics
 ```
-
-2. **ServiceMonitor peab olema õiges namespace's:**
-
-- ServiceMonitor namespace = Service namespace (tavaliselt)
-- Või kasuta `namespaceSelector` (advanced)
 
 ---
 
-### Probleem 3: Metrics endpoint 404
-
-**Sümptom:**
-
-```bash
-# Prometheus UI → Targets
-# user-service-monitor: DOWN
-# Error: HTTP 404 Not Found
-```
-
-**Põhjus:** Rakendus ei eksponeerib `/metrics` endpoint'i.
+### Probleem: Port-forward ei tööta
 
 **Lahendus:**
+```bash
+# Kontrolli, kas port 9090 on vaba
+lsof -i :9090
 
-Järgmises harjutuses (03-application-metrics.md) lisame `/metrics` endpoint Node.js rakendusse.
-
----
-
-## 🎓 Õpitud Mõisted
-
-### Prometheus:
-- **Time-series database:** Metrics salvestamine ajatelg (timestamp + value)
-- **Scraping:** Pull-based metrics collection (HTTP GET /metrics)
-- **Target:** Endpoint, mida Prometheus scrape'ib
-- **Job:** Grupp targets'e (nt `node-exporter`, `kubelet`)
-- **Instance:** Individuaalne target (nt specific pod IP)
-
-### Prometheus Operator:
-- **Operator:** Kubernetes controller, mis haldab Prometheus instance'id
-- **ServiceMonitor:** CRD (Custom Resource Definition) scrape config'iks
-- **PodMonitor:** Sama mis ServiceMonitor, aga pod'ide jaoks
-- **PrometheusRule:** CRD alerting rules'ide jaoks
-
-### PromQL:
-- **Instant vector:** Metrics snapshot (current value)
-- **Range vector:** Metrics time range (last 5m)
-- **Aggregation:** sum(), avg(), max(), min()
-- **rate():** Per-second rate over time range
-- **by (label):** Group by label
-
-### Metrics Types:
-- **Counter:** Monotonically increasing (http_requests_total)
-- **Gauge:** Up/down value (memory_usage_bytes)
-- **Histogram:** Distribution (request_duration_seconds)
-- **Summary:** Quantiles (request_duration_summary)
+# Kasuta teist porti
+kubectl port-forward -n monitoring svc/prometheus-kube-prometheus-prometheus 9091:9090
+# Ava: http://localhost:9091
+```
 
 ---
 
-## 💡 Parimad Tavad
+## 📚 Mida Sa Õppisid?
 
-1. **Kasuta Helm charts** - kube-prometheus-stack on battle-tested
-2. **Persistent storage** - Ära kaota metrics'eid pod restart'il
-3. **Retention policy** - Balance storage vs history (7-30 päeva)
-4. **ServiceMonitor** - Ära harda-code scrape configs
-5. **Resource limits** - Prometheus võib sööda palju mälu
-6. **High availability** - Production'is kasuta 2+ Prometheus replicas
-7. **Remote write** - Long-term storage (Thanos, Cortex)
-8. **Federation** - Multi-cluster monitoring
-9. **Security** - Enable authentication (OAuth, basic auth)
-10. **Alerting** - Seadista critical alerts (järgmises harjutuses)
+✅ **Prometheus arhitektuur**
+  - Time-series database
+  - Pull-based metrics collection
+  - Scrape targets
 
----
+✅ **Helm chart installation**
+  - kube-prometheus-stack
+  - Custom values configuration
+  - Multi-component deployment
 
-## 🔗 Järgmine Samm
+✅ **PromQL basics**
+  - Metric queries
+  - Rate calculations
+  - Aggregations (sum, avg)
+  - Label filtering
 
-Nüüd sul on Prometheus töötamas! Järgmises harjutuses seadistame **Grafana dashboards** - visualiseerime metrics'eid ilusate graafikutega.
-
-**Jätka:** [Harjutus 2: Grafana Dashboards](02-grafana-dashboards.md)
-
----
-
-## 📚 Viited
-
-### Prometheus:
-- [Prometheus Documentation](https://prometheus.io/docs/)
-- [PromQL Basics](https://prometheus.io/docs/prometheus/latest/querying/basics/)
-- [Prometheus Operator](https://github.com/prometheus-operator/prometheus-operator)
-
-### Helm Charts:
-- [kube-prometheus-stack](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack)
-- [Prometheus Community Charts](https://prometheus-community.github.io/helm-charts/)
-
-### Kubernetes:
-- [ServiceMonitor CRD](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#servicemonitor)
+✅ **Metrics types**
+  - Node metrics (hardware)
+  - Kubernetes object metrics (deployments, pods)
+  - Container metrics (resource usage)
 
 ---
 
-**Õnnitleme! Prometheus on nüüd töötav ja kogub metrics'eid! 📊**
+## 🚀 Järgmised Sammud
+
+**Exercise 2: Application Metrics** - Kogume metrics user-service'st:
+- ServiceMonitor CRD
+- User-service `/metrics` endpoint
+- Multi-environment monitoring (dev, staging, prod)
+- Custom application metrics
+
+```bash
+cat exercises/02-application-metrics.md
+```
+
+---
+
+## 💡 Best Practices
+
+✅ **Retention:** Hoia metrics 7-30 päeva (balanseeri storage vs history)
+✅ **Resource limits:** Sea CPU ja memory limits (prevent resource starvation)
+✅ **High availability:** Production'is kasuta 2+ Prometheus replicas
+✅ **Persistent storage:** Production'is kasuta PersistentVolumes
+✅ **Query optimization:** Kasuta recording rules slow queries jaoks
+✅ **Label cardinality:** Ära loo liiga palju unique label combinations (performance impact)
+
+---
+
+**Õnnitleme! Prometheus on nüüd running ja kogub metrics'eid! 🎉**
+
+**Kestus:** 60 minutit
+**Järgmine:** Exercise 2 - Application Metrics
