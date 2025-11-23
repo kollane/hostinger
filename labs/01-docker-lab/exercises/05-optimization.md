@@ -790,11 +790,10 @@ Peale selle harjutuse läbimist peaksid omama:
 - ✅ .dockerignore optimization (väiksem build context)
 - ✅ Non-root users (security)
 - ✅ Health checks (monitoring)
-- ⚠️ **Alpine vs Debian trade-off'id** (native moodulite tõttu)
 
 **Võrdlus Enne vs Pärast:**
 - 📉 Todo Service: -22% väiksem pilt (image)
-- ⚠️ User Service: sama suurus (~305MB), mõlemad kasutavad `node:18-slim`
+- ⚠️ User Service: sama suurus, mõlemad kasutavad `node:21-slim`
 - 📉 Rebuild kiirus: -60-80% MÕLEMAS teenuses
 - ✅ Security: root → non-root
 - ✅ Monitoring: ❌ → health checks
@@ -831,7 +830,7 @@ Peale selle harjutuse läbimist peaksid omama:
 - ✅ Layer caching (-60-80% kiirem rebuild)
 - ✅ Security (non-root users)
 - ✅ Health checks
-- ⚠️ Mõlemad User Service versioonid kasutavad `node:18-slim` (bcrypt native moodulid)
+- ⚠️ Mõlemad User Service versioonid kasutavad `node:21-slim` (bcrypt native moodulid)
 - ✅ Todo Service: -22% väiksem pilt (image)
 - ⚠️ User Service: sama suurus (~305MB), optimisatsioon annab kiiremad rebuild'id
 - ✅ End-to-End test optimeeritud süsteemiga
@@ -846,7 +845,7 @@ Peale selle harjutuse läbimist peaksid omama:
 - ✅ Security (non-root users)
 - ✅ Fast rebuilds (layer caching - 60-80% kiirem!)
 - ✅ End-to-End tested (JWT workflow töötab!)
-- 📚 **Õppetund:** Töökindlus > pildi (image) suurus (Alpine vs Debian)
+- 📚 **Õppetund:** Töökindlus > pildi (image) suurus
 
 **See on TÄIELIK production-ready mikroteenuste süsteem!** 🎉🚀
 
