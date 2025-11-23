@@ -240,7 +240,7 @@ Production-ready konfiguratsioon:
 
 ## ⚡ Kiirstart Seadistus
 
-### Variant A: Automaatne Seadistus (Soovitatud)
+### Automaatne Seadistus
 
 Käivita setup script, mis kontrollib Lab 1 eeldusi:
 
@@ -262,100 +262,6 @@ chmod +x setup.sh
 
 ---
 
-### Variant B: Manuaalne Kontroll
-
-#### 1. Kontrolli Docker Compose
-
-```bash
-# Docker Compose versioon (v2.x)
-docker compose version
-
-# Peaks olema: Docker Compose version v2.x.x
-```
-
-#### 2. Kontrolli Lab 1 Pilte (Images)
-
-```bash
-# Vaata optimeeritud pilte (images)
-docker images | grep -E "user-service|todo-service"
-
-# Peaksid nägema:
-# user-service    1.0-optimized    abc123    ~50MB
-# todo-service    1.0-optimized    def456    ~180MB
-```
-
-**Kui pildid (images) puuduvad:**
-
-```bash
-# Mine Lab 1 juurde ja ehita (build) optimeeritud pildid (images)
-cd ../01-docker-lab/
-cat exercises/05-optimization.md
-```
-
-#### 3. Kontrolli Lab 1 Andmehoidlaid (Volumes)
-
-```bash
-# Vaata andmehoidlaid (volumes)
-docker volume ls | grep postgres
-
-# Peaksid nägema:
-# postgres-user-data
-# postgres-todo-data
-```
-
-**Kui andmehoidlad (volumes) puuduvad:**
-
-```bash
-# Mine Lab 1 juurde ja loo andmehoidlad (volumes)
-cd ../01-docker-lab/
-cat exercises/04-volumes.md
-```
-
-#### 4. Kontrolli Lab 1 Võrku (Network)
-
-```bash
-# Vaata võrke (networks)
-docker network ls | grep todo-network
-
-# Peaks nägema:
-# todo-network    bridge
-```
-
-**Kui võrk (network) puudub:**
-
-```bash
-# Loo võrk (network)
-docker network create todo-network
-```
-
-#### 5. Kontrolli Andmebaasi Andmeid
-
-```bash
-# Käivita ajutiselt postgres konteinerid
-docker run -d --name temp-postgres-user \
-  -v postgres-user-data:/var/lib/postgresql/data \
-  -e POSTGRES_PASSWORD=postgres \
-  postgres:16-alpine
-
-# Kontrolli, kas users tabel on olemas
-docker exec temp-postgres-user psql -U postgres -d user_service_db -c "\dt"
-
-# Peata ja eemalda
-docker rm -f temp-postgres-user
-```
-
-#### 6. Alusta Harjutus 1'st
-
-```bash
-# Mine Lab 2 juurde
-cd labs/02-docker-compose-lab
-
-# Alusta harjutusega
-cat exercises/01-compose-basics.md
-```
-
----
-
 ### ⚡ Kiirkontroll: Kas Oled Valmis?
 
 Enne labori alustamist veendu, et kõik Lab 1 ressursid on olemas:
@@ -374,9 +280,8 @@ docker volume ls | grep -E "postgres-user-data|postgres-todo-data"
 echo -e "\n=== Lab 1 Võrk (Network) ==="
 docker network ls | grep todo-network
 
-echo -e "\n✅ Kui kõik ülalpool on olemas, oled valmis!"
+echo -e "\n✅ Kui kõik on olemas, oled valmis!"
 ```
-
 ---
 
 ## ✅ Kontrolli Tulemusi
