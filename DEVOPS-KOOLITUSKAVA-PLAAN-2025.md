@@ -1,1421 +1,1158 @@
-# DevOps Administraatori Koolituskava - PÕHJALIK PLAAN 2025
+# DevOps Koolituskava Plaan 2025
 
-**Versioon:** 2.0 DevOps-First
-**Kuupäev:** 2025-01-22
-**Staatus:** 📋 Planeerimisfaas
-**Eesmärk:** Luua tänapäevane, praktiline, labipõhine DevOps administraatori koolituskava
-
----
-
-## 📊 I. STRATEEGILINE ÜLEVAADE
-
-### Mis Me Loome?
-
-**Uus DevOps-keskne koolituskava**, mis:
-- ✅ Fookus 100% DevOps administraatoril (mitte full-stack arendajal)
-- ✅ Konteinerid ja orkestratsioon algusest peale (peatükk 5, mitte 12)
-- ✅ Kasutab 2025 best practices (K3s, Loki, Trivy, Sealed Secrets)
-- ✅ Põhineb valmis rakendustel (labs/apps/) - DevOps HALDAB, ei arenda
-- ✅ Praktilised laborid 6 tk (Docker → K8s → CI/CD → Monitoring)
-- ✅ 67-79 tundi (vs praegune 93h)
-
-### Sihtgrupp
-
-**Sobib:**
-- DevOps insenerid
-- Site Reliability Engineers (SRE)
-- Platform Engineers
-- Kubernetes administraatorid
-- Süsteemiadministraatorid → konteineritele
-
-**EI sobi:**
-- Backend/Frontend arendajad (kasuta v1.0 kava)
-
-### Võrdlus Praeguse Kavaga
-
-| Aspekt | Praegune v1.0 | Uus v2.0 DevOps |
-|--------|---------------|-----------------|
-| **Kestus** | 93h | 67-79h (-21%) |
-| **Backend arendus** | 17h (Node.js, Express, REST) | 0h (kasutame valmis apps) |
-| **Frontend arendus** | 11h (HTML, CSS, JS) | 0h (kasutame valmis apps) |
-| **DevOps fookus** | 65h (70%) | 67-79h (100%) |
-| **Docker algus** | Peatükk 12 (pärast 44h) | Peatükk 5 (pärast 10h) |
-| **Kubernetes algus** | Peatükk 15 (pärast 56h) | Peatükk 9 (pärast 24h) |
-| **Sihtgrupp** | Full-stack arendaja | DevOps administraator |
+**Versioon:** 1.0
+**Kuupäev:** 2025-11-23
+**Staatus:** Käimas (FAAS 2)
 
 ---
 
-## 🔧 II. 2025 BEST PRACTICES (KOHUSTUSLIKUD)
+## Ülevaade
 
-### Docker & Konteinerid
+See dokument on **master plan** 31-peatükilise eestikeelse DevOps koolituskava loomiseks. Koolituskava toetab 10 praktilist laborit (Lab 1-10) ja katab täieliku DevOps administraatori oskuste komplekti.
 
-**KASUTAME:**
-- ✅ **Alpine base images** (`node:18-alpine`, `eclipse-temurin:17-jre-alpine`)
-  - Väike: 5MB vs Debian 120MB
-  - Secure: vähem dependencies, väiksem attack surface
+**Kogu ulatus:**
+- **31 peatükki** (Peatükid 1-30 + Peatükk 6A)
+- **~52,000-65,000 sõna** (~104-129 lehekülge A4)
+- **Fookus:** 70% teooria, 30% näited
+- **Sihtgrupp:** IT-taustaga algajad DevOps'is
+- **Keel:** Eesti keel, inglise terminid sulgudes
 
-- ✅ **Multi-stage builds** (KOHUSTUSLIK!)
-  ```dockerfile
-  FROM gradle:8-jdk17 AS builder
-  # Build stage: kogu build tooling
-
-  FROM eclipse-temurin:17-jre-alpine AS runner
-  # Runtime: AINULT JRE, väike image
-  ```
-
-- ✅ **Non-root users** (ALATI!)
-  ```dockerfile
-  RUN addgroup --system --gid 1001 appuser
-  RUN adduser --system --uid 1001 appuser
-  USER appuser
-  ```
-
-- ✅ **Layer caching optimization**
-  ```dockerfile
-  COPY package.json package-lock.json ./
-  RUN npm ci --only=production
-  COPY src/ ./src/  # Muutub tihti, eraldi layer
-  ```
-
-- ✅ **.dockerignore** (node_modules, .git, .env)
-- ✅ **Health checks** (HEALTHCHECK directive)
-- ✅ **Security scanning** (Trivy)
-
-**VÄLTIME:**
-- ❌ `latest` tag production'is
-- ❌ Root kasutaja konteineris
-- ❌ Debian/Ubuntu kui Alpine sobib
-- ❌ Development dependencies production image'is
+**Eesmärk:**
+Luua põhjalik teoreetiline materjal, mis selgitab laborites praktiseeritavaid teemasid. Õppija saab lugeda peatükki enne või labori tegemise ajal, et mõista kontseptsioone ja põhimõtteid.
 
 ---
 
-### Kubernetes
+## Failide Struktuur
 
-**KASUTAME:**
-- ✅ **K3s** (lightweight Kubernetes, VPS-friendly)
-  - 512MB RAM vs 2GB (K8s)
-  - Üks binary, lihtne install
-  - Production-ready (CNCF certified)
+Iga peatükk on eraldi Markdown fail järgmise nimetusstandardiga:
 
-- ✅ **StatefulSets** andmebaaside jaoks (mitte Deployments!)
-  - Ordered deployment (postgres-0 enne postgres-1)
-  - Stable network IDs
-  - Persistent storage per replica
-
-- ✅ **InitContainers** database migrations'ile
-  ```yaml
-  initContainers:
-  - name: liquibase-migration
-    image: liquibase/liquibase:4.25-alpine
-    # Käivitub ENNE main container'it
-  ```
-
-- ✅ **PersistentVolumeClaims** (local-path StorageClass K3s'is)
-- ✅ **ConfigMaps** konfiguratsioonile (non-sensitive)
-- ✅ **Secrets** mandaatidele (base64)
-- ✅ **Pod Security Standards** (restricted profile)
-  ```yaml
-  apiVersion: v1
-  kind: Namespace
-  metadata:
-    labels:
-      pod-security.kubernetes.io/enforce: restricted
-  ```
-
-- ✅ **Network Policies** (micro-segmentation)
-  ```yaml
-  apiVersion: networking.k8s.io/v1
-  kind: NetworkPolicy
-  # Allow AINULT frontend → backend traffic
-  ```
-
-- ✅ **HorizontalPodAutoscaler** (CPU-based scaling)
-- ✅ **Resource requests & limits** (ALATI!)
-  ```yaml
-  resources:
-    requests:
-      memory: "256Mi"
-      cpu: "100m"
-    limits:
-      memory: "512Mi"
-      cpu: "500m"
-  ```
-
-**VÄLTIME:**
-- ❌ Minikube production'is (ainult dev/testing)
-- ❌ Docker Swarm (deprecated, low adoption)
-- ❌ Deployments andmebaasidele (kasuta StatefulSets)
-- ❌ PodSecurityPolicy (deprecated K8s 1.25+, kasuta PSS)
-- ❌ Hostpath volumes production'is (kasuta proper PV)
+```
+/home/janek/projects/hostinger/
+├── 01-DevOps-Sissejuhatus-VPS-Setup.md
+├── 02-Linux-Pohitoed-DevOps-Kontekstis.md
+├── 03-Git-DevOps-Toovoos.md
+├── 04-Vorgutehnoloogia-Alused.md
+├── 05-Docker-Pohimotted.md                                    ✅ VALMIS
+├── 06-Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md   ✅ VALMIS
+├── 06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md ✅ VALMIS
+├── 07-Docker-Imagite-Haldamine-Optimeerimine.md
+├── 08-Docker-Compose.md
+├── 09-PostgreSQL-Konteinerites.md
+├── 10-Kubernetes-Sissejuhatus.md
+├── 11-Pods-Rakenduste-Kaivitamine.md
+├── 12-Deployments-ReplicaSets.md
+├── 13-Services-Networking.md
+├── 14-ConfigMaps-Secrets.md
+├── 15-Persistent-Storage.md
+├── 16-InitContainers-Database-Migrations.md
+├── 17-Ingress-Load-Balancing.md
+├── 18-Horizontal-Pod-Autoscaling.md
+├── 19-Helm-Package-Manager.md
+├── 20-GitHub-Actions-Basics.md
+├── 21-Automated-Deployment-Pipeline.md
+├── 22-Prometheus-Metrics.md
+├── 23-Grafana-Visualization-Loki-Logging.md
+├── 24-Alerting.md
+├── 25-Security-Best-Practices.md
+├── 26-Vault-Sealed-Secrets.md
+├── 27-RBAC-Network-Policies.md
+├── 28-GitOps-ArgoCD.md
+├── 29-Backup-Disaster-Recovery.md
+└── 30-Terraform-Infrastructure-as-Code.md
+```
 
 ---
 
-### CI/CD
+## Detailne Peatükkide Nimekiri
 
-**KASUTAME:**
-- ✅ **GitHub Actions** (mitte Jenkins, Travis, CircleCI)
-  - Native GitHub integration
-  - Free for public repos
-  - 2000 min/month free private repos
-  - Matrix strategy (parallel builds)
+### FAAS 1: Põhitõed ja Sissejuhatus (Peatükid 1-4)
 
-- ✅ **Self-hosted runners** Kubernetes'es
-  ```yaml
-  apiVersion: actions.summerwind.dev/v1alpha1
-  kind: RunnerDeployment
-  # Actions runner pod'idena K8s'is
-  ```
+#### Peatükk 1: DevOps Sissejuhatus ja VPS Setup
+**Staatus:** ⏳ Planeeritud
+**Maht:** 8-10 lk (~4,000-5,000 sõna)
+**Kestus:** 1.5h teooria + 0.5h näited
 
-- ✅ **Reusable workflows**
-  ```yaml
-  jobs:
-    build:
-      uses: ./.github/workflows/docker-build.yml
-  ```
+**Põhiteemad:**
+- DevOps definitsioon ja põhimõisted
+- DevOps vs traditsiooniline IT (Waterfall vs Agile vs DevOps)
+- DevOps kultuur (collaboration, automation, measurement)
+- CI/CD põhimõtted (Continuous Integration, Continuous Delivery/Deployment)
+- Infrastructure as Code (IaC) kontseptsioon
+- VPS (Virtual Private Server) setup
+  - Ubuntu 22.04/24.04 install
+  - SSH access (public key authentication)
+  - Kasutajate haldus (useradd, usermod, groups)
+  - Õigused (chmod, chown)
+  - Firewall põhitõed (ufw - uncomplicated firewall)
+- DevOps tööriistad ülevaade (Docker, Kubernetes, Git, CI/CD tools)
 
-- ✅ **Matrix strategy** (multi-platform)
-  ```yaml
-  strategy:
-    matrix:
-      platform: [linux/amd64, linux/arm64]
-  ```
-
-- ✅ **Security scanning** pipeline'is
-  - Trivy (image scanning)
-  - Dependabot (dependency updates)
-  - CodeQL (code scanning)
-
-- ✅ **Multi-environment deployments** (dev, staging, prod)
-- ✅ **GitOps kontseptsioon** (ArgoCD preview)
-
-**VÄLTIME:**
-- ❌ Jenkins (complex, resource-heavy, outdated UI)
-- ❌ Travis CI (pricing changes, declining)
-- ❌ CircleCI (kui GitHub Actions native)
-- ❌ Hardcoded secrets workflows'is (use GitHub Secrets)
+**Seos laboritega:** Üldine taust kõigile laboritele
 
 ---
 
-### Monitoring & Logging
+#### Peatükk 2: Linux Põhitõed DevOps Kontekstis
+**Staatus:** ⏳ Planeeritud
+**Maht:** 8-10 lk (~4,000-5,000 sõna)
+**Kestus:** 2h teooria + 1h näited
 
-**KASUTAME:**
-- ✅ **Prometheus** (metrics collection)
-  - CNCF graduated project
-  - Pull model (scrapes /metrics endpoints)
-  - PromQL query language
-
-- ✅ **Grafana** (visualization)
-  - Best-in-class dashboards
-  - Multiple data sources
-  - Alerting
-
-- ✅ **Loki + Promtail** (log aggregation)
-  - "Prometheus for logs"
-  - Grafana Labs
-  - Label-based indexing (cheap storage!)
-  - Query logs koos metrics'iga
-
-- ✅ **AlertManager** (alerting)
-  - Prometheus native
-  - Alert routing, grouping, silencing
-  - Multiple notification channels
-
-- ✅ **ServiceMonitors** (Prometheus Operator)
-  ```yaml
-  apiVersion: monitoring.coreos.com/v1
-  kind: ServiceMonitor
-  # Auto-discovery of /metrics endpoints
-  ```
-
-- ✅ **Structured logging** (JSON)
-  ```json
-  {"level":"info","timestamp":"2025-01-22T10:00:00Z","message":"User created","user_id":123}
-  ```
-
-**VÄLTIME:**
-- ❌ ELK Stack (Elasticsearch + Logstash + Kibana)
-  - Heavy (8GB+ RAM for Elasticsearch)
-  - Expensive
-  - Complex to manage
-  - Use case: kui vaja full-text search
-
-- ❌ Grafana Alerts only (use AlertManager)
-- ❌ Plain text logs (use structured JSON)
-- ❌ Fluentd/Fluent Bit (kui Promtail lihtne piisab)
-
----
-
-### Database
-
-**KASUTAME:**
-- ✅ **Liquibase** (database migrations)
-  - XML/YAML/SQL changesets
-  - Rollback support (built-in)
-  - Preconditions
-  - Version tracking (databasechangelog table)
-
-- ✅ **HikariCP** (connection pooling)
-  - Fastest connection pool (benchmarked)
-  - Spring Boot default
-  - Low latency
-
-- ✅ **PgBouncer** (kui high-traffic)
-  - Connection multiplexing
-  - 200 app connections → 25 DB connections
-  - Lightweight (Golang)
-
-- ✅ **StatefulSets** Kubernetes'es
-  - PostgreSQL kui StatefulSet (mitte Deployment!)
-  - PersistentVolumeClaim per replica
-
-- ✅ **Automated backups** (CronJob)
-  ```yaml
-  apiVersion: batch/v1
-  kind: CronJob
-  spec:
-    schedule: "0 2 * * *"  # 02:00 daily
-  ```
-
-**VÄLTIME:**
-- ❌ Flyway kui Liquibase olemas (no free rollback)
-- ❌ Manual SQL migrations (use Liquibase automation)
-- ❌ `spring.jpa.hibernate.ddl-auto=create` (NEVER production!)
-- ❌ No connection pooling (use HikariCP)
-
----
-
-### Security
-
-**KASUTAME:**
-- ✅ **Trivy** (image scanning)
-  - Fast, accurate
-  - CNCF Sandbox project
-  - CLI + CI/CD integration
-
-- ✅ **Sealed Secrets** (GitOps-friendly)
-  ```yaml
-  apiVersion: bitnami.com/v1alpha1
-  kind: SealedSecret
-  # Encrypted in Git, decrypted in cluster
-  ```
-
-- ✅ **External Secrets Operator** (Vault, AWS Secrets Manager)
-  ```yaml
-  apiVersion: external-secrets.io/v1beta1
-  kind: ExternalSecret
-  # Sync secrets from external vaults
-  ```
-
-- ✅ **Network Policies** (Calico, Cilium)
-- ✅ **Pod Security Standards** (restricted)
-- ✅ **RBAC** (Role-Based Access Control)
-- ✅ **TLS everywhere** (cert-manager + Let's Encrypt)
-- ✅ **Non-root containers** (ALATI!)
-- ✅ **Read-only filesystems** (kui võimalik)
-- ✅ **Drop capabilities**
-  ```yaml
-  securityContext:
-    capabilities:
-      drop:
-      - ALL
-  ```
-
-**VÄLTIME:**
-- ❌ Clair (outdated scanner)
-- ❌ Plaintext secrets Git'is
-- ❌ No RBAC (kasuta least privilege)
-- ❌ Root containers
-- ❌ PodSecurityPolicy (deprecated, use PSS)
-
----
-
-### Package Management
-
-**KASUTAME:**
-- ✅ **Helm 3** (Kubernetes package manager)
-  - Chart'id (reusable K8s templates)
-  - Templating (values.yaml)
-  - Release management
-
-- ✅ **Kustomize** (kui lihtne overlay piisab)
-  - Built into kubectl
-  - Patch-based
-  - No templating
-
-**VÄLTIME:**
-- ❌ Helm 2 (deprecated, Tiller removed)
-- ❌ Manual YAML copy-paste
-
----
-
-## 📚 III. KOOLITUSKAVA STRUKTUUR (25 Peatükki)
-
-### Moodul 1: LINUX JA VPS ALUSED (8-10h)
-
-#### Peatükk 1: DevOps Sissejuhatus ja VPS Setup (3h)
-- DevOps kultuur ja töövoog (Plan → Code → Build → Test → Release → Deploy → Operate → Monitor)
-- Hostinger VPS (kirjakast @ 93.127.213.242)
-- SSH keys (ed25519, mitte RSA)
-- UFW firewall (ufw allow 22,80,443,6443/tcp)
-- sudo ja kasutajate haldamine
-- systemd teenuste haldamine
-
-**Praktiline:**
-- VPS access setup
-- Firewall rules
-- Non-root kasutaja loomine
-
-**Viited:** -
-
----
-
-#### Peatükk 2: Linux Põhitõed DevOps Kontekstis (3h)
-- Failisüsteem (/etc, /var, /opt, /home)
-- Protsessid (ps, top, systemctl)
-- Logid (journalctl, /var/log)
-- Võrk (ss, ip, netstat)
+**Põhiteemad:**
+- Bash käsud failide haldamiseks
+  - Navigeerimine: ls, cd, pwd, tree
+  - Failide manipuleerimine: cp, mv, rm, mkdir, touch
+  - Failide vaatamine: cat, less, head, tail, grep
+  - Otsimine: find, locate
+- Failide õigused
+  - chmod (numeric ja symbolic notation)
+  - chown, chgrp
+  - Spetsiaalsed õigused (setuid, setgid, sticky bit)
+- Kasutajad ja grupid
+  - useradd, usermod, userdel
+  - groupadd, groupmod
+  - /etc/passwd, /etc/group
+- Protsessid
+  - ps, top, htop
+  - kill, killall, pkill
+  - Background/foreground (&, fg, bg, jobs)
+- Süsteemiteenused
+  - systemctl (start, stop, restart, enable, disable, status)
+  - journalctl (log vaatamine)
+- Package management
+  - apt (update, upgrade, install, remove, search)
+  - apt-cache policy
 - Environment variables
-- Cron jobs
-- Permissions (chmod, chown)
+  - export, printenv, echo $VAR
+  - .bashrc, .profile
 
-**Praktiline:**
-- journalctl log monitoring
-- Cron job backup'i jaoks
-- Process management
-
-**Viited:** -
+**Seos laboritega:** Kõik laborid (Linux CLI baas)
 
 ---
 
-#### Peatükk 3: PostgreSQL Administraator Perspektiivist (2-4h)
-- **MITTE ARENDUS** - ainult ADMINISTREERIMINE
-- Docker PostgreSQL (PRIMAARNE)
-- Native install (ALTERNATIIV)
-- psql põhikäsud (\l, \c, \dt, \d)
-- Backup (pg_dump, pg_restore)
-- Performance monitoring (pg_stat_activity)
-- Connection limits (max_connections)
+#### Peatükk 3: Git DevOps Töövoos
+**Staatus:** ⏳ Planeeritud
+**Maht:** 6-8 lk (~3,000-4,000 sõna)
+**Kestus:** 1.5h teooria + 0.5h näited
 
-**Praktiline:**
-- PostgreSQL Docker container
-- Backup ja restore
-- Connection monitoring
+**Põhiteemad:**
+- Git alused
+  - Versioonikontrolli kontseptsioon
+  - Repository (local vs remote)
+  - Working directory, staging area, commit history
+- Põhikäsud
+  - git init, clone
+  - git add, commit, push, pull
+  - git status, log, diff
+- Branching strategies
+  - Feature branching
+  - Git Flow (main, develop, feature, release, hotfix)
+  - GitHub Flow (main, feature branches)
+- Collaboration workflow
+  - Pull requests (review, approve, merge)
+  - Merge conflicts resolution
+  - Code review best practices
+- Git DevOps kontekstis
+  - .gitignore patterns
+  - Semantic versioning (tags: v1.0.0, v1.1.0)
+  - Commit message conventions
+  - Branch protection rules
+- Git hooks (pre-commit, post-commit eelvaade)
 
-**Viited:** -
-
----
-
-#### Peatükk 4: Git DevOps Töövoos (2h)
-- Git põhikäsud (clone, pull, commit, push)
-- Branches ja merge
-- .gitignore
-- GitOps kontseptsioon
-- Infrastructure as Code repos
-
-**Praktiline:**
-- Clone koolituskava repo
-- Commit ja push
-
-**Viited:** -
-
----
-
-### Moodul 2: DOCKER JA KONTEINERISATSIOON (16-20h)
-
-#### Peatükk 5: Docker Põhimõtted (4h)
-- Konteinerid vs VMs
-- Docker arhitektuur (daemon, client, images, containers)
-- Docker lifecycle (pull → run → stop → rm)
-- Port mapping (-p)
-- Volumes (-v)
-- Environment variables (-e)
-- Networks (bridge, host)
-- Logs ja debugging
-
-**Praktiline:**
-- Nginx konteiner
-- PostgreSQL konteiner
-- Node.js rakendus
-
-**Viited:** Labor 1 Harjutus 1-2
+**Seos laboritega:** Lab 5 (CI/CD), Lab 8 (GitOps)
 
 ---
 
-#### Peatükk 6: Dockerfile ja Image Loomine (6-8h) ✅ VALMIS
-**Detailne sisu:** `PEATUKK-6-TAIENDUS-TEHNOLOOGIAD.md`
+#### Peatükk 4: Võrgutehnoloogia Alused DevOps'is
+**Staatus:** ⏳ Planeeritud
+**Maht:** 6-8 lk (~3,000-4,000 sõna)
+**Kestus:** 1.5h teooria + 0.5h näited
 
-**Sektsioonid:**
-1. **Node.js Konteineridamine** (1.5h)
-   - package.json, npm install
-   - Multi-stage builds (900MB → 150MB)
-   - .dockerignore
-   - Health checks
-   - Troubleshooting
+**Põhiteemad:**
+- Võrgu põhimõisted
+  - IP aadressid (IPv4, public vs private, CIDR notation)
+  - Portid ja protokollid (TCP, UDP)
+  - DNS (domain name system, A/AAAA/CNAME records)
+- Levinud portid DevOps'is
+  - HTTP: 80, HTTPS: 443
+  - SSH: 22
+  - PostgreSQL: 5432, MySQL: 3306
+  - Custom app ports: 3000, 8080, 8081
+- Load balancing kontseptsioon
+  - Round-robin, least connections
+  - Health checks
+- Reverse proxy
+  - Nginx reverse proxy eelvaade
+  - Ingress (Kubernetes context)
+- Networking tools
+  - ping, traceroute, nslookup/dig
+  - netstat, ss, lsof
+  - curl, wget
+- Firewall
+  - ufw (uncomplicated firewall)
+  - Allow/deny rules
 
-2. **Java/Spring Boot Konteineridamine** (2h)
-   - Traditional (WAR + Tomcat) vs Modern (JAR + Embedded Tomcat)
-   - Gradle vs Maven
-   - Multi-stage builds (470MB → 180MB)
-   - JDK vs JRE
-   - application.properties
-   - JVM tuning
-
-3. **Liquibase Database Migrations** (1.5h)
-   - Changelog struktuur (XML/YAML)
-   - databasechangelog tables
-   - Docker Compose migrations
-   - Kubernetes InitContainers
-   - Troubleshooting (locks, checksums)
-
-4. **Hibernate/HikariCP** (1-2h)
-   - Connection pooling
-   - Pool size tuning
-   - PostgreSQL max_connections
-   - PgBouncer
-   - Monitoring (Actuator metrics)
-
-**Praktiline:**
-- Dockerfile Node.js'le (lihtne + optimized)
-- Dockerfile Java'le (multi-stage)
-- Liquibase setup
-- HikariCP configuration
-
-**Viited:** Labor 1 Harjutus 1A, 1B, 5
+**Seos laboritega:** Kõik laborid (networking on kõikjal)
 
 ---
 
-#### Peatükk 7: Docker Compose (4h)
+### FAAS 2: Docker ja Konteinerid (Peatükid 5-9) ⭐ KÕRGE PRIORITEET
+
+#### Peatükk 5: Docker Põhimõtted
+**Staatus:** ✅ **VALMIS** (2025-11-23)
+**Maht:** 16 lk (~8,000 sõna)
+**Kestus:** 2h teooria + 1h näited
+
+**Põhiteemad:**
+- Miks konteinerid? (VM vs konteinerid võrdlus)
+- Docker arhitektuur (client, daemon, registry)
+- Docker image vs container
+- Docker workflow (Dockerfile → build → push → pull → run)
+- Docker'i installeerimine Ubuntu'sse
+- Põhikäsud (run, ps, images, pull, rm, rmi)
+- Esimesed näited (hello-world, Nginx, Ubuntu bash)
+
+**Seos laboritega:** Lab 1 (Docker Põhitõed)
+
+---
+
+#### Peatükk 6: Dockerfile ja Rakenduste Konteineriseerimise Detailid
+**Staatus:** ✅ **VALMIS** (2025-11-23)
+**Maht:** 18 lk (~9,000 sõna)
+**Kestus:** 2.5h teooria + 1.5h näited
+
+**Põhiteemad:**
+- Dockerfile struktuur ja põhimõtted
+- Dockerfile instruktsionid (FROM, WORKDIR, COPY, ADD, RUN, ENV, ARG, EXPOSE, USER, CMD, ENTRYPOINT, HEALTHCHECK)
+- Multi-stage builds (build stage → runtime stage)
+- Base image valik (Alpine vs Debian vs Distroless)
+- Layer caching optimization
+- .dockerignore fail
+- Security best practices (non-root users, minimal images)
+
+**Seos laboritega:** Lab 1 (Dockerfile loomine)
+
+---
+
+#### Peatükk 6A: Java/Spring Boot ja Node.js Rakenduste Konteineriseerimise Spetsiifika
+**Staatus:** ✅ **VALMIS** (2025-11-23)
+**Maht:** 20 lk (~10,000 sõna)
+**Kestus:** 3h teooria + 2h näited
+
+**Põhiteemad:**
+- **Traditsiooniline Java deployment (WAR Tomcat'is):**
+  - WAR faili struktuur
+  - Tomcat server setup ja deployment workflow
+  - Probleemid (port conflicts, shared JVM, downtime, JAR hell)
+- **Spring Boot embedded server:**
+  - Executable JAR (Fat JAR)
+  - Embedded Tomcat/Jetty/Undertow
+  - Spring Boot Actuator (health checks, metrics)
+  - application.properties configuration
+- **Põhjalik võrdlus: Tomcat WAR vs Spring Boot Container:**
+  - Deployment workflow võrdlus
+  - Resource usage võrdlus
+  - Tabel (downtime, isolatsioon, skaleeritavus, monitoring)
+- **Java konteineriseerimise spetsiifika:**
+  - Build tools (Maven vs Gradle)
+  - Multi-stage builds (JDK → JRE)
+  - JVM tuning konteinerites
+    - Container-aware JVM (Java 10+)
+    - Heap size tuning (-Xmx, -Xms, -XX:MaxRAMPercentage)
+    - Garbage Collector tuning (G1GC, ZGC)
+  - Image optimization (JDK vs JRE, Alpine, Distroless)
+- **Node.js konteineriseerimise põhitõed:**
+  - npm ci --only=production
+  - Multi-stage builds (TypeScript compile → runtime)
+  - NODE_ENV=production
+  - Non-root user (node user)
+
+**Seos laboritega:** Lab 1 (User Service Node.js, Todo Service Java Spring Boot)
+
+---
+
+#### Peatükk 7: Docker Image'ite Haldamine ja Optimeerimine
+**Staatus:** ⏳ Planeeritud
+**Maht:** 6-8 lk (~3,000-4,000 sõna)
+**Kestus:** 1.5h teooria + 0.5h näited
+
+**Põhiteemad:**
+- Docker build, tag, push workflow
+- Image naming conventions ([registry]/[username]/[repository]:[tag])
+- Docker Hub vs private registries (Harbor, ECR, GCR, ACR)
+- Image layer'id ja layer cache
+- Image size optimization
+  - Multi-stage builds
+  - Alpine base images
+  - .dockerignore
+  - Cleanup (apt clean, npm cache clean)
+- Image security scanning (Trivy eelvaade)
+- Image versioning strategies (semantic versioning, git SHA tags)
+- Docker registry authentication (docker login)
+- docker history (layer'ite analüüs)
+- Dive tool (image layer explorer)
+
+**Seos laboritega:** Lab 1 (Image build ja push)
+
+---
+
+#### Peatükk 8: Docker Compose
+**Staatus:** ⏳ Planeeritud
+**Maht:** 8-10 lk (~4,000-5,000 sõna)
+**Kestus:** 2h teooria + 1h näited
+
+**Põhiteemad:**
+- Docker Compose kontseptsioon (multi-container orchestration)
 - docker-compose.yml struktuur
-- Services, networks, volumes
-- depends_on + healthcheck
-- Environment variables (.env)
-- Multi-container orchestration
-- Dev vs prod configs
+  - version (deprecated v3+)
+  - services (container definitions)
+  - networks (custom networks)
+  - volumes (data persistence)
+- Services definition
+  - image vs build
+  - ports (host:container mapping)
+  - environment variables (.env file)
+  - depends_on (startup order)
+  - healthcheck
+  - restart policies (no, always, on-failure, unless-stopped)
+- Networking
+  - Default bridge network
+  - Custom networks (service discovery via DNS)
+- Volumes
+  - Named volumes vs bind mounts
+  - Volume drivers
+- Environment management
+  - docker-compose.override.yml pattern
+  - Environment-specific configs (dev vs prod)
+  - .env file usage
+- Docker Compose commands
+  - docker compose up/down
+  - docker compose ps/logs
+  - docker compose exec/run
+  - docker compose build/pull
+- Database migrations (Liquibase eelvaade)
 
-**Praktiline:**
-- Frontend + Backend + PostgreSQL
-- Multi-service deployment
-- Healthcheck dependencies
-
-**Viited:** Labor 2
+**Seos laboritega:** Lab 2 (Docker Compose full-stack setup)
 
 ---
 
-#### Peatükk 8: Docker Registry ja Image Haldamine (2-4h)
-- Docker Hub
-- Private registry (local)
-- Image tagging (semantic versioning)
-- Push/pull
-- Security scanning (Trivy)
-- Multi-platform images
+#### Peatükk 9: PostgreSQL Konteinerites
+**Staatus:** ⏳ Planeeritud
+**Maht:** 5-7 lk (~2,500-3,500 sõna)
+**Kestus:** 1.5h teooria + 1h näited
 
-**Praktiline:**
-- Push Docker Hub'i
-- Private registry setup
-- Trivy scanning
+**Põhiteemad:**
+- PostgreSQL official Docker image
+- Volume mounting andmete püsivuseks
+  - Named volume: postgres-data:/var/lib/postgresql/data
+  - Data persistence across container restarts
+- Environment variables
+  - POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB
+  - PGDATA (custom data directory)
+- Connection strings konteinerite vahel
+  - postgresql://user:password@postgres:5432/dbname
+  - Service discovery Docker Compose'is (hostname = service name)
+- PostgreSQL configuration konteineris
+  - Custom postgresql.conf (volume mount või ENV)
+  - max_connections, shared_buffers, work_mem
+- Backup ja restore
+  - pg_dump konteineris
+  - docker exec postgres pg_dump -U user dbname > backup.sql
+  - Restore: docker exec -i postgres psql -U user dbname < backup.sql
+- Liquibase database migrations
+  - Liquibase kontseptsioon (changelog, changesets)
+  - Liquibase Docker image
+  - InitContainer Kubernetes'es (eelvaade)
 
-**Viited:** Labor 1 (registry), Labor 5 (CI/CD push)
+**Seos laboritega:** Lab 1 (PostgreSQL konteinerites), Lab 2 (Compose + migrations)
 
 ---
 
-### Moodul 3: KUBERNETES ORKESTRATSIOON (22-26h)
+### FAAS 3: Kubernetes Alused (Peatükid 10-17)
 
-#### Peatükk 9: Kubernetes Alused ja K3s Setup (4h)
-- K8s arhitektuur (control plane, nodes)
-- Pods, Deployments, Services
-- kubectl CLI
-- **K3s installeerimine VPS'is (kirjakast)**
-- kubeconfig
-- Namespaces
-- Labels ja Selectors
+#### Peatükk 10: Kubernetes Sissejuhatus
+**Staatus:** ⏳ Planeeritud
+**Maht:** 8-10 lk (~4,000-5,000 sõna)
+**Kestus:** 2h teooria + 1h näited
 
-**Praktiline:**
-- K3s install kirjakast VPS'is
+**Põhiteemad:**
+- Kubernetes vs Docker Compose (millal kasutada?)
+- Kubernetes arhitektuur
+  - Control Plane: API Server, etcd, Scheduler, Controller Manager
+  - Worker Nodes: kubelet, kube-proxy, container runtime
+- Kubernetes objektid (Pods, Services, Deployments, ReplicaSets, ConfigMaps, Secrets jne)
+- Kubernetes distributions
+  - K3s (lightweight, VPS-friendly)
+  - Minikube (local development)
+  - K8s (full Kubernetes)
+  - EKS, GKE, AKS (managed cloud)
+- kubectl install ja konfigureerimine
+  - kubeconfig (~/.kube/config)
+  - Contexts ja clusters
+- K3s setup VPS'is
+  - K3s install (single-node cluster)
+  - kubectl get nodes
 - kubectl põhikäsud
-- Esimene Pod (Nginx)
+  - get, describe, logs, exec
+  - apply, delete
+  - kubectl cheat sheet
 
-**Viited:** Labor 3 Harjutus 1
+**Seos laboritega:** Lab 3 (Kubernetes Basics)
 
 ---
 
-#### Peatükk 10: Pods ja Deployments (4h)
-- Pod manifest YAML
-- Container spec
-- Resource requests/limits
-- Liveness/readiness probes
-- Deployments ja ReplicaSets
+#### Peatükk 11: Pods ja Rakenduste Käivitamine
+**Staatus:** ⏳ Planeeritud
+**Maht:** 6-7 lk (~3,000-3,500 sõna)
+**Kestus:** 1.5h teooria + 0.5h näited
+
+**Põhiteemad:**
+- Pod kontseptsioon (väikseim deployable üksus)
+- Pod lifecycle (Pending, Running, Succeeded, Failed, Unknown)
+- Single-container vs multi-container Pods
+- kubectl run, get, describe, logs, exec
+- Pod YAML manifest struktuur
+  - apiVersion, kind, metadata, spec
+  - containers[], image, ports, env
+- Pod restart policies (Always, OnFailure, Never)
+- Resource requests ja limits (eelvaade)
+- Sidecar pattern (eelvaade)
+
+**Seos laboritega:** Lab 3 (Pods loomine)
+
+---
+
+#### Peatükk 12: Deployments ja ReplicaSets
+**Staatus:** ⏳ Planeeritud
+**Maht:** 7-9 lk (~3,500-4,500 sõna)
+**Kestus:** 2h teooria + 1h näited
+
+**Põhiteemad:**
+- Deployment vs Pod (miks mitte käivitada Pode otse?)
+- ReplicaSet rolli (desired vs current replicas)
+- Deployment YAML struktuur
+  - replicas, selector, template
+- Deklaratiivne vs imperatiivne deployment
+- Self-healing (Pod crashib → ReplicaSet loob uue)
+- Scaling (manual ja eelvaade HPA jaoks)
+  - kubectl scale deployment myapp --replicas=5
 - Rolling updates
+  - Update strategy (RollingUpdate vs Recreate)
+  - maxSurge, maxUnavailable
 - Rollbacks
-- Self-healing
+  - kubectl rollout history/undo
+  - Revision tracking
 
-**Praktiline:**
-- Deploy backend Deployment
-- Scale replicas
-- Rolling update
-- Rollback
-
-**Viited:** Labor 3 Harjutus 2
+**Seos laboritega:** Lab 3 (Deployments loomine)
 
 ---
 
-#### Peatükk 11: Services ja Networking (4h)
-- Service types (ClusterIP, NodePort, LoadBalancer)
-- DNS-based discovery
-- Endpoints
-- Load balancing
-- Headless Services
-- Network Policies (basic)
+#### Peatükk 13: Services ja Networking
+**Staatus:** ⏳ Planeeritud
+**Maht:** 8-10 lk (~4,000-5,000 sõna)
+**Kestus:** 2h teooria + 1h näited
 
-**Praktiline:**
-- ClusterIP Service
-- NodePort Service
-- Service discovery test
+**Põhiteemad:**
+- Service kontseptsioon (stable endpoint Pod'ide jaoks)
+- Service tüübid
+  - ClusterIP (default, internal only)
+  - NodePort (external access via node IP:port)
+  - LoadBalancer (cloud provider LB)
+  - ExternalName (DNS CNAME)
+- DNS-based service discovery
+  - service-name.namespace.svc.cluster.local
+  - Sama namespace: lihtsalt service-name
+- Label selectors (labels: app=myapp)
+- Port mapping (port, targetPort, nodePort)
+- Endpoints (Pod IP'de list)
+- Load balancing Pod'ide vahel
+- kubectl port-forward (local testing)
 
-**Viited:** Labor 3 Harjutus 3
-
----
-
-#### Peatükk 12: ConfigMaps, Secrets ja Configuration (3h)
-- ConfigMap (literal, file, env)
-- Secret (Opaque, TLS, Docker registry)
-- Environment variable injection
-- Volume mount
-- 12-Factor App config
-- **Sealed Secrets** (GitOps)
-
-**Praktiline:**
-- ConfigMap rakenduse seadetele
-- Secret DB credentials'ile
-- Sealed Secret
-
-**Viited:** Labor 3 Harjutus 4
+**Seos laboritega:** Lab 3 (Services loomine)
 
 ---
 
-#### Peatükk 13: Persistent Storage (4h)
-- PersistentVolume (PV)
-- PersistentVolumeClaim (PVC)
-- StorageClass (local-path K3s'is)
-- Access Modes (RWO, RWX, ROX)
-- Reclaim Policies
-- **StatefulSets** (PostgreSQL!)
-- Volume snapshots
+#### Peatükk 14: ConfigMaps ja Secrets
+**Staatus:** ⏳ Planeeritud
+**Maht:** 6-8 lk (~3,000-4,000 sõna)
+**Kestus:** 1.5h teooria + 0.5h näited
 
-**Praktiline:**
-- PV/PVC setup
-- StatefulSet PostgreSQL
-- Data persistence test
-
-**Viited:** Labor 3 Harjutus 5
-
----
-
-#### Peatükk 14: Ingress ja Load Balancing (3-5h)
-- Ingress Controllers (Traefik K3s default)
-- Ingress rules (path-based, host-based)
-- TLS/SSL termination
-- **cert-manager + Let's Encrypt**
-- Annotations
-- Rate limiting
-
-**Praktiline:**
-- Traefik Ingress
-- HTTPS setup (Let's Encrypt)
-- Multi-service routing
-
-**Viited:** Labor 4 Harjutus 1
-
----
-
-### Moodul 4: CI/CD JA AUTOMATISEERIMINE (10-12h)
-
-#### Peatükk 15: GitHub Actions Basics (3h)
-- Workflow süntaks (YAML)
-- Triggers (push, PR, schedule, manual)
-- Jobs ja steps
-- Runners (GitHub-hosted vs self-hosted)
-- Actions marketplace
+**Põhiteemad:**
+- ConfigMap kasutamine
+  - Environment variables (envFrom, env)
+  - Volume mount (config files)
+  - kubectl create configmap
 - Secrets
-- Matrix strategy
+  - base64 encoding (mitte encryption!)
+  - Secret types (Opaque, TLS, Docker registry)
+  - Environment variables vs volume mounts
+- 12-Factor App configuration pattern
+- Best practices
+  - Secrets management (Vault eelvaade Lab 7 jaoks)
+  - Immutable ConfigMaps/Secrets
+- Secret rotation
 
-**Praktiline:**
-- Hello World workflow
-- Lint ja test workflow
-- Multi-job workflow
-
-**Viited:** Labor 5 Harjutus 1
-
----
-
-#### Peatükk 16: Docker Build Automation (3h)
-- Docker build GitHub Actions'is
-- Multi-platform builds (buildx)
-- Image tagging (SHA, semver)
-- Docker Hub push
-- Caching optimization
-- **Trivy scanning CI's**
-
-**Praktiline:**
-- Automated Docker build
-- Push Docker Hub'i
-- Security scan
-
-**Viited:** Labor 5 Harjutus 2
+**Seos laboritega:** Lab 3 (ConfigMaps ja Secrets)
 
 ---
 
-#### Peatükk 17: Kubernetes Deployment Automation (4-6h)
-- kubectl apply GitHub Actions'is
-- Kubeconfig management
-- **Self-hosted runners K8s'es**
-- Blue-green deployments
-- Canary deployments (basic)
-- Rollback automation
-- Multi-environment (dev/staging/prod)
-- **GitOps** (ArgoCD preview)
+#### Peatükk 15: Persistent Storage
+**Staatus:** ⏳ Planeeritud
+**Maht:** 8-10 lk (~4,000-5,000 sõna)
+**Kestus:** 2h teooria + 1h näited
 
-**Praktiline:**
-- CI/CD pipeline (build → test → deploy)
-- Automated K8s deployment
-- Multi-environment
+**Põhiteemad:**
+- Volumes vs Persistent Volumes
+- Volume types (emptyDir, hostPath, configMap, secret, PVC)
+- PersistentVolume (PV) ja PersistentVolumeClaim (PVC)
+- StorageClass
+  - Dynamic provisioning
+  - local-path (K3s default)
+  - Cloud storage classes (EBS, GCE PD, Azure Disk)
+- Volume lifecycle (Retain, Delete, Recycle)
+- Access modes (ReadWriteOnce, ReadOnlyMany, ReadWriteMany)
+- StatefulSets vs Deployments (andmebaasidele)
+- Volume expansion
 
-**Viited:** Labor 5 Harjutus 3-5
-
----
-
-### Moodul 5: MONITORING, LOGGING, SECURITY (15-18h)
-
-#### Peatükk 18: Prometheus ja Metrics (4h)
-- Prometheus arhitektuur (pull model)
-- Metrics types (counter, gauge, histogram, summary)
-- PromQL põhitõed
-- Exporters (node-exporter, postgres-exporter)
-- **ServiceMonitors** (Prometheus Operator)
-- Recording rules
-
-**Praktiline:**
-- Prometheus install K8s'es
-- Metrics collection
-- PromQL queries
-
-**Viited:** Labor 6 Harjutus 1
+**Seos laboritega:** Lab 3 (PostgreSQL PVC)
 
 ---
 
-#### Peatükk 19: Grafana ja Visualization (3h)
-- Grafana setup
-- Data sources (Prometheus)
-- Dashboards
-- Panels ja visualizations
-- Variables ja templating
-- Alerts
-- Community dashboards
+#### Peatükk 16: InitContainers ja Database Migrations
+**Staatus:** ⏳ Planeeritud
+**Maht:** 5-6 lk (~2,500-3,000 sõna)
+**Kestus:** 1h teooria + 0.5h näited
 
-**Praktiline:**
-- Grafana install
-- Kubernetes dashboard
-- Custom dashboard
+**Põhiteemad:**
+- InitContainer kontseptsioon
+- InitContainer vs main container
+- Kasutamise näited
+  - Database migration (Liquibase)
+  - Pre-requisite checks (DB readiness)
+  - Setup scripts (config generation)
+- Liquibase migrations InitContainer'iga
+  - Liquibase changelog
+  - InitContainer YAML
+- depends_on ekvivalent Kubernetes'es
 
-**Viited:** Labor 6 Harjutus 2
-
----
-
-#### Peatükk 20: Logging ja Log Aggregation (4h)
-- Structured logging (JSON)
-- **Loki arhitektuur** (label-based indexing)
-- **Promtail** log collection
-- LogQL queries
-- Log retention
-- Correlation (logs + metrics)
-
-**Praktiline:**
-- Loki + Promtail install
-- Log aggregation
-- LogQL Grafana's
-
-**Viited:** Labor 6 Harjutus 3
+**Seos laboritega:** Lab 3 (Database migrations)
 
 ---
 
-#### Peatükk 21: Alerting (2h)
-- **Prometheus AlertManager**
-- Alert rules (PrometheusRules)
-- Routing
-- Notification channels (Slack, email)
-- Alert fatigue prevention
-- Runbooks
+#### Peatükk 17: Ingress ja Load Balancing
+**Staatus:** ⏳ Planeeritud
+**Maht:** 8-10 lk (~4,000-5,000 sõna)
+**Kestus:** 2h teooria + 1h näited
 
-**Praktiline:**
-- AlertManager setup
-- Alert rules (CPU, memory, pod down)
-- Slack notifications
+**Põhiteemad:**
+- Ingress kontseptsioon (HTTP/HTTPS routing)
+- Ingress Controller (nginx-ingress, Traefik, HAProxy)
+- Ingress YAML struktuur
+  - rules[], paths[], backend (service + port)
+- Path-based routing (/api/users → user-service, /api/todos → todo-service)
+- Host-based routing (app1.example.com, app2.example.com)
+- TLS termination (HTTPS)
+  - cert-manager (Let's Encrypt eelvaade)
+- Annotations (rewrite, CORS, rate limiting)
+- Ingress vs LoadBalancer Service
 
-**Viited:** Labor 6 Harjutus 4
+**Seos laboritega:** Lab 4 (Ingress setup)
 
 ---
 
-#### Peatükk 22: Security Best Practices (4-6h)
-- **Pod Security Standards** (restricted)
-- **Network Policies**
-- RBAC (Role-Based Access Control)
-- **Sealed Secrets**
-- **External Secrets Operator** (Vault)
-- **Trivy** image scanning
-- Non-root containers
-- Read-only filesystems
-- Drop capabilities
-- TLS/SSL (cert-manager)
+### FAAS 4: Kubernetes Täiustatud + CI/CD (Peatükid 18-21)
 
-**Praktiline:**
+#### Peatükk 18: Horizontal Pod Autoscaling
+**Staatus:** ⏳ Planeeritud
+**Maht:** 6-7 lk (~3,000-3,500 sõna)
+**Kestus:** 1.5h teooria + 0.5h näited
+
+**Põhiteemad:**
+- HPA kontseptsioon (automaatne scaling)
+- Metrics Server install
+- CPU/memory-based autoscaling
+- HPA YAML struktuur
+  - minReplicas, maxReplicas
+  - targetCPUUtilizationPercentage
+- Custom metrics (edasijõudnud)
+- Testing HPA (load testing)
+
+**Seos laboritega:** Lab 4 (HPA setup)
+
+---
+
+#### Peatükk 19: Helm Package Manager
+**Staatus:** ⏳ Planeeritud
+**Maht:** 8-10 lk (~4,000-5,000 sõna)
+**Kestus:** 2h teooria + 1h näited
+
+**Põhiteemad:**
+- Helm vs kubectl apply (miks Helm?)
+- Helm kontseptsioonid (Chart, Release, Repository)
+- Chart struktuur (Chart.yaml, values.yaml, templates/)
+- Template engine (Go templates)
+  - {{ .Values.image.repository }}
+  - {{ .Release.Name }}
+  - if/else, range, with
+- Helm käsud
+  - helm install, upgrade, rollback, uninstall
+  - helm list, status
+- Values override strategies
+  - --set, -f values.yaml
+  - Environment-specific values (values-dev.yaml, values-prod.yaml)
+- Helm repository management
+  - helm repo add/update
+  - Artifact Hub
+
+**Seos laboritega:** Lab 4 (Helm charts loomine)
+
+---
+
+#### Peatükk 20: GitHub Actions Basics
+**Staatus:** ⏳ Planeeritud
+**Maht:** 7-9 lk (~3,500-4,500 sõna)
+**Kestus:** 2h teooria + 1h näited
+
+**Põhiteemad:**
+- CI/CD kontseptsioonid (Continuous Integration, Continuous Delivery/Deployment)
+- GitHub Actions arhitektuur (Workflows, Jobs, Steps, Runners)
+- Workflow süntaks (YAML)
+  - on (triggers: push, pull_request, workflow_dispatch, schedule)
+  - jobs[], steps[]
+  - runs-on (ubuntu-latest, self-hosted)
+- GitHub Secrets management
+  - GITHUB_TOKEN (automatic)
+  - Custom secrets (DOCKER_USERNAME, DOCKER_PASSWORD)
+- Matrix strategy (multi-platform builds)
+- Artifacts (build artifacts sharing)
+- Caching (node_modules, Gradle/Maven dependencies)
+
+**Seos laboritega:** Lab 5 (GitHub Actions workflows)
+
+---
+
+#### Peatükk 21: Automated Deployment Pipeline
+**Staatus:** ⏳ Planeeritud
+**Maht:** 7-9 lk (~3,500-4,500 sõna)
+**Kestus:** 2h teooria + 1h näited
+
+**Põhiteemad:**
+- Docker build ja push automation
+  - docker/login-action
+  - docker/build-push-action
+- Helm deployment automation
+  - helm upgrade --install
+  - kubectl apply -f
+- Multi-environment strategy (dev, staging, prod)
+  - Environment-specific workflows
+  - Deployment approvals (GitHub Environments)
+- Quality gates
+  - Testing (unit tests, integration tests)
+  - Linting (ESLint, Checkstyle)
+  - Security scanning (Trivy, Snyk)
+- Rollback mechanisms
+- Deployment notifications (Slack, email)
+
+**Seos laboritega:** Lab 5 (CI/CD pipeline)
+
+---
+
+### FAAS 5: Monitoring ja Logging (Peatükid 22-24)
+
+#### Peatükk 22: Prometheus Metrics
+**Staatus:** ⏳ Planeeritud
+**Maht:** 9-11 lk (~4,500-5,500 sõna)
+**Kestus:** 2.5h teooria + 1.5h näited
+
+**Põhiteemad:**
+- Prometheus arhitektuur (Server, Exporters, Alertmanager, Pushgateway)
+- Prometheus data model (metrics, labels, time series)
+- Metric types (Counter, Gauge, Histogram, Summary)
+- PromQL query language
+  - Instant queries, range queries
+  - Functions (rate, increase, sum, avg)
+  - Aggregation (by, without)
+- ServiceMonitor CRD (Prometheus Operator)
+- Application instrumentation
+  - Node.js (prom-client)
+  - Java Spring Boot (Micrometer + Actuator)
+- kube-state-metrics, node-exporter
+- Prometheus configuration (scrape_configs, targets)
+
+**Seos laboritega:** Lab 6 (Prometheus setup)
+
+---
+
+#### Peatükk 23: Grafana Visualization ja Loki Logging
+**Staatus:** ⏳ Planeeritud
+**Maht:** 8-10 lk (~4,000-5,000 sõna)
+**Kestus:** 2h teooria + 1h näited
+
+**Põhiteemad:**
+- Grafana arhitektuur
+- Datasources (Prometheus, Loki, InfluxDB jne)
+- Dashboard creation
+  - Panels (Graph, Stat, Table, Logs)
+  - Variables (templating)
+  - Annotations
+- PromQL queries dashboardides
+- Dashboard JSON export/import
+- Loki arhitektuur (labels vs indexed data)
+- LogQL query language
+  - Label selectors {app="myapp"}
+  - Line filters |= "error"
+  - Aggregation (count_over_time, rate)
+- Promtail DaemonSet (log collection)
+- Logs + metrics correlation
+
+**Seos laboritega:** Lab 6 (Grafana + Loki setup)
+
+---
+
+#### Peatükk 24: Alerting
+**Staatus:** ⏳ Planeeritud
+**Maht:** 6-7 lk (~3,000-3,500 sõna)
+**Kestus:** 1.5h teooria + 0.5h näited
+
+**Põhiteemad:**
+- Prometheus AlertManager
+- Alert rules (PrometheusRule CRD)
+  - alert, expr, for, labels, annotations
+- Alert severity levels (critical, warning, info)
+- Notification channels (Slack, email, PagerDuty)
+- Alert grouping, inhibition, silencing
+- Runbook links (annotations)
+
+**Seos laboritega:** Lab 6 (Alerting setup)
+
+---
+
+### FAAS 6: Security (Peatükid 25-27)
+
+#### Peatükk 25: Security Best Practices
+**Staatus:** ⏳ Planeeritud
+**Maht:** 6-8 lk (~3,000-4,000 sõna)
+**Kestus:** 1.5h teooria + 0.5h näited
+
+**Põhiteemad:**
+- OWASP Kubernetes Top 10
+- CIS Kubernetes Benchmark
+- Pod Security Standards (restricted, baseline, privileged)
+- Image security
+  - Non-root users
+  - Minimal base images (Alpine, Distroless)
+  - No secrets in images
+- Supply chain security
+  - Image scanning (Trivy eelvaade)
+  - Signed images (Cosign eelvaade)
+
+**Seos laboritega:** Lab 7 (Security best practices)
+
+---
+
+#### Peatükk 26: Vault ja Sealed Secrets
+**Staatus:** ⏳ Planeeritud
+**Maht:** 9-11 lk (~4,500-5,500 sõna)
+**Kestus:** 2.5h teooria + 1h näited
+
+**Põhiteemad:**
+- HashiCorp Vault arhitektuur
+  - Vault Server, storage backend
+  - Seal/unseal
+- Vault integration Kubernetes'ega
+  - Vault Agent Injector (sidecar pattern)
+  - Annotations (vault.hashicorp.com/agent-inject-secret)
+- Vault policies (read, write, list)
+- Secret engines (KV v2, Database, PKI)
+- Sealed Secrets Controller
+  - kubeseal CLI
+  - SealedSecret CRD
+  - Public/private key encryption
+- GitOps-friendly secrets management (Sealed Secrets in Git)
+
+**Seos laboritega:** Lab 7 (Vault ja Sealed Secrets)
+
+---
+
+#### Peatükk 27: RBAC ja Network Policies
+**Staatus:** ⏳ Planeeritud
+**Maht:** 9-11 lk (~4,500-5,500 sõna)
+**Kestus:** 2.5h teooria + 1h näited
+
+**Põhiteemad:**
+- Kubernetes RBAC (Role-Based Access Control)
+  - Role, RoleBinding (namespace-scoped)
+  - ClusterRole, ClusterRoleBinding (cluster-scoped)
+  - ServiceAccounts
+- RBAC verbs (get, list, create, update, delete, watch)
+- Principle of Least Privilege
 - Network Policies
-- Pod Security Standards
-- RBAC rules
-- Sealed Secrets
-- Trivy scanning
+  - Ingress rules (incoming traffic)
+  - Egress rules (outgoing traffic)
+  - Pod selectors, namespace selectors
+- Zero-trust networking
+- Trivy security scanning
+  - Image scanning
+  - Manifest scanning (YAML misconfigurations)
 
-**Viited:** Labor 4 Harjutus 3-4
-
----
-
-### Moodul 6: PRODUCTION OPERATIONS (10-12h)
-
-#### Peatükk 23: High Availability ja Scaling (4h)
-- **HorizontalPodAutoscaler** (HPA)
-- Vertical Pod Autoscaler (VPA)
-- Cluster Autoscaler
-- **PodDisruptionBudget**
-- Anti-affinity
-- Resource limits tuning
-- **PgBouncer** (connection pooling)
-- Caching (Redis intro)
-
-**Praktiline:**
-- HPA CPU-based
-- PodDisruptionBudget
-- Load testing (k6)
-
-**Viited:** Labor 4 Harjutus 5
+**Seos laboritega:** Lab 7 (RBAC ja Network Policies)
 
 ---
 
-#### Peatükk 24: Backup ja Disaster Recovery (3h)
-- PostgreSQL backup strategies:
-  - **Konteineris: CronJob + pg_dump**
-  - Väline: cron + pg_basebackup
-- Volume snapshots
-- Velero (Kubernetes backup)
-- Restore procedures
-- RTO ja RPO
-- DR testing
+### FAAS 7: Täiustatud Teemad (Peatükid 28-30)
 
-**Praktiline:**
-- Automated PostgreSQL backup (mõlemad variandid)
-- CronJob K8s'es
-- Restore test
+#### Peatükk 28: GitOps with ArgoCD
+**Staatus:** ⏳ Planeeritud
+**Maht:** 10-12 lk (~5,000-6,000 sõna)
+**Kestus:** 3h teooria + 1.5h näited
 
-**Viited:** Labor 3 (StatefulSet backup)
+**Põhiteemad:**
+- GitOps põhimõtted (declarative, versioned, immutable, pulled, reconciled)
+- ArgoCD arhitektuur
+  - Application Controller
+  - Repo Server
+  - API Server, UI
+- Application CRD
+  - source (repo, path, targetRevision)
+  - destination (cluster, namespace)
+  - syncPolicy
+- Kustomize overlays (base + overlays pattern)
+  - base/ (common resources)
+  - overlays/dev/, overlays/prod/
+- Sync policies
+  - Manual sync
+  - Auto-sync (automated)
+  - Self-heal (auto-correct drift)
+  - Prune (auto-delete removed resources)
+- ApplicationSet (dynamic application generation)
+- Argo Rollouts (Canary deployments, Blue-Green)
 
----
-
-#### Peatükk 25: Troubleshooting ja Debugging (3-5h)
-- kubectl debugging (logs, describe, exec, port-forward)
-- Ephemeral containers
-- Common issues:
-  - ImagePullBackOff
-  - CrashLoopBackOff
-  - Pending Pods
-  - Service unreachable
-  - PVC Pending
-- Network debugging (DNS, connectivity)
-- Resource constraints (OOM, CPU throttling)
-- PostgreSQL slow queries
-- Application debugging
-
-**Praktiline:**
-- Broken deployment fix
-- Network issue troubleshooting
-- Performance bottleneck
-
-**Viited:** Labor 6 Harjutus 5
+**Seos laboritega:** Lab 8 (ArgoCD setup ja GitOps workflow)
 
 ---
 
-## 🔨 IV. IMPLEMENTEERIMISE SAMMUD
+#### Peatükk 29: Backup ja Disaster Recovery
+**Staatus:** ⏳ Planeeritud
+**Maht:** 8-10 lk (~4,000-5,000 sõna)
+**Kestus:** 2h teooria + 1h näited
 
-### Samm 1: Planeerimine ja Audit ✅ VALMIS
+**Põhiteemad:**
+- Velero arhitektuur
+- Backup strategies
+  - Full cluster backup
+  - Namespace backup
+  - Application backup (label selectors)
+- PersistentVolume backups
+  - CSI snapshots (cloud provider)
+  - Restic (filesystem backup)
+- Scheduled backups
+  - Schedule CRD (cron expression)
+- Retention policies (TTL, deleteBackupAfter)
+- Restore workflows
+  - Full cluster restore
+  - Selective restore (namespace, resources)
+- Cross-cluster migration
+- 3-2-1 backup rule (3 copies, 2 media, 1 offsite)
 
-**Tehtud:**
-- ✅ Koostatud UUS-DEVOPS-KOOLITUSKAVA.md (põhiline ettepanek)
-- ✅ Koostatud PEATUKK-6-TAIENDUS-TEKNOLOOGIAD.md (Node.js, Java, Liquibase, Hibernate)
-- ✅ Koostatud DEVOPS-KOOLITUSKAVA-PLAAN-2025.md (see dokument)
-- ✅ Best practices 2025 auditeeritud
-
----
-
-### Samm 2: Peakoolituskava Integreerimine
-
-**Tegevused:**
-1. **Uuenda UUS-DEVOPS-KOOLITUSKAVA.md**
-   - Integreeri Peatükk 6 täiendus (6-8h materjal)
-   - Lisa laboriviited KÕIKIDESSE peatükkidesse
-   - Täpsusta kestusi (67-79h)
-
-2. **Lisa Best Practices märgid**
-   - Iga tehnoloogia juures: ✅ KASUTAME vs ❌ VÄLTIME
-   - Põhjendused (miks K3s, mitte Minikube prod'is)
-
-3. **Täienda võrdlustabeleid**
-   - v1.0 vs v2.0 võrdlus
-   - Tehnoloogiate võrdlused (Maven vs Gradle, Liquibase vs Flyway)
-
-**Tulemus:** Uuendatud UUS-DEVOPS-KOOLITUSKAVA.md (master document)
-
-**Ajakulu:** 2-3 tundi
+**Seos laboritega:** Lab 9 (Velero backup/restore)
 
 ---
 
-### Samm 3: Prioriteet 1 Peatükid (Kriitilised)
+#### Peatükk 30: Terraform Infrastructure as Code
+**Staatus:** ⏳ Planeeritud
+**Maht:** 10-12 lk (~5,000-6,000 sõna)
+**Kestus:** 3h teooria + 1.5h näited
 
-**Kirjutame ESIMESENA:**
+**Põhiteemad:**
+- Terraform vs kubectl vs Helm
+- Terraform arhitektuur
+  - Provider, Resource, Data Source
+  - State file
+- HCL (HashiCorp Configuration Language) syntax
+  - resource, data, variable, output
+  - Expressions, functions
+- Kubernetes provider
+  - kubernetes_deployment, kubernetes_service
+- Terraform workflow
+  - terraform init, plan, apply, destroy
+- State management
+  - Local state
+  - Remote state (S3, Terraform Cloud)
+  - State locking
+- Terraform modules (DRY principle)
+  - Module structure (variables.tf, main.tf, outputs.tf)
+  - Module reusability
+- GitOps for infrastructure (Atlantis eelvaade)
 
-#### 3.1 Peatükk 1: DevOps Sissejuhatus ja VPS Setup (3h)
-**Fail:** `01-DevOps-Sissejuhatus-VPS-Setup.md`
+**Seos laboritega:** Lab 10 (Terraform IaC)
 
-**Struktuur:**
+---
+
+## Laborite ja Peatükkide Seoste Tabel
+
+| Labor | Eeldus Peatükid | Põhiteemad Peatükkides |
+|-------|----------------|----------------------|
+| **Lab 1: Docker Põhitõed** | 5, 6, 6A, 7 | Docker põhimõtted, Dockerfile, Java/Node spetsiifika, Image haldamine |
+| **Lab 2: Docker Compose** | 8, 9 | Docker Compose, PostgreSQL konteinerites, Liquibase migrations |
+| **Lab 3: Kubernetes Basics** | 10, 11, 12, 13, 14, 15, 16 | K8s intro, Pods, Deployments, Services, ConfigMaps, Secrets, PV/PVC, InitContainers |
+| **Lab 4: Kubernetes Advanced** | 17, 18, 19 | Ingress, HPA, Helm charts |
+| **Lab 5: CI/CD Pipeline** | 20, 21 | GitHub Actions, automated deployment, multi-environment |
+| **Lab 6: Monitoring & Logging** | 22, 23, 24 | Prometheus, Grafana, Loki, Alerting |
+| **Lab 7: Security & Secrets** | 25, 26, 27 | Security best practices, Vault, Sealed Secrets, RBAC, Network Policies, Trivy |
+| **Lab 8: GitOps ArgoCD** | 28 | GitOps principles, ArgoCD, Kustomize, sync policies, Canary deployments |
+| **Lab 9: Backup & DR** | 29 | Velero, backup strategies, restore workflows, cross-cluster migration |
+| **Lab 10: Terraform IaC** | 30 | Terraform basics, Kubernetes provider, state management, modules |
+
+---
+
+## Peatüki Template/Struktuur
+
+Iga peatükk järgib standardset struktuuri:
+
 ```markdown
-# Peatükk 1: DevOps Sissejuhatus ja VPS Setup
+# Peatükk X: [Pealkiri]
 
-## 1.1 DevOps Kultuur ja Töövoog
-- DevOps definitsioon
-- CALMS framework (Culture, Automation, Lean, Measurement, Sharing)
-- DevOps lifecycle: Plan → Code → Build → Test → Release → Deploy → Operate → Monitor
-- SRE vs DevOps
+## Õpieesmärgid
+Peale selle peatüki läbimist oskad:
+- ✅ Eesmärk 1
+- ✅ Eesmärk 2
+- ✅ Eesmärk 3
 
-## 1.2 VPS Setup (kirjakast @ 93.127.213.242)
-- SSH key generation (ed25519)
-- SSH config (~/.ssh/config)
-- Initial server setup
-- UFW firewall (ports: 22, 80, 443, 6443)
+## Põhimõisted
+- **Termin 1 (English term):** Selgitus eesti keeles
+- **Termin 2 (English term):** Selgitus eesti keeles
 
-## 1.3 User Management
-- Non-root kasutaja
-- sudo konfigureerimine
-- SSH key-based auth
+## Teooria
 
-## 1.4 systemd Teenused
-- systemctl käsud
-- Service management
-- Logs (journalctl)
+### Alateema 1
+[Selgitus, diagrammid, põhimõtted - 70% sisust]
 
-## Praktilised Harjutused
-- [ ] SSH key setup
-- [ ] VPS ühendus
-- [ ] Firewall rules
-- [ ] Non-root kasutaja
+### Alateema 2
+[Selgitus, põhjendused, best practices]
 
-## Kontrolli Tulemusi
-- [ ] SSH key-based login töötab
-- [ ] UFW firewall enabled
-- [ ] Non-root kasutaja sudo õigustega
+## Praktilised Näited (30% sisust)
 
-## Troubleshooting
-- SSH connection refused
-- Permission denied (publickey)
-- Firewall blocking
+### Näide 1: [Praktiline stsenaarium]
+```bash
+# Käsud koos kommentaaridega
+```
+**Selgitus:** Mida see teeb ja miks
 
-## Viited
-- Koolituskava: 00-DEVOPS-RAAMISTIK.md
-- Best practices: DEVOPS-KOOLITUSKAVA-PLAAN-2025.md sektsioon II
+## Levinud Probleemid ja Lahendused
+
+### Probleem 1
+**Sümptom:** Mida kasutaja näeb
+**Põhjus:** Miks see juhtub
+**Lahendus:** Kuidas parandada
+
+## Best Practices
+- ✅ Soovitus 1 (DO)
+- ✅ Soovitus 2 (DO)
+- ❌ Väldi seda 1 (DON'T)
+- ❌ Väldi seda 2 (DON'T)
+
+## Kokkuvõte
+- Võtmepunktid (3-5 bullet points)
+- Viide laboratooriumile
+
+## Viited ja Edasine Lugemine
+- [Ametlik dokumentatsioon](https://...)
+- [Best practices guide](https://...)
+
+---
+
+**Viimane uuendus:** YYYY-MM-DD
+**Seos laboritega:** Lab X (teema)
+**Eelmine peatükk:** XX-Eelmine-Pealkiri.md
+**Järgmine peatükk:** XX-Jargmine-Pealkiri.md
 ```
 
-**Ajakulu:** 4-6 tundi kirjutamiseks
+---
+
+## Faaside kaupa Töökorraldus
+
+### FAAS 1: Põhitõed (Peatükid 1-4)
+**Kestus:** 1-2 nädalat
+**Prioriteet:** Madal (sissejuhatav materjal)
+**Järjekord:** 1 → 2 → 3 → 4
+
+Sissejuhatavad teemad: DevOps, Linux, Git, Networking
 
 ---
 
-#### 3.2 Peatükk 9: Kubernetes Alused ja K3s Setup (4h)
-**Fail:** `09-Kubernetes-Alused-K3s-Setup.md`
+### FAAS 2: Docker (Peatükid 5-9) ⭐ KÕRGE PRIORITEET
+**Kestus:** 2-3 nädalat
+**Prioriteet:** ✅ **KÕRGE** (toetab Lab 1-2)
+**Staatus:** 🏗️ **POOLELI** (3/5 valmis)
+**Järjekord:** 5 → 6 → 6A → 7 → 8 → 9
 
-**Põhjus:** Kubernetes on koolituskava TUUM - see peab olema täiuslik!
+**Valmis:**
+- ✅ Peatükk 5: Docker Põhimõtted (16 lk, ~8000 sõna)
+- ✅ Peatükk 6: Dockerfile Detailid (18 lk, ~9000 sõna)
+- ✅ Peatükk 6A: Java/Spring Boot ja Node.js Spetsiifika (20 lk, ~10000 sõna)
 
-**Struktuur:**
-```markdown
-# Peatükk 9: Kubernetes Alused ja K3s Setup
-
-## 9.1 Kubernetes Arhitektuur
-- Control plane komponendid (API server, etcd, scheduler, controller-manager)
-- Worker node komponendid (kubelet, kube-proxy, container runtime)
-- Pods, Deployments, Services kontseptsioonid
-
-## 9.2 K3s vs Kubernetes vs Minikube
-- Võrdlustabel (resource usage, features, use cases)
-- Miks K3s VPS'is? (512MB RAM vs 2GB)
-
-## 9.3 K3s Installeerimine VPS'is (kirjakast)
-- Prerequisites check
-- K3s install script
-- kubeconfig setup
-- Cluster verification
-
-## 9.4 kubectl CLI
-- kubectl config
-- Põhikäsud (get, describe, logs, exec, apply, delete)
-- kubectl explain
-- kubectl cheat sheet
-
-## 9.5 Namespaces
-- Default vs kube-system vs custom
-- Resource isolation
-- Namespace best practices
-
-## 9.6 Labels ja Selectors
-- Label syntax
-- Selectors (equality-based, set-based)
-- Common labels (app, version, component)
-
-## Praktilised Harjutused
-- [ ] K3s install kirjakast VPS'is
-- [ ] kubectl config
-- [ ] Namespace loomine
-- [ ] Esimene Pod (Nginx)
-- [ ] Labels ja selectors
-
-## Kontrolli Tulemusi
-- [ ] K3s cluster töötab
-- [ ] kubectl get nodes → Ready
-- [ ] Nginx pod Running
-- [ ] kubectl logs töötab
-
-## Troubleshooting
-- K3s install fails
-- kubectl connection refused
-- Pod ImagePullBackOff
-- Pod Pending
-
-## Viited
-- Lab 3 Harjutus 1: Cluster Setup & Pods
-- Best practices: K3s (DEVOPS-KOOLITUSKAVA-PLAAN-2025.md)
-```
-
-**Ajakulu:** 6-8 tundi kirjutamiseks
+**Järgmine:**
+- ⏳ Peatükk 7: Docker Image'ite Haldamine
+- ⏳ Peatükk 8: Docker Compose
+- ⏳ Peatükk 9: PostgreSQL Konteinerites
 
 ---
 
-#### 3.3 Peatükk 2: Linux Põhitõed DevOps Kontekstis (3h)
-**Fail:** `02-Linux-Pohitoed-DevOps.md`
+### FAAS 3: Kubernetes Alused (Peatükid 10-17)
+**Kestus:** 4-5 nädalat
+**Prioriteet:** ✅ **KÕRGE** (toetab Lab 3-4)
+**Järjekord:** 10 → 11 → 12 → 13 → 14 → 15 → 16 → 17
 
-**Ajakulu:** 4-6 tundi
-
----
-
-### Samm 4: Prioriteet 2 Peatükid (Olulised)
-
-**Kirjutame TEISENA:**
-- Peatükk 5: Docker Põhimõtted (4h)
-- Peatükk 7: Docker Compose (4h)
-- Peatükk 8: Docker Registry (2-4h)
-- Peatükk 10-14: Kubernetes (Pods, Services, ConfigMaps, Storage, Ingress)
-- Peatükk 15-17: CI/CD (GitHub Actions)
-- Peatükk 18-21: Monitoring (Prometheus, Grafana, Loki, AlertManager)
-
-**Ajakulu:** 15-20 peatükki × 4-6h = 60-120 tundi kirjutamiseks
+Orkestratsioon, Pods, Deployments, Services, Storage, Ingress
 
 ---
 
-### Samm 5: Prioriteet 3 Peatükid (Toetavad)
+### FAAS 4: Kubernetes Täiustatud + CI/CD (Peatükid 18-21)
+**Kestus:** 2-3 nädalat
+**Prioriteet:** Keskmine (toetab Lab 4-5)
+**Järjekord:** 18 → 19 → 20 → 21
 
-**Kirjutame VIIMASENA:**
-- Peatükk 3: PostgreSQL Administraator (2-4h)
-- Peatükk 4: Git DevOps Töövoos (2h)
-- Peatükk 22: Security Best Practices (4-6h)
-- Peatükk 23-25: Production Operations (HA, Backup, Troubleshooting)
-
-**Ajakulu:** 6 peatükki × 3-5h = 18-30 tundi
+HPA, Helm, GitHub Actions, Automated Deployment
 
 ---
 
-### Samm 6: Labide Kohandamine (DevOps Perspektiiv)
+### FAAS 5: Monitoring (Peatükid 22-24)
+**Kestus:** 2 nädalat
+**Prioriteet:** Keskmine (toetab Lab 6)
+**Järjekord:** 22 → 23 → 24
 
-**Iga labi README.md uuendamine:**
-
-**Lisame "DevOps Administraatori Perspektiiv" sektsiooni:**
-
-```markdown
-## 🎯 DevOps Administraatori Perspektiiv
-
-### Mida PEAD Teadma:
-- ✅ Kuidas Dockerfile'e kirjutada (multi-stage builds)
-- ✅ Kuidas image'id buildida ja optimeerida (Alpine, layer caching)
-- ✅ Kuidas environment variables seadistada (ConfigMaps, Secrets)
-- ✅ Kuidas health checks'e lisada (liveness, readiness)
-- ✅ Kuidas troubleshoot'ida (logs, exec, describe)
-- ✅ Kuidas security scanning'u teha (Trivy)
-
-### Mida EI PEA Teadma:
-- ❌ Node.js koodi kirjutamine (arendaja töö)
-- ❌ Java Spring Boot arendus (arendaja töö)
-- ❌ SQL päringute kirjutamine (arendaja töö)
-- ❌ Frontend JavaScript (arendaja töö)
-
-### Kasutame Valmis Rakendusi:
-**Arendaja kirjutas:**
-- `labs/apps/backend-nodejs/` (User Service)
-- `labs/apps/backend-java-spring/` (Todo Service)
-- `labs/apps/frontend/` (Web UI)
-
-**DevOps administraator:**
-- KONTEINERISEERIB need rakendused
-- DEPLOY'dab Kubernetes'e
-- MONITOORIB production'is
-- TROUBLESHOOT'ib issues
-
-**Analoogia:**
-DevOps administraator : Rakendus = Automehhaanik : Auto
-
-Automehhaanik EI PEAD teadma, kuidas autot DISAINIDA või TOOTA.
-Automehhaanik PEAB teadma, kuidas autot HOOLDADA, PARANDADA, MONITOORIDA.
-```
-
-**Labid uuendamiseks:**
-- Lab 1: Docker Põhitõed
-- Lab 2: Docker Compose
-- Lab 3: Kubernetes Basics
-- Lab 4: Kubernetes Advanced
-- Lab 5: CI/CD
-- Lab 6: Monitoring & Logging
-
-**Ajakulu:** 6 laborit × 2h = 12 tundi
+Prometheus, Grafana, Loki, Alerting
 
 ---
 
-### Samm 7: Kvaliteedikontroll ja Testimine
+### FAAS 6: Security (Peatükid 25-27)
+**Kestus:** 2-3 nädalat
+**Prioriteet:** Keskmine (toetab Lab 7)
+**Järjekord:** 25 → 26 → 27
 
-**Checklist iga peatüki jaoks:**
+Security best practices, Vault, Sealed Secrets, RBAC, Network Policies
 
-```markdown
+---
+
+### FAAS 7: Täiustatud Teemad (Peatükid 28-30)
+**Kestus:** 2-3 nädalat
+**Prioriteet:** Madal (toetab Lab 8-10)
+**Järjekord:** 28 → 29 → 30
+
+GitOps, ArgoCD, Backup/DR, Terraform IaC
+
+---
+
 ## Kvaliteedikontrolli Checklist
 
-### Sisu Kvaliteet
-- [ ] **Praktiline fookus** (80% hands-on, 20% teooria)
-- [ ] **2025 best practices** (ei vananenud tehnoloogiaid)
-- [ ] **DevOps vaatenurk** (mitte arendaja vaatenurk)
-- [ ] **Töötavad näited** (testitud VPS'is kirjakast)
+Iga peatüki peale kontrolli:
 
-### Struktuur
-- [ ] **Laboriviited** olemas (Labor X Harjutus Y)
-- [ ] **Troubleshooting sektsioon** (levinud probleemid + lahendused)
-- [ ] **Kontrolli tulemusi** checklist
-- [ ] **Praktiline harjutus** samm-sammult
-
-### Tehnilised Detailid
-- [ ] **Koodnäited** (syntax highlighting, copy-pasteable)
-- [ ] **Käsud** (täpsed, töötavad)
-- [ ] **YAML manifests** (valid syntax, testitud)
-- [ ] **VPS-spetsiifiline** (kirjakast hostname, IP)
-
-### Keel ja Stiil
-- [ ] **Eesti keel** põhitekstis
-- [ ] **English technical terms** (Docker, Kubernetes, Pod)
-- [ ] **Consistent terminology** (konteiner, mitte container)
-- [ ] **Clear explanations** (arusaadav algajale)
-
-### Viited
-- [ ] **Koolituskava viited** (00-DEVOPS-RAAMISTIK.md)
-- [ ] **Best practices viited** (DEVOPS-KOOLITUSKAVA-PLAAN-2025.md)
-- [ ] **Laboriviited** (Labor X)
-- [ ] **External docs** (Kubernetes.io, Docker.com)
-```
-
-**Ajakulu:** 25 peatükki × 1h = 25 tundi
+- [ ] **Õpieesmärgid on selged** (3-5 punkti, konkreetsed)
+- [ ] **Põhimõisted on defineeritud** (eesti + inglise terminid)
+- [ ] **Teooria on põhjalik** (70% sisust, selged selgitused, diagrammid)
+- [ ] **Näited töötavad** (testitud käsud, toimivad konfiguratsioonid)
+- [ ] **Levinud probleemid käsitletud** (Sümptom, Põhjus, Lahendus)
+- [ ] **Best practices on kaasatud** (DO's ja DON'Ts)
+- [ ] **Terminoloogia on järjepidev** (vaata TERMINOLOOGIA.md)
+- [ ] **Viited laboratooriumile on korrektsed** (Lab X teema)
+- [ ] **Viited ja edasine lugemine** (ametlikud dokud, best practices)
+- [ ] **Metadata on täidetud** (Viimane uuendus, Seos laboritega, Eelmine/Järgmine peatükk)
+- [ ] **Õigekiri kontrollitud** (eesti keele õigekiri, järjepidev sõnastus)
 
 ---
 
-## 📅 V. AJAKAVA (Realistlik Hinnang)
+## Edenemise Tracking
 
-### Variant A: Täielik Implementeerimine (Soovitatud)
+### Praegune Staatus (2025-11-23)
 
-**Samm 1:** Planeerimine ✅ **VALMIS** (2-3 päeva)
+**Kokku valmis:** 3 / 31 peatükki (9.7%)
+**Sõnu kirjutatud:** ~27,000 / ~52,000-65,000 (52% FAAS 2'st)
+**Lehekülgi:** ~54 / ~104-129
 
-**Samm 2:** Peakava integreerimine (2-3h)
+**Järgmised sammud:**
 
-**Samm 3:** Prioriteet 1 peatükid (3 tk)
-- Peatükk 1, 2, 9
-- Ajakulu: 14-20h kirjutamist
-- Kalender: 2-3 päeva
+1. **Lõpeta FAAS 2** (Docker peatükid 7, 8, 9)
+   - Peatükk 7: Docker Image'ite Haldamine (6-8 lk)
+   - Peatükk 8: Docker Compose (8-10 lk)
+   - Peatükk 9: PostgreSQL Konteinerites (5-7 lk)
 
-**Samm 4:** Prioriteet 2 peatükid (15 tk)
-- Docker, Kubernetes, CI/CD, Monitoring
-- Ajakulu: 60-120h kirjutamist
-- Kalender: 8-15 päeva
+2. **Testi FAAS 2 koos Lab 1-2'ga**
+   - Loe läbi Lab 1 README ja exercises
+   - Kontrolli, kas Peatükid 5-9 katavad kõik laboris kasutatavad teemad
+   - Lisa puuduvad teemad või täpsusta
 
-**Samm 5:** Prioriteet 3 peatükid (6 tk)
-- PostgreSQL, Git, Security, Production
-- Ajakulu: 18-30h kirjutamist
-- Kalender: 2-4 päeva
+3. **Alusta FAAS 3** (Kubernetes Alused)
+   - Peatükk 10: Kubernetes Sissejuhatus
 
-**Samm 6:** Labide kohandamine (6 tk)
-- DevOps perspektiivi lisamine
-- Ajakulu: 12h
-- Kalender: 1-2 päeva
-
-**Samm 7:** Kvaliteedikontroll (25 tk)
-- Ajakulu: 25h
-- Kalender: 3-4 päeva
-
-**KOKKU:** 16-29 tööpäeva (3-6 nädalat)
+4. **Jätka järjest läbi kõigi faaside**
 
 ---
 
-### Variant B: Faasidena Implementeerimine
+## Hinnanguline Ajakulu
 
-**Faas 1: MVP (Minimum Viable Product)**
-- Samm 1-3: Plaan + Prioriteet 1 peatükid
-- Tulemus: 3 peatükki valmis (1, 2, 9)
-- Ajakulu: 5-8 päeva
+**Kokku:** ~14-15 nädalat (täiskohaga töö, 2 peatükki nädalas)
 
-**Faas 2: Tuum**
-- Samm 4: Docker + Kubernetes peatükid
-- Tulemus: 10 peatükki valmis (5-14)
-- Ajakulu: 10-15 päeva
+| Faas | Peatükid | Kestus |
+|------|---------|--------|
+| FAAS 1 | 1-4 | 1-2 nädalat |
+| FAAS 2 | 5-9 | 2-3 nädalat ✅ (pooleli) |
+| FAAS 3 | 10-17 | 4-5 nädalat |
+| FAAS 4 | 18-21 | 2-3 nädalat |
+| FAAS 5 | 22-24 | 2 nädalat |
+| FAAS 6 | 25-27 | 2-3 nädalat |
+| FAAS 7 | 28-30 | 2-3 nädalat |
 
-**Faas 3: CI/CD ja Monitoring**
-- Samm 4 jätk: Peatükid 15-21
-- Tulemus: 7 peatükki valmis
-- Ajakulu: 7-10 päeva
-
-**Faas 4: Lõplik Viimistlus**
-- Samm 5-7: Prioriteet 3 + Labid + QA
-- Tulemus: Kõik 25 peatükki valmis
-- Ajakulu: 6-10 päeva
-
-**KOKKU:** 28-43 päeva (4-9 nädalat) - faasides
+**Alternatiivne lähenemine (osaline töö):**
+- 1 peatükk nädalas = ~30 nädalat (~7 kuud)
+- Prioritiseeri FAAS 2 ja 3 esimesena (Lab 1-4 support)
 
 ---
 
-## ✅ VI. KVALITEEDIKONTROLL
+## Märkused
 
-### Automaatne Kontrollimine
+### Terminoloogia
 
-**Tehnilised kontrollid:**
-```bash
-# YAML syntax validation
-yamllint peatukid/*.yaml
+Järgi **TERMINOLOOGIA.md** faili:
+- Eesti terminid: "ehita" (build), "pilt" (image), "konteiner" (container)
+- Käsud inglise keeles: `docker build`, `kubectl apply`
+- Failinimed muutmata: `Dockerfile`, `package.json`
+- Pattern: "Loo Kubernetes deployment (deployment) kasutades kubectl apply käsku"
 
-# Markdown lint
-markdownlint peatukid/*.md
+### Diagrammid
 
-# Link checking
-markdown-link-check peatukid/*.md
+Kasuta **ASCII art** või **Mermaid** diagramme:
+- ASCII art: Lihtsad arhitektuuridiagrammid (nagu Peatükis 5, 6A)
+- Mermaid: Kompleksemad workflow'id (kui vaja)
 
-# Spell check (Estonian + English technical terms)
-aspell check peatukid/*.md
-```
+### Näited
 
----
+- **Töötavad käsud:** Kõik käsud peavad olema testitud
+- **Kommentaarid:** Selgita, mida iga käsk teeb
+- **Tulemus:** Näita, mis on käsu väljund
 
-### Manuaalne Review
+### Välised Viited
 
-**Iga peatüki review checklist:**
-
-1. **Tehniline täpsus**
-   - [ ] Käsud töötavad (testitud VPS'is)
-   - [ ] YAML manifests valid
-   - [ ] Versiooni numbrid õiged (K8s 1.28+, Docker 24+)
-
-2. **Best practices compliance**
-   - [ ] 2025 best practices järgitud
-   - [ ] Security best practices (non-root, scanning)
-   - [ ] Performance optimization (multi-stage builds)
-
-3. **Pedagoogiline kvaliteet**
-   - [ ] Eesmärgid selged
-   - [ ] Praktiline harjutus samm-sammult
-   - [ ] Troubleshooting kaasatud
-
-4. **Laboriviited**
-   - [ ] Iga peatükk viitab asjakohasele labile
-   - [ ] Laboris vastav sisu olemas
+Kasuta **ametlikke dokumentatsioone** ja **best practices guide'e**:
+- Docker: docs.docker.com
+- Kubernetes: kubernetes.io/docs
+- Spring Boot: spring.io/guides
+- Prometheus: prometheus.io/docs
+- Väldi aegunud blogisid või foorumeid
 
 ---
 
-### Testimine VPS'is
+## Kokkuvõte
 
-**Test environment:**
-- VPS: kirjakast @ 93.127.213.242
-- OS: Ubuntu 24.04.3 LTS
-- User: janek
+See plaan on **living document** - uuenda seda regulaarselt:
 
-**Testimise workflow:**
-```bash
-# 1. Alusta puhtalt labalt
-./labs/reset.sh
+1. **Märgi valmis peatükid** (✅)
+2. **Uuenda staatust** (Pooleli, Valmis)
+3. **Lisa märkusi** (kui midagi muutub)
+4. **Testi laborite vastavust** (peale iga faasi)
 
-# 2. Järgi peatüki juhiseid täpselt
-cat 05-Docker-Pohimotted.md
-
-# 3. Dokumenteeri kõik käsud
-script -a testing-log.txt
-
-# 4. Kontrolli tulemusi
-# Kas kõik käsud töötasid?
-# Kas tulemus on oodatud?
-
-# 5. Troubleshooting test
-# Tekita tahtlikult viga
-# Kas troubleshooting sektsioon aitab?
-```
+**Järgmine review:** Peale FAAS 2 valmimist (Peatükid 5-9 kõik valmis)
 
 ---
 
-## 📝 VII. DELIVERABLES (Lõpptulemused)
+**Viimane uuendus:** 2025-11-23
+**Autor:** Claude Code + Janek
+**Staatus:** FAAS 2 pooleli (3/5 peatükki valmis)
 
-### Dokumendid
-
-**Koolituskava dokumentatsioon:**
-1. ✅ `00-DEVOPS-RAAMISTIK.md` - Master curriculum framework
-2. ✅ `DEVOPS-KOOLITUSKAVA-PLAAN-2025.md` - See dokument (plaan)
-3. ✅ `UUS-DEVOPS-KOOLITUSKAVA.md` - Koondülevaade (integrated)
-4. ✅ `PEATUKK-6-TAIENDUS-TEKNOLOOGIAD.md` - Node.js, Java, Liquibase, Hibernate
-
-**25 peatükki (Estonian):**
-```
-01-DevOps-Sissejuhatus-VPS-Setup.md
-02-Linux-Pohitoed-DevOps.md
-03-PostgreSQL-Administraator.md
-04-Git-DevOps-Toovoos.md
-05-Docker-Pohimotted.md
-06-Dockerfile-Image-Loomine.md (6-8h, includes PEATUKK-6-TAIENDUS)
-07-Docker-Compose.md
-08-Docker-Registry.md
-09-Kubernetes-Alused-K3s-Setup.md
-10-Pods-Deployments.md
-11-Services-Networking.md
-12-ConfigMaps-Secrets.md
-13-Persistent-Storage.md
-14-Ingress-LoadBalancing.md
-15-GitHub-Actions-Basics.md
-16-Docker-Build-Automation.md
-17-Kubernetes-Deployment-Automation.md
-18-Prometheus-Metrics.md
-19-Grafana-Visualization.md
-20-Logging-Log-Aggregation.md
-21-Alerting.md
-22-Security-Best-Practices.md
-23-High-Availability-Scaling.md
-24-Backup-Disaster-Recovery.md
-25-Troubleshooting-Debugging.md
-```
-
-**Labid (6 tk, uuendatud):**
-```
-labs/01-docker-lab/README.md (+ DevOps perspektiiv)
-labs/02-docker-compose-lab/README.md
-labs/03-kubernetes-basics-lab/README.md
-labs/04-kubernetes-advanced-lab/README.md
-labs/05-cicd-lab/README.md
-labs/06-monitoring-logging-lab/README.md
-```
-
----
-
-### Abimaterjalid
-
-**Best practices guides:**
-- Docker best practices checklist
-- Kubernetes best practices checklist
-- Security best practices checklist
-
-**Cheat sheets:**
-- kubectl cheat sheet (Estonian)
-- Docker CLI cheat sheet
-- Git DevOps workflow
-
-**Troubleshooting guides:**
-- Docker troubleshooting
-- Kubernetes troubleshooting
-- PostgreSQL troubleshooting
-
----
-
-## 🎯 VIII. JÄRGMISED SAMMUD (Immediate Actions)
-
-### Samm 1: Kinnitamine ✋ **OOTAB SINU KINNITUST**
-
-**Küsimused:**
-1. ✅ **Kas see plaan sobib?**
-   - 25 peatükki, 67-79h, DevOps-first
-   - 2025 best practices (K3s, Loki, Trivy, Sealed Secrets)
-   - Prioriteedid: 1 (kriitiline) → 2 (oluline) → 3 (toetav)
-
-2. ✅ **Kas best practices list on täielik?**
-   - Docker: Alpine, multi-stage, non-root
-   - K8s: K3s, StatefulSets, InitContainers, PSS, Network Policies
-   - CI/CD: GitHub Actions, self-hosted runners
-   - Monitoring: Prometheus+Grafana, Loki+Promtail (mitte ELK)
-   - Security: Trivy, Sealed Secrets, External Secrets
-   - Database: Liquibase, HikariCP, PgBouncer
-
-3. ✅ **Kas soovid muuta prioriteete?**
-   - Praegu: Peatükk 1, 2, 9 esimesena
-   - Saad muuta järjekorda
-
-4. ✅ **Milline implementeerimise variant?**
-   - Variant A: Kõik korraga (16-29 päeva)
-   - Variant B: Faasides (MVP → Tuum → CI/CD → Viimistlus)
-
----
-
-### Samm 2: Implementeerimise Algus (Pärast Kinnitust)
-
-**KOHE pärast sinu kinnitust:**
-
-1. **Uuenda UUS-DEVOPS-KOOLITUSKAVA.md**
-   - Integreeri Peatükk 6 täiendus
-   - Lisa laboriviited kõikidesse peatükkidesse
-   - Täpsusta kestusi
-
-2. **Alusta Peatükk 1 kirjutamisega**
-   - `01-DevOps-Sissejuhatus-VPS-Setup.md`
-   - DevOps kultuur + VPS kirjakast setup
-   - 3h materjal
-
-3. **Commit ja push**
-   - Git commit strategy: üks peatükk = üks commit
-   - Descriptive commit messages
-
----
-
-## 📞 IX. KONTAKT JA KÜSIMUSED
-
-**Kui sul on küsimusi:**
-- Best practices kohta (miks Loki, mitte ELK?)
-- Prioriteetide kohta (miks peatükk 9 enne 5?)
-- Struktuuri kohta (kas 6-8h peatükk on liiga pikk?)
-- Ajakava kohta (kas 3-6 nädalat on realistlik?)
-
-**Anna teada:**
-- Mis vajab täpsustamist
-- Mis peaks olema erinev
-- Millised on sinu prioriteedid
-
----
-
-## ✨ KOKKUVÕTE
-
-**See plaan annab sulle:**
-- ✅ **Täieliku ülevaate** kogu projektist (strateegia → struktuur → implementeerimine → kvaliteedikontroll)
-- ✅ **2025 best practices** detailse loendiga (KASUTAME vs VÄLTIME)
-- ✅ **25 peatüki struktuuri** (moodulid 1-6, laboriviited)
-- ✅ **Implementeerimise roadmap** (7 sammu, prioriteedid, ajakava)
-- ✅ **Kvaliteedikontrolli** (checklist, testimine VPS'is)
-- ✅ **Deliverables** (25 peatükki + 6 labi + abimaterjalid)
-
-**Valmis alustama, kui annad rohelist tuld!** 🚀
-
----
-
-**Autor:** Claude Code (Sonnet 4.5)
-**Kuupäev:** 2025-01-22
-**Versioon:** 1.0 Final Plan
-**Staatus:** 📋 Ootab kinnitust
-
-**Edu koolituskava loomisega!** 🎓
+**Edu koolituskava loomisega! 🎓🚀**
