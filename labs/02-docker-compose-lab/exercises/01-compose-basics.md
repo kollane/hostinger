@@ -276,7 +276,7 @@ services:
       postgres-user:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      test: ["CMD", "node", "healthcheck.js"]
       interval: 30s
       timeout: 3s
       retries: 3
@@ -359,6 +359,80 @@ Defineerib 4 teenust (service):
 - `depends_on:` - Sõltuvused teistest teenustest
 - `healthcheck:` - Seisukorra kontroll (health check)
 - `restart:` - Restart poliitika
+
+#### `healthcheck:` - Oluline!
+
+**User Service healthcheck:**
+```yaml
+healthcheck:
+  test: ["CMD", "node", "healthcheck.js"]
+  interval: 30s
+  timeout: 3s
+  retries: 3
+  start_period: 40s
+```
+
+**Miks `node healthcheck.js`, mitte `wget` või `curl`?**
+- Node.js 22-slim pilt (image) **EI sisalda** `wget` ega `curl` tööriistu
+- `healthcheck.js` fail on juba konteineris olemas (Lab 1'st)
+- Node on garanteeritult olemas (kuna see on Node.js konteiner)
+- Docker Compose healthcheck **override'ib** Dockerfile HEALTHCHECK'i
+
+**Todo Service healthcheck:**
+```yaml
+healthcheck:
+  test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/health"]
+```
+
+**Miks todo-service võib kasutada `wget`?**
+- Java runtime pilt (eclipse-temurin) sisaldab `wget` tööriista
+- Kui `wget` puuduks, kasutaks `curl` või Java HTTP klienti
+
+**Healthcheck parameetrid:**
+- `interval: 30s` - Kontrolli iga 30 sekundi tagant
+- `timeout: 3s` - Ühendus timeout (katse ebaõnnestub peale 3s)
+- `retries: 3` - Mitme ebaõnnestumise järel märgitakse unhealthy
+- `start_period: 40s` - Grace period startup'il (ei loe failures)
+
+#### Miks mitte installida wget konteinerisse?
+
+**Küsimus:** Kas võiks lihtsalt installida wget Node.js konteinerisse?
+
+**Vastus:** Jah, tehniliselt võimalik, aga **EI OLE best practice**:
+
+❌ **Vale lähenemine (AVOID):**
+```dockerfile
+FROM node:22-slim
+RUN apt-get update && apt-get install -y wget  # Lisab 5-10MB
+HEALTHCHECK CMD wget --spider http://localhost:3000/health
+```
+
+**Miks see on halb?**
+- Suurem image (+5-10MB wget + dependencies)
+- Aeglasem build (apt-get update/install)
+- Rohkem security vulnerabilities (lisapakettide CVE'd)
+- Multi-stage build keerulisem (wget mõlemas stage'is)
+
+✅ **Õige lähenemine (BEST PRACTICE):**
+```dockerfile
+FROM node:22-slim
+# Kasuta tööriistu mis juba on
+HEALTHCHECK CMD node healthcheck.js
+```
+
+**Miks see on parem?**
+- Minimal image size (slim jääb slim'iks)
+- Vähem dependencies = vähem vulnerabilities
+- Kiirem build ja deploy
+- Production-ready approach
+
+**DevOps põhimõte:**
+> "Don't install tools just for healthchecks. Use what's already in the container."
+
+**Millal siiski installida wget?**
+- Kui rakendusel endal on vaja wget'i (debugging, scripting)
+- Kui healthcheck PEAB olema wget (legacy süsteemid)
+- Development image'ites (mitte production!)
 
 #### `volumes:` Blokk
 
@@ -822,6 +896,82 @@ docker stop <container-id>
 ports:
   - "3001:3000"  # Host port 3001, konteiner port 3000
 ```
+
+### Probleem 5: "user-service on unhealthy staatuses"
+
+**Sümptomid:**
+```bash
+docker compose ps
+# user-service    Up (unhealthy)    # ← Probleem!
+```
+
+**Põhjus:** Healthcheck kasutab `wget` käsku, aga Node.js 22-slim pildis ei ole `wget` installitud.
+
+**Diagnoos:**
+```bash
+# Kontrolli healthcheck viga
+docker inspect user-service --format='{{json .State.Health}}' | jq
+
+# Peaks nägema:
+# "Output": "exec: \"wget\": executable file not found in $PATH"
+```
+
+**Lahendus:**
+
+Docker Compose healthcheck peab kasutama `node healthcheck.js` asemel `wget`:
+
+```yaml
+# VALE (ei tööta Node.js slim pildis):
+user-service:
+  healthcheck:
+    test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+
+# ÕIGE (töötab alati):
+user-service:
+  healthcheck:
+    test: ["CMD", "node", "healthcheck.js"]
+    interval: 30s
+    timeout: 3s
+    retries: 3
+    start_period: 40s
+```
+
+**Miks see juhtub?**
+- Node.js 22-slim pilt on minimalistlik (ei sisalda wget/curl)
+- `healthcheck.js` fail on juba konteineris (Lab 1'st)
+- Docker Compose healthcheck override'ib Dockerfile HEALTHCHECK'i
+
+**Rakenda parandus:**
+```bash
+# 1. Paranda docker-compose.yml (muuda wget → node healthcheck.js)
+vim docker-compose.yml
+
+# 2. Taaskäivita user-service
+docker compose up -d --force-recreate user-service
+
+# 3. Oota ~40 sekundit (start_period) ja kontrolli
+docker compose ps
+# user-service    Up (healthy)    # ← Parandatud!
+```
+
+**Alternatiiv: Kas võiks installida wget?**
+
+Tehniliselt jah, aga see on **anti-pattern** production image'itele:
+
+```dockerfile
+# ❌ EI SOOVITATA (AVOID)
+FROM node:22-slim
+RUN apt-get update && apt-get install -y wget
+# Probleem: +5-10MB, rohkem CVE'd, aeglasem build
+```
+
+**Production image'id peavad olema minimalistlikud:**
+- Väiksem attack surface (vähem koodi = vähem bugs)
+- Vähem security vulnerabilities (iga pakett võib tuua CVE'd)
+- Kiiremad deployments (väiksem image = kiirem download)
+- Odavam storage/bandwidth
+
+**DevOps best practice:** Kasuta seda, mis juba on - `node`, `npm`, `healthcheck.js`
 
 ---
 
