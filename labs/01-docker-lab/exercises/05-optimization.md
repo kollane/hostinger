@@ -313,7 +313,7 @@ docker images | grep -E 'user-service|todo-service'
 ```
 
 **ℹ️ Märkus User Service suuruse kohta:**
-User Service pilt (image) jääb samaks (~305MB), sest mõlemad versioonid kasutavad `node:18-slim`.
+User Service pilt (image) jääb samaks (~305MB), sest mõlemad versioonid kasutavad `node:21-slim`.
 
 **Mida võitsime optimeeritud versiooniga:**
 ✅ Multi-stage build (dependencies cached eraldi kihina)
