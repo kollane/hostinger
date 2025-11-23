@@ -158,6 +158,8 @@ Lisa **frontend teenus (service)** järgmise struktuuri järgi (peale todo-servi
     volumes:
       # Mount frontend failid (read-only)
       - ../../apps/frontend:/usr/share/nginx/html:ro
+      # Mount Nginx konfiguratsioon (reverse proxy API päringutele)
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
     networks:
       - todo-network
     depends_on:
@@ -171,6 +173,104 @@ Lisa **frontend teenus (service)** järgmise struktuuri järgi (peale todo-servi
 ```
 
 Salvesta: `Esc`, siis `:wq`, `Enter`
+
+---
+
+### Samm 2.5: Lisa Nginx Reverse Proxy Konfiguratsioon (10 min)
+
+**Miks see on vajalik?**
+
+Frontend JavaScript (`app.js`) teeb API päringuid relatiivse URL-iga `/api`:
+- Brauser saadab: `http://kirjakast.cloud:8080/api/auth/login`
+- Backend API'd töötavad: `http://user-service:3000` ja `http://todo-service:8081`
+- **Nginx peab proxy-ma API päringud õigetesse portidesse**
+
+**Arhitektuur:**
+
+```
+Browser
+  ↓ http://kirjakast.cloud:8080/api/auth/login
+Nginx (port 8080)
+  ↓ proxy_pass
+  ├─ /api/auth/*  → user-service:3000
+  ├─ /api/users*  → user-service:3000
+  └─ /api/todos*  → todo-service:8081
+```
+
+**Loo nginx.conf fail:**
+
+```bash
+vim nginx.conf
+```
+
+Vajuta `i` (insert mode) ja lisa:
+
+```nginx
+server {
+    listen 80;
+    server_name _;
+
+    # Frontend staatilised failid
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # Frontend staatilised failid (HTML, CSS, JS)
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # ===========================================
+    # API Reverse Proxy - User Service (Port 3000)
+    # ===========================================
+
+    # Auth endpoints (/api/auth/register, /api/auth/login)
+    location /api/auth/ {
+        proxy_pass http://user-service:3000/api/auth/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # User endpoints (/api/users, /api/users/me)
+    location /api/users {
+        proxy_pass http://user-service:3000/api/users;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # ===========================================
+    # API Reverse Proxy - Todo Service (Port 8081)
+    # ===========================================
+
+    # Todo endpoints (/api/todos)
+    location /api/todos {
+        proxy_pass http://todo-service:8081/api/todos;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+Salvesta: `Esc`, siis `:wq`, `Enter`
+
+**Kontrolli:**
+
+```bash
+# Kas nginx.conf on olemas?
+ls -la nginx.conf
+
+# Kas docker-compose.yml mount'ib seda?
+grep "nginx.conf" docker-compose.yml
+# Peaksid nägema: - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+```
 
 ---
 
@@ -198,6 +298,34 @@ Salvesta: `Esc`, siis `:wq`, `Enter`
 #### `healthcheck`
 - Kontrollib, kas Nginx vastab HTTP päringutele
 - Tagab, et teenus (service) on valmis päringuid vastu võtma
+
+#### `volumes: - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro`
+- Mount'ib Nginx konfiguratsiooni konteinerisse
+- `/etc/nginx/conf.d/default.conf` on Nginx vaikimisi konfiguratsioon
+- **Võimaldab reverse proxy funktsionaalsust**
+
+**Nginx Reverse Proxy tööloogika:**
+
+1. **Frontend failid (HTML/CSS/JS):**
+   - `location /` → serveerib `/usr/share/nginx/html`
+   - Brauser laeb: `http://kirjakast.cloud:8080/index.html`
+
+2. **API päringud (JavaScript):**
+   - Frontend teeb: `fetch('/api/auth/login')`
+   - Brauser saadab: `http://kirjakast.cloud:8080/api/auth/login`
+   - Nginx proxy_pass: `http://user-service:3000/api/auth/login`
+   - User Service vastab → Nginx edastab → Brauser
+
+3. **Miks see on oluline:**
+   - ✅ Üks port (8080) kõigile päringutele
+   - ✅ Ei ole CORS probleeme (sama origin)
+   - ✅ Backend portid (3000, 8081) pole avalikult kättesaadavad
+   - ✅ Lihtne URL struktuur frontend'is (`/api`)
+
+**Ilma reverse proxy'ta:**
+- Frontend peaks teadma backend URL-e: `http://kirjakast.cloud:3000`, `http://kirjakast.cloud:8081`
+- CORS vead (cross-origin requests)
+- Keerulisem turvalisuse haldamine
 
 ---
 
@@ -302,34 +430,50 @@ Vajuta `F12` ja ava "Console" tab.
 
 **Peaksid nägema:**
 ```
-API Request: POST http://localhost:3000/api/auth/register
+API Request: POST http://kirjakast.cloud:8080/api/auth/register
 API Response: { message: "User created successfully", ... }
-API Request: GET http://localhost:8081/api/todos
+API Request: GET http://kirjakast.cloud:8080/api/todos
 API Response: { content: [...], totalElements: 1 }
 ```
+
+**Oluline:** Kõik API päringud lähevad läbi Nginx (port 8080), mitte otse backend portidesse!
 
 #### Kontrolli Network Tab'i
 
 Vajuta `F12` → "Network" tab → refresh leht.
 
 **Peaksid nägema päringuid (requests):**
-- `http://localhost:3000/api/auth/login` (POST)
-- `http://localhost:8081/api/todos` (GET)
+- `http://kirjakast.cloud:8080/api/auth/login` (POST)
+- `http://kirjakast.cloud:8080/api/todos` (GET)
 - Response koodid: `200 OK` või `201 Created`
 
-#### Vaata Backend Loge
+**Network tab'is näed:**
+1. Request URL: `http://kirjakast.cloud:8080/api/...` (läbi Nginx)
+2. Status: 200 või 201
+3. Response Headers: `X-Forwarded-For`, `X-Real-IP` (Nginx lisab need)
+
+#### Vaata Loge
 
 ```bash
-# User Service logid
+# Nginx access logid (kõik sissetulevad päringud)
+docker compose logs frontend | tail -20
+# Peaksid nägema:
+# GET /api/auth/login HTTP/1.1" 200
+# GET /api/todos HTTP/1.1" 200
+
+# User Service logid (proxy'd päringud)
 docker compose logs user-service | tail -20
-
-# Todo Service logid
-docker compose logs todo-service | tail -20
-
 # Peaksid nägema API päringuid (requests):
 # user-service  | POST /api/auth/register 201
 # user-service  | POST /api/auth/login 200
+
+# Todo Service logid (proxy'd päringud)
+docker compose logs todo-service | tail -20
 # todo-service  | GET /api/todos 200
+
+# Kogu süsteemi logid
+docker compose logs -f
+# Vaata reaalajas, kuidas päringud liiguvad läbi Nginx → Backend
 ```
 
 ---
@@ -468,6 +612,83 @@ sudo lsof -i :8080
 # Lahendus: Muuda porti docker-compose.yml's
 ports:
   - "8090:80"  # Kasuta porti 8090 host'is
+```
+
+### Probleem 5: "API calls fail - Network error" või "ERR_CONNECTION_REFUSED"
+
+**Põhjus:** Nginx reverse proxy konfiguratsioon puudub või on valesti mount'itud.
+
+```bash
+# Kontrolli, kas nginx.conf fail on olemas
+ls -la compose-project/nginx.conf
+
+# Kui puudub:
+# Loo nginx.conf fail (vaata Samm 2.5)
+
+# Kontrolli, kas nginx.conf on mount'itud konteinerisse
+docker compose exec frontend cat /etc/nginx/conf.d/default.conf
+
+# Kui fail puudub või on tühi:
+# Kontrolli docker-compose.yml volumes sektsiooni:
+volumes:
+  - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro  # See rida peab olemas olema!
+
+# Taaskäivita frontend
+docker compose up -d --force-recreate frontend
+```
+
+### Probleem 6: "502 Bad Gateway" API päringutele
+
+**Põhjus:** Nginx ei saa ühendust backend teenustega (user-service või todo-service).
+
+```bash
+# Kontrolli, kas backend teenused töötavad
+docker compose ps
+
+# Peaksid nägema:
+# user-service    Up (healthy)
+# todo-service    Up (healthy)
+
+# Kui mõni on unhealthy või stopped:
+docker compose logs user-service
+docker compose logs todo-service
+
+# Kontrolli Nginx error loge
+docker compose logs frontend | grep error
+
+# Tüüpilised vead:
+# "connect() failed (111: Connection refused) while connecting to upstream"
+# → Backend teenus ei tööta, kontrolli healthcheck'i
+
+# "no resolver defined to resolve user-service"
+# → Teenused peavad olema samas network'is (todo-network)
+
+# Lahendus: Taaskäivita kogu stack
+docker compose down
+docker compose up -d
+```
+
+### Probleem 7: "Login töötab, aga todo'sid ei saa luua"
+
+**Põhjus:** JWT_SECRET ei ole sama mõlemas backend teenuses.
+
+```bash
+# Kontrolli JWT_SECRET väärtusi
+docker compose exec user-service printenv | grep JWT_SECRET
+docker compose exec todo-service printenv | grep JWT_SECRET
+
+# Mõlemad peavad olema TÄPSELT SAMAD!
+
+# Kui erinevad:
+# Uuenda docker-compose.yml:
+# user-service:
+#   environment:
+#     JWT_SECRET: sama-secret-key
+# todo-service:
+#   environment:
+#     JWT_SECRET: sama-secret-key  # Täpselt sama!
+
+docker compose up -d --force-recreate user-service todo-service
 ```
 
 ---
