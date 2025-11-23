@@ -1,1051 +1,812 @@
-# Peatükk 22: Security Best Practices 🔒
+# Peatükk 22: Security Best Practices
 
-**Kestus:** 4 tundi
-**Eeldused:** Peatükk 21 läbitud
-**Eesmärk:** Turvalisuse best practices rakendamine
-
----
-
-## Sisukord
-
-1. [Ülevaade](#1-ülevaade)
-2. [Network Policies](#2-network-policies)
-3. [Pod Security Standards](#3-pod-security-standards)
-4. [Secrets Management](#4-secrets-management)
-5. [Image Security Scanning](#5-image-security-scanning)
-6. [OWASP Top 10](#6-owasp-top-10)
-7. [Rate Limiting](#7-rate-limiting)
-8. [Security Headers](#8-security-headers)
-9. [Harjutused](#9-harjutused)
+**Kestus:** 5 tundi
+**Eeldused:** Peatükk 9-14 (Kubernetes core + advanced)
+**Eesmärk:** Mõista security mindset'i ja defense-in-depth strateegiaid
 
 ---
 
-## 1. Ülevaade
+## Õpieesmärgid
 
-### 1.1. Security Layers
+- Security mindset (defense in depth, least privilege, zero trust)
+- RBAC fundamentals (millal kasutada, millal mitte)
+- Secret management strategies (Vault, Sealed Secrets, external providers)
+- Network isolation (Network Policies, service mesh)
+- Container security (image scanning, runtime security)
+- Security trade-offs (convenience vs security)
+- Compliance basics (GDPR, SOC2, PCI-DSS)
+
+---
+
+## 22.1 Security Mindset
+
+### Defense in Depth
+
+**Concept: Multiple security layers**
 
 ```
-┌─────────────────────────────────────────────┐
-│         INFRASTRUCTURE SECURITY              │
-│  - Firewall (ufw)                           │
-│  - SSH key-based auth                       │
-│  - fail2ban                                 │
-└─────────────────────────────────────────────┘
-              ↓
-┌─────────────────────────────────────────────┐
-│         NETWORK SECURITY                     │
-│  - Network Policies (K8s)                   │
-│  - TLS/SSL (cert-manager)                   │
-│  - Private networks                         │
-└─────────────────────────────────────────────┘
-              ↓
-┌─────────────────────────────────────────────┐
-│         CONTAINER SECURITY                   │
-│  - Pod Security Standards                   │
-│  - Image scanning (Trivy)                   │
-│  - Non-root users                           │
-│  - Read-only filesystem                     │
-└─────────────────────────────────────────────┘
-              ↓
-┌─────────────────────────────────────────────┐
-│         APPLICATION SECURITY                 │
-│  - OWASP Top 10                             │
-│  - Input validation                         │
-│  - SQL injection prevention                 │
-│  - XSS prevention                           │
-│  - CSRF tokens                              │
-└─────────────────────────────────────────────┘
-              ↓
-┌─────────────────────────────────────────────┐
-│         SECRETS MANAGEMENT                   │
-│  - Kubernetes Secrets                       │
-│  - Sealed Secrets                           │
-│  - External Secrets (Vault)                 │
-└─────────────────────────────────────────────┘
+Security is NOT one wall - it's multiple concentric walls:
+
+Layer 1: Network perimeter (firewall, VPN)
+  → Attacker bypasses (phishing email)
+
+Layer 2: Application authentication (JWT, OAuth)
+  → Attacker steals token (XSS vulnerability)
+
+Layer 3: Database encryption (TLS, encryption at rest)
+  → Attacker gains DB access (SQL injection)
+
+Layer 4: Audit logging (who accessed what, when)
+  → Detection of breach (forensics)
+
+Result: Even if Layer 1-3 fail, Layer 4 detects the breach
 ```
+
+**Põhjendus:** Single layer security FAILS. Defense in depth = multiple layers (attacker must break ALLE layers).
 
 ---
 
-## 2. Network Policies
+### Least Privilege Principle
 
-### 2.1. Mis on Network Policy?
+**Concept: Give MINIMUM necessary permissions**
 
-**Network Policy:** Kubernetes firewall Pod-ide vahel
+```
+❌ BAD:
+  Developer needs to deploy app
+  → Give cluster-admin access (full Kubernetes control)
 
-**Vaikimisi:** Kõik Podid saavad omavahel suhelda (no restrictions)
+  Result: Developer accidentally deletes production namespace!
 
-**Network Policy-ga:** Määra täpselt, kes saab kellega suhelda
+✅ GOOD:
+  Developer needs to deploy app
+  → Give deploy-only access (specific namespace)
 
-### 2.2. Default Deny Policy
-
-**Keela kõik ühendused, luba ainult vajalik:**
-
-**Fail:** `default-deny-all.yaml`
-
-```yaml
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: default-deny-all
-  namespace: production
-spec:
-  podSelector: {}  # Kehtib kõigile Podidele
-  policyTypes:
-  - Ingress
-  - Egress
+  Result: Developer CAN deploy, but CANNOT delete namespaces
 ```
 
-**Rakenda:**
-```bash
-kubectl apply -f default-deny-all.yaml
+**Põhjendus:** "With great power comes great responsibility" - but also great RISK. Limit blast radius (minimize damage if compromised).
 
-# NB! Peale seda EI SAA enam ükski Pod ühendust (ka DNS ei tööta!)
-# Peame lisama specific allow policies
+---
+
+### Zero Trust Architecture
+
+**Traditional security (perimeter-based):**
+
+```
+Inside network: TRUSTED (no auth between services)
+Outside network: UNTRUSTED (firewall blocks)
+
+Problem: If attacker gets inside → free access to everything!
 ```
 
-### 2.3. Allow Backend → PostgreSQL
+**Zero Trust (verify everything):**
 
-**Luba backend Podidel ühenduda PostgreSQL-iga:**
+```
+NO implicit trust - EVERY request authenticated & authorized:
 
-**Fail:** `allow-backend-to-postgres.yaml`
+Service A → Service B:
+  1. Service A presents certificate (mutual TLS)
+  2. Service B verifies certificate
+  3. Service B checks RBAC (is Service A allowed?)
+  4. Request permitted
 
-```yaml
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-backend-to-postgres
-  namespace: production
-spec:
-  podSelector:
-    matchLabels:
-      app: postgres
-  policyTypes:
-  - Ingress
-  ingress:
-  - from:
-    - podSelector:
-        matchLabels:
-          app: backend
-    ports:
-    - protocol: TCP
-      port: 5432
+Result: Breach of Service A ≠ access to Service B
 ```
 
-### 2.4. Allow Frontend ← Ingress
+**Põhjendus:** "Never trust, always verify" - assume breach has happened, verify EVERY interaction.
 
-**Luba Ingress suhelda frontend-iga:**
+---
 
-```yaml
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-ingress-to-frontend
-  namespace: production
-spec:
-  podSelector:
-    matchLabels:
-      app: frontend
-  policyTypes:
-  - Ingress
-  ingress:
-  - from:
-    - namespaceSelector:
-        matchLabels:
-          name: kube-system  # Traefik on kube-system-is
-    ports:
-    - protocol: TCP
-      port: 80
+## 22.2 RBAC (Role-Based Access Control)
+
+### Why RBAC?
+
+**Scenario WITHOUT RBAC:**
+
+```
+All users have cluster-admin access:
+  - Developers can delete production Pods
+  - QA can modify secrets
+  - Intern can delete PersistentVolumes
+
+Result: Accidents happen, data lost!
 ```
 
-### 2.5. Allow DNS
+**Scenario WITH RBAC:**
 
-**Kõik Podid vajavad DNS-i:**
-
-```yaml
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-dns
-  namespace: production
-spec:
-  podSelector: {}  # Kõik Podid
-  policyTypes:
-  - Egress
-  egress:
-  - to:
-    - namespaceSelector:
-        matchLabels:
-          name: kube-system
-    ports:
-    - protocol: UDP
-      port: 53
 ```
+Roles:
+  - cluster-admin: Infra team (full access)
+  - developer: Deploy to dev/staging namespaces
+  - viewer: Read-only access (logs, metrics)
+  - ci-cd-bot: Deploy to all namespaces (automated)
 
-### 2.6. Complete Network Policy Set
-
-**Fail:** `network-policies.yaml`
-
-```yaml
----
-# 1. Default deny all
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: default-deny-all
-  namespace: production
-spec:
-  podSelector: {}
-  policyTypes:
-  - Ingress
-  - Egress
-
----
-# 2. Allow DNS for all
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-dns
-  namespace: production
-spec:
-  podSelector: {}
-  policyTypes:
-  - Egress
-  egress:
-  - to:
-    - namespaceSelector: {}
-      podSelector:
-        matchLabels:
-          k8s-app: kube-dns
-    ports:
-    - protocol: UDP
-      port: 53
-
----
-# 3. Allow backend → postgres
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-backend-to-postgres
-  namespace: production
-spec:
-  podSelector:
-    matchLabels:
-      app: postgres
-  policyTypes:
-  - Ingress
-  ingress:
-  - from:
-    - podSelector:
-        matchLabels:
-          app: backend
-    ports:
-    - protocol: TCP
-      port: 5432
-
----
-# 4. Allow ingress → backend
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-ingress-to-backend
-  namespace: production
-spec:
-  podSelector:
-    matchLabels:
-      app: backend
-  policyTypes:
-  - Ingress
-  ingress:
-  - from:
-    - namespaceSelector: {}
-    ports:
-    - protocol: TCP
-      port: 3000
-
----
-# 5. Allow ingress → frontend
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-ingress-to-frontend
-  namespace: production
-spec:
-  podSelector:
-    matchLabels:
-      app: frontend
-  policyTypes:
-  - Ingress
-  ingress:
-  - from:
-    - namespaceSelector: {}
-    ports:
-    - protocol: TCP
-      port: 80
-
----
-# 6. Allow backend egress (API calls, external DB)
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-backend-egress
-  namespace: production
-spec:
-  podSelector:
-    matchLabels:
-      app: backend
-  policyTypes:
-  - Egress
-  egress:
-  - to:
-    - podSelector:
-        matchLabels:
-          app: postgres
-    ports:
-    - protocol: TCP
-      port: 5432
-  - to:
-    - namespaceSelector: {}
-    ports:
-    - protocol: TCP
-      port: 53
-    - protocol: UDP
-      port: 53
-```
-
-**Rakenda:**
-```bash
-kubectl apply -f network-policies.yaml
-
-# Testi
-kubectl exec -it -n production <backend-pod> -- curl http://postgres:5432
-# Peaks töötama
-
-kubectl exec -it -n production <backend-pod> -- curl http://google.com
-# Peaks FAILIMA (kui ei ole lubatud)
+Result: Developers CAN deploy, CANNOT delete production
 ```
 
 ---
 
-## 3. Pod Security Standards
+### RBAC Components
 
-### 3.1. Pod Security Admission
+**Roles:**
 
-**Kubernetes 1.25+:** Pod Security Admission (PSA) asendab PodSecurityPolicy
+```
+Role = Set of permissions
 
-**3 taset:**
-- **Privileged:** Pole piiranguid
-- **Baseline:** Minimaalsed piirangud
-- **Restricted:** Kõige turvalisem
+Example "pod-reader" Role:
+  - Can: get, list, watch Pods
+  - Cannot: create, delete, update Pods
 
-### 3.2. Enforce Restricted Mode
-
-**Label namespace:**
-```bash
-kubectl label namespace production \
-  pod-security.kubernetes.io/enforce=restricted \
-  pod-security.kubernetes.io/audit=restricted \
-  pod-security.kubernetes.io/warn=restricted
+Example "deployer" Role:
+  - Can: get, list, create, update, delete Pods, Deployments
+  - Cannot: delete namespaces, modify RBAC
 ```
 
-**Nüüd ei saa deployida privileeritud Podi:**
-```yaml
-# See FAILIB
-spec:
-  containers:
-  - name: bad
-    securityContext:
-      privileged: true  # ❌ Not allowed in restricted mode
+**RoleBinding:**
+
+```
+RoleBinding = Assign Role to User/Group
+
+Example:
+  Role: "deployer"
+  User: "alice@company.com"
+  Namespace: "staging"
+
+Result: Alice can deploy to staging namespace (not production!)
 ```
 
-### 3.3. Secure Pod Manifest
+**ClusterRole vs Role:**
 
-**Fail:** `backend-deployment-secure.yaml`
-
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: backend
-  namespace: production
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: backend
-  template:
-    metadata:
-      labels:
-        app: backend
-    spec:
-      # Security Context Pod-level
-      securityContext:
-        runAsNonRoot: true        # Keela root user
-        runAsUser: 1000           # User ID
-        fsGroup: 1000             # File system group
-        seccompProfile:
-          type: RuntimeDefault    # Seccomp profile
-
-      containers:
-      - name: backend
-        image: localhost:5000/backend:1.0
-
-        # Security Context Container-level
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-            - ALL                 # Drop kõik capabilities
-          readOnlyRootFilesystem: true  # Read-only filesystem
-
-        # Volume mounts writable paths
-        volumeMounts:
-        - name: tmp
-          mountPath: /tmp
-        - name: cache
-          mountPath: /app/.npm
-
-        resources:
-          requests:
-            memory: "256Mi"
-            cpu: "100m"
-          limits:
-            memory: "512Mi"
-            cpu: "500m"
-
-      volumes:
-      - name: tmp
-        emptyDir: {}
-      - name: cache
-        emptyDir: {}
 ```
+Role: Namespace-scoped (specific namespace only)
+ClusterRole: Cluster-wide (all namespaces)
 
-### 3.4. Dockerfile Non-Root User
+Use ClusterRole for:
+  - Cluster-admin (infra team)
+  - Viewer (read-only all namespaces)
 
-**Backend Dockerfile:**
-```dockerfile
-FROM node:18-alpine
-
-# Loo non-root user
-RUN addgroup -g 1000 appgroup && \
-    adduser -D -u 1000 -G appgroup appuser
-
-WORKDIR /app
-
-# Kopeeri files
-COPY package*.json ./
-RUN npm ci --only=production
-
-COPY . .
-
-# Muuda ownership
-RUN chown -R appuser:appgroup /app
-
-# Switch to non-root user
-USER appuser
-
-EXPOSE 3000
-
-CMD ["node", "src/index.js"]
-```
-
-**Build:**
-```bash
-docker build -t localhost:5000/backend:secure .
-docker push localhost:5000/backend:secure
+Use Role for:
+  - Developers (specific namespace)
 ```
 
 ---
 
-## 4. Secrets Management
+### Common RBAC Patterns
 
-### 4.1. Kubernetes Secrets (Base64)
+**1. Namespace isolation (multi-team)**
 
-**Probleem:** Base64 ei ole encryption, ainult encoding
-
-**Lae Secret:**
-```bash
-kubectl get secret backend-secret -n production -o yaml
-
-# data:
-#   DB_PASSWORD: cGFzc3dvcmQ=  ← base64, mitte encrypted!
-
-echo "cGFzc3dvcmQ=" | base64 -d
-# password  ← igaüks saab dekodeerida
 ```
+Team A:
+  - Namespace: team-a
+  - Role: deployer (full access to team-a namespace)
+  - Cannot access: team-b namespace
 
-### 4.2. Sealed Secrets
+Team B:
+  - Namespace: team-b
+  - Role: deployer (full access to team-b namespace)
+  - Cannot access: team-a namespace
 
-**Sealed Secrets:** Encrypted Secrets GitHubis
-
-**Paigalda Sealed Secrets controller:**
-```bash
-kubectl apply -f https://github.com/bitnami-labs/sealed-secrets/releases/download/v0.24.0/controller.yaml
-
-# Paigalda kubeseal CLI
-wget https://github.com/bitnami-labs/sealed-secrets/releases/download/v0.24.0/kubeseal-0.24.0-linux-amd64.tar.gz
-tar -xvzf kubeseal-0.24.0-linux-amd64.tar.gz
-sudo install -m 755 kubeseal /usr/local/bin/kubeseal
-```
-
-**Loo Sealed Secret:**
-```bash
-# Loo tavalisSecret (ära commit see!)
-kubectl create secret generic backend-secret \
-  --from-literal=DB_PASSWORD=supersecret \
-  --dry-run=client -o yaml > secret.yaml
-
-# Encrypt kubeseal-iga
-kubeseal --format=yaml < secret.yaml > sealed-secret.yaml
-
-# Nüüd saad commit-ida sealed-secret.yaml (encrypted)
-kubectl apply -f sealed-secret.yaml
-
-# Sealed Secrets controller dekrüpteerib automaatselt Secret-iks
-kubectl get secret backend-secret -n production
-```
-
-**sealed-secret.yaml näeb välja nii:**
-```yaml
-apiVersion: bitnami.com/v1alpha1
-kind: SealedSecret
-metadata:
-  name: backend-secret
-  namespace: production
-spec:
-  encryptedData:
-    DB_PASSWORD: AgBy3i4OJSWK+PiTySYZZA9rO43cGDEq...  ← encrypted!
-```
-
-### 4.3. External Secrets (HashiCorp Vault)
-
-**External Secrets Operator:** Sünkroniseerib secrets Vault-ist K8s-i
-
-**Quick setup:**
-```bash
-# Paigalda External Secrets Operator
-helm repo add external-secrets https://charts.external-secrets.io
-helm install external-secrets external-secrets/external-secrets -n kube-system
-
-# Paigalda Vault (dev mode)
-helm repo add hashicorp https://helm.releases.hashicorp.com
-helm install vault hashicorp/vault --set "server.dev.enabled=true" -n vault --create-namespace
-```
-
-**SecretStore:**
-```yaml
-apiVersion: external-secrets.io/v1beta1
-kind: SecretStore
-metadata:
-  name: vault-backend
-  namespace: production
-spec:
-  provider:
-    vault:
-      server: "http://vault.vault.svc.cluster.local:8200"
-      path: "secret"
-      version: "v2"
-      auth:
-        tokenSecretRef:
-          name: "vault-token"
-          key: "token"
-```
-
-**ExternalSecret:**
-```yaml
-apiVersion: external-secrets.io/v1beta1
-kind: ExternalSecret
-metadata:
-  name: backend-secret
-  namespace: production
-spec:
-  refreshInterval: 1h
-  secretStoreRef:
-    name: vault-backend
-    kind: SecretStore
-  target:
-    name: backend-secret
-  data:
-  - secretKey: DB_PASSWORD
-    remoteRef:
-      key: database
-      property: password
+Benefit: Teams isolated (Team A cannot break Team B)
 ```
 
 ---
 
-## 5. Image Security Scanning
+**2. CI/CD service account**
 
-### 5.1. Trivy
-
-**Paigalda Trivy:**
-```bash
-# VPS kirjakast
-wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
-echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
-sudo apt update
-sudo apt install trivy
 ```
+Service Account: "ci-cd-bot"
+  - Role: deployer (can deploy to all namespaces)
+  - Cannot: modify RBAC, delete PVs
 
-**Scanni image:**
-```bash
-trivy image localhost:5000/backend:1.0
+GitHub Actions uses this account:
+  - kubectl apply -f deployment.yaml (permitted)
+  - kubectl delete namespace prod (denied!)
 
-# Output:
-# Total: 245 (UNKNOWN: 5, LOW: 89, MEDIUM: 78, HIGH: 65, CRITICAL: 8)
-```
-
-**Scanni ainult CRITICAL ja HIGH:**
-```bash
-trivy image --severity CRITICAL,HIGH localhost:5000/backend:1.0
-```
-
-**Fail kui leitakse CRITICAL:**
-```bash
-trivy image --exit-code 1 --severity CRITICAL localhost:5000/backend:1.0
-
-# Exit code 1 kui leitakse CRITICAL vulnerabilities
-```
-
-### 5.2. Trivy GitHub Actions-is
-
-**Workflow:** `.github/workflows/security-scan.yml`
-
-```yaml
-name: Security Scan
-
-on:
-  push:
-    branches: [main]
-  pull_request:
-
-jobs:
-  trivy:
-    name: Trivy Scan
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Build image
-      run: |
-        cd labs/apps/backend-nodejs
-        docker build -t backend:test .
-
-    - name: Run Trivy scan
-      uses: aquasecurity/trivy-action@master
-      with:
-        image-ref: backend:test
-        format: 'sarif'
-        output: 'trivy-results.sarif'
-        severity: 'CRITICAL,HIGH'
-
-    - name: Upload results to GitHub Security
-      uses: github/codeql-action/upload-sarif@v2
-      if: always()
-      with:
-        sarif_file: 'trivy-results.sarif'
-```
-
-### 5.3. Admission Controller (OPA Gatekeeper)
-
-**Keela vulnerable images:**
-
-```bash
-# Paigalda Gatekeeper
-kubectl apply -f https://raw.githubusercontent.com/open-policy-agent/gatekeeper/master/deploy/gatekeeper.yaml
-```
-
-**ConstraintTemplate (näide):**
-```yaml
-apiVersion: templates.gatekeeper.sh/v1
-kind: ConstraintTemplate
-metadata:
-  name: k8sblockimages
-spec:
-  crd:
-    spec:
-      names:
-        kind: K8sBlockImages
-  targets:
-    - target: admission.k8s.gatekeeper.sh
-      rego: |
-        package k8sblockimages
-        violation[{"msg": msg}] {
-          input.review.object.spec.containers[_].image
-          not startswith(input.review.object.spec.containers[_].image, "localhost:5000/")
-          msg := "Only images from localhost:5000 registry are allowed"
-        }
+Benefit: CI/CD automated, but restricted (cannot delete critical resources)
 ```
 
 ---
 
-## 6. OWASP Top 10
+**3. Read-only access (QA, auditors)**
 
-### 6.1. SQL Injection Prevention
-
-**❌ BAD (vulnerable):**
-```javascript
-app.get('/users/:id', async (req, res) => {
-  const query = `SELECT * FROM users WHERE id = ${req.params.id}`;  // ❌ SQL injection!
-  const result = await pool.query(query);
-  res.json(result.rows);
-});
 ```
+Role: "viewer"
+  - Can: get, list, watch (all resources)
+  - Cannot: create, update, delete
 
-**✅ GOOD (safe):**
-```javascript
-app.get('/users/:id', async (req, res) => {
-  const query = 'SELECT * FROM users WHERE id = $1';  // ✅ Parameterized
-  const result = await pool.query(query, [req.params.id]);
-  res.json(result.rows);
-});
-```
-
-### 6.2. XSS Prevention
-
-**Backend:** Validate and sanitize input
-
-```javascript
-const validator = require('validator');
-
-app.post('/api/users', async (req, res) => {
-  const { name, email } = req.body;
-
-  // Validate
-  if (!validator.isEmail(email)) {
-    return res.status(400).json({ error: 'Invalid email' });
-  }
-
-  // Sanitize
-  const sanitizedName = validator.escape(name);
-
-  // Save
-  await pool.query('INSERT INTO users (name, email) VALUES ($1, $2)', [sanitizedName, email]);
-  res.json({ success: true });
-});
-```
-
-**Frontend:** Escape output
-
-```javascript
-// ❌ BAD
-document.getElementById('name').innerHTML = userData.name;  // XSS!
-
-// ✅ GOOD
-document.getElementById('name').textContent = userData.name;  // Safe
-```
-
-### 6.3. CSRF Protection
-
-**Backend (Express):**
-```bash
-npm install csurf cookie-parser
-```
-
-```javascript
-const csrf = require('csurf');
-const cookieParser = require('cookie-parser');
-
-app.use(cookieParser());
-app.use(csrf({ cookie: true }));
-
-// Send CSRF token to frontend
-app.get('/api/csrf-token', (req, res) => {
-  res.json({ csrfToken: req.csrfToken() });
-});
-
-// Protected route
-app.post('/api/users', (req, res) => {
-  // CSRF token validated automatically
-  // ...
-});
-```
-
-**Frontend:**
-```javascript
-// Fetch CSRF token
-const { csrfToken } = await fetch('/api/csrf-token').then(r => r.json());
-
-// Include in requests
-fetch('/api/users', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'CSRF-Token': csrfToken
-  },
-  body: JSON.stringify(data)
-});
-```
-
-### 6.4. Authentication Best Practices
-
-**Password hashing (bcrypt):**
-```javascript
-const bcrypt = require('bcrypt');
-
-// Register
-const hashedPassword = await bcrypt.hash(password, 10);  // 10 rounds
-await pool.query('INSERT INTO users (email, password) VALUES ($1, $2)', [email, hashedPassword]);
-
-// Login
-const user = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
-const valid = await bcrypt.compare(password, user.rows[0].password);
-```
-
-**JWT Best Practices:**
-```javascript
-const jwt = require('jsonwebtoken');
-
-// Short expiry
-const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, {
-  expiresIn: '1h'  // ✅ Short expiry
-});
-
-// Verify
-const decoded = jwt.verify(token, process.env.JWT_SECRET);
+Use case: QA needs to check logs, metrics (not modify)
 ```
 
 ---
 
-## 7. Rate Limiting
+### RBAC Anti-Patterns
 
-### 7.1. Express Rate Limit
+**❌ Everyone gets cluster-admin**
 
-**Paigalda:**
-```bash
-npm install express-rate-limit
+```
+Reason: "It's easier"
+Risk: Anyone can delete production (accidental or malicious)
 ```
 
-**Rakenda:**
-```javascript
-const rateLimit = require('express-rate-limit');
+**❌ One service account for all apps**
 
-// General rate limit
-const generalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,  // 15 minutes
-  max: 100,                   // Max 100 requests per window
-  message: 'Too many requests, please try again later'
-});
-
-// Login rate limit (stricter)
-const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 5,                     // Max 5 login attempts
-  skipSuccessfulRequests: true
-});
-
-app.use('/api', generalLimiter);
-app.use('/api/auth/login', loginLimiter);
+```
+Reason: "Less management"
+Risk: Compromised app = access to ALL namespaces
 ```
 
-### 7.2. Traefik Rate Limiting
+**Fix:** One service account PER app (isolated blast radius)
 
-**Ingress annotation:**
-```yaml
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: app-ingress
-  namespace: production
-  annotations:
-    traefik.ingress.kubernetes.io/rate-limit: |
-      average: 100
-      burst: 200
-spec:
-  rules:
-  - host: example.com
-    http:
-      paths:
-      - path: /api
-        pathType: Prefix
-        backend:
-          service:
-            name: backend
-            port:
-              number: 3000
+---
+
+## 22.3 Secret Management
+
+### Why Secrets Don't Belong in Git
+
+**❌ NEVER COMMIT SECRETS:**
+
+```
+# .env file (committed to Git)
+DB_PASSWORD=supersecret123
+JWT_SECRET=mytoken456
+
+Problem:
+  - Git history is PERMANENT (secret exposed forever!)
+  - Public repo = secret leaked to internet
+  - Developer laptop stolen = attacker has secrets
+```
+
+**✅ USE external secret management:**
+
+```
+Git repository:
+  - deployment.yaml (references Secret, not contains Secret)
+
+Kubernetes Secret (created separately):
+  - kubectl create secret ... (not committed to Git)
+
+External Vault (best):
+  - Secrets stored in HashiCorp Vault
+  - Kubernetes fetches at runtime (short-lived tokens)
 ```
 
 ---
 
-## 8. Security Headers
+### Kubernetes Secrets Limitations
 
-### 8.1. Helmet (Express)
+**Kubernetes Secret = base64 encoded (NOT encrypted!)**
 
-**Paigalda:**
-```bash
-npm install helmet
+```
+Create Secret:
+  kubectl create secret generic db-pass --from-literal=password=secret123
+
+Stored in etcd (base64):
+  cGFzc3dvcmQ6c2VjcmV0MTIz  (anyone with etcd access can decode!)
+
+Decode:
+  echo "cGFzc3dvcmQ6c2VjcmV0MTIz" | base64 -d
+  → password:secret123
+
+Problem: Base64 is NOT encryption (just encoding)!
 ```
 
-**Rakenda:**
-```javascript
-const helmet = require('helmet');
+**Mitigation:**
+- ✅ Enable etcd encryption at rest (encrypt etcd datastore)
+- ✅ RBAC (restrict Secret access to specific ServiceAccounts)
+- ✅ External secret managers (Vault, AWS Secrets Manager)
 
-app.use(helmet());
+---
 
-// VÕI custom config
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrc: ["'self'"],
-      imgSrc: ["'self'", "data:", "https:"],
-    },
-  },
-  hsts: {
-    maxAge: 31536000,
-    includeSubDomains: true,
-    preload: true
-  }
-}));
+### External Secret Managers
+
+**HashiCorp Vault:**
+
+```
+Architecture:
+  1. Secrets stored in Vault (encrypted)
+  2. App requests secret (authenticates with Kubernetes token)
+  3. Vault verifies token (is this Pod allowed?)
+  4. Vault returns short-lived secret (expires in 1h)
+
+Benefit:
+  - Secrets NEVER stored in Kubernetes
+  - Short-lived tokens (limit blast radius)
+  - Audit log (who accessed what secret, when)
 ```
 
-**Headers lisatud:**
-- `X-DNS-Prefetch-Control`
-- `X-Frame-Options: DENY`
-- `Strict-Transport-Security`
-- `X-Content-Type-Options: nosniff`
-- `X-XSS-Protection`
+**Sealed Secrets (Bitnami):**
 
-### 8.2. Nginx Security Headers (Frontend)
+```
+Problem: Can't commit Secrets to Git (plaintext)
 
-**nginx.conf:**
-```nginx
-server {
-    listen 80;
+Solution: Sealed Secrets (encrypted Secret)
+  1. Create Secret (plaintext)
+  2. Encrypt with kubeseal tool (public key)
+  3. Commit SealedSecret to Git (encrypted, safe!)
+  4. Sealed Secrets Controller decrypts (private key in cluster)
 
-    # Security headers
-    add_header X-Frame-Options "SAMEORIGIN" always;
-    add_header X-Content-Type-Options "nosniff" always;
-    add_header X-XSS-Protection "1; mode=block" always;
-    add_header Referrer-Policy "no-referrer-when-downgrade" always;
-    add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';" always;
+Benefit: GitOps-friendly (secrets in Git, but encrypted)
+```
 
-    # HSTS (kui HTTPS)
-    # add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+**Cloud provider secret managers:**
 
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
-}
+```
+AWS Secrets Manager, Azure Key Vault, GCP Secret Manager:
+  - Store secrets in cloud provider
+  - Kubernetes fetches at runtime (IAM authentication)
+  - Rotation supported (auto-rotate DB passwords)
 ```
 
 ---
 
-## 9. Harjutused
+### Secret Rotation
 
-### Harjutus 1: Network Policies
+**Why rotate secrets?**
 
-**Eesmärk:** Rakenda network policies
+```
+Scenario: Employee leaves company
 
-```bash
-vim network-policies.yaml
-# (kopeeri sektsioonist 2.6)
+Without rotation:
+  - Ex-employee knows DB password (risk!)
 
-kubectl apply -f network-policies.yaml
+With rotation:
+  - DB password rotated weekly (ex-employee's knowledge expired)
 
-# Testi
-kubectl exec -n production <backend-pod> -- curl -m 5 postgres:5432
-# Peaks töötama
-
-kubectl exec -n production <frontend-pod> -- curl -m 5 postgres:5432
-# Peaks FAILIMA (frontend ei saa ühendust postgres-iga)
+Benefit: Limit window of exposure
 ```
 
-**Valideerimise checklist:**
-- [ ] Network policies rakendatud
-- [ ] Backend → PostgreSQL töötab
-- [ ] Frontend → PostgreSQL blokitud
-- [ ] DNS töötab kõigile
+**Rotation strategies:**
+
+```
+Manual rotation (bad):
+  - DevOps changes secret monthly
+  - Risky (forgotten, inconsistent)
+
+Automated rotation (good):
+  - Vault rotates DB password daily
+  - App fetches new password automatically
+  - No manual intervention
+```
 
 ---
 
-### Harjutus 2: Secure Pod Configuration
+## 22.4 Network Security
 
-**Eesmärk:** Deployida secure Pod
+### Network Policies - Firewall for Pods
 
-```bash
-# Label namespace
-kubectl label namespace production pod-security.kubernetes.io/enforce=restricted
+**Without Network Policies:**
 
-# Muuda Dockerfile non-root user-iks
-vim labs/apps/backend-nodejs/Dockerfile
-# Lisa USER appuser
+```
+Default Kubernetes behavior: ALL Pods can talk to ALL Pods
 
-# Build
-docker build -t localhost:5000/backend:secure .
-docker push localhost:5000/backend:secure
+Scenario:
+  - Frontend Pod can access Database Pod (expected)
+  - Backend Pod can access Database Pod (expected)
+  - Random Pod can access Database Pod (UNEXPECTED!)
 
-# Deploy secure manifest
-vim backend-deployment-secure.yaml
-# (kopeeri sektsioonist 3.3)
-
-kubectl apply -f backend-deployment-secure.yaml
+Risk: Compromised Pod = access to entire cluster
 ```
 
-**Valideerimise checklist:**
-- [ ] Namespace labeled restricted
-- [ ] Dockerfile kasutab non-root user-it
-- [ ] Pod securityContext correct
-- [ ] readOnlyRootFilesystem: true
-- [ ] Pod käivitub edukalt
+**With Network Policies:**
+
+```
+Policy: "Database Pod accepts connections ONLY from Backend Pod"
+
+Result:
+  - Frontend Pod → Database: BLOCKED
+  - Backend Pod → Database: ALLOWED
+  - Random Pod → Database: BLOCKED
+
+Benefit: Lateral movement prevented (compromised Frontend ≠ access to DB)
+```
 
 ---
 
-### Harjutus 3: Trivy Image Scanning
+### Network Policy Concept
 
-**Eesmärk:** Scanni images vulnerabilities jaoks
+**Ingress vs Egress:**
 
-```bash
-# Paigalda Trivy
-sudo apt install trivy
+```
+Ingress = Incoming traffic TO Pod
+  Example: "Backend Pod accepts traffic FROM Frontend Pod"
 
-# Scanni backend
-trivy image localhost:5000/backend:1.0
-
-# Scanni ainult CRITICAL
-trivy image --severity CRITICAL,HIGH localhost:5000/backend:1.0
-
-# Fail kui CRITICAL
-trivy image --exit-code 1 --severity CRITICAL localhost:5000/backend:1.0
+Egress = Outgoing traffic FROM Pod
+  Example: "Frontend Pod can connect TO api.external.com"
 ```
 
-**Valideerimise checklist:**
-- [ ] Trivy paigaldatud
-- [ ] Image scanitud
-- [ ] Vulnerabilities leitud
-- [ ] Exit code 1 kui CRITICAL
+**Default deny pattern (best practice):**
+
+```
+Step 1: Block ALL traffic (default deny)
+Step 2: Allow specific traffic (whitelist)
+
+Example:
+  1. Default: No Pod can talk to Database
+  2. Allow: Backend Pod → Database (port 5432)
+
+Result: Only Backend can access Database (everything else blocked)
+```
+
+---
+
+### Service Mesh (Advanced)
+
+**Problem: Network Policies = Layer 4 (IP/port only)**
+
+```
+Network Policy:
+  "Pod A can connect to Pod B port 3000"
+
+But CANNOT:
+  - Authenticate (is Pod A really Pod A, or attacker spoofing?)
+  - Encrypt (traffic plaintext, sniffable)
+  - Rate limit (Pod A sending 1M req/s, DDoS)
+```
+
+**Solution: Service Mesh (Layer 7 security)**
+
+```
+Service Mesh (Istio, Linkerd):
+  - Mutual TLS (authenticate BOTH sides, encrypt traffic)
+  - Authorization (is Pod A allowed to call /users endpoint?)
+  - Observability (trace requests, detect anomalies)
+  - Rate limiting (Pod A max 100 req/s)
+
+Benefit: Zero-trust network (verify EVERY request)
+```
+
+**Trade-off:**
+
+```
+Benefit: Strong security (mutual TLS, fine-grained policies)
+Cost: Complexity (learning curve, operational overhead)
+
+Recommendation: Start with Network Policies → add Service Mesh if needed
+```
+
+---
+
+## 22.5 Container Security
+
+### Image Scanning (Vulnerability Detection)
+
+**Why scan images?**
+
+```
+Scenario:
+  Your code: Secure ✅
+  Base image (node:18): Contains CVE-2023-12345 (CRITICAL exploit) ❌
+
+Result: Production vulnerable (attacker exploits base image)
+```
+
+**Image scanning tools:**
+
+```
+Trivy (CNCF project):
+  - Scan: trivy image myorg/backend:1.0
+  - Detects: CVE-2023-12345 (CRITICAL)
+  - Action: Update base image OR apply patch
+
+Harbor (registry with built-in scanning):
+  - Auto-scan on push
+  - Block deployment if CRITICAL vulnerabilities
+
+Benefit: Catch vulnerabilities BEFORE production
+```
+
+---
+
+### Minimal Base Images
+
+**❌ BAD: Full OS image**
+
+```
+FROM ubuntu:22.04  (1GB image)
+
+Problem:
+  - Contains: bash, curl, wget, gcc, ssh (attack surface!)
+  - Vulnerabilities: 500+ packages = 500+ CVEs to patch
+```
+
+**✅ GOOD: Minimal image**
+
+```
+FROM node:18-alpine  (100MB image, 10x smaller)
+
+Benefit:
+  - Minimal packages (only Node.js + essential libs)
+  - Fewer vulnerabilities (less attack surface)
+  - Faster pulls (smaller size)
+```
+
+**BEST: Distroless image**
+
+```
+FROM gcr.io/distroless/nodejs:18  (50MB, no shell!)
+
+Benefit:
+  - NO shell (attacker cannot run bash commands!)
+  - NO package manager (cannot install tools)
+  - Minimal CVEs
+
+Trade-off: Harder to debug (no shell for troubleshooting)
+```
+
+---
+
+### Runtime Security
+
+**Pod Security Standards (PSS):**
+
+```
+Privileged (unsafe):
+  - Root user allowed
+  - Host network allowed
+  - Privileged containers allowed
+
+Baseline (moderate):
+  - Non-root user
+  - Read-only root filesystem
+  - No privileged containers
+
+Restricted (secure):
+  - All of Baseline +
+  - Drop all capabilities
+  - Seccomp profile (syscall filtering)
+```
+
+**Example restriction:**
+
+```
+Baseline policy:
+  - Container MUST run as non-root (UID 1000)
+  - Container CANNOT mount host filesystem
+
+Result: Compromised container CANNOT:
+  - Access host filesystem (isolated)
+  - Run as root (limited privileges)
+```
+
+---
+
+### Security Contexts
+
+**Why security contexts?**
+
+```
+Default container behavior:
+  - Runs as root (UID 0)
+  - Read-write filesystem
+  - All Linux capabilities
+
+Risk: Compromised container = root access!
+```
+
+**Security context example (concept):**
+
+```
+Run as non-root (UID 1000):
+  - Benefit: Attacker cannot modify /etc/passwd (permission denied)
+
+Read-only filesystem:
+  - Benefit: Attacker cannot write malware to disk
+
+Drop capabilities:
+  - Benefit: Attacker cannot open raw sockets (network sniffing blocked)
+```
+
+---
+
+## 22.6 Supply Chain Security
+
+### Image Provenance (Where Did This Image Come From?)
+
+**Problem: Untrusted images**
+
+```
+Scenario:
+  Developer pulls: docker pull randomuser/backend:latest
+
+Risk:
+  - Who is "randomuser"? (not verified)
+  - Image contains malware? (backdoor, crypto miner)
+  - Image modified after build? (man-in-the-middle)
+```
+
+**Solution: Image signing and verification**
+
+```
+Cosign (CNCF project):
+  1. Build image: docker build -t myorg/backend:1.0 .
+  2. Sign image: cosign sign myorg/backend:1.0 (cryptographic signature)
+  3. Verify before deploy: cosign verify myorg/backend:1.0
+
+Benefit: Only signed images deployed (provenance verified)
+```
+
+---
+
+### SBOM (Software Bill of Materials)
+
+**What is SBOM?**
+
+```
+SBOM = List of ALL dependencies in image
+
+Example SBOM:
+  - Node.js 18.19.0
+  - Express 4.18.2
+  - PostgreSQL client 8.11.3
+  - OpenSSL 3.0.2
+
+Use case: Vulnerability discovered in OpenSSL 3.0.2
+  → Query SBOM: Which images contain vulnerable OpenSSL?
+  → Rebuild affected images
+
+Benefit: Rapid response to vulnerabilities
+```
+
+---
+
+## 22.7 Compliance and Auditing
+
+### Compliance Requirements
+
+**GDPR (EU):**
+
+```
+Requirements:
+  - Data encryption (at rest, in transit)
+  - Access control (who can access user data)
+  - Audit logging (track data access)
+  - Data deletion (right to be forgotten)
+
+Kubernetes implications:
+  - etcd encryption (data at rest)
+  - TLS everywhere (data in transit)
+  - RBAC + audit logs (access control)
+```
+
+**SOC 2 (US):**
+
+```
+Requirements:
+  - Access control (least privilege)
+  - Change management (audit trail for changes)
+  - Monitoring and alerting (detect anomalies)
+
+Kubernetes implications:
+  - RBAC (least privilege)
+  - GitOps (all changes in Git = audit trail)
+  - Prometheus + alerting (anomaly detection)
+```
+
+**PCI-DSS (payment data):**
+
+```
+Requirements:
+  - Network segmentation (isolate payment systems)
+  - Encryption (TLS, encryption at rest)
+  - Logging and monitoring (detect breaches)
+
+Kubernetes implications:
+  - Network Policies (isolate payment namespace)
+  - TLS everywhere (encryption)
+  - Centralized logging (audit trail)
+```
+
+---
+
+### Audit Logging
+
+**Kubernetes Audit Logs:**
+
+```
+What gets logged:
+  - Who: User/ServiceAccount
+  - What: kubectl delete pod
+  - When: 2025-01-23 10:15:32
+  - Where: Namespace=production
+  - Result: Success or Failure
+
+Use case: "Who deleted production database Pod?"
+  → Audit log: User=john@company.com, Action=delete Pod, Time=...
+
+Benefit: Forensics (investigate incidents)
+```
+
+---
+
+## 22.8 Security Checklist
+
+### Pre-Production Security Checklist
+
+**Infrastructure:**
+- [ ] etcd encryption enabled (encrypt secrets at rest)
+- [ ] TLS everywhere (API server, kubelet, etcd)
+- [ ] Network Policies enabled (default deny)
+- [ ] RBAC configured (least privilege)
+- [ ] Audit logging enabled (who did what, when)
+
+**Application:**
+- [ ] Images scanned (no CRITICAL vulnerabilities)
+- [ ] Images signed (cosign/notary)
+- [ ] Secrets in external manager (Vault, AWS Secrets Manager)
+- [ ] Non-root containers (runAsNonRoot: true)
+- [ ] Read-only filesystem (readOnlyRootFilesystem: true)
+
+**Monitoring:**
+- [ ] Audit log monitoring (detect suspicious activity)
+- [ ] Vulnerability alerts (new CVEs discovered)
+- [ ] Failed auth alerts (brute force attempts)
+
+**Compliance:**
+- [ ] GDPR requirements met (if EU users)
+- [ ] SOC 2 requirements met (if B2B SaaS)
+- [ ] PCI-DSS requirements met (if handling payment data)
 
 ---
 
 ## Kokkuvõte
 
-Selles peatükis õppisid:
+**Security mindset:**
+- **Defense in depth:** Multiple security layers (not one wall)
+- **Least privilege:** Give MINIMUM necessary permissions
+- **Zero trust:** Never trust, always verify (every request authenticated)
 
-✅ **Network Policies:** Pod-to-Pod firewall
-✅ **Pod Security:** Non-root, read-only, capabilities drop
-✅ **Secrets Management:** Sealed Secrets, External Secrets
-✅ **Image Scanning:** Trivy vulnerability detection
-✅ **OWASP Top 10:** SQL injection, XSS, CSRF
-✅ **Rate Limiting:** Express ja Traefik
-✅ **Security Headers:** Helmet, Nginx headers
+**RBAC:**
+- **Roles:** Set of permissions (pod-reader, deployer, viewer)
+- **RoleBinding:** Assign Role to User (namespace-scoped)
+- **ClusterRole:** Cluster-wide roles (cluster-admin, read-only-all)
+- **Best practice:** One ServiceAccount per app (isolated blast radius)
+
+**Secret management:**
+- **Kubernetes Secrets:** Base64 encoded (NOT encrypted!)
+- **External managers:** Vault, AWS Secrets Manager (encrypted, short-lived)
+- **Sealed Secrets:** GitOps-friendly (encrypted in Git)
+- **Secret rotation:** Automated (daily/weekly) to limit exposure window
+
+**Network security:**
+- **Network Policies:** Firewall for Pods (default deny + whitelist)
+- **Service Mesh:** Mutual TLS, fine-grained authorization, observability
+- **Trade-off:** Network Policies = simple, Service Mesh = powerful but complex
+
+**Container security:**
+- **Image scanning:** Trivy, Harbor (detect CVEs before production)
+- **Minimal images:** Alpine, distroless (reduce attack surface)
+- **Pod Security Standards:** Baseline (non-root), Restricted (drop capabilities)
+- **Security contexts:** runAsNonRoot, readOnlyRootFilesystem
+
+**Supply chain:**
+- **Image signing:** Cosign (verify provenance)
+- **SBOM:** Software Bill of Materials (track dependencies)
+
+**Compliance:**
+- **GDPR:** Encryption, access control, audit logs, data deletion
+- **SOC 2:** Least privilege, change management, monitoring
+- **PCI-DSS:** Network segmentation, encryption, logging
 
 ---
 
-## Järgmine Samm
+**DevOps Vaatenurk:**
 
-**Peatükk 23: Troubleshooting ja Debugging**
+Security is NOT a one-time task - it's continuous:
+- [ ] Scan images EVERY build (CI/CD integration)
+- [ ] Rotate secrets regularly (automated)
+- [ ] Review RBAC quarterly (remove unused permissions)
+- [ ] Audit logs reviewed weekly (detect anomalies)
+- [ ] Vulnerability patching within 7 days (CRITICAL), 30 days (HIGH)
 
-**Ressursid:**
-- OWASP: https://owasp.org/www-project-top-ten/
-- Trivy: https://github.com/aquasecurity/trivy
-- Sealed Secrets: https://github.com/bitnami-labs/sealed-secrets
+Security trade-offs:
+- **Convenience vs Security:** Locked down system = harder to use (balance needed)
+- **Cost vs Security:** Enterprise tools expensive (Vault, PagerDuty) - worth it?
+- **Speed vs Security:** Manual approvals slow deployment (automate with gates)
 
 ---
 
-**VPS:** kirjakast @ 93.127.213.242
-**Kasutaja:** janek
-**Security:** Defense in depth
+**Järgmised Sammud:**
+**Peatükk 23:** High Availability ja Scaling
+**Peatükk 24:** Backup ja Disaster Recovery
 
-Edu! 🚀
+📖 **Praktika:** Labor 6, Harjutus 5 - RBAC setup, Network Policies, Image scanning

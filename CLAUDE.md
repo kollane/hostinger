@@ -9,11 +9,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 This is an **Estonian-language full-stack DevOps training curriculum** for learning production-ready web application development, containerization, and orchestration on Ubuntu 24.04 LTS VPS.
 
 **VPS Environment:**
-- **Hostname:** kirjakast
+- **Hostname:** your-vps-hostname (example: vpsserver)
 - **OS:** Ubuntu 24.04.3 LTS
-- **User:** janek
-- **IP:** 93.127.213.242
-- **Resources:** 7.8 GB RAM, 2 CPU cores, 96 GB disk
+- **User:** your-username (example: student)
+- **IP:** YOUR_VPS_IP (example: 203.0.113.42)
+- **Resources:** 7.8 GB RAM, 2 CPU cores, 96 GB disk (adjust based on your VPS)
 
 **Language:** Estonian (eesti keel) with English technical terms
 **Structure:** 25 chapters of theory + 6 hands-on lab modules
@@ -257,12 +257,12 @@ kubectl exec -it <pod-name> -- sh
 
 ```bash
 # Local machine (connecting to VPS)
-ssh janek@kirjakast
+ssh your-username@your-vps-hostname
 # Or using IP:
-ssh janek@93.127.213.242
+ssh your-username@YOUR_VPS_IP
 
 # VPS hostname
-hostname  # Returns: kirjakast
+hostname  # Returns: your-vps-hostname
 ```
 
 ### PostgreSQL
@@ -275,7 +275,7 @@ docker exec -it postgres psql -U username -d database
 psql -h localhost -U username -d database
 
 # Connect from local machine to VPS PostgreSQL
-psql -h 93.127.213.242 -U username -d database
+psql -h YOUR_VPS_IP -U username -d database
 
 # Common commands
 \l              # List databases
@@ -295,7 +295,7 @@ psql -h 93.127.213.242 -U username -d database
 3. **Duration:** Each chapter should be 3-5 hours of material
 4. **Practical Focus:** Include code examples and exercises
 5. **Editor:** Use vim (not nano) in all command examples
-6. **Environment:** Reference actual VPS details (hostname: kirjakast, user: janek)
+6. **Environment:** Use generic placeholders (hostname: your-vps-hostname, user: your-username)
 7. **Reference:** Check `00-KOOLITUSKAVA-RAAMISTIK.md` for chapter outlines
 
 ### When Working on Lab Content (labs/)
@@ -337,14 +337,14 @@ Check `PROGRESS-STATUS.md` to see which chapters are complete.
 ### VPS Infrastructure
 
 **Production Environment:**
-- Ubuntu 24.04.3 LTS (server: kirjakast)
-- Docker-first approach (Docker 29.0.1 + Compose v2.40.3)
-- User: janek (sudo access)
-- IP: 93.127.213.242
+- Ubuntu 24.04.3 LTS
+- Docker-first approach (Docker 29+ + Compose v2.40+)
+- User: your-username (sudo access required)
+- IP: YOUR_VPS_IP
 - Preferred editor: vim
-- File manager: yazi
+- File manager: yazi (optional)
 
-**All labs run on the same VPS where the curriculum is being taught**
+**All labs run on a VPS where the curriculum is being taught**
 
 ### PostgreSQL Deployment
 
@@ -451,8 +451,10 @@ Check `PROGRESS-STATUS.md` to see which chapters are complete.
 
 ---
 
-**Repository Path:** `/home/janek/projects/hostinger`
+**Repository Path:** `/home/your-username/hostinger` (adjust to your setup)
 **Main References:**
 - `00-KOOLITUSKAVA-RAAMISTIK.md` - Master curriculum
 - `labs/00-LAB-RAAMISTIK.md` - Lab structure
 - `PROGRESS-STATUS.md` - Progress tracking
+- `UUS-DEVOPS-KOOLITUSKAVA.md` - New DevOps-focused curriculum (v2.0)
+- `IMPLEMENTEERIMISE-PLAAN.md` - Implementation plan
