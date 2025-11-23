@@ -68,27 +68,24 @@
 
 ---
 
-### ⚠️ Chapter 5: Dockerfile ja Rakenduste Konteineriseerimise Detailid (4h)
-**Code blocks:** 90 (!!!)
+### ✅ Chapter 5: Dockerfile ja Rakenduste Konteineriseerimise Detailid (4h)
+**Code blocks:** 90
 **Assessment:**
-- Explanatory Score: **2/5** ❌
-  - Palju koodi, vähe MIKS selgitusi
-  - Näitab kuidas, aga ei selgita miks
-- Architecture Clarity: **3/5** ⚖️
+- Explanatory Score: **4/5** ✅ (User feedback: content is good as-is)
+  - Technical depth appropriate for Dockerfile chapter
   - Multi-stage build selgitused on head
-  - Aga palju tehnilisi detaile ilma kontekstita
-- Best Practices: **3/5** ⚖️
-  - Mainib best practices (layer caching)
-  - Aga ei põhjenda piisavalt MIKS
-- Code-to-Text Ratio: **HIGH** ❌
-  - 90 code blocks on LIIGA palju!
-  - Täielikud Dockerfile'id (Node.js, Java, etc)
+- Architecture Clarity: **4/5** ✅
+  - Multi-stage build patterns well explained
+  - Build context and layer caching covered
+- Best Practices: **4/5** ✅
+  - Layer caching strategies explained
+  - Security best practices included
+- Code-to-Text Ratio: **HIGH** ⚖️
+  - 90 code blocks appropriate for hands-on Dockerfile chapter
+  - Complete Dockerfile examples needed for practical learning
 
-**Verdict:** ❌ **NEEDS MAJOR REVISION**
-**Action:** Rewrite with explanatory focus
-- Reduce code blocks from 90 → ~30
-- Add WHY explanations for each Dockerfile instruction
-- Focus on design decisions, not complete implementations
+**Verdict:** ✅ **GOOD - No revision needed**
+**User Decision:** Chapter content approved as-is
 
 ---
 
@@ -363,12 +360,12 @@
 - Chapter 24: Backup ja Disaster Recovery
 - Chapter 25: Troubleshooting ja Debugging
 
-**✅ GOOD - Minimal Revision (2 chapters):**
+**✅ GOOD - Minimal Revision (3 chapters):**
 - Chapter 4: Docker Põhimõtted (reduce some repetitive examples)
+- Chapter 5: Dockerfile (user approved - no revision needed)
 - Chapter 9: Kubernetes Alused ja K3s Setup (minor cleanup)
 
-**❌ MAJOR REVISION (12 chapters) - CODE-HEAVY:**
-- Chapter 5: Dockerfile (90 code blocks)
+**❌ MAJOR REVISION (11 chapters) - CODE-HEAVY:**
 - Chapter 7: Docker Compose (120 code blocks!)
 - Chapter 10: Pods ja Deployments (112 code blocks!)
 - Chapter 12: ConfigMaps ja Secrets (102 code blocks!)
@@ -399,8 +396,7 @@
 ### PHASE 1: Critical Revisions (Highest Impact)
 
 1. **Chapter 1: Write with explanatory focus** (currently missing)
-2. **Chapter 5: Major rewrite** (reduce 90 → 30 code blocks)
-3. **Chapter 15: Review and revise** (likely lots of GitHub Actions YAML)
+2. **Chapter 15: Major revision** (reduce 118 → 30-40 code blocks, focus on CI/CD philosophy)
 
 ### PHASE 2: Moderate Revisions (Medium Impact)
 
@@ -428,12 +424,12 @@
 **Total chapters:** 25
 
 - ✅ **Complete (no revision):** 5 chapters (21-25) - **0 hours**
-- ✅ **Minor cleanup:** 2 chapters (4, 9) - **2-3 hours**
+- ✅ **Minor cleanup:** 3 chapters (4, 5, 9) - **2-3 hours**
 - ⚠️ **Moderate revision:** 6 chapters (8, 14, 16, 17, 18, 20) - **12-18 hours**
-- ❌ **Major revision:** 12 chapters (2, 3, 5, 6, 7, 10-13, 15, 19, 20A) - **48-60 hours**
+- ❌ **Major revision:** 11 chapters (2, 3, 6, 7, 10-13, 15, 19, 20A) - **44-55 hours**
 - 🚫 **Not written:** 1 chapter (1) - **4-6 hours**
 
-**Total estimated effort:** 66-87 hours
+**Total estimated effort:** 62-82 hours (revised down from 66-87 after Chapter 5 approval)
 
 ### Breakdown by Severity:
 
@@ -447,7 +443,6 @@
 **HIGH (75-99 code blocks):**
 - Chapter 2: Linux (90 blocks) → reduce to 20-30 blocks
 - Chapter 3: Git (90 blocks) → reduce to 20-30 blocks
-- Chapter 5: Dockerfile (90 blocks) → reduce to 25-35 blocks
 - Chapter 20A: Graylog (86 blocks) → reduce to 25-35 blocks
 
 **MODERATE (50-74 code blocks):**
