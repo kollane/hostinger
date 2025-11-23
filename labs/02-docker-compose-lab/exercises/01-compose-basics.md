@@ -143,10 +143,10 @@ Enne docker-compose.yml loomist, peata kõik Lab 1 käsitsi loodud konteinerid:
 docker ps
 
 # Peata kõik Lab 1 konteinerid
-docker stop user-service todo-service postgres-user postgres-todo
+docker stop user-service todo-service postgres-user postgres-todo todo-service-opt user-service-opt
 
 # Eemalda konteinerid (andmehoidlad (volumes) ja võrk (network) jäävad alles!)
-docker rm user-service todo-service postgres-user postgres-todo
+docker rm user-service todo-service postgres-user postgres-todo todo-service-opt user-service-opt
 
 # Kontrolli, et konteinerid on eemaldatud
 docker ps -a | grep -E "user-service|todo-service|postgres"
