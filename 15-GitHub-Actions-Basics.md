@@ -2,19 +2,20 @@
 
 **Kestus:** 3 tundi
 **Eeldused:** Peatükk 3 (Git), Peatükk 4-7 (Docker)
-**Eesmärk:** Automatiseerida build, test, ja deploy workflow GitHub Actions'iga
+**Eesmärk:** Mõista CI/CD filosoofiat ja GitHub Actions arhitektuuri
 
 ---
 
 ## Õpieesmärgid
 
-Selle peatüki lõpuks oskad:
-- Mõista CI/CD põhimõtteid ja GitHub Actions arhitektuuri
-- Kirjutada workflow YAML faile
-- Seadistada triggers (push, pull_request, schedule)
-- Kasutada GitHub-hosted runners
-- Hallata secrets ja environment variables
-- Luua multi-job workflows
+Selle peatüki lõpuks mõistad:
+- **MIKS** CI/CD on kriitiline DevOps'is
+- **KUIDAS** GitHub Actions arhitektuur toimib
+- **MILLAL** kasutada erinevaid triggers ja workflow patterns
+- **Kuidas** hallata secrets ja environment variables turvaliselt
+- **Erinevusi** GitHub Actions vs GitLab CI vs Bamboo
+
+**TÄHTIS:** See peatükk keskendub KONTSEPTIDELE ja DISAINI OTSUSTELE. Täielikke workflow näiteid harjutad **Lab 5: CI/CD Lab'is**.
 
 ---
 
@@ -45,15 +46,37 @@ Problems:
 - Works on my machine™
 ```
 
+**Miks see on OHTLIK?**
+
+1. **Human error:** Käsitsi deployment → 1 kord 10-st läheb midagi valesti
+2. **No testing:** Kui kohalikud testid ei jooksnud, deploy läheb samuti läbi
+3. **No audit trail:** Kes deploy'das? Millal? Mida muudeti? → Ei tea
+4. **Downtime:** Manual deployment võtab 15-30 minutit (service down)
+5. **Fear of deployment:** "Ärge deploy'dage reedeti!" (kui midagi läheb valesti, veedate nädalavahetuse parandamisega)
+
 ---
 
 ### Solution: CI/CD Pipeline
 
 **Continuous Integration (CI):**
-> Automatically build and test code on every commit
+> Automatically build and test code on **every commit**
+
+**MIKS see on revolutsiooniline?**
+- Bugid avastakse 5 minutit pärast commit'i (mitte 2 nädalat hiljem)
+- Merge conflicts avastakse koheselt
+- Code quality (linter) jõustatakse automaatselt
+- Testid **peavad** jooksma (ei saa skipida)
 
 **Continuous Deployment (CD):**
 > Automatically deploy tested code to production
+
+**MIKS see on revolutsiooniline?**
+- Deploy võtab 5 minutit (mitte 30)
+- Zero downtime (rolling update)
+- Rollback on 1-click (kui midagi läheb valesti)
+- Deploy'da võib 10x päevas (mitte 1x kuus)
+
+---
 
 **GitHub Actions workflow:**
 
@@ -72,15 +95,72 @@ Problems:
 ```
 
 **DevOps benefits:**
-- ✅ Consistency (same process every time)
-- ✅ Speed (automated → 10x faster)
-- ✅ Quality (tests always run)
-- ✅ Confidence (if tests pass, deploy is safe)
-- ✅ Audit trail (all deployments logged)
+- ✅ **Consistency:** Same process every time (no "oops, I forgot to run tests")
+- ✅ **Speed:** Automated → 10x faster (5 min vs 30 min)
+- ✅ **Quality:** Tests always run (can't skip)
+- ✅ **Confidence:** If tests pass, deploy is safe
+- ✅ **Audit trail:** All deployments logged (who, what, when)
+- ✅ **Rollback:** Previous version is 1-click away
+
+---
+
+### Reaalne Näide: Startup vs Enterprise
+
+**Startup ilma CI/CD:**
+```
+- 5 developers
+- Manual deployment: 30 min
+- Deploy 2x päevas
+- Developer aeg deployment'ile: 5h nädalas
+- Bugs production'is: 3-4 nädalas (avastatud hilja)
+```
+
+**Startup CI/CD'ga:**
+```
+- 5 developers
+- Automated deployment: 5 min
+- Deploy 10x päevas (ei ole enam "big scary event")
+- Developer aeg deployment'ile: 0h (automatic)
+- Bugs production'is: 0-1 nädalas (caught by CI)
+```
+
+**Kokkuvõte:** CI/CD võimaldab väiksel meeskonnal liikuda KIIREMINI ja TURVALISEMALT.
 
 ---
 
 ## 15.2 GitHub Actions Architecture
+
+### MIKS GitHub Actions?
+
+**Alternatiivid:**
+1. **Jenkins:** Self-hosted, paindlik, aga complex setup
+2. **GitLab CI/CD:** GitLab'i native, hea enterprise'ile
+3. **Travis CI:** Legacy, kaotab turuosa
+4. **CircleCI:** Cloud-native, hea, aga kallis
+
+**GitHub Actions EELISED:**
+- ✅ **Native GitHub integration:** Zero setup (juba GitHubis)
+- ✅ **Free tier:** 2,000 minutes/month (public repos: unlimited)
+- ✅ **Marketplace:** 10,000+ pre-built actions
+- ✅ **Simple YAML:** Lihtne õppida
+- ✅ **Community:** Suur kasutajaskond, palju näiteid
+
+**GitHub Actions PUUDUSED:**
+- ❌ **Vendor lock-in:** Workflow'de ei saa lihtsalt teise platvormi viia
+- ❌ **Limited free tier:** 2,000 min/month (enterprise peab maksma)
+- ❌ **GitHub-centric:** Kui repo on GitLab'is, ei saa kasutada
+
+**MILLAL kasutada GitHub Actions?**
+- ✅ Repo on GitHubis
+- ✅ Small/medium projects (free tier piisab)
+- ✅ Open-source (unlimited minutes)
+
+**MILLAL kasutada GitLab CI?**
+- ✅ Repo on GitLabis
+- ✅ Enterprise (better pricing, self-hosted)
+- ✅ Need complex pipelines (better features)
+
+---
 
 ### Components
 
@@ -89,21 +169,25 @@ Problems:
 - Defines automation (build, test, deploy)
 
 **Trigger (Event):**
-- What starts workflow (push, pull_request, schedule)
+- **MIKS see on oluline:** Määrab, MILLAL workflow käivitub
+- **Common triggers:** push, pull_request, schedule, manual
 
 **Job:**
-- Set of steps running on a runner
-- Multiple jobs can run in parallel
+- **MIKS multiple jobs:** Parallel execution (tests + build samaaegselt)
+- **Trade-off:** Rohkem jobs = kiirem, aga complex dependencies
 
 **Step:**
 - Individual task (checkout code, run command, use action)
+- **MIKS atomic steps:** Debug on lihtsam (näed, kus täpselt fail)
 
 **Runner:**
-- Machine that executes workflow
-- GitHub-hosted (free minutes) or self-hosted
+- **Machine that executes workflow**
+- **MIKS GitHub-hosted:** Zero maintenance, clean environment
+- **MIKS self-hosted:** Cost savings, custom hardware (GPU)
 
 **Action:**
-- Reusable task (checkout code, setup Node.js, deploy to K8s)
+- **Reusable task**
+- **MIKS kasutada actions:** Don't reinvent the wheel (10,000+ marketplace)
 
 ---
 
@@ -141,7 +225,14 @@ Result:
 
 ## 15.3 Workflow YAML Structure
 
-### Minimal Workflow
+### Minimal Workflow - Concept
+
+**MIKS YAML?**
+- ✅ Human-readable (inimene saab aru)
+- ✅ Git-friendly (version control, code review)
+- ✅ Declarative (kirjeldad MIDA, mitte KUIDAS)
+
+**Minimal näide (kontsept):**
 
 ```yaml
 # .github/workflows/hello.yml
@@ -157,769 +248,598 @@ jobs:
       run: echo "Hello, World!"
 ```
 
-**What happens:**
+**Mida see teeb:**
+1. Push to any branch → trigger workflow
+2. GitHub allocates ubuntu-latest runner
+3. Runner executes: `echo "Hello, World!"`
+4. Log output visible in GitHub UI
 
-```
-1. Push to any branch
-2. GitHub Actions starts workflow
-3. Allocate ubuntu-latest runner
-4. Run command: echo "Hello, World!"
-5. Log output visible in GitHub UI
-```
+**TÄHTIS:** See on MINIMAALNE näide kontsepti mõistmiseks. Praktilisi workflow'e harjutad **Lab 5'is**.
 
 ---
 
-### Workflow Syntax Breakdown
+### Triggers - MILLAL Kasutada?
 
-**name:** Workflow display name
+**Design decision:** Trigger määrab, KUI TIHTI ja MILLAL workflow jookseb.
 
-```yaml
-name: CI Pipeline
-```
+**1. `on: push` - Continuous Integration**
 
-**on:** Triggers (events)
+**MILLAL kasutada:**
+- ✅ Main branch protection (tests enne merge'i)
+- ✅ Automatic build on main branch
+- ✅ Hotfix deployment
 
-```yaml
-# Single trigger
-on: push
+**MIKS see on hea:**
+- Immediate feedback (developer teab 5 min jooksul, kas build läbis)
+- Prevents broken main branch
 
-# Multiple triggers
-on: [push, pull_request]
-
-# Specific branches
-on:
-  push:
-    branches:
-      - main
-      - develop
-
-# Specific paths
-on:
-  push:
-    paths:
-      - 'src/**'
-      - 'Dockerfile'
-
-# Scheduled (cron)
-on:
-  schedule:
-    - cron: '0 2 * * *'  # Daily 02:00 UTC
-```
-
-**jobs:** Define jobs
-
-```yaml
-jobs:
-  build:  # Job ID
-    runs-on: ubuntu-latest  # Runner
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Run build
-        run: npm run build
-```
-
-**runs-on:** Runner type
-
-```yaml
-runs-on: ubuntu-latest  # Ubuntu 22.04
-runs-on: ubuntu-20.04   # Specific version
-runs-on: windows-latest
-runs-on: macos-latest
-```
-
-**steps:** Tasks in job
-
-```yaml
-steps:
-  - name: Step description
-    uses: actions/checkout@v4  # Use pre-built action
-
-  - name: Run command
-    run: echo "Hello"  # Shell command
-
-  - name: Multi-line command
-    run: |
-      npm install
-      npm test
-```
-
-📖 **Praktika:** Labor 5, Harjutus 1 - First GitHub Actions workflow
+**Trade-off:**
+- ⚠️ Konsumeerib runner minutes (iga push)
+- ⚠️ Slow repo (100 pushes/day) = high cost
 
 ---
 
-## 15.4 Common Triggers
+**2. `on: pull_request` - Code Review Gate**
 
-### Push Trigger
+**MILLAL kasutada:**
+- ✅ Require tests before merge
+- ✅ Security scanning
+- ✅ Code quality checks (linter)
 
-```yaml
-on:
-  push:
-    branches:
-      - main
-      - 'release/**'  # release/v1.0, release/v2.0
-    tags:
-      - 'v*'  # v1.0.0, v2.1.3
-```
+**MIKS see on hea:**
+- Broken code never reaches main (caught in PR)
+- Code review'daja näeb, et testid läbisid
 
-**Use case:** Deploy to production on push to main
+**Trade-off:**
+- ⚠️ Slower feedback (peab ootama workflow completion)
 
 ---
 
-### Pull Request Trigger
+**3. `on: schedule` - Nightly Builds**
 
-```yaml
-on:
-  pull_request:
-    branches:
-      - main
-    types:
-      - opened
-      - synchronize  # New commits pushed to PR
-```
+**MILLAL kasutada:**
+- ✅ Security scanning (daily scan)
+- ✅ Dependency updates (check for outdated packages)
+- ✅ Report generation (nightly metrics)
 
-**Use case:** Run tests before merge
+**MIKS see on hea:**
+- Avastab probleeme, mis tekivad ajas (dependencies deprecated)
+- Ei blokeeri development workflow'd
 
----
-
-### Manual Trigger (workflow_dispatch)
-
-```yaml
-on:
-  workflow_dispatch:
-    inputs:
-      environment:
-        description: 'Environment to deploy'
-        required: true
-        type: choice
-        options:
-          - dev
-          - staging
-          - production
-```
-
-**Use case:** Manual production deploys (button in GitHub UI)
+**Trade-off:**
+- ⚠️ Slow feedback (probleemid avastatud 12-24h hiljem)
 
 ---
 
-### Scheduled Trigger
+**4. `on: workflow_dispatch` - Manual Deployment**
 
-```yaml
-on:
-  schedule:
-    - cron: '0 2 * * *'  # Daily 02:00 UTC
-    - cron: '0 */6 * * *'  # Every 6 hours
-```
+**MILLAL kasutada:**
+- ✅ Production deployment (safety gate - human approval)
+- ✅ Hotfix deployment (urgent manual trigger)
+- ✅ Testing (trigger workflow manually for debugging)
 
-**Use case:** Nightly builds, automated backups, security scans
+**MIKS see on hea:**
+- Human control (ei deploy'da automaatselt production'i)
+- Flexibility (võid valida parameetreid)
 
----
-
-## 15.5 Steps and Actions
-
-### Checkout Code
-
-**Always first step:**
-
-```yaml
-steps:
-  - name: Checkout repository
-    uses: actions/checkout@v4
-```
-
-**What it does:**
-- Clones Git repository to runner
-- Checks out commit that triggered workflow
+**Trade-off:**
+- ⚠️ Slower (peab käsitsi trigger'dama)
+- ⚠️ Requires human (ei saa täielikult automatiseerida)
 
 ---
 
-### Run Shell Commands
+**Design decision: Kui TIHTI deploy'da?**
 
-```yaml
-steps:
-  - name: Install dependencies
-    run: npm install
-
-  - name: Run tests
-    run: npm test
-
-  - name: Multi-line script
-    run: |
-      echo "Building application..."
-      npm run build
-      echo "Build complete!"
+**Conservative approach:**
 ```
+- PR → run tests (automatic)
+- Push to main → build image (automatic)
+- Deploy to production → manual approval (workflow_dispatch)
+```
+
+**Aggressive approach (Continuous Deployment):**
+```
+- PR → run tests (automatic)
+- Merge to main → deploy to production (automatic, 0 human intervention)
+```
+
+**MIKS conservative?**
+- ✅ Safety (human approval before production)
+- ❌ Slower (peab ootama approval)
+
+**MIKS aggressive?**
+- ✅ Speed (production updated 5 min pärast merge)
+- ❌ Risk (kui tests ei kata kõike, broken code → production)
+
+**DevOps best practice:** Start conservative, move to aggressive kui test coverage > 80%.
 
 ---
 
-### Use Pre-built Actions
+## 15.4 Secrets Management - MIKS See On Kriitiline?
 
-**Setup Node.js:**
+### Probleem: Hardcoded Secrets
 
-```yaml
-- name: Setup Node.js
-  uses: actions/setup-node@v4
-  with:
-    node-version: '18'
-```
-
-**Setup Docker Buildx:**
+**❌ NEVER do this:**
 
 ```yaml
-- name: Set up Docker Buildx
-  uses: docker/setup-buildx-action@v3
-```
-
-**Login to Docker Hub:**
-
-```yaml
-- name: Login to Docker Hub
-  uses: docker/login-action@v3
-  with:
-    username: ${{ secrets.DOCKER_USERNAME }}
-    password: ${{ secrets.DOCKER_PASSWORD }}
-```
-
-**GitHub Actions Marketplace:**
-- https://github.com/marketplace?type=actions
-- 20,000+ pre-built actions
-
----
-
-## 15.6 Environment Variables and Secrets
-
-### Environment Variables
-
-**Workflow-level:**
-
-```yaml
+# BAD - secret hardcoded in repo
 env:
-  NODE_ENV: production
-  APP_VERSION: 1.2.3
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "Version $APP_VERSION"
+  DATABASE_PASSWORD: "mypassword123"
+  DOCKER_PASSWORD: "hunter2"
 ```
 
-**Job-level:**
+**MIKS see on OHTLIK?**
+- ❌ Secrets on Git history's (IGAVESTI)
+- ❌ Anyone with repo access näeb secrets
+- ❌ Leaked secrets → security breach (database compromised)
 
-```yaml
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    env:
-      BUILD_ENV: production
-    steps:
-      - run: npm run build
-```
-
-**Step-level:**
-
-```yaml
-steps:
-  - name: Deploy
-    env:
-      DEPLOY_ENV: production
-    run: ./deploy.sh
-```
+**Reaalne näide:** AWS credentials leakitud GitHubis → $10,000 bitcoin mining bill järgmisel kuul.
 
 ---
 
-### Secrets Management
+### Solution: GitHub Secrets
 
-**Create secret in GitHub:**
+**KUIDAS see toimib:**
+1. Secrets stored encrypted in GitHub (not in repo)
+2. Workflow saab access secrets'ile runtime'is
+3. Secrets never logged (masked in output)
 
-```
-Repository → Settings → Secrets and variables → Actions
-→ New repository secret
-
-Name: DOCKER_PASSWORD
-Value: super-secret-docker-hub-password
-```
-
-**Use secret in workflow:**
-
-```yaml
-steps:
-  - name: Login to Docker Hub
-    uses: docker/login-action@v3
-    with:
-      username: ${{ secrets.DOCKER_USERNAME }}
-      password: ${{ secrets.DOCKER_PASSWORD }}
-```
-
-**Secrets security:**
-- Never logged in output (masked as ***)
-- Not accessible in forked repositories (security)
-- Encrypted at rest
-
-**Default secrets:**
-
-```yaml
-steps:
-  - name: Checkout with token
-    uses: actions/checkout@v4
-    with:
-      token: ${{ secrets.GITHUB_TOKEN }}  # Auto-provided
-```
-
----
-
-### Context Variables
-
-**GitHub context:**
-
-```yaml
-steps:
-  - run: echo "Repository: ${{ github.repository }}"
-  - run: echo "Branch: ${{ github.ref_name }}"
-  - run: echo "SHA: ${{ github.sha }}"
-  - run: echo "Actor: ${{ github.actor }}"
-```
-
-**Runner context:**
-
-```yaml
-steps:
-  - run: echo "OS: ${{ runner.os }}"
-  - run: echo "Arch: ${{ runner.arch }}"
-```
-
-📖 **Praktika:** Labor 5, Harjutus 2 - Secrets management
-
----
-
-## 15.7 Multi-Job Workflows
-
-### Parallel Jobs
-
-```yaml
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: npm test
-
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: npm run lint
-
-  security-scan:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: npm audit
-```
-
-**Execution:**
-
-```
-test          lint          security-scan
-  ↓             ↓                ↓
-Parallel execution (fastest!)
-```
-
----
-
-### Sequential Jobs (dependencies)
-
-```yaml
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: npm run build
-
-  test:
-    needs: build  # Wait for build
-    runs-on: ubuntu-latest
-    steps:
-      - run: npm test
-
-  deploy:
-    needs: [build, test]  # Wait for both
-    runs-on: ubuntu-latest
-    steps:
-      - run: ./deploy.sh
-```
-
-**Execution:**
-
-```
-build
-  ↓
-test
-  ↓
-deploy
-```
-
----
-
-### Matrix Strategy (test multiple versions)
-
-```yaml
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [16, 18, 20]
-        os: [ubuntu-latest, windows-latest]
-
-    steps:
-      - uses: actions/checkout@v4
-      - name: Setup Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
-      - run: npm test
-```
-
-**Execution:**
-
-```
-6 jobs in parallel:
-- Node 16 + Ubuntu
-- Node 16 + Windows
-- Node 18 + Ubuntu
-- Node 18 + Windows
-- Node 20 + Ubuntu
-- Node 20 + Windows
-```
-
-**Use case:** Test compatibility across versions
-
----
-
-## 15.8 Docker Build Automation
-
-### Basic Docker Build and Push
-
-```yaml
-name: Docker Build
-
-on:
-  push:
-    branches:
-      - main
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Build and push
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./Dockerfile
-          push: true
-          tags: |
-            myusername/backend:latest
-            myusername/backend:${{ github.sha }}
-```
-
-**What happens:**
-
-```
-1. Checkout code
-2. Setup Docker Buildx (builder)
-3. Login to Docker Hub
-4. Build image
-5. Tag: latest + commit SHA
-6. Push to Docker Hub
-
-Result:
-- myusername/backend:latest
-- myusername/backend:abc1234567
-```
-
----
-
-### Multi-Platform Builds
-
-```yaml
-- name: Build multi-platform
-  uses: docker/build-push-action@v5
-  with:
-    context: .
-    platforms: linux/amd64,linux/arm64
-    push: true
-    tags: myusername/backend:latest
-```
-
-**Builds for:**
-- AMD64 (Intel/AMD servers)
-- ARM64 (Apple Silicon, AWS Graviton)
-
----
-
-### Cache Optimization
-
-```yaml
-- name: Build with cache
-  uses: docker/build-push-action@v5
-  with:
-    context: .
-    push: true
-    tags: myusername/backend:latest
-    cache-from: type=registry,ref=myusername/backend:cache
-    cache-to: type=registry,ref=myusername/backend:cache,mode=max
-```
-
-**Benefit:** 10x faster builds (reuse layers)
-
-📖 **Praktika:** Labor 5, Harjutus 3 - Automated Docker builds
-
----
-
-## 15.9 Practical CI/CD Pipeline
-
-### Complete Example - Backend API
-
-```yaml
-name: Backend CI/CD
-
-on:
-  push:
-    branches:
-      - main
-      - develop
-  pull_request:
-    branches:
-      - main
-
-env:
-  DOCKER_IMAGE: myorg/backend-api
-  NODE_VERSION: '18'
-
-jobs:
-  # Job 1: Lint and Test
-  test:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run linter
-        run: npm run lint
-
-      - name: Run tests
-        run: npm test
-
-      - name: Generate coverage report
-        run: npm run test:coverage
-
-      - name: Upload coverage
-        uses: codecov/codecov-action@v3
-        with:
-          file: ./coverage/coverage-final.json
-
-  # Job 2: Build Docker Image
-  build:
-    needs: test
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push'  # Only on push, not PR
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.DOCKER_IMAGE }}
-          tags: |
-            type=ref,event=branch
-            type=sha,prefix={{branch}}-
-
-      - name: Build and push
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./Dockerfile.prod
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ env.DOCKER_IMAGE }}:cache
-          cache-to: type=registry,ref=${{ env.DOCKER_IMAGE }}:cache,mode=max
-
-  # Job 3: Security Scan
-  security:
-    needs: build
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-
-    steps:
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ${{ env.DOCKER_IMAGE }}:main-${{ github.sha }}
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-
-      - name: Upload Trivy results
-        uses: github/codeql-action/upload-sarif@v2
-        with:
-          sarif_file: 'trivy-results.sarif'
-```
-
-**Pipeline flow:**
-
-```
-git push to main
-  ↓
-1. Test job (parallel):
-   - Lint
-   - Unit tests
-   - Coverage report
-
-2. Build job (after test passes):
-   - Build Docker image
-   - Tag: main-abc1234
-   - Push to Docker Hub
-
-3. Security job (after build):
-   - Scan image for vulnerabilities
-   - Upload results to GitHub
-```
-
----
-
-## 15.10 Best Practices
-
-### 1. Fail Fast
-
-```yaml
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - run: npm run lint  # Fast check first
-      - run: npm test      # Slower tests second
-```
-
-**Benefit:** If lint fails (30s), don't waste time on tests (5min)
-
----
-
-### 2. Cache Dependencies
-
-```yaml
-- name: Setup Node.js with cache
-  uses: actions/setup-node@v4
-  with:
-    node-version: '18'
-    cache: 'npm'  # Cache node_modules
-
-- name: Install dependencies
-  run: npm ci  # Faster than npm install
-```
-
-**Speed improvement:** 5min → 30s
-
----
-
-### 3. Use Specific Action Versions
-
-```yaml
-# ❌ BAD (unstable)
-uses: actions/checkout@main
-
-# ✅ GOOD (stable)
-uses: actions/checkout@v4
-```
-
----
-
-### 4. Separate Workflows
-
-```
-.github/workflows/
-  ├── ci.yml          # Test, lint (on PR)
-  ├── build.yml       # Build, push (on push to main)
-  ├── deploy.yml      # Deploy (on release tag)
-  └── security.yml    # Security scan (nightly)
-```
-
-**Benefit:** Faster feedback, clearer separation
-
----
-
-### 5. Use Environments for Secrets
+**Minimal näide (kontsept):**
 
 ```yaml
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: production  # Environment-specific secrets
-
     steps:
-      - name: Deploy
+      - name: Deploy to Kubernetes
         env:
           KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
         run: kubectl apply -f deployment.yaml
 ```
 
+**MIKS see on parem?**
+- ✅ Secrets NOT in Git history
+- ✅ Access control (ainult repo admins saavad secrets muuta)
+- ✅ Masked in logs (ei kuvata console output'is)
+
 ---
 
-### 6. Timeout Jobs
+### Secrets Best Practices
+
+**1. MIKS use environment-specific secrets?**
+
+```
+Environments:
+- development → secrets.DEV_KUBE_CONFIG
+- staging → secrets.STAGING_KUBE_CONFIG
+- production → secrets.PROD_KUBE_CONFIG
+```
+
+**MIKS see on oluline:**
+- ✅ Prevents accidental production deployment (dev secrets ei tööta prod'is)
+- ✅ Principle of least privilege (dev'idel ei ole prod secrets)
+
+---
+
+**2. MIKS rotate secrets regularly?**
+
+**DevOps best practice:** Rotate secrets every 90 days (või koheselt kui developer lahkub).
+
+**MIKS?**
+- ✅ Compromised secret has limited lifetime
+- ✅ Reduces blast radius (kui secret leaks, it expires soon)
+
+---
+
+**3. MIKS use OIDC instead of long-lived tokens?**
+
+**Problem: Long-lived tokens**
+- Token generated → valid for 1 year
+- If leaked → attacker has 1 year access
+
+**Solution: OIDC (OpenID Connect)**
+- GitHub generates short-lived token (valid 1 hour)
+- If leaked → attacker has 1 hour window (minimal damage)
+
+**MILLAL kasutada OIDC?**
+- ✅ AWS, Azure, GCP deployment (native support)
+- ✅ Security-critical applications
+
+**MILLAL kasutada long-lived tokens?**
+- ✅ Simple projects (OIDC setup complex)
+- ✅ Self-hosted runners (OIDC not always supported)
+
+---
+
+## 15.5 Multi-Job Workflows - MIKS Paralleliseerimine?
+
+### Probleem: Sequential Pipeline
+
+**Ilma paralleliseerimiseta:**
+
+```
+Step 1: Lint (30 seconds)
+  ↓
+Step 2: Unit tests (3 minutes)
+  ↓
+Step 3: Integration tests (5 minutes)
+  ↓
+Step 4: Build Docker image (2 minutes)
+  ↓
+Total: 10.5 minutes
+```
+
+**MIKS see on AEGLANE?**
+- Tests ei sõltu üksteisest (unit tests ei vaja integration tests tulemust)
+- Build ei vaja tests tulemust (võib paralleelselt joosta)
+
+---
+
+### Solution: Parallel Jobs
+
+**Concept (parallel execution):**
+
+```
+git push →
+
+Job 1: Lint (30s)     \
+Job 2: Unit tests (3m) → Job 4: Deploy (if all pass)
+Job 3: Integration (5m)/
+
+Total: 5 minutes (saved 5.5 minutes!)
+```
+
+**MIKS paralleliseerimine on hea?**
+- ✅ Faster feedback (5 min vs 10.5 min)
+- ✅ Better resource usage (3 runners samaaegselt vs 1 runner sequentially)
+
+**Trade-off:**
+- ⚠️ Consumes more runner minutes (3 runners × 5 min = 15 runner-minutes vs 10.5 sequential)
+- ⚠️ More complex (dependencies between jobs)
+
+---
+
+### Design Decision: Parallel vs Sequential?
+
+**MILLAL parallel?**
+- ✅ Jobs sõltumatud (testid ei vaja üksteist)
+- ✅ Speed critical (developer waiting for feedback)
+- ✅ Unlimited runner minutes (free tier piisab)
+
+**MILLAL sequential?**
+- ✅ Jobs dependent (build vajab test results)
+- ✅ Limited runner minutes (free tier ületatud)
+- ✅ Simple pipeline (complexity not worth it)
+
+**DevOps best practice:**
+- Parallel: lint, unit tests, security scan (sõltumatud)
+- Sequential: tests → build → deploy (dependencies)
+
+---
+
+**Minimal näide (kontsept):**
 
 ```yaml
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - run: npm run lint
+
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 10  # Kill after 10 minutes
-
     steps:
       - run: npm test
+
+  deploy:
+    needs: [lint, test]  # Wait for lint AND test
+    runs-on: ubuntu-latest
+    steps:
+      - run: kubectl apply -f deployment.yaml
 ```
 
-**Prevent:** Hanging jobs consuming runner minutes
+**Explanation:**
+- `lint` and `test` run in parallel (no dependencies)
+- `deploy` waits for both (needs: [lint, test])
+
+**TÄHTIS:** Täielikke multi-job workflow näiteid harjutad **Lab 5'is**.
 
 ---
 
-## 15.11 GitHub-Hosted vs Self-Hosted Runners
+## 15.6 Docker Build Automation - Concepts
+
+### MIKS Automated Docker Builds?
+
+**Manual Docker build:**
+
+```bash
+# Developer käsitsi:
+docker build -t myapp:latest .
+docker tag myapp:latest myusername/myapp:v1.2.3
+docker push myusername/myapp:v1.2.3
+docker push myusername/myapp:latest
+```
+
+**MIKS see on PROBLEEM?**
+- ❌ Developer unustab tagida version'iga (ainult `latest`)
+- ❌ Inconsistent tags (üks developer kasutab `v1.2.3`, teine `1.2.3`)
+- ❌ Slow (developer peab ootama build'i - 5-10 min)
+- ❌ No audit trail (kes buildinud selle image?)
+
+---
+
+### Solution: Automated Builds in CI/CD
+
+**Workflow automates:**
+1. **Build:** Docker image (every push to main)
+2. **Tag:** Versioned (git commit SHA + semver tag)
+3. **Push:** To Docker Hub/registry
+4. **Audit:** Logged in GitHub Actions
+
+**MIKS see on parem?**
+- ✅ Consistent tagging (always git SHA)
+- ✅ Parallel builds (ei blokeeri developer'it)
+- ✅ Audit trail (GitHub Actions log shows exact build)
+- ✅ Reproducible (sama commit SHA → sama image)
+
+---
+
+### Design Decisions
+
+**1. Tagging strategy - MIKS See On Oluline?**
+
+**Option A: Only `latest`**
+```
+myapp:latest (always overwritten)
+```
+
+**MIKS BAD?**
+- ❌ No versioning (ei tea, milline version on production'is)
+- ❌ Rollback impossible (previous version kadunud)
+
+---
+
+**Option B: Git SHA tagging**
+```
+myapp:abc1234567 (git commit SHA)
+myapp:latest
+```
+
+**MIKS GOOD?**
+- ✅ Immutable (SHA never changes)
+- ✅ Rollback possible (deploy previous SHA)
+- ✅ Audit trail (SHA → git commit → code changes)
+
+---
+
+**Option C: Semantic versioning**
+```
+myapp:v1.2.3
+myapp:v1.2
+myapp:v1
+myapp:latest
+```
+
+**MIKS GOOD?**
+- ✅ Human-readable (v1.2.3 vs abc1234567)
+- ✅ Semver semantics (v1.2.3 → v1.2.4 = patch, v1.3.0 = minor, v2.0.0 = breaking)
+
+**MIKS COMPLEX?**
+- ⚠️ Requires version bumping (peab manually uuendama version number)
+- ⚠️ CI/CD peab parsima semver tags
+
+**DevOps best practice:** Use **git SHA + semver** (both):
+```
+myapp:v1.2.3
+myapp:abc1234567
+myapp:latest
+```
+
+---
+
+**2. Multi-platform builds - MILLAL Kasutada?**
+
+**Option A: Single platform (linux/amd64)**
+
+**MILLAL kasutada:**
+- ✅ Homogeneous infrastructure (kõik serverid on x86)
+- ✅ Speed critical (multi-platform 2x slower)
+
+---
+
+**Option B: Multi-platform (linux/amd64,linux/arm64)**
+
+**MILLAL kasutada:**
+- ✅ Heterogeneous infrastructure (x86 + ARM)
+- ✅ Cloud-native (AWS Graviton = ARM, cost savings 20%)
+- ✅ Apple Silicon support (M1/M2 = ARM)
+
+**Trade-off:**
+- ✅ Flexibility (works everywhere)
+- ❌ Slower builds (2x time)
+- ❌ More runner minutes (double cost)
+
+---
+
+**3. Layer caching - MIKS See On Kriitiline?**
+
+**Without cache:**
+```
+Build 1: 5 minutes (download all dependencies)
+Build 2: 5 minutes (download all dependencies again)
+Build 3: 5 minutes (download all dependencies again)
+```
+
+**With cache:**
+```
+Build 1: 5 minutes (download dependencies)
+Build 2: 30 seconds (reuse cached dependencies)
+Build 3: 30 seconds (reuse cached dependencies)
+```
+
+**MIKS cache on oluline?**
+- ✅ 10x faster builds
+- ✅ Lower runner minutes (cost savings)
+- ✅ Faster feedback (developer gets results faster)
+
+**MILLAL cache ei tööta?**
+- ❌ Dependency changes (package.json updated → cache invalid)
+- ❌ Base image updated (node:18 → node:20 → cache invalid)
+
+**DevOps best practice:** Always enable caching (free speed boost).
+
+---
+
+**Minimal näide (kontsept):**
+
+```yaml
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          push: true
+          tags: myusername/backend:${{ github.sha }}
+          cache-from: type=registry,ref=myusername/backend:cache
+```
+
+**Explanation:**
+- `tags: ${{ github.sha }}` → automatic git SHA tagging
+- `cache-from` → reuse cached layers
+
+**TÄHTIS:** Täielikke Docker build workflow'e harjutad **Lab 5: CI/CD Lab'is**.
+
+---
+
+## 15.7 Best Practices - MIKS Oluline?
+
+### 1. Fail Fast - MIKS?
+
+**Concept:** Run fast checks first, slow checks later.
+
+**MIKS see on hea?**
+- ✅ If lint fails (30s), don't waste 5min on tests
+- ✅ Faster feedback (developer knows immediately)
+- ✅ Lower runner minutes (don't run expensive tests if code doesn't lint)
+
+**Example:**
+```
+Step 1: Lint (30s) ← if fails, stop here
+Step 2: Unit tests (3m) ← if fails, stop here
+Step 3: Integration tests (5m)
+Step 4: Deploy
+```
+
+**Without fail-fast:**
+```
+All steps run even if lint fails → waste 8 minutes
+```
+
+**With fail-fast:**
+```
+Lint fails → stop immediately → save 8 minutes
+```
+
+---
+
+### 2. Use Specific Action Versions - MIKS?
+
+**❌ BAD:**
+```yaml
+uses: actions/checkout@main  # Unstable (main branch changes)
+```
+
+**✅ GOOD:**
+```yaml
+uses: actions/checkout@v4  # Stable (v4 never changes)
+```
+
+**MIKS see on oluline?**
+- ✅ Reproducible builds (sama workflow alati sama result)
+- ✅ No breaking changes (v4 → v5 upgrade controlled)
+- ✅ Security (pinned version, ei muutu ilma teadmata)
+
+---
+
+### 3. Separate Workflows - MIKS?
+
+**MIKS mitte 1 gigantic workflow?**
+
+**Problem:**
+```
+1 workflow:
+- Lint
+- Test
+- Build
+- Deploy
+- Security scan
+- Dependency update
+
+→ 1 fail → entire workflow fails (even if unrelated)
+→ Slow feedback (peab ootama kõiki steps)
+```
+
+**Solution: Separate workflows**
+```
+ci.yml → Test, lint (on PR)
+build.yml → Build, push (on push to main)
+deploy.yml → Deploy (on release tag)
+security.yml → Security scan (nightly)
+```
+
+**MIKS see on parem?**
+- ✅ Faster feedback (tests run independent of security scan)
+- ✅ Clear separation (deploy workflow ei sisalda test logic)
+- ✅ Easier debugging (väiksem workflow → lihtsam aru saada)
+
+---
+
+### 4. Timeout Jobs - MIKS?
+
+**Problem: Hanging jobs**
+
+```
+Test starts → hangs (infinite loop) → runs forever → consumes all runner minutes
+```
+
+**Solution:**
+```yaml
+jobs:
+  test:
+    timeout-minutes: 10  # Kill after 10 minutes
+```
+
+**MIKS see on oluline?**
+- ✅ Prevents runaway costs (hanging job ei consume kogu budget)
+- ✅ Faster feedback (ei oota 6h, et job eventually fails)
+
+---
+
+### 5. Cache Dependencies - MIKS?
+
+**Without cache:**
+```
+npm install → download 200 MB dependencies → 2 minutes
+(iga build)
+```
+
+**With cache:**
+```
+npm install → reuse cached dependencies → 10 seconds
+```
+
+**MIKS cache on oluline?**
+- ✅ 10x faster builds
+- ✅ Lower costs (less runner minutes)
+
+**MILLAL cache invalideerimine?**
+- Dependencies change (package-lock.json updated) → cache rebuilt
+
+---
+
+## 15.8 GitHub-Hosted vs Self-Hosted Runners
 
 ### GitHub-Hosted Runners
 
@@ -930,61 +850,76 @@ jobs:
 
 **Free tier:**
 - 2,000 minutes/month (public repos: unlimited)
-- After limit: $0.008/minute
+- After limit: $0.008/minute (~$0.50/hour)
+
+**MIKS GitHub-Hosted?**
 
 **Pros:**
-- ✅ Zero maintenance
-- ✅ Fast startup
-- ✅ Clean environment
+- ✅ **Zero maintenance:** Ei pea OS-i updatedama, security patches automatic
+- ✅ **Fast startup:** VM allocated in 10-20 seconds
+- ✅ **Clean environment:** Iga job fresh VM (no leftover state)
+- ✅ **Security:** Isolated (malicious code ei mõjuta teisi workflows)
 
 **Cons:**
-- ❌ Limited resources (2 cores)
-- ❌ No GPU, no custom hardware
-- ❌ Cost after free tier
+- ❌ **Limited resources:** 2 cores (ei sobi heavy builds)
+- ❌ **No GPU:** Deep learning, video rendering ei tööta
+- ❌ **Cost after free tier:** $0.008/min = $28.80 kui 3,600 min/month (60h/month)
+
+**MILLAL kasutada GitHub-Hosted?**
+- ✅ Small/medium projects (< 2,000 min/month)
+- ✅ Open-source (unlimited minutes)
+- ✅ Security critical (isolated environment)
 
 ---
 
 ### Self-Hosted Runners
 
-**Setup:**
+**Concept:** Use your own VPS/server as runner.
 
-```bash
-# On your VPS/server
-mkdir actions-runner && cd actions-runner
-curl -o actions-runner-linux-x64-2.311.0.tar.gz -L https://github.com/actions/runner/releases/download/v2.311.0/actions-runner-linux-x64-2.311.0.tar.gz
-tar xzf ./actions-runner-linux-x64-2.311.0.tar.gz
-./config.sh --url https://github.com/YOUR_ORG/YOUR_REPO --token YOUR_TOKEN
-./run.sh
-```
-
-**Use in workflow:**
-
-```yaml
-jobs:
-  build:
-    runs-on: self-hosted  # Use self-hosted runner
-    steps:
-      - uses: actions/checkout@v4
-      - run: npm run build
-```
+**MIKS Self-Hosted?**
 
 **Pros:**
-- ✅ Unlimited minutes (free)
-- ✅ Custom hardware (GPU, more CPU/RAM)
-- ✅ Access to internal network
+- ✅ **Unlimited minutes:** Ei maksa GitHub'ile (free)
+- ✅ **Custom hardware:** GPU, 32 cores, 128 GB RAM (kui vaja)
+- ✅ **Access to internal network:** Deploy to on-premise Kubernetes
+- ✅ **Cost savings:** $5/month VPS vs $30/month GitHub-hosted
 
 **Cons:**
-- ❌ Maintenance (OS updates, security)
-- ❌ Not isolated (persistent state between jobs)
-- ❌ Security risk (malicious code access to server)
-
-**Production recommendation:** GitHub-hosted for security, self-hosted for cost/performance
+- ❌ **Maintenance:** OS updates, security patches (sina pead)
+- ❌ **Not isolated:** Persistent state (previous job files jäävad)
+- ❌ **Security risk:** Malicious code saab access serverile
+- ❌ **Availability:** Kui server down → workflows fail
 
 ---
 
-## 15.12 Alternatiivid: GitLab CI ja Bamboo
+### Design Decision: Millal Kasutada?
 
-### Miks võrrelda?
+**GitHub-Hosted:**
+- ✅ Open-source projects (unlimited minutes)
+- ✅ Security critical (need isolation)
+- ✅ Don't want maintenance burden
+
+**Self-Hosted:**
+- ✅ High runner minute usage (> 5,000 min/month = cost savings)
+- ✅ Custom hardware needed (GPU, high RAM)
+- ✅ Deploy to on-premise infrastructure
+- ✅ Private repos with lots of builds
+
+**DevOps best practice:**
+- Start with GitHub-Hosted (simple)
+- Migrate to Self-Hosted kui costs > $50/month
+
+---
+
+**Security warning:**
+- ⚠️ **NEVER** use self-hosted runners for public repos (malicious PR saab access serverile!)
+- ✅ **ONLY** use self-hosted for private repos (trust your team)
+
+---
+
+## 15.9 Alternatiivid: GitLab CI ja Bamboo
+
+### MIKS Võrrelda?
 
 **DevOps reaalsus:**
 > "GitHub Actions on hea, aga organisatsioon võib kasutada GitLab'i või Bamboo'd. DevOps administraator PEAB mõistma erinevusi."
@@ -992,430 +927,141 @@ jobs:
 **Kolm peamist CI/CD platvormi:**
 1. **GitHub Actions** - GitHub'i native, populaarne open-source projektidele
 2. **GitLab CI/CD** - GitLab'i native, enterprise favorite
-3. **Bamboo** - Atlassian (Jira integreer), enterprise legacy
+3. **Bamboo** - Atlassian (Jira integratsioon), enterprise legacy
 
 ---
 
-### GitLab CI/CD
+### GitHub Actions vs GitLab CI/CD
 
-#### Arhitektuur
-
-**GitLab CI = GitLab integree**ritud CI/CD**
-
-```
-GitLab Repository:
-  .gitlab-ci.yml (root kataloogis)
-
-GitLab Runner:
-  - Self-hosted (peamine variant)
-  - GitLab SaaS shared runners (piiratud)
-
-Pipeline:
-  → Stages (build, test, deploy)
-  → Jobs (paralleelsed või sequential)
-```
-
-**Võtmeerinevus GitHub Actions'iga:**
-- GitHub: Jobs grupeeritakse workflow's
-- GitLab: Jobs grupeeritakse **stages'tes**
+| **Kriteerium** | **GitHub Actions** | **GitLab CI/CD** |
+|---|---|---|
+| **Workflow syntax** | YAML (`.github/workflows/`) | YAML (`.gitlab-ci.yml`) |
+| **Free tier** | 2,000 min/month | 400 min/month |
+| **Self-hosted** | Supported | Supported (better tooling) |
+| **Marketplace** | 10,000+ actions | Smaller ecosystem |
+| **Enterprise** | Good | Better (more features) |
+| **Learning curve** | Easy | Moderate |
 
 ---
 
-#### GitLab CI YAML Näide
+**MILLAL kasutada GitHub Actions?**
+- ✅ Repo on GitHubis
+- ✅ Open-source (unlimited minutes)
+- ✅ Simple workflows (build, test, deploy)
+- ✅ Want marketplace actions
 
-```yaml
-# .gitlab-ci.yml
-stages:
-  - build
-  - test
-  - deploy
-
-variables:
-  DOCKER_IMAGE: myorg/backend
-
-# Build job
-build-job:
-  stage: build
-  image: docker:latest
-  services:
-    - docker:dind  # Docker-in-Docker
-  script:
-    - docker build -t $DOCKER_IMAGE:$CI_COMMIT_SHA .
-    - docker push $DOCKER_IMAGE:$CI_COMMIT_SHA
-  only:
-    - main
-
-# Test job
-test-job:
-  stage: test
-  image: node:18
-  script:
-    - npm ci
-    - npm test
-  coverage: '/Coverage: \d+\.\d+/'
-
-# Deploy job
-deploy-job:
-  stage: deploy
-  image: bitnami/kubectl:latest
-  script:
-    - kubectl apply -f k8s/deployment.yaml
-  environment:
-    name: production
-    url: https://api.example.com
-  when: manual  # Manual trigger
-  only:
-    - main
-```
-
-**Syntax võrdlus:**
-
-| Aspect | GitHub Actions | GitLab CI |
-|--------|----------------|-----------|
-| Config file | `.github/workflows/*.yml` | `.gitlab-ci.yml` |
-| Trigger | `on: push` | `only: [main]` |
-| Runner | `runs-on: ubuntu-latest` | `image: node:18` |
-| Steps | `steps: - run:` | `script: -` |
-| Secrets | `${{ secrets.NAME }}` | `$CI_JOB_TOKEN` (auto) |
+**MILLAL kasutada GitLab CI/CD?**
+- ✅ Repo on GitLabis
+- ✅ Enterprise (better pricing for self-hosted)
+- ✅ Complex pipelines (better DAG support)
+- ✅ Want GitLab's integrated DevOps platform
 
 ---
 
-#### GitLab Runners
+### GitHub Actions vs Bamboo
 
-**Self-hosted (peamine):**
-
-```bash
-# Install GitLab Runner on VPS
-curl -L https://packages.gitlab.com/install/repositories/runner/gitlab-runner/script.deb.sh | sudo bash
-sudo apt-get install gitlab-runner
-
-# Register runner
-sudo gitlab-runner register \
-  --url https://gitlab.com/ \
-  --registration-token YOUR_TOKEN \
-  --executor docker \
-  --docker-image alpine:latest
-```
-
-**Shared runners (GitLab SaaS):**
-- Free tier: 400 minutes/month
-- Paid: $10/month for 1,000 minutes
-
-**Executor types:**
-- **docker:** Konteinerites (soovitatud)
-- **shell:** Otse host'is
-- **kubernetes:** K8s Pod'ides
+| **Kriteerium** | **GitHub Actions** | **Bamboo** |
+|---|---|---|
+| **Hosting** | Cloud (GitHub) | Self-hosted (Atlassian) |
+| **Cost** | Free tier + pay-per-minute | License fee ($10-100k/year) |
+| **Setup** | Zero setup | Complex setup |
+| **Jira integration** | Via marketplace | Native (excellent) |
+| **Modern** | Yes (2019+) | Legacy (2008+) |
 
 ---
 
-#### GitLab CI Eelised
+**MILLAL kasutada Bamboo?**
+- ✅ Already using Atlassian stack (Jira, Confluence, Bitbucket)
+- ✅ Enterprise legacy (migrating from Bamboo complex)
+- ✅ On-premise strict requirements
 
-**✅ Plussid:**
+**MIKS migrate FROM Bamboo?**
+- ❌ Expensive license fees
+- ❌ Complex maintenance
+- ❌ Legacy architecture (less modern features)
 
-1. **Built-in Docker Registry:**
-   ```yaml
-   # Push image GitLab Registry'sse (auto-auth)
-   script:
-     - docker build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA .
-     - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
-   ```
-
-2. **Auto DevOps:**
-   - Zero-config CI/CD (auto-detects language)
-   - Auto build, test, security scan, deploy to K8s
-
-3. **Merge Request Pipelines:**
-   - CI runs ONLY on merge request (säästab runner minutes)
-
-4. **DAG (Directed Acyclic Graph):**
-   ```yaml
-   # Complex dependencies
-   deploy:
-     needs:
-       - build:frontend
-       - build:backend
-       - test:integration
-   ```
-
-5. **Child/Parent Pipelines:**
-   - Trigger pipeline from another pipeline
-   - Monorepo support (frontend/, backend/ separate pipelines)
-
-**❌ Miinused:**
-
-- Self-hosted runners required (SaaS free tier väike)
-- Steeper learning curve (rohkem features = keerulisem)
-- GitLab instance maintenance (if self-hosted GitLab)
+**DevOps trend:** Enterprises moving FROM Bamboo TO GitHub Actions / GitLab CI.
 
 ---
 
-### Bamboo (Atlassian)
+### Design Decision Framework
 
-#### Arhitektuur
+**Choosing CI/CD platform:**
 
-**Bamboo = Standalone CI/CD server**
+**Step 1:** Where is your repo?
+- GitHub → GitHub Actions (obvious choice)
+- GitLab → GitLab CI/CD (obvious choice)
+- Bitbucket → GitHub Actions / GitLab CI (migrate repo)
 
-```
-Bamboo Server:
-  - Java application
-  - Web UI (config via UI, not YAML!)
-  - Integration: Jira, Bitbucket, Confluence
+**Step 2:** Enterprise requirements?
+- Yes → GitLab CI/CD (better enterprise features)
+- No → GitHub Actions (simpler, cheaper)
 
-Bamboo Agent:
-  - Self-hosted (Java agent)
-  - Executes builds
+**Step 3:** Existing stack?
+- Atlassian stack → Bamboo (if already paying)
+- No existing stack → GitHub Actions (free tier)
 
-Plan:
-  → Stages
-  → Jobs
-  → Tasks
-```
-
-**Võtmeerinevus:**
-- GitHub Actions/GitLab: **Configuration as Code** (YAML Git'is)
-- Bamboo: **UI-based configuration** (clicks, not code!)
-
----
-
-#### Bamboo Configuration
-
-**No YAML!** Config via Web UI:
-
-```
-1. Create Plan (e.g., "Backend Build")
-2. Add Stage (e.g., "Build")
-3. Add Job (e.g., "Compile")
-4. Add Tasks:
-   - Source Code Checkout (Git)
-   - Script: npm install
-   - Script: npm run build
-   - Docker: docker build -t backend:${bamboo.buildNumber}
-5. Add Deployment Project
-   - Environment: Production
-   - Tasks: kubectl apply -f deployment.yaml
-```
-
-**Bamboo Specs (modern approach):**
-
-```java
-// bamboo-specs/bamboo.yaml (Java-based!)
----
-version: 2
-plan:
-  project-key: PROJ
-  key: BUILD
-  name: Backend Build Plan
-
-stages:
-  - Build:
-      jobs:
-        - Compile:
-            tasks:
-              - checkout
-              - script: npm install
-              - script: npm test
-```
-
-**Hybrid:** Java/YAML specs stored in Git, but less popular
-
----
-
-#### Bamboo Eelised
-
-**✅ Plussid:**
-
-1. **Jira Integration:**
-   - Automatic issue linking (commit → Jira ticket)
-   - Build status in Jira issues
-   - Deployment tracking per release
-
-2. **Bitbucket Integration:**
-   - Branch detection (auto-create plans)
-   - Pull request builds
-
-3. **Mature Deployment Projects:**
-   - Multi-environment (dev, staging, prod)
-   - Manual approvals (click button to deploy)
-   - Rollback support
-
-4. **Build artifacts:**
-   - Store build outputs (JARs, Docker images)
-   - Artifact sharing between plans
-
-5. **Enterprise features:**
-   - Advanced permissions (Jira users/groups)
-   - Audit logging
-   - Compliance reports
-
-**❌ Miinused:**
-
-- **Expensive:** $1,200/year for 25 agents (vs GitHub Actions free tier)
-- **UI-based config:** Ei ole Infrastructure as Code (hard to version)
-- **Heavy:** Java server (2GB RAM minimum)
-- **Vendor lock-in:** Atlassian ecosystem (Jira, Bitbucket, Confluence)
-- **Legacy:** Vähem modern kui GitHub Actions/GitLab CI
-
----
-
-### Võrdlus: GitHub Actions vs GitLab CI vs Bamboo
-
-| Kriteerium | GitHub Actions | GitLab CI | Bamboo |
-|------------|----------------|-----------|---------|
-| **Hind** | Free (2,000 min/month) | Free (400 min/month) | $1,200/year |
-| **Config** | YAML (`.github/workflows/`) | YAML (`.gitlab-ci.yml`) | UI + specs (Java/YAML) |
-| **Runners** | GitHub-hosted + self-hosted | Self-hosted (peamine) | Self-hosted only |
-| **IaC** | ✅ YAML Git'is | ✅ YAML Git'is | ❌ UI-based (specs optional) |
-| **Docker support** | ✅ Native | ✅ Docker-in-Docker | ✅ Docker tasks |
-| **K8s integration** | Marketplace actions | Built-in (Auto DevOps) | Marketplace plugins |
-| **Secrets** | GitHub Secrets | GitLab Variables | Bamboo Variables |
-| **Parallelism** | Jobs | Jobs in stages | Jobs in stages |
-| **Matrix builds** | ✅ | ✅ | ❌ (manual duplication) |
-| **Marketplace** | 20,000+ actions | Auto DevOps templates | ~1,000 plugins |
-| **Learning curve** | Easy | Medium | Hard (UI + concepts) |
-| **Best for** | GitHub repos, OSS | GitLab repos, Enterprise | Atlassian stack (Jira) |
-
----
-
-### Valiku Juhised
-
-**Vali GitHub Actions kui:**
-- ✅ Kasutad GitHub'i
-- ✅ Open-source projekt
-- ✅ Vajad Marketplace actions'e
-- ✅ Budget-conscious (free tier suur)
-
-**Vali GitLab CI kui:**
-- ✅ Kasutad GitLab'i
-- ✅ Vajad built-in Docker Registry't
-- ✅ Enterprise (self-hosted GitLab)
-- ✅ Keeruline pipeline logic (DAG, parent/child)
-
-**Vali Bamboo kui:**
-- ✅ Kasutad juba Jira + Bitbucket
-- ✅ Enterprise (audit, compliance)
-- ✅ Deployment projects (multi-env management)
-- ❌ **EI SOOVITA uutele projektidele** (legacy, kallis)
-
----
-
-### Migratsioon GitHub Actions → GitLab CI
-
-**GitHub Actions:**
-```yaml
-name: CI
-on: [push]
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: npm test
-```
-
-**GitLab CI ekvivalent:**
-```yaml
-stages:
-  - test
-
-test-job:
-  stage: test
-  image: node:18
-  script:
-    - npm test
-```
-
-**Migration tools:**
-- GitLab CI/CD migration guide
-- Manual conversion (syntax different)
-
----
-
-### Praktiline Soovitus
-
-**DevOps administraator peaks:**
-
-1. **Põhjalikult teadma ühte:**
-   - GitHub Actions (kui GitHub org)
-   - GitLab CI (kui GitLab org)
-
-2. **Põhimõisteid teadma kõigist:**
-   - Pipeline, stage, job, step/task
-   - Runners/agents
-   - Secrets management
-   - Docker integration
-
-3. **Vältima Bamboo'd uutele projektidele:**
-   - Kallis, legacy
-   - Modern alternatiivid (GitHub Actions, GitLab CI, Jenkins) paremad
-
-**Trend 2025:**
-- GitHub Actions: kasvab (populaarsus, OSS)
-- GitLab CI: stabiilne (enterprise)
-- Bamboo: väheneb (legacy, Atlassian ei investeeri)
+**DevOps best practice:**
+- Default: GitHub Actions (jos repo on GitHubis)
+- Enterprise: GitLab CI/CD (better pricing, features)
+- Legacy: Bamboo (ainult kui juba kasutuses)
 
 ---
 
 ## Kokkuvõte
 
-### Mida sa õppisid?
+**Peamised kontseptid:**
 
-**CI/CD fundamentals:**
-- Continuous Integration (automatic build + test)
-- Continuous Deployment (automatic deploy)
-- GitHub Actions = CI/CD platform
+1. **CI/CD revolutsioon:**
+   - Manual deployment → automated pipeline
+   - 30 min → 5 min, error-prone → consistent
+   - Fear of deployment → deploy 10x päevas
 
-**Workflow syntax:**
-- YAML in `.github/workflows/`
-- Triggers: push, pull_request, schedule, workflow_dispatch
-- Jobs: parallel or sequential
-- Steps: actions or shell commands
+2. **GitHub Actions architecture:**
+   - Workflow = YAML file
+   - Triggers = push, PR, schedule, manual
+   - Runners = GitHub-hosted vs self-hosted
 
-**Common patterns:**
-- Checkout code: `actions/checkout@v4`
-- Setup environments: `setup-node`, `setup-python`
-- Docker build: `docker/build-push-action`
-- Secrets: `${{ secrets.SECRET_NAME }}`
+3. **Design decisions:**
+   - Triggers: Millal kasutada push vs PR vs schedule?
+   - Secrets: MIKS secrets management on kriitiline?
+   - Parallel jobs: Millal paralleliseerimine on worth it?
+   - Docker builds: Tagging strategy (SHA vs semver)
+   - Runners: GitHub-hosted vs self-hosted (cost, security, performance)
 
-**Best practices:**
-- Cache dependencies (faster builds)
-- Fail fast (lint before tests)
-- Specific action versions (@v4, not @main)
-- Timeout jobs (prevent hangs)
+4. **Best practices:**
+   - Fail fast (lint before tests)
+   - Specific versions (reproducible builds)
+   - Separate workflows (clear separation)
+   - Timeout jobs (prevent runaway costs)
+   - Cache dependencies (10x faster builds)
 
----
-
-### DevOps Administraatori Vaatenurk
-
-**Iga päev:**
-```
-git push → Automatic workflow starts
-→ View logs in GitHub Actions tab
-→ Fix failures
-```
-
-**Workflow debugging:**
-```yaml
-- name: Debug info
-  run: |
-    echo "Event: ${{ github.event_name }}"
-    echo "Branch: ${{ github.ref_name }}"
-    env  # Print all env vars
-```
-
-**Monitor:**
-- Workflow success rate
-- Build times (optimize slow steps)
-- Runner usage (cost)
+5. **Alternatiivid:**
+   - GitHub Actions: Cloud-native, simple, good free tier
+   - GitLab CI/CD: Enterprise, better pricing, complex features
+   - Bamboo: Legacy, expensive, Atlassian integration
 
 ---
 
-### Järgmised Sammud
+**Järgmine samm:**
 
-**Peatükk 16:** Docker Build Automation (advanced CI/CD)
-**Peatükk 17:** Kubernetes Deployment Automation (GitOps)
+**Lab 5: CI/CD Lab** - Praktilised harjutused:
+- Harjutus 1: First GitHub Actions workflow
+- Harjutus 2: Multi-job workflows (parallel execution)
+- Harjutus 3: Automated Docker builds
+- Harjutus 4: Complete CI/CD pipeline (build → test → deploy)
+- Harjutus 5: Self-hosted runner setup
+
+**Lab 5'is õpid:**
+- Täielikke workflow YAML faile kirjutada
+- Debugging GitHub Actions (logs, secrets)
+- Production-ready pipelines (security, caching, multi-environment)
 
 ---
 
-**Kestus kokku:** ~3 tundi teooriat + praktilised harjutused labides
+**Mõtle:**
+- MIKS eelistaksid GitHub Actions vs GitLab CI?
+- Kuidas disainida CI/CD pipeline, mis on KIIRE ja TURVALINE?
+- MILLAL on self-hosted runners worth it?
 
-📖 **Praktika:** Labor 5, Harjutused 1-3 - GitHub Actions CI/CD pipelines
+**Edasi:** Lab 5 või Peatükk 16 (Docker Build Automation).
