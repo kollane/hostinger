@@ -329,23 +329,6 @@ JWT_SECRET=$(openssl rand -base64 32)
 echo "JWT_SECRET=$JWT_SECRET"
 export JWT_SECRET
 
-# Loo todo-network, kui pole veel olemas (Harjutus 3-st)
-docker network create todo-network 2>/dev/null || true
-
-# Veendu, et MÕLEMAD PostgreSQL containerid töötavad (Harjutus 4-st volumes'itega)
-docker ps | grep postgres
-
-# Kui ei tööta, käivita:
-# docker run -d --name postgres-user --network todo-network \
-#   -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres \
-#   -e POSTGRES_DB=user_service_db \
-#   -v postgres-user-data:/var/lib/postgresql/data postgres:16-alpine
-
-# docker run -d --name postgres-todo --network todo-network \
-#   -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres \
-#   -e POSTGRES_DB=todo_service_db \
-#   -v postgres-todo-data:/var/lib/postgresql/data postgres:16-alpine
-
 # === KÄIVITA USER SERVICE (optimeeritud) ===
 docker run -d \
   --name user-service-opt \
@@ -540,6 +523,65 @@ diff vana-user.txt uus-user.txt
 # Oodatud: Optimeeritud images võib olla vähem või sama palju turvaauke
 # (sõltub base image'i versioonist)
 ```
+
+Millal on Dockeriga parem
+
+- Kui sul on mitme projekti CI/CD, siis on mugav kasutada ametlikku `aquasec/trivy` image’it ja vältida lokaalse pakihalduse/versioonikonflikte.[^2][^1]
+- Kui tahad hoida build-nodid võimalikult “puhtad”, st mitte installida hosti peale lisabinaare, on Trivy konteiner hea isolatsioonikiht.[^1]
+
+## Kuidas Trivy’d läbi Docker’i jooksutada
+
+Eeldus: `user-service:1.0-optimized` ja `todo-service:1.0-optimized` on juba lokaalses Docker daemonis. Siis:
+
+```bash
+# Ühekordne skann, HIGH+CRITICAL
+docker run --rm \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  aquasec/trivy:latest image \
+  --severity HIGH,CRITICAL user-service:1.0-optimized
+
+docker run --rm \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  aquasec/trivy:latest image \
+  --severity HIGH,CRITICAL todo-service:1.0-optimized
+```
+
+JSON raportid:
+
+```bash
+docker run --rm \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v "$(pwd)":/reports \
+  aquasec/trivy:latest image \
+  --format json --output /reports/user-service-scan.json \
+  user-service:1.0-optimized
+
+docker run --rm \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v "$(pwd)":/reports \
+  aquasec/trivy:latest image \
+  --format json --output /reports/todo-service-scan.json \
+  todo-service:1.0-optimized
+```
+
+Võrdluse jaoks saad sama `diff`‑triki teha, lihtsalt väljund suuna hosti mountitud kataloogi:
+
+```bash
+docker run --rm \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v "$(pwd)":/reports \
+  aquasec/trivy:latest image user-service:1.0 \
+  > vana-user.txt
+
+docker run --rm \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v "$(pwd)":/reports \
+  aquasec/trivy:latest image user-service:1.0-optimized \
+  > uus-user.txt
+
+diff vana-user.txt uus-user.txt
+```
+
 
 **Trivy Eelised:**
 - ✅ Skannib OS pakette (alpine, debian)
