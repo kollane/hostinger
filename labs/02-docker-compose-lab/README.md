@@ -16,6 +16,14 @@ Selles laboris õpid hallama mitut konteinerit korraga Docker Compose'i abil. **
 
 Lab 2 lõpuks on sul valmis terve süsteem docker-compose.yml failiga, mida saad Lab 3's Kubernetes'esse deploy'da.
 
+**⚠️ MÄRKUS: Docker Compose v2 (2025 Best Practice)**
+
+See labor kasutab **Docker Compose v2** (`docker compose` käsku, mitte `docker-compose`):
+- ✅ Käsk: `docker compose up` (v2) - SOOVITATAV 2025+
+- ❌ Käsk: `docker-compose up` (v1, aegunud)
+- ℹ️ `version:` väli YAML failis on valikuline (optional) Compose v2's
+- ℹ️ Compose v2 on built-in Docker CLI's alates Docker 20.10+
+
 ---
 
 ## 🏗️ Arhitektuur

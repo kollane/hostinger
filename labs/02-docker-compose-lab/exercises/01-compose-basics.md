@@ -198,6 +198,10 @@ Vajuta `i` (insert mode) ja lisa järgmine sisu:
 # - Todo Service (Java Spring Boot)
 # ==========================================================================
 
+# MÄRKUS: Docker Compose v2 (2025)
+# version: '3.8' on VALIKULINE (optional) Compose v2's!
+# Compose v2 ei nõua enam version väljaanni, kuid see on siin backwards compatibility jaoks.
+# Võid selle ära jätta - Compose v2 kasutab automaatselt uusimat versiooni.
 version: '3.8'
 
 services:

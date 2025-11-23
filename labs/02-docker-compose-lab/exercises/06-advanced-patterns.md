@@ -15,16 +15,18 @@ See harjutus on **valikuline** ja **sõltumatu** Harjutustest 3-5.
 - Docker Compose profiles (erinevad teenuste komplektid)
 - Volume backup & restore (disaster recovery)
 - Network troubleshooting (debug tööriistad)
+- Compose Watch mode (auto-rebuild development - VALIKULINE)
 
 ---
 
 ## 📋 Ülevaade
 
-Selles harjutuses õpid kolme **täiendavat DevOps pattern'i**, mis on kasulikud real-world projektides:
+Selles harjutuses õpid nelja **täiendavat DevOps pattern'i**, mis on kasulikud real-world projektides:
 
 1. **Profiles** - Käivita erinevaid teenuste komplekte (dev, prod, debug)
 2. **Backup/Restore** - Andmete kaitse ja disaster recovery
 3. **Network Troubleshooting** - Debug network probleeme
+4. **Compose Watch** - Auto-rebuild development (2025 best practice, valikuline)
 
 ---
 
@@ -284,6 +286,162 @@ exit
 
 ---
 
+### Osa 4: Compose Watch - Auto-Rebuild Development (VALIKULINE - 10 min)
+
+**2025 Best Practice: Kasuta Compose Watch'i kiireks arenduseks!**
+
+Docker Compose Watch (lisatud Compose v2.22+) võimaldab automaatset rebuild'i või faili sync'i, kui source code muutub. See on **super kasulik development'is!**
+
+#### Samm 8: Mõista Watch Mode'i (2 min)
+
+**Probleem Development'is:**
+- Muudad source code'i
+- Pead manuaalselt rebuild'ima image'i: `docker compose build`
+- Pead restart'ima service'i: `docker compose up -d`
+- **Aeglane feedback loop!**
+
+**Lahendus: Compose Watch**
+```bash
+docker compose watch
+```
+
+**Automaatselt:**
+- Jälgib (watch) source code muudatusi
+- Rebuild'ib image'i automaatselt
+- Restart'ib service'i automaatselt
+- **Kiire feedback loop!**
+
+#### Samm 9: Konfigureeri Watch Mode (5 min)
+
+Ava docker-compose.yml ja lisa watch konfiguratsioon User Service'le:
+
+```bash
+vim docker-compose.yml
+```
+
+Lisa `develop` sektsoon user-service'le (peale `healthcheck:` sektsiooni):
+
+```yaml
+  user-service:
+    image: user-service:1.0-optimized
+    container_name: user-service
+    restart: unless-stopped
+    # ... existing config ...
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 40s
+
+    # === WATCH MODE (Development) ===
+    develop:
+      watch:
+        # Variant 1: Rebuild kui source code muutub
+        - action: rebuild
+          path: ../../apps/backend-nodejs
+          ignore:
+            - node_modules/
+            - .git/
+
+        # Variant 2: Sync specific files (kiirem kui rebuild)
+        # - action: sync
+        #   path: ../../apps/backend-nodejs/src
+        #   target: /app/src
+
+        # Variant 3: Sync + restart (kiirem kui rebuild)
+        # - action: sync+restart
+        #   path: ../../apps/backend-nodejs/src
+        #   target: /app/src
+```
+
+**Watch Actions:**
+
+1. **rebuild** - Full rebuild (aeglane, aga kindel)
+   - Rebuilds image kui mis tahes fail muutub
+   - Restart'ib container automaatselt
+   - Sobib production-like testing'uks
+
+2. **sync** - Sync files ilma rebuild'ita (kiire!)
+   - Copy'ib muudetud failid containerisse
+   - EI rebuild'i image'i
+   - Sobib interpreteeritud keeltele (Node.js, Python)
+
+3. **sync+restart** - Sync + restart (keskmine kiirus)
+   - Sync'ib failid + restart'ib container
+   - Sobib kui application peab restart'ima (config muutused)
+
+#### Samm 10: Testi Watch Mode (3 min)
+
+```bash
+# Käivita watch mode
+docker compose watch
+
+# Oodatud väljund:
+# ⦿ watch enabled
+# ...watching 1 service
+
+# Nüüd tee muudatus source code'is (TEISES TERMINALIS):
+cd ../../apps/backend-nodejs
+echo "// Test comment" >> server.js
+
+# Vaata watch terminali:
+# Näed automaatset rebuild'i ja restart'i!
+# [user-service] rebuilding...
+# [user-service] restarting...
+
+# Lõpeta watch mode: Ctrl+C
+```
+
+**Tulemus:**
+- ✅ Source code muudatus → auto rebuild
+- ✅ Ei pea manuaalselt käivitama `docker compose build`
+- ✅ Kiire development feedback loop
+
+#### Bonus: Watch Mode Production vs Development
+
+**Development (watch mode):**
+```yaml
+develop:
+  watch:
+    - action: sync+restart  # Kiire feedback
+      path: ./src
+      target: /app/src
+```
+
+**Production (NO watch):**
+```yaml
+# Ära kasuta watch'i production'is!
+# develop: sektsiooni ei tohiks production config'is olla
+```
+
+**Best Practice:**
+- ✅ Kasuta watch'i ainult development'is
+- ✅ Kasuta `docker-compose.override.yml` watch config'i jaoks
+- ❌ ÄRA kasuta watch'i production'is (turvalisus + resource kasutus)
+
+**docker-compose.override.yml näide (dev watch):**
+```yaml
+# docker-compose.override.yml (local development ainult)
+version: '3.8'
+
+services:
+  user-service:
+    develop:
+      watch:
+        - action: sync+restart
+          path: ../../apps/backend-nodejs/src
+          target: /app/src
+```
+
+**Mida õppisid:**
+- ✅ Compose Watch mode (auto-rebuild)
+- ✅ Watch actions: rebuild, sync, sync+restart
+- ✅ Fast development feedback loop
+- ✅ Development vs Production config separation
+
+---
+
 ## ✅ Kontrolli Tulemusi
 
 Peale selle harjutuse läbimist peaksid omama:
@@ -296,6 +454,7 @@ Peale selle harjutuse läbimist peaksid omama:
   - [ ] DNS resolution (`dig`, `nslookup`)
   - [ ] Port connectivity (`nc`, `nmap`)
   - [ ] HTTP requests (`curl`)
+- [ ] **Compose Watch** mode testitud (valikuline, Compose v2.22+)
 
 ---
 
