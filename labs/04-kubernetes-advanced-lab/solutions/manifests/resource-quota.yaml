@@ -1,0 +1,132 @@
+# ==========================================================================
+# ResourceQuota - Namespace-level Resource Limits
+# ==========================================================================
+# Reference solution for Exercise 4 (Resource Limits & Quotas)
+#
+# Purpose:
+# - Limit total resource consumption in a namespace
+# - Prevent resource exhaustion
+# - Enforce resource budgets in multi-tenant clusters
+#
+# Apply:
+#   kubectl apply -f resource-quota.yaml
+#
+# Check:
+#   kubectl get resourcequota
+#   kubectl describe resourcequota compute-quota
+# ==========================================================================
+
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: compute-quota
+  namespace: default  # Change to your namespace
+spec:
+  hard:
+    # ==========================================================================
+    # CPU Limits
+    # ==========================================================================
+    # Total CPU requests across all pods in namespace
+    requests.cpu: "2"           # Max 2 CPU cores total (requests)
+    
+    # Total CPU limits across all pods
+    limits.cpu: "4"             # Max 4 CPU cores total (limits)
+    
+    # ==========================================================================
+    # Memory Limits
+    # ==========================================================================
+    # Total memory requests
+    requests.memory: 4Gi        # Max 4GB total (requests)
+    
+    # Total memory limits
+    limits.memory: 8Gi          # Max 8GB total (limits)
+    
+    # ==========================================================================
+    # Pod Count Limits
+    # ==========================================================================
+    pods: "20"                  # Max 20 pods in namespace
+    
+    # ==========================================================================
+    # Storage Limits
+    # ==========================================================================
+    persistentvolumeclaims: "5" # Max 5 PVCs
+    requests.storage: 50Gi      # Max 50GB total storage
+    
+    # ==========================================================================
+    # Service Limits
+    # ==========================================================================
+    services: "10"              # Max 10 services
+    services.loadbalancers: "2" # Max 2 LoadBalancer services
+    services.nodeports: "5"     # Max 5 NodePort services
+    
+    # ==========================================================================
+    # Other Resource Limits (Optional)
+    # ==========================================================================
+    # count/deployments.apps: "10"      # Max 10 deployments
+    # count/statefulsets.apps: "5"      # Max 5 statefulsets
+    # count/jobs.batch: "20"            # Max 20 jobs
+    # count/cronjobs.batch: "10"        # Max 10 cronjobs
+    # count/secrets: "20"               # Max 20 secrets
+    # count/configmaps: "20"            # Max 20 configmaps
+
+---
+
+# ==========================================================================
+# Example: Production Environment Quota (Stricter)
+# ==========================================================================
+# apiVersion: v1
+# kind: ResourceQuota
+# metadata:
+#   name: prod-quota
+#   namespace: production
+# spec:
+#   hard:
+#     requests.cpu: "10"
+#     limits.cpu: "20"
+#     requests.memory: 20Gi
+#     limits.memory: 40Gi
+#     pods: "50"
+#     persistentvolumeclaims: "20"
+#     requests.storage: 200Gi
+
+---
+
+# ==========================================================================
+# Example: Development Environment Quota (More Relaxed)
+# ==========================================================================
+# apiVersion: v1
+# kind: ResourceQuota
+# metadata:
+#   name: dev-quota
+#   namespace: development
+# spec:
+#   hard:
+#     requests.cpu: "4"
+#     limits.cpu: "8"
+#     requests.memory: 8Gi
+#     limits.memory: 16Gi
+#     pods: "30"
+#     persistentvolumeclaims: "10"
+#     requests.storage: 100Gi
+
+---
+
+# ==========================================================================
+# Scope-based ResourceQuota
+# ==========================================================================
+# Limit resources for specific pod priorities
+# apiVersion: v1
+# kind: ResourceQuota
+# metadata:
+#   name: high-priority-quota
+#   namespace: default
+# spec:
+#   hard:
+#     requests.cpu: "4"
+#     limits.cpu: "8"
+#     requests.memory: 8Gi
+#   scopeSelector:
+#     matchExpressions:
+#     - operator: In
+#       scopeName: PriorityClass
+#       values: ["high"]

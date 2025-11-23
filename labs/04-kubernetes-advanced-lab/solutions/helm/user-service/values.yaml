@@ -1,49 +1,116 @@
+# ==========================================================================
+# Helm Values - User Service
+# ==========================================================================
+# Default väärtused. Override'i install ajal:
+#   helm install user-service . -f values-prod.yaml
+#   helm install user-service . --set replicaCount=5
+# ==========================================================================
+
+# Replica count
 replicaCount: 2
 
+# Image config
 image:
   repository: user-service
-  pullPolicy: Never
   tag: "1.0"
+  pullPolicy: IfNotPresent
 
+# Service config
 service:
   type: ClusterIP
-  port: 80
+  port: 3000
   targetPort: 3000
 
-env:
-  - name: PORT
-    value: "3000"
-  - name: NODE_ENV
-    value: "production"
-  - name: DB_HOST
-    value: "postgres"
-  - name: DB_PORT
-    value: "5432"
-  - name: DB_NAME
-    value: "user_service_db"
+# Ingress config
+ingress:
+  enabled: true
+  className: nginx
+  host: kirjakast.cloud
+  path: /api/users
+  pathType: Prefix
+  annotations: {}
+    # nginx.ingress.kubernetes.io/rewrite-target: /
+    # nginx.ingress.kubernetes.io/ssl-redirect: "false"
 
+# Resources
 resources:
   requests:
-    memory: "128Mi"
-    cpu: "100m"
+    cpu: 100m
+    memory: 128Mi
   limits:
-    memory: "256Mi"
-    cpu: "500m"
+    cpu: 500m
+    memory: 512Mi
 
-ingress:
-  enabled: false
-  className: nginx
-  annotations: {}
-  hosts:
-    - host: chart-example.local
-      paths:
-        - path: /
-          pathType: Prefix
-  tls: []
-
+# Autoscaling (HPA)
 autoscaling:
-  enabled: false
+  enabled: true
   minReplicas: 2
   maxReplicas: 10
   targetCPUUtilizationPercentage: 50
   targetMemoryUtilizationPercentage: 70
+
+# Health checks
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 3000
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+  successThreshold: 1
+
+readinessProbe:
+  httpGet:
+    path: /ready
+    port: 3000
+  initialDelaySeconds: 5
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 2
+  successThreshold: 1
+
+# Environment variables
+env:
+  # Database
+  DB_HOST: postgres-user
+  DB_PORT: "5432"
+  DB_NAME: user_service_db
+  DB_USER: postgres
+  # DB_PASSWORD from secret
+  
+  # App config
+  NODE_ENV: production
+  PORT: "3000"
+  JWT_EXPIRES_IN: "24h"
+
+# Secrets (create separate Secret resource)
+secrets:
+  jwtSecret: "your-jwt-secret-here"
+  dbPassword: "postgres"
+
+# NodeSelector (optional)
+nodeSelector: {}
+  # kubernetes.io/os: linux
+  # node-type: worker
+
+# Tolerations (optional)
+tolerations: []
+  # - key: "node-role"
+  #   operator: "Equal"
+  #   value: "worker"
+  #   effect: "NoSchedule"
+
+# Affinity (optional)
+affinity: {}
+  # podAntiAffinity:
+  #   preferredDuringSchedulingIgnoredDuringExecution:
+  #   - weight: 100
+  #     podAffinityTerm:
+  #       labelSelector:
+  #         matchExpressions:
+  #         - key: app
+  #           operator: In
+  #           values:
+  #           - user-service
+  #       topologyKey: kubernetes.io/hostname

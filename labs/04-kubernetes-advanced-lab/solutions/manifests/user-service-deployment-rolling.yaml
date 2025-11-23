@@ -1,0 +1,206 @@
+# ==========================================================================
+# User Service Deployment - Rolling Updates with Health Checks
+# ==========================================================================
+# Reference solution for Exercise 3 (Rolling Updates & Health Checks)
+#
+# Features:
+# - Rolling update strategy (maxSurge: 1, maxUnavailable: 0)
+# - Liveness probe (restart if unhealthy)
+# - Readiness probe (remove from Service if not ready)
+# - Resource requests & limits
+# - Zero-downtime deployments
+#
+# Apply:
+#   kubectl apply -f user-service-deployment-rolling.yaml
+#
+# Test rolling update:
+#   kubectl set image deployment/user-service user-service=user-service:1.1
+#   kubectl rollout status deployment/user-service
+#   kubectl rollout undo deployment/user-service
+# ==========================================================================
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+  labels:
+    app: user-service
+    version: v1.0
+spec:
+  replicas: 3
+  
+  # ==========================================================================
+  # Rolling Update Strategy - Zero Downtime
+  # ==========================================================================
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1           # Max 1 extra pod tijdens update (total: 4)
+      maxUnavailable: 0     # Min 3 pods ALTIJD beschikbaar
+  
+  selector:
+    matchLabels:
+      app: user-service
+  
+  template:
+    metadata:
+      labels:
+        app: user-service
+        version: v1.0
+    spec:
+      containers:
+      - name: user-service
+        image: user-service:1.0
+        imagePullPolicy: IfNotPresent
+        
+        ports:
+        - containerPort: 3000
+          name: http
+          protocol: TCP
+        
+        # ==========================================================================
+        # Environment Variables
+        # ==========================================================================
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: PORT
+          value: "3000"
+        
+        # Database connection
+        - name: DB_HOST
+          value: "postgres-user"
+        - name: DB_PORT
+          value: "5432"
+        - name: DB_NAME
+          value: "user_service_db"
+        - name: DB_USER
+          value: "postgres"
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: db-password
+        
+        # JWT config
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: jwt-secret
+        - name: JWT_EXPIRES_IN
+          value: "24h"
+        
+        # ==========================================================================
+        # Resource Management
+        # ==========================================================================
+        resources:
+          requests:
+            cpu: 100m        # 0.1 CPU core (guaranteed)
+            memory: 128Mi    # 128 MiB (guaranteed)
+          limits:
+            cpu: 500m        # 0.5 CPU core (max)
+            memory: 512Mi    # 512 MiB (max, OOMKill if exceeded)
+        
+        # ==========================================================================
+        # Liveness Probe - Is container alive?
+        # ==========================================================================
+        # If fails 3 times → Kubernetes RESTARTS container
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+            scheme: HTTP
+          initialDelaySeconds: 30   # Wait 30s before first check
+          periodSeconds: 10         # Check every 10s
+          timeoutSeconds: 5         # Timeout after 5s
+          failureThreshold: 3       # 3 failures → restart
+          successThreshold: 1       # 1 success → healthy
+        
+        # ==========================================================================
+        # Readiness Probe - Is container ready to receive traffic?
+        # ==========================================================================
+        # If fails 2 times → Remove from Service endpoints
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 3000
+            scheme: HTTP
+          initialDelaySeconds: 5    # Start checking after 5s
+          periodSeconds: 5          # Check every 5s
+          timeoutSeconds: 3         # Timeout after 3s
+          failureThreshold: 2       # 2 failures → not ready
+          successThreshold: 1       # 1 success → ready
+        
+        # ==========================================================================
+        # Startup Probe (Optional) - For slow-starting containers
+        # ==========================================================================
+        # Gives container max 60s (12 * 5s) to start
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 0
+          periodSeconds: 5
+          failureThreshold: 12      # 12 * 5s = 60s max startup time
+      
+      # ==========================================================================
+      # Pod Disruption Budget (Optional but Recommended)
+      # ==========================================================================
+      # Ensures at least 2 pods are always available during disruptions
+      # Create separately: kubectl apply -f pdb.yaml
+
+---
+
+# ==========================================================================
+# Pod Disruption Budget
+# ==========================================================================
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: user-service-pdb
+spec:
+  minAvailable: 2  # At least 2 pods must be available
+  selector:
+    matchLabels:
+      app: user-service
+
+---
+
+# ==========================================================================
+# Service (ClusterIP)
+# ==========================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service
+  labels:
+    app: user-service
+spec:
+  type: ClusterIP
+  ports:
+  - port: 3000
+    targetPort: 3000
+    protocol: TCP
+    name: http
+  selector:
+    app: user-service
+
+---
+
+# ==========================================================================
+# Example Secret (DEVELOPMENT ONLY - use proper secrets in production)
+# ==========================================================================
+# In production:
+# - Use kubectl create secret
+# - Use external secret managers (AWS Secrets Manager, HashiCorp Vault)
+# - Use SealedSecrets or SOPS
+# ==========================================================================
+apiVersion: v1
+kind: Secret
+metadata:
+  name: app-secrets
+type: Opaque
+stringData:
+  db-password: "postgres"           # CHANGE IN PRODUCTION
+  jwt-secret: "your-secret-key-here"  # CHANGE IN PRODUCTION

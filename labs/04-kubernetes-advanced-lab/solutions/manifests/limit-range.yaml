@@ -1,0 +1,203 @@
+# ==========================================================================
+# LimitRange - Default Resources and Min/Max Constraints
+# ==========================================================================
+# Reference solution for Exercise 4 (Resource Limits & Quotas)
+#
+# Purpose:
+# - Set default resource requests/limits if not specified
+# - Enforce minimum and maximum resource values
+# - Prevent resource exhaustion from individual pods
+#
+# Apply:
+#   kubectl apply -f limit-range.yaml
+#
+# Check:
+#   kubectl get limitrange
+#   kubectl describe limitrange resource-limits
+# ==========================================================================
+
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: resource-limits
+  namespace: default  # Change to your namespace
+spec:
+  limits:
+  
+  # ==========================================================================
+  # Container-level Limits
+  # ==========================================================================
+  - type: Container
+    
+    # Default LIMITS (applied if not specified in pod spec)
+    default:
+      cpu: 500m          # Default CPU limit: 0.5 core
+      memory: 512Mi      # Default memory limit: 512 MiB
+    
+    # Default REQUESTS (applied if not specified in pod spec)
+    defaultRequest:
+      cpu: 100m          # Default CPU request: 0.1 core
+      memory: 128Mi      # Default memory request: 128 MiB
+    
+    # Minimum allowed values (validation)
+    min:
+      cpu: 50m           # Min 0.05 core
+      memory: 64Mi       # Min 64 MiB
+    
+    # Maximum allowed values (validation)
+    max:
+      cpu: 2000m         # Max 2 cores per container
+      memory: 2Gi        # Max 2 GiB per container
+    
+    # Maximum ratio of limits/requests
+    maxLimitRequestRatio:
+      cpu: 10            # Limit can be max 10x requests
+      memory: 4          # Limit can be max 4x requests
+  
+  # ==========================================================================
+  # Pod-level Limits (Total across all containers in pod)
+  # ==========================================================================
+  - type: Pod
+    max:
+      cpu: 4000m         # Max 4 cores per pod (all containers combined)
+      memory: 4Gi        # Max 4 GiB per pod
+    
+    min:
+      cpu: 100m          # Min 0.1 core per pod
+      memory: 128Mi      # Min 128 MiB per pod
+  
+  # ==========================================================================
+  # PersistentVolumeClaim Limits
+  # ==========================================================================
+  - type: PersistentVolumeClaim
+    min:
+      storage: 1Gi       # Min 1 GiB per PVC
+    max:
+      storage: 20Gi      # Max 20 GiB per PVC
+
+---
+
+# ==========================================================================
+# Example: Production Environment LimitRange (More Conservative)
+# ==========================================================================
+# apiVersion: v1
+# kind: LimitRange
+# metadata:
+#   name: prod-limits
+#   namespace: production
+# spec:
+#   limits:
+#   - type: Container
+#     default:
+#       cpu: 1000m       # Higher defaults in prod
+#       memory: 1Gi
+#     defaultRequest:
+#       cpu: 250m
+#       memory: 256Mi
+#     min:
+#       cpu: 100m
+#       memory: 128Mi
+#     max:
+#       cpu: 4000m       # Allow more resources
+#       memory: 8Gi
+#     maxLimitRequestRatio:
+#       cpu: 4           # Tighter ratio
+#       memory: 2
+
+---
+
+# ==========================================================================
+# Example: Development Environment LimitRange (More Permissive)
+# ==========================================================================
+# apiVersion: v1
+# kind: LimitRange
+# metadata:
+#   name: dev-limits
+#   namespace: development
+# spec:
+#   limits:
+#   - type: Container
+#     default:
+#       cpu: 200m        # Lower defaults for dev
+#       memory: 256Mi
+#     defaultRequest:
+#       cpu: 50m
+#       memory: 64Mi
+#     min:
+#       cpu: 25m
+#       memory: 32Mi
+#     max:
+#       cpu: 1000m       # Lower max for dev
+#       memory: 1Gi
+#     maxLimitRequestRatio:
+#       cpu: 20          # More permissive ratio
+#       memory: 8
+
+---
+
+# ==========================================================================
+# How LimitRange Works - Examples
+# ==========================================================================
+#
+# Example 1: Pod WITHOUT resources specified
+# -------------------------------------------
+# apiVersion: v1
+# kind: Pod
+# metadata:
+#   name: my-app
+# spec:
+#   containers:
+#   - name: app
+#     image: nginx:1.25-alpine
+#     # No resources specified!
+#
+# Result: LimitRange applies defaults:
+#   resources:
+#     requests:
+#       cpu: 100m
+#       memory: 128Mi
+#     limits:
+#       cpu: 500m
+#       memory: 512Mi
+#
+#
+# Example 2: Pod WITH resources (within limits)
+# ----------------------------------------------
+# apiVersion: v1
+# kind: Pod
+# metadata:
+#   name: my-app
+# spec:
+#   containers:
+#   - name: app
+#     image: nginx:1.25-alpine
+#     resources:
+#       requests:
+#         cpu: 200m
+#         memory: 256Mi
+#       limits:
+#         cpu: 800m
+#         memory: 1Gi
+#
+# Result: Accepted (within min/max constraints)
+#
+#
+# Example 3: Pod WITH resources (exceeds limits)
+# -----------------------------------------------
+# apiVersion: v1
+# kind: Pod
+# metadata:
+#   name: my-app
+# spec:
+#   containers:
+#   - name: app
+#     image: nginx:1.25-alpine
+#     resources:
+#       requests:
+#         cpu: 3000m      # ❌ Exceeds max (2000m)
+#         memory: 512Mi
+#
+# Result: REJECTED with error:
+#   "cpu max limit is 2000m"
+#
+# ==========================================================================
