@@ -105,7 +105,7 @@ vim Dockerfile
 ```
 
 **Ülesanne:** Kirjuta Dockerfile, mis:
-1. Kasutab Node.js 18 alpine baaspilti (base image)
+1. Kasutab Node.js 22 slim baaspilti (base image)
 2. Seadistab töökataloogiks `/app`
 3. Kopeerib `package*.json` failid
 4. Installib sõltuvused (dependencies)
@@ -118,7 +118,7 @@ vim Dockerfile
 **Näidis:**
 
 ```dockerfile
-FROM node:18-slim
+FROM node:22-slim
 
 WORKDIR /app
 

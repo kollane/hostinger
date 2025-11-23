@@ -1,5 +1,5 @@
 # Lihtne Dockerfile User Teenuse (Service) jaoks (Harjutus 1)
-FROM node:18-slim
+FROM node:22-slim
 
 WORKDIR /app
 

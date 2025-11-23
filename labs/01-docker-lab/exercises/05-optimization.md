@@ -84,11 +84,11 @@ docker images | grep -E 'user-service|todo-service'
 ```bash
 # === USER SERVICE (Node.js) ===
 docker history user-service:1.0
-# Näed: FROM node:18-slim, WORKDIR, COPY package*.json, RUN npm install, COPY ., CMD
+# Näed: FROM node:22-slim, WORKDIR, COPY package*.json, RUN npm install, COPY ., CMD
 
 # === TODO SERVICE (Java) ===
 docker history todo-service:1.0
-# Näed: FROM eclipse-temurin:17-jre-alpine, WORKDIR, COPY JAR, CMD
+# Näed: FROM eclipse-temurin:21-jre-alpine, WORKDIR, COPY JAR, CMD
 ```
 
 **Küsimused:**
@@ -124,7 +124,7 @@ Vaata näidislahendust: `/hostinger/labs/01-docker-lab/solutions/backend-nodejs/
 
 ```dockerfile
 # Stage 1: Dependencies
-FROM node:18-slim AS dependencies
+FROM node:22-slim AS dependencies
 WORKDIR /app
 
 # Kopeeri dependency files (caching jaoks)
@@ -134,7 +134,7 @@ COPY package*.json ./
 RUN npm ci --only=production
 
 # Stage 2: Runtime
-FROM node:18-slim
+FROM node:22-slim
 WORKDIR /app
 
 # Loo non-root user (Debian käsud!)
@@ -216,7 +216,7 @@ Vaata näidislahendust: `/hostinger/labs/01-docker-lab/solutions/backend-java-sp
 # Eelised: väiksem image, layer caching, non-root user, health check
 
 # Stage 1: Build
-FROM gradle:8.5-jdk17-alpine AS builder
+FROM gradle:8.11-jdk21-alpine AS builder
 
 WORKDIR /app
 
@@ -232,7 +232,7 @@ COPY src ./src
 RUN gradle bootJar --no-daemon
 
 # Stage 2: Runtime
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:21-jre-alpine
 
 WORKDIR /app
 
@@ -473,26 +473,121 @@ docker stats --no-stream --format "table {{.Name}}\t{{.MemUsage}}\t{{.CPUPerc}}"
 4. ✅ AGA: Väiksemad images (-25-33%), health checks, non-root users!
 5. ✅ TOOTMISEKS VALMIS mikroteenuste süsteem! 🚀
 
-### Samm 6: Security Scan (Bonus - 10 min)
+### Samm 6: Security Scan ja Vulnerability Assessment (15 min)
+
+**2025 Best Practice: Kasuta Docker Scout JA Trivy turvaaugu analüüsiks!**
+
+#### 6a. Docker Scout (sisseehitatud Docker'isse)
+
+Docker Scout on Docker'i enda turvaaugu skanner, mis on vaikimisi saadaval Docker Desktop'is ja Docker CLI's.
 
 ```bash
-# Installi trivy (kui pole)
-# sudo apt install trivy  # või
+# === DOCKER SCOUT BASIC SCAN ===
+# Skanni mõlemat optimeeritud pilti
+echo "=== User Service Security Scan (Docker Scout) ==="
+docker scout cves user-service:1.0-optimized
+
+echo -e "\n=== Todo Service Security Scan (Docker Scout) ==="
+docker scout cves todo-service:1.0-optimized
+
+# Võrdle vana vs uus versiooni
+docker scout compare user-service:1.0 --to user-service:1.0-optimized
+
+# Näita soovitusi (recommendations)
+docker scout recommendations user-service:1.0-optimized
+docker scout recommendations todo-service:1.0-optimized
+
+# === QUICK SUMMARY ===
+docker scout quickview user-service:1.0-optimized
+docker scout quickview todo-service:1.0-optimized
+```
+
+**Mida Docker Scout näitab:**
+- ✅ CVE (Common Vulnerabilities and Exposures) loetelu
+- ✅ CVSS (severity) skoor
+- ✅ Mõjutatud paketid
+- ✅ Parandussoovitused (base image upgrade jne)
+
+#### 6b. Trivy (täiendav, põhjalikum skanner)
+
+```bash
+# Installi trivy (kui pole veel)
+# Ubuntu/Debian:
+# wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+# echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
+# sudo apt update && sudo apt install trivy
+
+# macOS:
 # brew install trivy
 
 # Skanni MÕLEMAT optimeeritud pilti (image)
-echo "=== User Service Security Scan ==="
-trivy image user-service:1.0-optimized
+echo "=== User Service Security Scan (Trivy) ==="
+trivy image --severity HIGH,CRITICAL user-service:1.0-optimized
 
-echo -e "\n=== Todo Service Security Scan ==="
-trivy image todo-service:1.0-optimized
+echo -e "\n=== Todo Service Security Scan (Trivy) ==="
+trivy image --severity HIGH,CRITICAL todo-service:1.0-optimized
+
+# Genereeri JSON raport
+trivy image -f json -o user-service-scan.json user-service:1.0-optimized
+trivy image -f json -o todo-service-scan.json todo-service:1.0-optimized
 
 # Võrdle vana vs uus
+echo "=== Võrdlus: User Service 1.0 vs 1.0-optimized ==="
 trivy image user-service:1.0 > vana-user.txt
 trivy image user-service:1.0-optimized > uus-user.txt
+diff vana-user.txt uus-user.txt
 
-# Oodatud: Vähem turvaauke optimeeritud images (alpine + non-root)
+# Oodatud: Optimeeritud images võib olla vähem või sama palju turvaauke
+# (sõltub base image'i versioonist)
 ```
+
+**Trivy Eelised:**
+- ✅ Skannib OS pakette (alpine, debian)
+- ✅ Skannib language dependencies (npm, maven)
+- ✅ Toetab JSON/SARIF/HTML output'i
+- ✅ Integreeritav CI/CD'sse
+
+#### 6c. Security Scan Best Practices
+
+**Soovitused tootmises (production):**
+
+1. **Automaatne skannimine CI/CD's:**
+   ```yaml
+   # GitHub Actions näide
+   - name: Run Docker Scout
+     run: docker scout cves ${{ env.IMAGE_NAME }}
+
+   - name: Run Trivy
+     run: trivy image --exit-code 1 --severity HIGH,CRITICAL ${{ env.IMAGE_NAME }}
+   ```
+
+2. **Base Image'i uuendamine:**
+   - Kasuta alati kõige viimast stabiilset versiooni
+   - Node.js: `node:22-slim` (mitte `node:22.0.0-slim`)
+   - Java: `eclipse-temurin:21-jre-alpine` (mitte `...:21.0.0-...`)
+   - See tagab automaatsed security patch'id
+
+3. **Non-root user (juba tehtud!):**
+   - ✅ User Service: `nodejs:1001`
+   - ✅ Todo Service: `spring:1001`
+
+4. **Read-only root filesystem (optional):**
+   ```dockerfile
+   # Dockerfile'is (edasijõudnutele)
+   USER nodejs:nodejs
+   # Või docker run'is:
+   # docker run --read-only ...
+   ```
+
+5. **Minimaalne base image:**
+   - ✅ Alpine Linux (väike, vähem pakette = vähem CVE'd)
+   - ✅ Distroless images (Google, ainult runtime)
+
+**Mida õppisid:**
+- ✅ Docker Scout (kiire, sisseehitatud)
+- ✅ Trivy (põhjalik, CI/CD integratsioon)
+- ✅ Vulnerability severity (HIGH, CRITICAL)
+- ✅ Security best practices (non-root, minimal base images)
 
 ### Samm 7: Layer Caching Test (10 min)
 
@@ -561,7 +656,7 @@ docker images | grep -E 'user-service|todo-service' | sort
 | Aspekt | Before (Harjutus 1) | After (Optimized) | Improvement |
 | ------ | ------------------- | ----------------- | ----------- |
 | **Size** | ~305MB | ~305MB | ⚠️ Same (both slim) |
-| **Base image** | node:18-slim | node:18-slim (multi-stage) | ✅ |
+| **Base image** | node:22-slim | node:22-slim (multi-stage) | ✅ |
 | **Layers** | 5-6 | 8-10 (but cached!) | ✅ |
 | **Build time (1st)** | 30s | 40s | ❌ +10s |
 | **Build time (rebuild)** | 30s | 10s | 📉 -66% |
@@ -597,7 +692,7 @@ docker images | grep -E 'user-service|todo-service' | sort
 | **Multi-stage benefit** | Dependencies layer | JDK → JRE separation |
 | **Non-root user** | nodejs:1001 | spring:1001 |
 | **Health check** | Custom JS script | Built-in /health endpoint |
-| **Base image** | node:18-slim (both) | eclipse-temurin:17-jre-alpine |
+| **Base image** | node:22-slim (both) | eclipse-temurin:21-jre-alpine |
 
 **Järeldus:**
 - ⚠️ User Service: suurus jääb samaks (~305MB), sest mõlemad versioonid kasutavad sama baaspilti (base image)
@@ -627,7 +722,7 @@ Peale selle harjutuse läbimist peaksid omama:
 - [x] Optimeeritud konteinerid töötavad (`docker ps` näitab "healthy")
 - [x] End-to-End JWT workflow töötab identitsioonilt
 - [x] .dockerignore failid on optimeeritud
-- [ ] Security scan läbitud (bonus, kui trivy installitud)
+- [x] Security scan läbitud (Docker Scout + Trivy)
 
 ---
 

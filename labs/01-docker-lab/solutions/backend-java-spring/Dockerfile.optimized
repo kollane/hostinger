@@ -3,7 +3,7 @@
 # Eelised: väiksem pilt (image), kihtide vahemälu (layer caching), mitte-juurkasutaja (non-root user), seisukorra kontroll (health check)
 
 # 1. etapp: Ehitus (Build)
-FROM gradle:8.5-jdk17-alpine AS builder
+FROM gradle:8.11-jdk21-alpine AS builder
 
 WORKDIR /app
 
@@ -19,7 +19,7 @@ COPY src ./src
 RUN gradle bootJar --no-daemon
 
 # 2. etapp: Runtime
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:21-jre-alpine
 
 WORKDIR /app
 

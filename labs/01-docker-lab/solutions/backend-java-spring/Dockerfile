@@ -1,7 +1,7 @@
 # Lihtne Dockerfile Todo Teenuse (Service) jaoks (Harjutus 1)
 # Eeldab, et JAR fail on juba ehitatud (built): ./gradlew bootJar
 
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:21-jre-alpine
 
 WORKDIR /app
 
