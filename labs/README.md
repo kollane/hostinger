@@ -26,15 +26,15 @@ Tere tulemast DevOps praktiliste laborite juurde! See on **praktiline õppeprogr
 
 | # | Labor | Kestus | Eeldused | Staatus |
 |---|-------|--------|----------|---------|
-| **1** | [Docker Põhitõed](01-docker-lab/) | 4h | Peatükk 12 | ✅ Valmis |
-| **2** | [Docker Compose](02-docker-compose-lab/) | 3h | Lab 1, Peatükk 13 | ✅ Valmis |
-| **3** | [Kubernetes Alused](03-kubernetes-basics-lab/) | 5h | Lab 1-2, Peatükk 15-16 | ✅ Valmis |
-| **4** | [Kubernetes Täiustatud](04-kubernetes-advanced-lab/) | 5h | Lab 3, Peatükk 17-19 | ✅ Valmis |
-| **5** | [CI/CD Pipeline](05-cicd-lab/) | 4h | Lab 1-4, Peatükk 20-21 | ✅ Valmis |
-| **6** | [Monitoring & Logging](06-monitoring-logging-lab/) | 4h | Lab 1-5, Peatükk 24 | ✅ Valmis |
-| **7** | [Security & Secrets](07-security-secrets-lab/) | 5h | Lab 1-6, Peatükk 25 | ✅ Valmis |
+| **1** | [Docker Põhitõed](01-docker-lab/) | 4h | Peatükk 4-5 | ✅ Valmis |
+| **2** | [Docker Compose](02-docker-compose-lab/) | 3h | Lab 1, Peatükk 7 | ✅ Valmis |
+| **3** | [Kubernetes Alused](03-kubernetes-basics-lab/) | 5h | Lab 1-2, Peatükk 9-13 | ✅ Valmis |
+| **4** | [Kubernetes Täiustatud](04-kubernetes-advanced-lab/) | 5h | Lab 3, Peatükk 14 | ✅ Valmis |
+| **5** | [CI/CD Pipeline](05-cicd-lab/) | 4h | Lab 1-4, Peatükk 15-17 | ✅ Valmis |
+| **6** | [Monitoring & Logging](06-monitoring-logging-lab/) | 4h | Lab 1-5, Peatükk 18-21 | ✅ Valmis |
+| **7** | [Security & Secrets](07-security-secrets-lab/) | 5h | Lab 1-6, Peatükk 22 | ✅ Valmis |
 | **8** | [GitOps with ArgoCD](08-gitops-argocd-lab/) | 5h | Lab 1-7 | ✅ Valmis |
-| **9** | [Backup & Disaster Recovery](09-backup-disaster-recovery-lab/) | 5h | Lab 1-8 | ✅ Valmis |
+| **9** | [Backup & Disaster Recovery](09-backup-disaster-recovery-lab/) | 5h | Lab 1-8, Peatükk 24 | ✅ Valmis |
 | **10** | [Terraform Infrastructure as Code](10-terraform-iac-lab/) | 5h | Lab 1-9 | ✅ Valmis |
 
 ### Laborite Grupid
@@ -539,16 +539,18 @@ Laborid toetuvad järgmistele peatükkidele:
 
 | Peatükk | Labor | Teema |
 |---------|-------|-------|
-| **12** | Lab 1 | Docker põhimõtted |
-| **13** | Lab 2 | Docker Compose |
-| **15-16** | Lab 3 | Kubernetes alused |
-| **17-19** | Lab 4 | Kubernetes täiustatud |
-| **20-21** | Lab 5 | CI/CD |
-| **24** | Lab 6 | Monitoring |
-| **25** | Lab 7 | Security |
-| - | Lab 8 | GitOps (advanced topic) |
-| - | Lab 9 | Backup & DR (advanced topic) |
-| - | Lab 10 | Infrastructure as Code (advanced topic) |
+| **4-5** | Lab 1 | Docker põhimõtted ja Dockerfile loomine |
+| **7** | Lab 2 | Docker Compose |
+| **9-13** | Lab 3 | Kubernetes alused (setup, Pods, Services, ConfigMaps, Storage) |
+| **14** | Lab 4 | Kubernetes täiustatud (Ingress ja Load Balancing) |
+| **15-17** | Lab 5 | CI/CD (GitHub Actions, automatiseerimine) |
+| **18-21** | Lab 6 | Monitoring ja Logging (Prometheus, Grafana, Loki, Alerting) |
+| **22** | Lab 7 | Security Best Practices |
+| **-** | Lab 8 | GitOps ja ArgoCD (peatükk puudub) |
+| **24** | Lab 9 | Backup ja Disaster Recovery |
+| **-** | Lab 10 | Terraform Infrastructure as Code (peatükk puudub) |
+
+**Märkus:** Lab 8 (GitOps/ArgoCD) ja Lab 10 (Terraform/IaC) vastavad koolituskava peatükid on planeeritud, kuid praegu veel loomata. Need laborid käsitlevad täiustatud DevOps teemasid, mida saab läbida ka ilma eraldi teoreetiliste peatükkideta, tuginedes labori sisesele dokumentatsioonile ja välisressurssidele.
 
 ---
 
