@@ -48,7 +48,7 @@ registerForm.addEventListener('submit', async (e) => {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ username, email, password }),
+            body: JSON.stringify({ name: username, email, password }),
         });
 
         const data = await response.json();
@@ -322,7 +322,7 @@ function showAuthView() {
 function showNotesView() {
     authView.style.display = 'none';
     notesView.style.display = 'block';
-    usernameDisplay.textContent = `Tere, ${currentUser.username}!`;
+    usernameDisplay.textContent = `Tere, ${currentUser.name}!`;
 }
 
 // Kuva teade
