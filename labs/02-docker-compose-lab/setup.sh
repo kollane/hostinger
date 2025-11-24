@@ -277,9 +277,9 @@ echo "     - Sisaldab testimisandmeid (4 kasutajat, 8 todo'd)"
 echo "     - Kiire start, aga vähem õpetlik"
 echo ""
 
-# Vaikimisi valik: käsitsi (1)
-read -p "Vali variant (1/2) [1]: " db_choice
-db_choice=${db_choice:-1}
+# Vaikimisi valik: automaatne (2)
+read -p "Vali variant (1/2) [2]: " db_choice
+db_choice=${db_choice:-2}
 
 if [ "$db_choice" == "2" ]; then
     DB_INIT_MODE="auto"
@@ -297,7 +297,7 @@ fi
 # Samm 4: Ressursside Kokkuvõte
 # =============================================================================
 echo ""
-echo "[4/4] Ressursside kokkuvõte"
+echo "[4/7] Ressursside kokkuvõte"
 echo "=========================================="
 echo ""
 
@@ -313,26 +313,274 @@ fi
 echo ""
 
 # =============================================================================
+# Samm 5: Stack'i Ajutine Käivitamine (AINULT automaatse režiimi korral)
+# =============================================================================
+if [ "$DB_INIT_MODE" == "auto" ]; then
+    echo ""
+    echo "[5/7] PostgreSQL konteinrite käivitamine"
+    echo "=========================================="
+    echo ""
+    echo "Käivitan AINULT PostgreSQL konteinerid (mitte backend teenuseid)..."
+    echo "See võtab ~10-15 sekundit"
+    echo ""
+
+    cd compose-project
+
+    # Käivita AINULT PostgreSQL konteinerid (postgres-user ja postgres-todo)
+    # Kasuta ainult docker-compose.yml (ignoreeri automaatset override faili)
+    docker compose -f docker-compose.yml up -d postgres-user postgres-todo > /dev/null 2>&1
+
+    if [ $? -ne 0 ]; then
+        echo "❌ PostgreSQL konteinrite käivitamine ebaõnnestus!"
+        echo "Proovi käsitsi: cd compose-project && docker compose -f docker-compose.yml up -d postgres-user postgres-todo"
+        cd ..
+        exit 1
+    fi
+
+    echo "✓ PostgreSQL konteinerid käivitatud"
+    echo ""
+
+    # =============================================================================
+    # Samm 6: Oota PostgreSQL Konteinrite Valmimist
+    # =============================================================================
+    echo "[6/7] PostgreSQL konteinrite valmimise ootamine"
+    echo "=========================================="
+    echo ""
+    echo "Ootan, kuni PostgreSQL konteinerid on healthy..."
+    echo -n "Ootan"
+
+    # Oota kuni PostgreSQL konteinerid on healthy (max 30s)
+    max_wait=30
+    waited=0
+    all_healthy=false
+
+    while [ $waited -lt $max_wait ]; do
+        user_health=$(docker inspect --format='{{.State.Health.Status}}' postgres-user 2>/dev/null || echo "starting")
+        todo_health=$(docker inspect --format='{{.State.Health.Status}}' postgres-todo 2>/dev/null || echo "starting")
+
+        if [ "$user_health" = "healthy" ] && [ "$todo_health" = "healthy" ]; then
+            all_healthy=true
+            break
+        fi
+
+        echo -n "."
+        sleep 2
+        waited=$((waited + 2))
+    done
+    echo ""
+
+    if [ "$all_healthy" = false ]; then
+        echo "⚠️  PostgreSQL konteinerid ei jõudnud healthy staatusesse 30s jooksul"
+        echo "   Proovin andmeid siiski täita..."
+        echo ""
+    else
+        echo "✓ PostgreSQL konteinerid on healthy (${waited}s)"
+        echo ""
+    fi
+
+    # =============================================================================
+    # Samm 7: Tabelite Loomine ja Testimisandmete Täitmine
+    # =============================================================================
+    echo "[7/7] Tabelite loomine ja testimisandmete täitmine"
+    echo "=========================================="
+    echo ""
+
+    # 1. Loo users tabel
+    echo "Loon users tabeli..."
+    docker exec -i postgres-user psql -U postgres -d user_service_db > /dev/null 2>&1 <<'EOF'
+CREATE TABLE IF NOT EXISTS users (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    role VARCHAR(50) DEFAULT 'user',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+EOF
+
+    if [ $? -eq 0 ]; then
+        echo "✓ users tabel loodud"
+    else
+        echo "❌ users tabeli loomine ebaõnnestus"
+    fi
+
+    # 2. Loo todos tabel
+    echo "Loon todos tabeli..."
+    docker exec -i postgres-todo psql -U postgres -d todo_service_db > /dev/null 2>&1 <<'EOF'
+CREATE TABLE IF NOT EXISTS todos (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    priority VARCHAR(20) DEFAULT 'medium',
+    due_date TIMESTAMP,
+    completed BOOLEAN DEFAULT false,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+EOF
+
+    if [ $? -eq 0 ]; then
+        echo "✓ todos tabel loodud"
+    else
+        echo "❌ todos tabeli loomine ebaõnnestus"
+    fi
+
+    echo ""
+
+    # 3. Täida users andmed (4 kasutajat: admin, john, jane, bob)
+    echo "Täidan users andmed..."
+    docker exec -i postgres-user psql -U postgres -d user_service_db > /dev/null 2>&1 <<'EOF'
+-- Kustuta vanad testimisandmed (kui on)
+DELETE FROM users WHERE email IN (
+    'admin@example.com',
+    'john@example.com',
+    'jane@example.com',
+    'bob@example.com'
+);
+
+-- Admin kasutaja (parool: password123)
+INSERT INTO users (name, email, password, role, created_at, updated_at) VALUES
+('Admin User', 'admin@example.com', '$2b$10$K3W/4PeZ9aB8xLqW1p7/8uxXXDtKr0X3wQ4C5gL4Zj7qR6mN9pE5C', 'admin', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+-- Tavalised kasutajad (parool: password123)
+INSERT INTO users (name, email, password, role, created_at, updated_at) VALUES
+('John Doe', 'john@example.com', '$2b$10$K3W/4PeZ9aB8xLqW1p7/8uxXXDtKr0X3wQ4C5gL4Zj7qR6mN9pE5C', 'user', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Jane Smith', 'jane@example.com', '$2b$10$K3W/4PeZ9aB8xLqW1p7/8uxXXDtKr0X3wQ4C5gL4Zj7qR6mN9pE5C', 'user', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Bob Johnson', 'bob@example.com', '$2b$10$K3W/4PeZ9aB8xLqW1p7/8uxXXDtKr0X3wQ4C5gL4Zj7qR6mN9pE5C', 'user', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+EOF
+
+    if [ $? -eq 0 ]; then
+        echo "✓ users andmed täidetud (4 kasutajat)"
+    else
+        echo "❌ users andmete täitmine ebaõnnestus"
+    fi
+
+    # 4. Täida todos andmed (8 TODO'd - kõrge, keskmine, madal prioriteet)
+    echo "Täidan todos andmed..."
+    docker exec -i postgres-todo psql -U postgres -d todo_service_db > /dev/null 2>&1 <<'EOF'
+-- Kustuta vanad testimisandmed (kui on)
+DELETE FROM todos WHERE title IN (
+    'Õpi Docker põhitõed',
+    'Seadista PostgreSQL',
+    'Loo REST API',
+    'Implementeeri JWT autentimine',
+    'Paigalda Kubernetes',
+    'Kirjuta dokumentatsioon',
+    'Testi rakendust',
+    'Deploy production serverisse'
+);
+
+-- Lisa 8 TODO'd (user_id=1 on admin)
+INSERT INTO todos (user_id, title, description, priority, due_date, completed, created_at, updated_at) VALUES
+-- Kõrge prioriteet (3 TODO'd)
+(1, 'Õpi Docker põhitõed', 'Läbi töötada Lab 1 harjutused ja õppida konteinerte. Fookuseks on multi-stage builds ja image optimeerimine.', 'high', '2025-11-20 18:00:00', false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(1, 'Seadista PostgreSQL', 'Paigalda ja konfigureeri PostgreSQL andmebaas VPS serverisse. Loo varukoopia strateegia.', 'high', '2025-11-18 12:00:00', true, CURRENT_TIMESTAMP - INTERVAL '2 days', CURRENT_TIMESTAMP - INTERVAL '1 day'),
+(1, 'Implementeeri JWT autentimine', 'Lisa JWT token-põhine autentimine kasutajate jaoks. Kontrolli token expiration ja refresh tokeni.', 'high', '2025-11-19 10:00:00', true, CURRENT_TIMESTAMP - INTERVAL '3 days', CURRENT_TIMESTAMP - INTERVAL '2 days'),
+
+-- Keskmine prioriteet (3 TODO'd)
+(1, 'Loo REST API', 'Välja töötada Node.js backend koos Express raamistikuga. Implementeeri CRUD operatsioonid.', 'medium', '2025-11-22 15:00:00', false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(1, 'Kirjuta dokumentatsioon', 'API dokumentatsioon OpenAPI/Swagger spetsifikatsioonis. Lisa kasutusjuhendid.', 'medium', '2025-11-25 17:00:00', false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(1, 'Testi rakendust', 'Ühik- ja integratsioonitestid. Jest raamistik Node.js jaoks, JUnit Java jaoks.', 'medium', '2025-11-23 14:00:00', false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+
+-- Madal prioriteet (2 TODO'd)
+(1, 'Paigalda Kubernetes', 'Õpi Kubernetes põhitõed ja paigalda esimene klaster. Deploymentid, Services, ConfigMaps.', 'low', NULL, false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(1, 'Deploy production serverisse', 'Seadista CI/CD pipeline GitHub Actions abil. Automaatne deployment pärast merge main branchi.', 'low', NULL, false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+EOF
+
+    if [ $? -eq 0 ]; then
+        echo "✓ todos andmed täidetud (8 TODO'd)"
+    else
+        echo "❌ todos andmete täitmine ebaõnnestus"
+    fi
+
+    echo ""
+    echo "=========================================="
+    echo "Andmete kontroll (kas jäid püsima?):"
+    echo "=========================================="
+    echo ""
+
+    user_count=$(docker exec postgres-user psql -U postgres -d user_service_db -tAc "SELECT COUNT(*) FROM users;" 2>/dev/null || echo "0")
+    todo_count=$(docker exec postgres-todo psql -U postgres -d todo_service_db -tAc "SELECT COUNT(*) FROM todos;" 2>/dev/null || echo "0")
+
+    if [ "$user_count" -gt 0 ]; then
+        echo "✓ users: $user_count rida (andmed salvestatud volume'i)"
+    else
+        echo "❌ users: 0 rida (andmed ei jäänud püsima!)"
+    fi
+
+    if [ "$todo_count" -gt 0 ]; then
+        echo "✓ todos: $todo_count rida (andmed salvestatud volume'i)"
+    else
+        echo "❌ todos: 0 rida (andmed ei jäänud püsima!)"
+    fi
+
+    echo ""
+    echo "=========================================="
+    echo "PostgreSQL konteinrite peatamine"
+    echo "=========================================="
+    echo ""
+    echo "Peatan PostgreSQL konteinerid..."
+    echo "Volume'd jäävad alles koos andmetega!"
+    echo ""
+
+    # Peata AINULT PostgreSQL konteinerid (mitte tervet stack'i)
+    docker compose -f docker-compose.yml stop postgres-user postgres-todo > /dev/null 2>&1
+    docker compose -f docker-compose.yml rm -f postgres-user postgres-todo > /dev/null 2>&1
+
+    if [ $? -eq 0 ]; then
+        echo "✓ PostgreSQL konteinerid peatatud ja eemaldatud"
+        echo "✓ Volume'd on alles: postgres-user-data, postgres-todo-data"
+    else
+        echo "⚠️  PostgreSQL konteinrite peatamine ebaõnnestus"
+    fi
+
+    cd ..
+    echo ""
+fi
+
+# =============================================================================
 # Lõppsõnum
 # =============================================================================
+echo ""
 echo "=============================================="
 echo "✅ Lab 2 setup lõpetatud!"
 echo "=============================================="
 echo ""
 
-echo "JÄRGMISED SAMMUD - Stack'i käivitamine:"
-echo ""
-
 if [ "$DB_INIT_MODE" == "auto" ]; then
-    echo "VARIANT A: Käivita stack koos automaatse DB init'iga:"
-    echo "  cd compose-project"
-    echo "  docker compose -f docker-compose.yml -f docker-compose.init.yml up -d"
+    echo "✅ VALMIS! Volume'd on täidetud andmetega!"
     echo ""
-    echo "Andmebaas luuakse automaatselt:"
-    echo "  - 4 kasutajat (admin@example.com, john@example.com, jane@example.com, bob@example.com)"
-    echo "  - 5 näidis todo'd"
+    echo "Volume'id sisaldavad nüüd:"
+    echo "  ✓ postgres-user-data - users tabel koos 4 kasutajaga"
+    echo "  ✓ postgres-todo-data - todos tabel koos 8 todo'ga"
+    echo ""
+    echo "JÄRGMISED SAMMUD - Alusta harjutusi:"
+    echo ""
+    echo "1. Käivita stack käsitsi (pedagoogiline):"
+    echo "   cd compose-project"
+    echo "   docker compose up -d"
+    echo ""
+    echo "2. Kontrolli teenuste olekut:"
+    echo "   docker compose ps"
+    echo "   docker compose logs -f"
+    echo ""
+    echo "3. Testi rakendust:"
+    echo "   curl http://localhost:8080                 - Frontend"
+    echo "   curl http://localhost:3000/health          - User Service"
+    echo "   curl http://localhost:8081/health          - Todo Service"
+    echo ""
+    echo "4. Vaata andmeid:"
+    echo "   docker exec postgres-user psql -U postgres -d user_service_db -c 'SELECT * FROM users;'"
+    echo "   docker exec postgres-todo psql -U postgres -d todo_service_db -c 'SELECT * FROM todos;'"
+    echo ""
+    echo "5. Alusta Harjutus 1'st:"
+    echo "   cat exercises/01-compose-basics.md"
     echo ""
 else
+    echo "JÄRGMISED SAMMUD - Stack'i käivitamine:"
+    echo ""
     echo "VARIANT A: Käsitsi DB seadistamine (soovitatud õppimiseks):"
     echo "  cd compose-project"
     echo "  docker compose up -d"
@@ -342,25 +590,22 @@ else
     echo "  cd compose-project"
     echo "  docker compose -f docker-compose.yml -f docker-compose.init.yml up -d"
     echo ""
+    echo "Kasulikud käsud pärast käivitamist:"
+    echo "  docker compose ps              - Vaata teenuste olekut"
+    echo "  docker compose logs -f         - Vaata logisid"
+    echo "  docker compose down            - Peata teenused"
+    echo ""
+    echo "Testimine:"
+    echo "  curl http://localhost:8080                 - Frontend"
+    echo "  curl http://localhost:3000/health          - User Service"
+    echo "  curl http://localhost:8081/health          - Todo Service"
+    echo ""
+    echo "Harjutused:"
+    echo "  1. Loe README.md Lab 2 ülevaadet"
+    echo "  2. Alusta Harjutus 1'st: exercises/01-compose-basics.md"
+    echo "  3. Järgi harjutusi järjest"
+    echo ""
 fi
-
-echo "Kasulikud käsud pärast käivitamist:"
-echo "  docker compose ps              - Vaata teenuste olekut"
-echo "  docker compose logs -f         - Vaata logisid"
-echo "  docker compose down            - Peata teenused"
-echo ""
-
-echo "Testimine:"
-echo "  curl http://localhost:8080                 - Frontend"
-echo "  curl http://localhost:3000/health          - User Service"
-echo "  curl http://localhost:8081/health          - Todo Service"
-echo ""
-
-echo "Harjutused:"
-echo "  1. Loe README.md Lab 2 ülevaadet"
-echo "  2. Alusta Harjutus 1'st: exercises/01-compose-basics.md"
-echo "  3. Järgi harjutusi järjest"
-echo ""
 
 echo "=============================================="
 echo "Head õppimist! 🚀"

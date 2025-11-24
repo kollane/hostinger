@@ -221,7 +221,7 @@ Vajuta `i` (insert mode) ja lisa järgmine sisu:
 # version: '3.8' on VALIKULINE (optional) Compose v2's!
 # Compose v2 ei nõua enam version väljaanni, kuid see on siin backwards compatibility jaoks.
 # Võid selle ära jätta - Compose v2 kasutab automaatselt uusimat versiooni.
-version: '3.8'
+#version: '3.8'
 
 services:
   # ==========================================================================
@@ -283,7 +283,7 @@ services:
       DB_NAME: user_service_db
       DB_USER: postgres
       DB_PASSWORD: postgres
-      JWT_SECRET: shared-secret-key-change-this-in-production-must-be-at-least-256-bits
+      JWT_SECRET: VXCkL39yz/6xw7JFpHdLpP8xgBFUSKbnNJWdAaeWDiM=
       JWT_EXPIRES_IN: 1h
       PORT: 3000
       NODE_ENV: production
@@ -314,7 +314,7 @@ services:
       DB_NAME: todo_service_db
       DB_USER: postgres
       DB_PASSWORD: postgres
-      JWT_SECRET: shared-secret-key-change-this-in-production-must-be-at-least-256-bits
+      JWT_SECRET: VXCkL39yz/6xw7JFpHdLpP8xgBFUSKbnNJWdAaeWDiM=
       SPRING_PROFILES_ACTIVE: prod
       JAVA_OPTS: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
     ports:

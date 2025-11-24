@@ -56,6 +56,17 @@ for compose_file in docker-compose.yml docker-compose.*.yml; do
 done
 
 echo ""
+echo "🗂️  Eemaldame compose-project kataloogi..."
+
+# Kustuta compose-project kataloog, kuna Harjutus 1 Samm 2 käseb selle luua
+if [ -d "compose-project" ]; then
+    rm -rf compose-project
+    echo "  ✓ compose-project kataloog eemaldatud"
+else
+    echo "  ⏭  compose-project kataloogi ei leitud (juba puhas)"
+fi
+
+echo ""
 echo "📦 Eemaldame Lab 2 containerid..."
 
 # Eemalda compose containerid (kasutavad tavaliselt prefixeid)
