@@ -1144,21 +1144,77 @@ docker compose up -d
 
 ---
 
-## 🔗 Järgmine Samm
+## 🔗 Järgmised Sammud
 
-Suurepärane! Nüüd on sul **turvaline Docker Compose arhitektuur**!
+🎉 **Õnnitleme! Oled loonud turvalisuse Docker Compose arhitektuuri!**
 
-**Mis edasi?**
+**Mis saavutasid:**
 - ✅ Võrgu segmenteerimine (network segmentation) implementeeritud
 - ✅ Rünnaku pind (attack surface) vähendatud 96%
 - ✅ Vähimate õiguste printsiip (principle of least privilege) rakendatud
-- ⏭️ **Järgmine Lab:** Kubernetes (Lab 3), kus õpid:
-  - Kubernetes Network Policies (võrgu segmenteerimine K8s'is)
-  - Service types: ClusterIP (internal) vs NodePort (external)
-  - Ingress Controllers (nagu Nginx reverse proxy)
-  - Pod Security Policies
+- ✅ 3-taseme arhitektuur (DMZ → Backend → Database)
+- ✅ Ainult 1 avalik port (8080)
 
-**Jätka:** [Lab 3: Kubernetes Basics](../../03-kubernetes-basics-lab/README.md)
+---
+
+### Mis Edasi? Vali Oma Tee:
+
+#### **Variant A: Jätka Kubernetes'ega** (soovitatav enamikule)
+
+**Oled valmis Lab 3'ks!** Docker põhitõed on selged. Nüüd on aeg õppida Kubernetes'e!
+
+→ **[Lab 3: Kubernetes Basics](../../03-kubernetes-basics-lab/README.md)**
+
+**Lab 3's õpid:**
+- Kubernetes Network Policies (võrgu segmenteerimine K8s'is)
+- Service types: ClusterIP (internal) vs NodePort (external)
+- Ingress Controllers (nagu Nginx reverse proxy)
+- Pod Security Policies
+- ConfigMaps, Secrets, Persistent Volumes
+
+---
+
+#### **Variant B: Sügav Docker Võrgu Analüüs** (valikuline, advanced)
+
+**Soovid süvendada Docker võrke?** Lab 2.5 õpetab professionaalset võrgu analüüsi!
+
+→ **[Lab 2.5: Network Analysis & Testing](../../02.5-network-analysis-lab/README.md)** 🔷 *Valikuline*
+
+**Lab 2.5's õpid:**
+- Docker network inspection professionaalsete tööriistadega (`jq`, `tcpdump`)
+- Süstemaatiline connectivity testing (connectivity matrix)
+- Traffic analysis ja monitooring (`ss`, `netstat`, packet capture)
+- DNS resolution ja service discovery testimine
+- Automated testing scripts (bash, pass/fail reporting)
+- Security auditing (`nmap`, port scanning, Docker Scout)
+- Load testing ja performance analysis
+- CI/CD integration
+
+**⚠️ MÄRKUS:** Lab 2.5 on **VALIKULINE**, mitte kohustuslik Lab 3 jaoks!
+
+**Kestus:** 3 tundi
+**Kasutab:** Lab 2 olemasolevat docker-compose stack'i (ei loo uut keskkonda)
+
+**Sobib sulle, kui:**
+- Plaanid töötada DevOps/SRE rollis (network debugging oluline)
+- Huvi pakub professionaalne võrgu analüüs ja diagnostika
+- Soovid õppida automatiseeritud testimist
+- Oled huvitatud security auditing'ust
+
+**Jäta vahele, kui:**
+- Soovid kiiresti Kubernetes'e jõuda
+- Docker põhitõed on piisavad
+- Aeg on piiratud
+
+---
+
+### Soovitus:
+
+**Uutele õppijatele:** → Jätka Lab 3'ga (Variant A)
+
+**Advanced õppijatele:** → Tee Lab 2.5, siis Lab 3 (Variant B → Lab 3)
+
+**Kiire tee:** → Lab 3 nüüd, tule Lab 2.5 juurde hiljem tagasi
 
 ---
 

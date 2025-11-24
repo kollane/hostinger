@@ -179,6 +179,12 @@ Peale selle labori läbimist oskad:
 - Database migration'id Liquibase'iga (Harjutus 4)
 - Service discovery kontseptsioon
 
+**Labor 2.5: Network Analysis & Testing (VALIKULINE - EI OLE VAJALIK)**
+- 🔷 **Lab 2.5 on valikuline süvendav materjal**
+- Lab 2.5 EI OLE eeldus Lab 3 jaoks
+- Võid jätkata Lab 3'ga kohe pärast Lab 2'd
+- Lab 2.5 õpetab professionaalset võrgu analüüsi (valikuline, advanced)
+
 ### ✅ Tööriistad
 
 **1. kubectl (Kubernetes CLI)**

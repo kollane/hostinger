@@ -1,6 +1,6 @@
 # DevOps Praktilised Laborid
 
-**Hands-On DevOps Training Program** - 10 laborit, 47 tundi praktilisi oskusi
+**Hands-On DevOps Training Program** - 10 laborit + 1 valikuline, 47h + 3h valikulist
 
 ---
 
@@ -22,12 +22,13 @@ Tere tulemast DevOps praktiliste laborite juurde! See on **praktiline õppeprogr
 
 ## 📋 Laborite Ülevaade
 
-**Kokku: 10 laborit, 47 tundi praktilisi harjutusi**
+**Kokku: 10 laborit + 1 valikuline, 47h + 3h valikulist**
 
 | # | Labor | Kestus | Eeldused | Staatus |
 |---|-------|--------|----------|---------|
 | **1** | [Docker Põhitõed](01-docker-lab/) | 4h |  |  |
 | **2** | [Docker Compose](02-docker-compose-lab/) | 5.25h | Lab 1 |  |
+| **2.5** | 🔷 [Network Analysis & Testing](02.5-network-analysis-lab/) | 3h | Lab 2 (valikuline) |  |
 | **3** | [Kubernetes Alused](03-kubernetes-basics-lab/) | 5h | Lab 1-2 |  |
 | **4** | [Kubernetes Täiustatud](04-kubernetes-advanced-lab/) | 5h | Lab 1-3 |  |
 | **5** | [CI/CD Pipeline](05-cicd-lab/) | 4h | Lab 1-4, Peatükk 15-17 |  |
@@ -39,8 +40,9 @@ Tere tulemast DevOps praktiliste laborite juurde! See on **praktiline õppeprogr
 
 ### Laborite Grupid
 
-**📦 Põhikursus (Lab 1-6, 27h):**
+**📦 Põhikursus (Lab 1-6, 27h + 3h valikulist):**
 - Docker konteinerite haldamine + võrgu turvalisus
+- 🔷 Lab 2.5: Network Analysis (valikuline, professionaalne võrgu analüüs)
 - Kubernetes orkestratsioon
 - CI/CD automatiseerimine
 - Monitoring ja logging
