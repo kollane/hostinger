@@ -131,13 +131,14 @@ Peale selle labori läbimist oskad:
 ├── README.md                  # See fail
 ├── setup.sh                   # Automaatne seadistus
 ├── reset.sh                   # Labori ressursside puhastamine
-├── exercises/                 # Harjutused (6 harjutust)
+├── exercises/                 # Harjutused (7 harjutust)
 │   ├── 01-compose-basics.md           # Lab 1 → docker-compose.yml (4 teenust)
 │   ├── 02-add-frontend.md             # Lisa Frontend (5. teenus)
 │   ├── 03-network-segmentation.md     # Võrgu segmenteerimine ja portide turvalisus
 │   ├── 04-environment-management.md   # .env failid ja override pattern
 │   ├── 05-database-migrations.md      # Liquibase init container
-│   └── 06-production-patterns.md      # Scaling, limits, health checks
+│   ├── 06-production-patterns.md      # Scaling, limits, health checks
+│   └── 07-advanced-patterns.md        # Advanced patterns
 └── solutions/                 # Lahendused
     ├── docker-compose.yml             # 4 teenust (Harjutus 1)
     ├── docker-compose-full.yml        # 5 teenust (Harjutus 2)
@@ -252,6 +253,12 @@ Production-ready konfiguratsioon:
 - Seisukorra kontrollid (health checks) ja dependency management
 - Logging konfiguratsioon
 
+### Harjutus 7: Advanced Patterns (vajadusel)
+**Fail:** [exercises/07-advanced-patterns.md](exercises/07-advanced-patterns.md)
+
+Täiustatud mustrid (advanced patterns):
+- Vaata faili detailide jaoks
+
 ---
 
 ## ⚡ Kiirstart Seadistus
@@ -347,6 +354,7 @@ Peale labori läbimist pead omama:
 - [ ] Harjutus 4: Environment Management (.env failid)
 - [ ] Harjutus 5: Database Migrations (Liquibase)
 - [ ] Harjutus 6: Production Patterns (scaling, limits)
+- [ ] Harjutus 7: Advanced Patterns (vajadusel)
 
 ---
 
