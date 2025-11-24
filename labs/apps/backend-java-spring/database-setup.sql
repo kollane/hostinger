@@ -1,28 +1,16 @@
 -- =====================================================
 -- Todo Service Database Setup
 -- =====================================================
--- Selle skripti eesmärk on luua andmebaas ja tabelid
--- Todo Service rakenduse jaoks.
+-- NOTE: Database is already created by POSTGRES_DB environment variable
+-- This script runs inside that database automatically via /docker-entrypoint-initdb.d/
 --
--- Kasutamine:
---   sudo -u postgres psql -f database-setup.sql
+-- Selle skripti eesmärk on luua tabelid Todo Service rakenduse jaoks.
 --
--- Või Docker'is:
---   docker exec -i postgres-todo psql -U postgres < database-setup.sql
+-- Käsitsi kasutamine Docker'is:
+--   docker exec -i postgres-todo psql -U postgres -d todo_service_db < database-setup.sql
 -- =====================================================
 
--- 1. LOO ANDMEBAAS (kui ei ole olemas)
--- Märkus: See käsk võib ebaõnnestuda, kui andmebaas on juba olemas
--- Kui käivitad psql'is, kasuta esmalt: CREATE DATABASE todo_service_db;
--- Seejärelühenda: \c todo_service_db;
-
--- CREATE DATABASE todo_service_db;
--- \c todo_service_db;
-
--- Kui andmebaas on juba loodud, ühenda sellega:
--- psql -U postgres -d todo_service_db -f database-setup.sql
-
--- 2. LOO TODOS TABEL
+-- 1. LOO TODOS TABEL
 CREATE TABLE IF NOT EXISTS todos (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL,
@@ -81,8 +69,3 @@ VALUES
     (1, 'Loo REST API', 'Välja töötada Node.js backend koos Express raamistikuga', 'medium', '2025-11-22 15:00:00', false),
     (1, 'Implementeeri JWT autentimine', 'Lisa JWT token-põhine autentimine kasutajate jaoks', 'high', '2025-11-19 10:00:00', true),
     (1, 'Paigalda Kubernetes', 'Õpi Kubernetes põhitõed ja paigalda esimene klaster', 'low', NULL, false);
-
--- 6. KONTROLLI TULEMUST
-SELECT 'Database setup completed successfully!' AS status;
-SELECT COUNT(*) AS total_todos FROM todos;
-SELECT * FROM todos ORDER BY created_at DESC LIMIT 5;

@@ -177,6 +177,54 @@ Peale selle labori läbimist oskad:
 
 ---
 
+## 🚀 Quick Start
+
+Lab 2'l on kaks alustamise viisi:
+
+### Variant A: Setup Skript (Soovitatav algajatele ja kiireks testimiseks)
+
+```bash
+cd 02-docker-compose-lab
+./setup.sh
+```
+
+**Setup skript teeb:**
+- ✅ Kontrollib Lab 1 eeldusi (images, volumes, network)
+- ✅ Loob puuduvad ressursid (võrk, volumes)
+- ✅ Võimaldab valida andmebaasi automaatset initsialiseermist
+  - Variant 1: Käsitsi (pedagoogiline - õpid SQL'i ja docker exec'i)
+  - Variant 2: Automaatne (mugavus - init skriptid loodavad skeemi + testimisandmed)
+- ✅ Käivitab teenused
+
+**Sobib, kui:**
+- Soovid kiiresti alustada ilma Lab 1 ressursside loomiseta
+- Soovid testimisandmetega andmebaasi (4 kasutajat, 8 todo'd)
+- Soovid keskenduda Docker Compose'i õppimisele, mitte DB seadistusele
+
+### Variant B: Käsitsi (Pedagoogiline - Õpid kõik sammud)
+
+Järgi harjutuste juhiseid järjest:
+1. **Harjutus 1**: Compose Basics - Lab 1 → docker-compose.yml konversioon
+2. **Harjutus 2**: Add Frontend - 5. teenuse lisamine
+3. **Harjutus 3**: Network Segmentation - Turvaline arhitektuur
+
+```bash
+cd 02-docker-compose-lab/exercises
+cat 01-compose-basics.md
+```
+
+**Sobib, kui:**
+- Läbisid Lab 1 ja soovid progressive learning'ut
+- Soovid õppida Docker Compose'i samm-sammult
+- Soovid mõista MIKS iga konfiguratsioon on vajalik
+
+**⚠️ PEDAGOOGILINE MÄRKUS:**
+- **Harjutused õpetavad käsitsi** (docker exec, SQL, võrgud, volumes) - see on õppimise osa!
+- **setup.sh on mugavuse huvides** - kasuta, kui vajad kiiret starti või testimisandmeid
+- **Soovitame esimest korda teha käsitsi**, et õppida Docker põhitõdesid
+
+---
+
 ## 📚 Progressiivne Õppetee
 
 ```

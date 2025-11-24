@@ -122,13 +122,32 @@ docker volume ls | grep -E "postgres-user-data|postgres-todo-data"
 # 3. Kontrolli võrku (network)
 docker network ls | grep todo-network
 # Oodatud: todo-network
+
+# 4. VALIKULINE: Kontrolli andmebaasi skeeme (tabelid)
+# See harjutus eeldab, et andmebaasid on tühjad või sisaldavad õigeid tabeleid
+# Kui soovid testimisandmeid, kasuta setup.sh skripti (valik 2)
 ```
 
 **Kui midagi puudub:**
-- 🔗 Mine tagasi Lab 1 juurde: `cd ../01-docker-lab`
-- 🔗 Vaata [Lab 1 README](../../01-docker-lab/README.md)
 
-**✅ Kui kõik ülalpool on OK, võid jätkatakatama!**
+**Variant A: Setup Skript (Kiire)**
+```bash
+cd ..  # Tagasi 02-docker-compose-lab/ kausta
+./setup.sh
+# Skript loob puuduvad ressursid ja võimaldab valida DB init'i
+```
+
+**Variant B: Käsitsi (Pedagoogiline)**
+- 🔗 **Images puuduvad?** Mine tagasi Lab 1: `cd ../../01-docker-lab` ja ehita image'd
+- 🔗 **Võrk puudub?** Loo võrk: `docker network create todo-network`
+- 🔗 **Volumes puuduvad?** Loo volumes:
+  ```bash
+  docker volume create postgres-user-data
+  docker volume create postgres-todo-data
+  ```
+- 🔗 **DB skeem puudub?** Skeemide loomine õpetatakse selles harjutuses (Samm 8) või kasuta setup.sh
+
+**✅ Kui kõik ülalpool on OK, võid jätkata!**
 
 ---
 
@@ -868,7 +887,51 @@ volumes:
     driver: local
 ```
 
-### Probleem 3: "Backend can't connect to database"
+### Probleem 3: "relation \"users\" does not exist" või "relation \"todos\" does not exist"
+
+**Põhjus:** Andmebaasi skeemid (tabelid) puuduvad.
+
+**Lahendus A: Setup Skript (Automaatne)**
+```bash
+cd ..  # Tagasi 02-docker-compose-lab/
+./setup.sh
+# Vali valik 2 (Automaatne initsialiseermine)
+# või
+docker compose -f compose-project/docker-compose.yml -f compose-project/docker-compose.init.yml up -d
+```
+
+**Lahendus B: Käsitsi (Pedagoogiline)**
+```bash
+# User Service database
+docker compose exec postgres-user psql -U postgres -d user_service_db <<EOF
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    role VARCHAR(20) DEFAULT 'user',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+EOF
+
+# Todo Service database
+docker compose exec postgres-todo psql -U postgres -d todo_service_db <<EOF
+CREATE TABLE todos (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    completed BOOLEAN NOT NULL DEFAULT FALSE,
+    priority VARCHAR(20) DEFAULT 'medium',
+    due_date TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+EOF
+```
+
+### Probleem 4: "Backend can't connect to database"
 
 ```bash
 # Kontrolli, kas DB on healthy
@@ -882,7 +945,7 @@ docker compose exec user-service env | grep DB_HOST
 # Peaks olema: DB_HOST=postgres-user (teenuse nimi (service name))
 ```
 
-### Probleem 4: "Port already in use"
+### Probleem 5: "Port already in use"
 
 ```bash
 # Vaata, mis kasutab porti

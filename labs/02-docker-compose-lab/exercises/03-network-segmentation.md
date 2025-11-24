@@ -56,12 +56,33 @@ docker compose ps
 
 # 4. Kas frontend töötab?
 curl http://localhost:8080
+
+# 5. KRIITILINE: Kas andmebaasi skeemid (users ja todos tabelid) on loodud?
+docker compose exec postgres-user psql -U postgres -d user_service_db -c "\dt"
+# Oodatud: users tabel
+docker compose exec postgres-todo psql -U postgres -d todo_service_db -c "\dt"
+# Oodatud: todos tabel
 ```
 
 **Kui midagi puudub:**
+
+**Andmebaasi skeemid puuduvad?** (KRIITILINE!)
+```bash
+# Variant A: Setup skript (kiire)
+cd ..  # Tagasi 02-docker-compose-lab/
+./setup.sh
+# Vali valik 2 (Automaatne initsialiseermine)
+
+# Variant B: Käsitsi
+cd compose-project
+docker compose -f docker-compose.yml -f docker-compose.init.yml up -d
+# VÕI vaata Harjutus 1 Troubleshooting sektsiooni
+```
+
+**Harjutus 2 pole läbitud?**
 - 🔗 Mine tagasi [Harjutus 2](02-add-frontend.md)
 
-**✅ Kui kõik ülalpool on OK, võid jätkata!**
+**✅ Kui kõik ülalpool on OK (eriti DB skeemid!), võid jätkata!**
 
 ---
 

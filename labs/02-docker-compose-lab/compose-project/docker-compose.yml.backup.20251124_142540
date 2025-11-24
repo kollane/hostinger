@@ -1,0 +1,163 @@
+# ==========================================================================
+# Docker Compose - Lab 1 Lõpuseisu Konversioon
+# ==========================================================================
+# Käivitab 4 teenust:
+# - 2x PostgreSQL (users ja todos)
+# - User Service (Node.js)
+# - Todo Service (Java Spring Boot)
+# ==========================================================================
+
+# MÄRKUS: Docker Compose v2 (2025)
+# version: '3.8' on VALIKULINE (optional) Compose v2's!
+# Compose v2 ei nõua enam version väljaanni, kuid see on siin backwards compatibility jaoks.
+# Võid selle ära jätta - Compose v2 kasutab automaatselt uusimat versiooni.
+#version: '3.8'
+
+services:
+  # ==========================================================================
+  # PostgreSQL - User Service Database
+  # ==========================================================================
+  postgres-user:
+    image: postgres:16-alpine
+    container_name: postgres-user
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: user_service_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres-user-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - todo-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==========================================================================
+  # PostgreSQL - Todo Service Database
+  # ==========================================================================
+  postgres-todo:
+    image: postgres:16-alpine
+    container_name: postgres-todo
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: todo_service_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres-todo-data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    networks:
+      - todo-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==========================================================================
+  # User Service - Node.js + Express + PostgreSQL
+  # ==========================================================================
+  user-service:
+    image: user-service:1.0-optimized
+    container_name: user-service
+    restart: unless-stopped
+    environment:
+      DB_HOST: postgres-user
+      DB_PORT: 5432
+      DB_NAME: user_service_db
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      JWT_SECRET: IW0JnUSDhk30Y7wLtHCXvwkkEt9saabZnwnIwD3RO9Y= 
+      JWT_EXPIRES_IN: 1h
+      PORT: 3000
+      NODE_ENV: production
+    ports:
+      - "3000:3000"
+    networks:
+      - todo-network
+    depends_on:
+      postgres-user:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "healthcheck.js"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 40s
+
+  # ==========================================================================
+  # Todo Service - Java Spring Boot + PostgreSQL
+  # ==========================================================================
+  todo-service:
+    image: todo-service:1.0-optimized
+    container_name: todo-service
+    restart: unless-stopped
+    environment:
+      DB_HOST: postgres-todo
+      DB_PORT: 5432
+      DB_NAME: todo_service_db
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      JWT_SECRET: IW0JnUSDhk30Y7wLtHCXvwkkEt9saabZnwnIwD3RO9Y=
+      SPRING_PROFILES_ACTIVE: prod
+      JAVA_OPTS: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
+    ports:
+      - "8081:8081"
+    networks:
+      - todo-network
+    depends_on:
+      postgres-todo:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 60s
+
+  # ==========================================================================
+  # Frontend - Nginx Static Files
+  # ==========================================================================
+  frontend:
+    image: nginx:alpine
+    container_name: frontend
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      # Mount frontend failid (read-only)
+      - ../../apps/frontend:/usr/share/nginx/html:ro
+      # Mount Nginx konfiguratsioon (reverse proxy API päringutele)
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - todo-network
+    depends_on:
+      - user-service
+      - todo-service
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+
+# ==========================================================================
+# Volumes - Kasutame Lab 1'st loodud andmehoidlaid
+# ==========================================================================
+volumes:
+  postgres-user-data:
+    external: true  # Kasutame Lab 1'st loodud volume'i
+  postgres-todo-data:
+    external: true  # Kasutame Lab 1'st loodud volume'i
+
+# ==========================================================================
+# Networks - Kasutame Lab 1'st loodud võrku
+# ==========================================================================
+networks:
+  todo-network:
+    external: true  # Kasutame Lab 1'st loodud network'i

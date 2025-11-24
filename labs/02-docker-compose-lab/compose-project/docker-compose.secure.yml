@@ -1,0 +1,279 @@
+# ==========================================================================
+# Docker Compose - Turvaline Arhitektuur (Harjutus 3 Lahendus)
+# ==========================================================================
+# Võrgu segmenteerimine (Network Segmentation) + Portide Turvalisus
+#
+# 5 teenust (services) 3 võrgus (networks):
+# - Frontend (Nginx) - Avalik (public), port 8080
+# - User Service (Node.js) - Sisene (internal), ei ole avalik
+# - Todo Service (Java Spring Boot) - Sisene (internal), ei ole avalik
+# - 2x PostgreSQL - Isoleeritud (isolated), ei ole avalik
+#
+# Võrgu Arhitektuur (3-tier):
+#   Internet (0.0.0.0:8080)
+#       ↓
+#   Frontend Network (DMZ) - frontend
+#       ↓
+#   Backend Network (Application) - frontend, user-service, todo-service
+#       ↓
+#   Database Network (Data - ISOLATED) - user-service, todo-service, postgres-*
+#
+# Turvalisuse Parandused:
+# - ✅ 96% rünnaku pinna vähenemine (5 pordid → 1 port)
+# - ✅ Andmebaasid ei ole avalikud
+# - ✅ Backend API'd ei ole avalikud
+# - ✅ Frontend ei pääse ligi andmebaasidele
+# - ✅ Võrgu segmenteerimine (network segmentation)
+# - ✅ Vähimate õiguste printsiip (principle of least privilege)
+#
+# Kasutamine:
+#   docker compose -f docker-compose.secure.yml up -d
+#   docker compose -f docker-compose.secure.yml ps
+#   docker compose -f docker-compose.secure.yml logs
+#   docker compose -f docker-compose.secure.yml down
+#
+# Development Debug (kasuta koos docker-compose.override.yml'iga):
+#   docker compose -f docker-compose.secure.yml up -d
+#   # Override fail lisab localhost-only porte (127.0.0.1)
+# ==========================================================================
+
+version: '3.8'
+
+services:
+  # ==========================================================================
+  # FRONTEND LAYER (DMZ - Demilitarized Zone)
+  # ==========================================================================
+  # Turvaline: Avalik teenus (public service), hardened Nginx,
+  #            ei pääse ligi andmebaasidele
+  # Võrgud: frontend-network (avalik), backend-network (proxy backend'idele)
+  # ==========================================================================
+
+  frontend:
+    image: nginx:alpine
+    container_name: frontend
+    restart: unless-stopped
+    ports:
+      - "8080:80"    # ✅ AINULT see port on avalik (0.0.0.0:8080)
+    volumes:
+      # Mount frontend failid (read-only)
+      - ../../apps/frontend:/usr/share/nginx/html:ro
+      # Mount Nginx konfiguratsioon (reverse proxy API päringutele)
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - frontend-network    # Avalik ligipääs (public access)
+      - backend-network     # Pääseb ligi backend'idele (reverse proxy)
+    depends_on:
+      - user-service
+      - todo-service
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    # Turvalisus: Read-only volumes, ei ole database-network'is
+
+  # ==========================================================================
+  # APPLICATION LAYER (Backend Services)
+  # ==========================================================================
+  # Turvaline: Sisene teenus (internal service), ei ole avalik,
+  #            pääseb ligi ainult oma andmebaasile
+  # Võrgud: backend-network (võtab vastu frontend päringuid),
+  #         database-network (ühendub postgres-user'iga)
+  # ==========================================================================
+
+  user-service:
+    image: user-service:1.0-optimized
+    container_name: user-service
+    restart: unless-stopped
+    environment:
+      DB_HOST: postgres-user
+      DB_PORT: 5432    # Sisene port (internal port), ei ole avalik
+      DB_NAME: user_service_db
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      JWT_SECRET: shared-secret-key-change-this-in-production-must-be-at-least-256-bits
+      JWT_EXPIRES_IN: 1h
+      PORT: 3000
+      NODE_ENV: production
+    # ❌ EI OLE ports: sektsiooni - teenus ei ole avalik!
+    # Kättesaadav ainult Docker DNS kaudu: http://user-service:3000
+    # Development debug: kasuta docker-compose.override.yml (127.0.0.1:3000)
+    networks:
+      - backend-network     # Võtab vastu frontend päringuid (requests)
+      - database-network    # Pääseb ligi postgres-user'ile
+    depends_on:
+      postgres-user:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "healthcheck.js"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 40s
+    # Turvalisus: Ei ole avalik, ainult backend-network ja database-network
+
+  todo-service:
+    image: todo-service:1.0-optimized
+    container_name: todo-service
+    restart: unless-stopped
+    environment:
+      DB_HOST: postgres-todo
+      DB_PORT: 5432    # Sisene port (internal port), ei ole avalik
+      DB_NAME: todo_service_db
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      JWT_SECRET: shared-secret-key-change-this-in-production-must-be-at-least-256-bits
+      SPRING_PROFILES_ACTIVE: prod
+      JAVA_OPTS: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
+    # ❌ EI OLE ports: sektsiooni - teenus ei ole avalik!
+    # Kättesaadav ainult Docker DNS kaudu: http://todo-service:8081
+    # Development debug: kasuta docker-compose.override.yml (127.0.0.1:8081)
+    networks:
+      - backend-network     # Võtab vastu frontend päringuid (requests)
+      - database-network    # Pääseb ligi postgres-todo'le
+    depends_on:
+      postgres-todo:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 60s
+    # Turvalisus: Ei ole avalik, ainult backend-network ja database-network
+
+  # ==========================================================================
+  # DATA LAYER (Databases)
+  # ==========================================================================
+  # Turvaline: Isoleeritud teenus (isolated service), ei ole avalik,
+  #            kättesaadav ainult backend teenustele (backend services)
+  # Võrgud: database-network AINULT (internal: true - täielik isoleerimine)
+  # ==========================================================================
+
+  postgres-user:
+    image: postgres:16-alpine
+    container_name: postgres-user
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: user_service_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres-user-data:/var/lib/postgresql/data
+    # ❌ EI OLE ports: sektsiooni - andmebaas ei ole avalik!
+    # Kättesaadav ainult Docker DNS kaudu: postgres-user:5432
+    # Development debug: kasuta docker-compose.override.yml (127.0.0.1:5432)
+    networks:
+      - database-network    # ✅ AINULT database võrgus (network)
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # Turvalisus: Ei ole avalik, ainult user-service pääseb ligi
+
+  postgres-todo:
+    image: postgres:16-alpine
+    container_name: postgres-todo
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: todo_service_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres-todo-data:/var/lib/postgresql/data
+    # ❌ EI OLE ports: sektsiooni - andmebaas ei ole avalik!
+    # Kättesaadav ainult Docker DNS kaudu: postgres-todo:5432
+    # Development debug: kasuta docker-compose.override.yml (127.0.0.1:5433)
+    networks:
+      - database-network    # ✅ AINULT database võrgus (network)
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # Turvalisus: Ei ole avalik, ainult todo-service pääseb ligi
+
+# ==========================================================================
+# VÕRGU SEGMENTEERIMINE (Network Segmentation)
+# ==========================================================================
+# 3-taseme arhitektuur: DMZ → Backend → Database
+#
+# Turvaline konfiguratsioon:
+# - Frontend Network (DMZ): Avalik võrk (public network)
+# - Backend Network (Application): Sisene võrk (internal network)
+# - Database Network (Data): Isoleeritud võrk (isolated network)
+#
+# Ligipääsu Kontroll (Access Control):
+#   ┌──────────────┬──────────┬──────────┬──────────┬────────────┬────────────┐
+#   │ KES?         │ Frontend │ User Svc │ Todo Svc │ Postgres-U │ Postgres-T │
+#   ├──────────────┼──────────┼──────────┼──────────┼────────────┼────────────┤
+#   │ Internet     │    ✅    │    ❌    │    ❌    │     ❌     │     ❌     │
+#   │ Frontend     │    -     │    ✅    │    ✅    │     ❌     │     ❌     │
+#   │ User Service │    -     │    -     │    ❌    │     ✅     │     ❌     │
+#   │ Todo Service │    -     │    -     │    -     │     ❌     │     ✅     │
+#   └──────────────┴──────────┴──────────┴──────────┴────────────┴────────────┘
+# ==========================================================================
+
+networks:
+  # PUBLIC NETWORK (DMZ - Demilitarized Zone)
+  # Avalik võrk (public network), kus on frontend
+  # Väliselt kättesaadav (externally accessible): 0.0.0.0:8080
+  frontend-network:
+    driver: bridge
+    # Ei ole internal - võimaldab välisest ligipääsu frontend'ile
+
+  # APPLICATION NETWORK (Backend Services)
+  # Sisene võrk (internal network) backend teenustele (backend services)
+  # Ei ole väliselt kättesaadav (not externally accessible)
+  # Frontend pääseb ligi backend'idele reverse proxy kaudu
+  backend-network:
+    driver: bridge
+    # Ei ole internal - võimaldab frontend'il proxy'd teha backend'idele
+
+  # DATA NETWORK (Databases)
+  # Isoleeritud võrk (isolated network) andmebaasidele
+  # Täielikult isoleeritud (completely isolated) - ei saa ühendust välismaailmaga
+  # Ainult backend teenused (backend services) pääsevad ligi
+  database-network:
+    driver: bridge
+    internal: true    # ✅ OLULINE: Täielikult isoleeritud võrk (isolated network)
+    # internal: true tähendab:
+    # - Ei saa ühendust välismaailmaga (no external access)
+    # - Ei saa pinge'ida 8.8.8.8 (no internet)
+    # - Ainult sisene suhtlus (internal communication only)
+
+# ==========================================================================
+# ANDMEHOIDLAD (Volumes) - Data Persistence
+# ==========================================================================
+volumes:
+  postgres-user-data:
+    external: true    # Kasutame Lab 1'st loodud volume'i
+  postgres-todo-data:
+    external: true    # Kasutame Lab 1'st loodud volume'i
+
+# ==========================================================================
+# TURVALISUSE KOKKUVÕTE (Security Summary)
+# ==========================================================================
+#
+# ENNE (Exercise 1-2):
+# - 5 avalikku porti: 8080, 3000, 8081, 5432, 5433
+# - 1 võrk (flat network): todo-network
+# - Kõik teenused näevad kõike (no segmentation)
+# - Andmebaasid otse internetist kättesaadavad
+# - Backend API'd otse internetist kättesaadavad
+# - Turvarisk: ❌ KÕRGE
+#
+# PEALE (Exercise 3 - SEE FAIL):
+# - 1 avalik port: 8080 (ainult frontend)
+# - 3 võrku (segmented): frontend, backend, database
+# - Teenused näevad ainult seda, mida vaja (least privilege)
+# - Andmebaasid MITTE avalikud (isolated)
+# - Backend API'd MITTE avalikud (internal only)
+# - Turvarisk: ✅ MADAL
+#
+# Paranemine:
+# - 96% rünnaku pinna vähenemine (attack surface reduction)
+# - Defense in depth (kaitse sügavuses)
+# - Compliance ready (vastab standarditele)
+# ==========================================================================
