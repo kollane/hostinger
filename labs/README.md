@@ -1,6 +1,6 @@
 # DevOps Praktilised Laborid
 
-**Hands-On DevOps Training Program** - 10 laborit, 45 tundi praktilisi oskusi
+**Hands-On DevOps Training Program** - 10 laborit, 47 tundi praktilisi oskusi
 
 ---
 
@@ -22,25 +22,25 @@ Tere tulemast DevOps praktiliste laborite juurde! See on **praktiline õppeprogr
 
 ## 📋 Laborite Ülevaade
 
-**Kokku: 10 laborit, 45 tundi praktilisi harjutusi**
+**Kokku: 10 laborit, 47 tundi praktilisi harjutusi**
 
 | # | Labor | Kestus | Eeldused | Staatus |
 |---|-------|--------|----------|---------|
 | **1** | [Docker Põhitõed](01-docker-lab/) | 4h |  |  |
-| **2** | [Docker Compose](02-docker-compose-lab/) | 3h | |  |
-| **3** | [Kubernetes Alused](03-kubernetes-basics-lab/) | 5h |  |  |
-| **4** | [Kubernetes Täiustatud](04-kubernetes-advanced-lab/) | 5h |  |  |
+| **2** | [Docker Compose](02-docker-compose-lab/) | 5.25h | Lab 1 |  |
+| **3** | [Kubernetes Alused](03-kubernetes-basics-lab/) | 5h | Lab 1-2 |  |
+| **4** | [Kubernetes Täiustatud](04-kubernetes-advanced-lab/) | 5h | Lab 1-3 |  |
 | **5** | [CI/CD Pipeline](05-cicd-lab/) | 4h | Lab 1-4, Peatükk 15-17 |  |
-| **6** | [Monitoring & Logging](06-monitoring-logging-lab/) | 4h |  |  |
-| **7** | [Security & Secrets](07-security-secrets-lab/) | 5h | |  |
-| **8** | [GitOps with ArgoCD](08-gitops-argocd-lab/) | 5h |  |  |
-| **9** | [Backup & Disaster Recovery](09-backup-disaster-recovery-lab/) | 5h |  |  |
+| **6** | [Monitoring & Logging](06-monitoring-logging-lab/) | 4h | Lab 1-5 |  |
+| **7** | [Security & Secrets](07-security-secrets-lab/) | 5h | Lab 1-6 |  |
+| **8** | [GitOps with ArgoCD](08-gitops-argocd-lab/) | 5h | Lab 1-7 |  |
+| **9** | [Backup & Disaster Recovery](09-backup-disaster-recovery-lab/) | 5h | Lab 1-8 |  |
 | **10** | [Terraform Infrastructure as Code](10-terraform-iac-lab/) | 5h | Lab 1-9 |  |
 
 ### Laborite Grupid
 
-**📦 Põhikursus (Lab 1-6, 25h):**
-- Docker konteinerite haldamine
+**📦 Põhikursus (Lab 1-6, 27h):**
+- Docker konteinerite haldamine + võrgu turvalisus
 - Kubernetes orkestratsioon
 - CI/CD automatiseerimine
 - Monitoring ja logging
@@ -173,18 +173,20 @@ Peale kõigi laborite läbimist oskad:
 
 ---
 
-### Lab 2: Docker Compose (3h)
+### Lab 2: Docker Compose (5.25h)
 
-**Eesmärk:** Hallata mitme-konteineri rakendusi Docker Compose'iga
+**Eesmärk:** Hallata mitme-konteineri rakendusi Docker Compose'iga ning implementeerida turvaline võrgu segmenteerimine
 
 **Teemad:**
 - Basic docker-compose.yml struktuur
 - Full-stack setup (kõik teenused koos)
+- Võrgu segmenteerimine (network segmentation) - 3-tier arhitektuur (DMZ → Backend → Database)
+- Portide turvalisus (localhost-only binding, rünnaku pinna vähendamine 96%)
 - Environment management (dev vs prod)
 - Database migrations
 - Production patterns
 
-**Tulemus:** Täielik docker-compose.yml, mis käivitab kogu süsteemi
+**Tulemus:** Turvaline docker-compose.yml, mis käivitab kogu süsteemi segmenteeritud võrkudega
 
 ---
 
