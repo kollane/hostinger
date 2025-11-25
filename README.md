@@ -73,10 +73,10 @@ See on **kahetasandiline õppeprogramm**, mis ühendab:
 
 ## 📖 Koolituskava Sisukord
 
-**Progressi ülevaade:** 4 / 31 peatükki valmis (12.9%)
+**Progressi ülevaade:** 5 / 31 peatükki valmis (16.1%)
 
 ```
-[████░░░░░░░░░░░░░░░░░░░░░░░░░░] 12.9%
+[█████░░░░░░░░░░░░░░░░░░░░░░░░░] 16.1%
 ```
 
 ### FAAS 1: Põhitõed ja Sissejuhatus (Peatükid 1-4)
@@ -100,9 +100,10 @@ See on **kahetasandiline õppeprogramm**, mis ühendab:
 | 7 | [Docker Image'ite Haldamine ja Optimeerimine](07-Docker-Imagite-Haldamine-Optimeerimine.md) | ⏳ Planeeritud | Build, tag, push, registry, versioning, security scanning |
 | 8 | [Docker Compose](08-Docker-Compose.md) | ⏳ Planeeritud | docker-compose.yml, multi-container apps, environments, migrations |
 | 8A | **[Docker Compose Production vs Development](resource/08A-Docker-Compose-Production-Development-Seadistused.md)** | ✅ **Valmis** | Port binding strateegiad, production vs dev lähenemine, override pattern, security best practices |
+| 8B | **[Nginx Reverse Proxy Docker Keskkonnas](resource/08B-Nginx-Reverse-Proxy-Docker-Keskkonnas.md)** | ✅ **Valmis** | Reverse proxy kontseptsioon, Nginx Docker Compose's, CORS lahendamine, API gateway, turvalisus |
 | 9 | [PostgreSQL Konteinerites](09-PostgreSQL-Konteinerites.md) | ⏳ Planeeritud | Volumes, connection strings, backup/restore, Liquibase |
 
-**FAAS 2 Progress:** 4 / 7 peatükki valmis (57%)
+**FAAS 2 Progress:** 5 / 8 peatükki valmis (62.5%)
 
 ---
 

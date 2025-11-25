@@ -180,10 +180,19 @@ Salvesta: `Esc`, siis `:wq`, `Enter`
 
 **Miks see on vajalik?**
 
-Frontend JavaScript (`app.js`) teeb API päringuid relatiivse URL-iga `/api`:
-- Brauser saadab: `http://kirjakast.cloud:8080/api/auth/login`
-- Backend API'd töötavad: `http://user-service:3000` ja `http://todo-service:8081`
-- **Nginx peab proxy-ma API päringud õigetesse portidesse**
+Frontend JavaScript teeb API päringuid relatiivse URL-iga `/api`, aga backend teenused töötavad erinevatel portidel. **Nginx peab proxy-ma API päringud õigetesse portidesse.**
+
+**📚 Põhjalik teooria:**
+👉 **Loe põhjalikku selgitust:** [Peatükk 08B: Nginx Reverse Proxy Docker Keskkonnas](../../../resource/08B-Nginx-Reverse-Proxy-Docker-Keskkonnas.md)
+
+**See peatükk käsitleb:**
+- ✅ Reverse proxy kontseptsioon (forward vs reverse)
+- ✅ Kuidas lahendada CORS probleeme
+- ✅ Turvalisuse aspektid (backend'id peidetud)
+- ✅ proxy_pass direktiiv ja header'id
+- ✅ Troubleshooting ja best practices
+
+---
 
 **Arhitektuur:**
 
@@ -274,58 +283,27 @@ grep "nginx.conf" docker-compose.yml
 
 ---
 
-### Samm 3: Mõista Frontend Konfiguratsiooni (5 min)
+### Samm 3: Mõista Frontend Konfiguratsiooni (3 min)
 
-**Analüüsi lisatud teenust (service):**
+**Analüüsi olulisemad osad docker-compose.yml'ist:**
 
 #### `image: nginx:alpine`
-- Kasutab Nginx Alpine pilti (image) (väike, ~10MB)
-- Nginx on veebiserver staatiliste failide (static files) jaoks
+- Kerge Nginx pilt (~10MB)
 
-#### `volumes: - ../../apps/frontend:/usr/share/nginx/html:ro`
-- Mount'ib `labs/apps/frontend/` kausta konteinerisse
-- `:ro` = read-only (konteiner ei saa faile muuta)
-- Nginx serveerib neid faile portist 80
+#### `volumes:`
+```yaml
+- ../../apps/frontend:/usr/share/nginx/html:ro    # Frontend failid (HTML/CSS/JS)
+- ./nginx.conf:/etc/nginx/conf.d/default.conf:ro  # Nginx konfiguratsioon
+```
+- `:ro` = read-only (turvalisus)
 
 #### `ports: - "8080:80"`
-- Host port 8080 vastendub (maps to) konteineri port 80
-- Brauserist: `http://kirjakast:8080` → Nginx port 80
+- Ainult port 8080 on avalik
+- Backend portid (3000, 8081) pole avalikud → Turvalisem
 
-#### `depends_on: - user-service - todo-service`
-- Frontend käivitub peale mõlemat backend'i
-- Ei vaja `condition: service_healthy` (frontend ei kontrolli backend'i startup'il)
-
-#### `healthcheck`
-- Kontrollib, kas Nginx vastab HTTP päringutele
-- Tagab, et teenus (service) on valmis päringuid vastu võtma
-
-#### `volumes: - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro`
-- Mount'ib Nginx konfiguratsiooni konteinerisse
-- `/etc/nginx/conf.d/default.conf` on Nginx vaikimisi konfiguratsioon
-- **Võimaldab reverse proxy funktsionaalsust**
-
-**Nginx Reverse Proxy tööloogika:**
-
-1. **Frontend failid (HTML/CSS/JS):**
-   - `location /` → serveerib `/usr/share/nginx/html`
-   - Brauser laeb: `http://kirjakast.cloud:8080/index.html`
-
-2. **API päringud (JavaScript):**
-   - Frontend teeb: `fetch('/api/auth/login')`
-   - Brauser saadab: `http://kirjakast.cloud:8080/api/auth/login`
-   - Nginx proxy_pass: `http://user-service:3000/api/auth/login`
-   - User Service vastab → Nginx edastab → Brauser
-
-3. **Miks see on oluline:**
-   - ✅ Üks port (8080) kõigile päringutele
-   - ✅ Ei ole CORS probleeme (sama origin)
-   - ✅ Backend portid (3000, 8081) pole avalikult kättesaadavad
-   - ✅ Lihtne URL struktuur frontend'is (`/api`)
-
-**Ilma reverse proxy'ta:**
-- Frontend peaks teadma backend URL-e: `http://kirjakast.cloud:3000`, `http://kirjakast.cloud:8081`
-- CORS vead (cross-origin requests)
-- Keerulisem turvalisuse haldamine
+**Nginx teeb kaks asja:**
+1. Serveerib frontend faile (`location /`)
+2. Proxy'b API päringud backend'itele (`location /api/`)
 
 ---
 

@@ -367,6 +367,45 @@ Iga peatükk on eraldi Markdown fail järgmise nimetusstandardiga:
 
 ---
 
+#### Peatükk 8B: Nginx Reverse Proxy Docker Keskkonnas
+**Staatus:** ✅ **VALMIS** (2025-01-25)
+**Maht:** 18 lk (~9,000 sõna)
+**Kestus:** 3.5h teooria + 1.5h praktiline harjutus
+
+**Põhiteemad:**
+- **Reverse proxy kontseptsioon:**
+  - Forward proxy vs reverse proxy
+  - Nginx kui reverse proxy
+  - Kasutusjuhud mikroteenuste arhitektuuris
+- **Nginx konfiguratsioon Docker Compose's:**
+  - location block'id (frontend failid vs API routing)
+  - proxy_pass direktiiv ja trailing slash
+  - proxy_set_header direktiivid (Host, X-Real-IP, X-Forwarded-*)
+  - Volume mount'id nginx.conf jaoks
+- **CORS probleemide lahendamine:**
+  - Mis on CORS ja miks see tekib
+  - Kuidas reverse proxy lahendab CORS'i
+  - Relatiivne URL vs absoluutne URL frontend'is
+- **Arhitektuur ja turvalisus:**
+  - Üks avalik port (8080), backend'id peidetud
+  - Docker Compose teenuste definitsioonid
+  - Network segmentation (frontend-network, backend-network)
+  - Defense in depth
+- **Best practices:**
+  - Backend'id pole avalikud (pole porte)
+  - Read-only mount'id
+  - Rate limiting ja IP filtering
+  - Performance optimisatsioonid (caching, gzip, connection pooling)
+- **Troubleshooting:**
+  - 502 Bad Gateway
+  - 404 Not Found API päringutele
+  - CORS vead hoolimata proxy'st
+  - Timeout'id ja performance probleemid
+
+**Seos laboritega:** Lab 2 Exercise 2 (Frontend + Nginx reverse proxy)
+
+---
+
 #### Peatükk 9: PostgreSQL Konteinerites
 **Staatus:** ⏳ Planeeritud
 **Maht:** 5-7 lk (~2,500-3,500 sõna)
@@ -1014,14 +1053,15 @@ Sissejuhatavad teemad: DevOps, Linux, Git, Networking
 ### FAAS 2: Docker (Peatükid 5-9) ⭐ KÕRGE PRIORITEET
 **Kestus:** 2-3 nädalat
 **Prioriteet:** ✅ **KÕRGE** (toetab Lab 1-2)
-**Staatus:** 🏗️ **POOLELI** (4/7 peatükki valmis)
-**Järjekord:** 5 → 6 → 6A → 7 → 8 → 8A → 9
+**Staatus:** 🏗️ **POOLELI** (5/8 peatükki valmis, 62.5%)
+**Järjekord:** 5 → 6 → 6A → 7 → 8 → 8A → 8B → 9
 
 **Valmis:**
 - ✅ Peatükk 5: Docker Põhimõtted (16 lk, ~8000 sõna)
 - ✅ Peatükk 6: Dockerfile Detailid (18 lk, ~9000 sõna)
 - ✅ Peatükk 6A: Java/Spring Boot ja Node.js Spetsiifika (20 lk, ~10000 sõna)
 - ✅ Peatükk 8A: Production vs Development Seadistused (15 lk, ~7500 sõna)
+- ✅ Peatükk 8B: Nginx Reverse Proxy Docker Keskkonnas (18 lk, ~9000 sõna)
 
 **Järgmine:**
 - ⏳ Peatükk 7: Docker Image'ite Haldamine
