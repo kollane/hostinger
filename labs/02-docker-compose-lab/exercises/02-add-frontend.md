@@ -166,7 +166,7 @@ Lisa **frontend teenus (service)** järgmise struktuuri järgi (peale todo-servi
       - user-service
       - todo-service
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1"]
       interval: 30s
       timeout: 3s
       retries: 3
