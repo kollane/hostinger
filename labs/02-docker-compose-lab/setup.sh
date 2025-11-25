@@ -101,6 +101,40 @@ if [ $missing_images -gt 0 ]; then
         if ! docker images | grep -q "user-service.*1.0-optimized"; then
             echo "[1/2] Ehitan user-service:1.0-optimized..."
             cd ../apps/backend-nodejs
+
+            # Kontrolli ja kopeeri healthcheck.js Lab 1 lahendusest kui puudub
+            if [ ! -f "healthcheck.js" ]; then
+                echo "  → Kopeerin healthcheck.js Lab 1 lahendusest..."
+                if [ -f "../../01-docker-lab/solutions/backend-nodejs/healthcheck.js" ]; then
+                    cp ../../01-docker-lab/solutions/backend-nodejs/healthcheck.js .
+                    echo "  ✓ healthcheck.js kopeeritud"
+                else
+                    echo "  ⚠ Lab 1 lahendus puudub, loon healthcheck.js inline'ina..."
+                    cat > healthcheck.js <<'HEALTHCHECK_EOF'
+const http = require('http');
+
+const options = {
+  host: 'localhost',
+  port: 3000,
+  path: '/health',
+  timeout: 2000
+};
+
+const req = http.request(options, (res) => {
+  if (res.statusCode === 200) {
+    process.exit(0);
+  } else {
+    process.exit(1);
+  }
+});
+
+req.on('error', () => process.exit(1));
+req.end();
+HEALTHCHECK_EOF
+                    echo "  ✓ healthcheck.js loodud"
+                fi
+            fi
+
             docker build -f ../../01-docker-lab/solutions/backend-nodejs/Dockerfile.optimized -t user-service:1.0-optimized . > /dev/null 2>&1
             if [ $? -eq 0 ]; then
                 echo "✓ user-service:1.0-optimized ehitatud edukalt"
@@ -528,18 +562,20 @@ EOF
     echo "Volume'd jäävad alles koos andmetega!"
     echo ""
 
-    # Peata AINULT PostgreSQL konteinerid (mitte tervet stack'i)
-    (cd "$COMPOSE_DIR" && docker compose -f docker-compose.yml stop postgres-user postgres-todo > /dev/null 2>&1)
-    (cd "$COMPOSE_DIR" && docker compose -f docker-compose.yml rm -f postgres-user postgres-todo > /dev/null 2>&1)
+    # Peata ja eemalda AINULT PostgreSQL konteinerid (mitte tervet stack'i)
+    # -s flag peatab konteinerid, -f eemaldab isegi kui töötavad
+    cd "$COMPOSE_DIR"
+    docker compose -f docker-compose.yml rm -sf postgres-user postgres-todo > /dev/null 2>&1
+    exitcode=$?
+    cd ../..
 
-    if [ $? -eq 0 ]; then
+    if [ $exitcode -eq 0 ]; then
         echo "✓ PostgreSQL konteinerid peatatud ja eemaldatud"
         echo "✓ Volume'd on alles: postgres-user-data, postgres-todo-data"
     else
-        echo "⚠️  PostgreSQL konteinrite peatamine ebaõnnestus"
+        echo "⚠️  PostgreSQL konteinrite eemaldamine ebaõnnestus (exitcode: $exitcode)"
+        echo "   Võimalik, et konteinerid ei eksisteeri või on juba eemaldatud"
     fi
-
-    cd ../..
     echo ""
 fi
 
