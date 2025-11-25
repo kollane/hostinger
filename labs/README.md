@@ -543,8 +543,8 @@ Laborid toetuvad järgmistele peatükkidele:
 
 | Peatükk | Labor | Teema |
 |---------|-------|-------|
-| **4-5** | Lab 1 | Docker põhimõtted ja Dockerfile loomine |
-| **7** | Lab 2 | Docker Compose |
+| **5-6, 6A** | Lab 1 | Docker põhimõtted, Dockerfile loomine, Java/Node.js spetsiifika |
+| **8, 8A, 8B** | Lab 2 | Docker Compose, production vs development seadistused, Nginx reverse proxy |
 | **9-13** | Lab 3 | Kubernetes alused (setup, Pods, Services, ConfigMaps, Storage) |
 | **14** | Lab 4 | Kubernetes täiustatud (Ingress ja Load Balancing) |
 | **15-17** | Lab 5 | CI/CD (GitHub Actions, automatiseerimine) |

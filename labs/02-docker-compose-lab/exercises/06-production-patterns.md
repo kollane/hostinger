@@ -71,7 +71,10 @@ Lisa järgmine sisu:
 #   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 # ==========================================================================
 
-version: '3.8'
+# MÄRKUS: Docker Compose v2 (2025)
+# version: '3.8' on VALIKULINE (optional) Compose v2's!
+# Võid selle ära jätta - Compose v2 kasutab automaatselt uusimat versiooni.
+#version: '3.8'
 
 services:
   # ==========================================================================

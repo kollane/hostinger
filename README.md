@@ -73,10 +73,10 @@ See on **kahetasandiline õppeprogramm**, mis ühendab:
 
 ## 📖 Koolituskava Sisukord
 
-**Progressi ülevaade:** 3 / 31 peatükki valmis (9.7%)
+**Progressi ülevaade:** 5 / 31 peatükki valmis (16.1%)
 
 ```
-[███░░░░░░░░░░░░░░░░░░░░░░░░░░░] 9.7%
+[█████░░░░░░░░░░░░░░░░░░░░░░░░░] 16.1%
 ```
 
 ### FAAS 1: Põhitõed ja Sissejuhatus (Peatükid 1-4)
@@ -99,9 +99,11 @@ See on **kahetasandiline õppeprogramm**, mis ühendab:
 | 6A | **[Java/Spring Boot ja Node.js Spetsiifika](resource/06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md)** | ✅ **Valmis** | WAR Tomcat vs JAR konteiner, JVM tuning, Spring Boot embedded server, Node.js best practices |
 | 7 | [Docker Image'ite Haldamine ja Optimeerimine](07-Docker-Imagite-Haldamine-Optimeerimine.md) | ⏳ Planeeritud | Build, tag, push, registry, versioning, security scanning |
 | 8 | [Docker Compose](08-Docker-Compose.md) | ⏳ Planeeritud | docker-compose.yml, multi-container apps, environments, migrations |
+| 8A | **[Docker Compose Production vs Development](resource/08A-Docker-Compose-Production-Development-Seadistused.md)** | ✅ **Valmis** | Port binding strateegiad, production vs dev lähenemine, override pattern, security best practices |
+| 8B | **[Nginx Reverse Proxy Docker Keskkonnas](resource/08B-Nginx-Reverse-Proxy-Docker-Keskkonnas.md)** | ✅ **Valmis** | Reverse proxy kontseptsioon, Nginx Docker Compose's, CORS lahendamine, API gateway, turvalisus |
 | 9 | [PostgreSQL Konteinerites](09-PostgreSQL-Konteinerites.md) | ⏳ Planeeritud | Volumes, connection strings, backup/restore, Liquibase |
 
-**FAAS 2 Progress:** 3 / 5 peatükki valmis (60%)
+**FAAS 2 Progress:** 5 / 8 peatükki valmis (62.5%)
 
 ---
 

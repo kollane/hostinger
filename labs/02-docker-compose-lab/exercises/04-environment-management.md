@@ -250,7 +250,7 @@ services:
       - user-service
       - todo-service
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1"]
       interval: 30s
       timeout: 3s
       retries: 3
@@ -396,7 +396,10 @@ Lisa:
 #   docker compose up -d  # Rakendab nii docker-compose.yml kui override.yml
 # ==========================================================================
 
-version: '3.8'
+# MÄRKUS: Docker Compose v2 (2025)
+# version: '3.8' on VALIKULINE (optional) Compose v2's!
+# Võid selle ära jätta - Compose v2 kasutab automaatselt uusimat versiooni.
+#version: '3.8'
 
 services:
   user-service:

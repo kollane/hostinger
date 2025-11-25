@@ -423,7 +423,8 @@ develop:
 **docker-compose.override.yml näide (dev watch):**
 ```yaml
 # docker-compose.override.yml (local development ainult)
-version: '3.8'
+# MÄRKUS: version: '3.8' on valikuline Compose v2's
+#version: '3.8'
 
 services:
   user-service:

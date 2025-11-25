@@ -461,7 +461,7 @@ Leia `frontend:` teenus (service) docker-compose.yml's ja **asenda** `networks:`
       - user-service
       - todo-service
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1"]
       interval: 30s
       timeout: 3s
       retries: 3
@@ -482,7 +482,7 @@ Leia `user-service:` ja **asenda** `networks:` sektsioon:
       DB_NAME: user_service_db
       DB_USER: postgres
       DB_PASSWORD: postgres
-      JWT_SECRET: shared-secret-key-change-this-in-production-must-be-at-least-256-bits
+      JWT_SECRET: VXCkL39yz/6xw7JFpHdLpP8xgBFUSKbnNJWdAaeWDiM=
       JWT_EXPIRES_IN: 1h
       PORT: 3000
       NODE_ENV: production
@@ -518,7 +518,7 @@ Leia `todo-service:` ja **asenda** `networks:` sektsioon:
       DB_NAME: todo_service_db
       DB_USER: postgres
       DB_PASSWORD: postgres
-      JWT_SECRET: shared-secret-key-change-this-in-production-must-be-at-least-256-bits
+      JWT_SECRET: VXCkL39yz/6xw7JFpHdLpP8xgBFUSKbnNJWdAaeWDiM=
       SPRING_PROFILES_ACTIVE: prod
       JAVA_OPTS: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
     # MÄRKUS: ports: sektsioon eemaldatakse järgmises sammuses!
@@ -609,7 +609,42 @@ See on asendatud uue 3-võrgu konfiguratsiooniga, mille lisasid Samm 2.3's.
 
 ---
 
+## 🔀 Kaks Lähenemist: Production vs Development
+
+Enne kui jätkame sammudega 4 ja 5, on oluline mõista **kahte erinevat lähenemist** portide haldamiseks.
+
+### 📊 Võrdlus
+
+| Aspekt | **Samm 4: Production** | **Samm 5: Development** |
+|--------|------------------------|-------------------------|
+| **Portide konfiguratsioon** | ❌ Pole üldse `ports:` sektsiooni | ✅ `127.0.0.1:3000:3000` (localhost-only) |
+| **Väline ligipääs** | ❌ Täiesti blokeeritud | ❌ Blokeeritud |
+| **SSH sessioon** | ❌ Ei pääse ligi | ✅ Saab debug'ida |
+| **Turvarisk** | ✅ Null (puuduvad pordid) | ✅ Madal (localhost-only) |
+| **Debug'imine** | ❌ Raskem (logs, exec) | ✅ Lihtne (curl, psql) |
+| **Kasutusjuht** | Production, staging | Development, debug |
+
+---
+
+### 📚 Põhjalik Teooria
+
+**💡 Täielik selgitus, turvalisuse parimad tavad ja otsustuspuu:**
+
+👉 **Loe enne jätkamist:** [Peatükk 08A: Docker Compose Production vs Development Seadistused](../../../resource/08A-Docker-Compose-Production-Development-Seadistused.md)
+
+**See peatükk käsitleb:**
+- ✅ Kolm port binding strateegiat (0.0.0.0, 127.0.0.1, pole porte)
+- ✅ Millal kasutada production vs development lähenemist
+- ✅ Turvalisuse parimad tavad (defense in depth, compliance, GDPR)
+- ✅ docker-compose.override.yml pattern ja automaatne laadimine
+- ✅ Otsustuspuu: kuidas valida õiget lähenemist
+- ✅ Näited reaalsest maailmast ja praktiline harjutus
+
+---
+
 ### Samm 4: Eemalda Avalikud Pordid (10 min)
+
+**Eesmärk:** Loo production-ready konfiguratsioon (maksimaalne turvalisus).
 
 Nüüd eemaldame avalikud pordid backend ja database teenustelt (services).
 
@@ -720,7 +755,9 @@ docker compose ps
 
 ### Samm 5: Lisa Development Override (127.0.0.1 Binding) (5 min)
 
-Tootmises (production) me ei vaja backend/DB porte, aga arenduses (development) on kasulik neid debug'ida. Loome `docker-compose.override.yml` faili, mis seob pordid **ainult localhost'ile**.
+**Eesmärk:** Loo development-friendly konfiguratsioon (turvalisus + debug'imine).
+
+Samm 4's eemaldasime kõik pordid (production lähenemine). Nüüd lisame need tagasi, aga **turvaliselt** - ainult localhost'ile (`127.0.0.1`). See annab parima mõlemast maailmast: maksimaalse turvalisuse JA mugava debug'imise!
 
 #### 5.1. Loo docker-compose.override.yml
 
@@ -745,7 +782,10 @@ Vajuta `i` (insert mode) ja lisa:
 #   ❌ curl http://kirjakast.cloud:3000/health (väliselt) → CONNECTION REFUSED
 # ==========================================================================
 
-version: '3.8'
+# MÄRKUS: Docker Compose v2 (2025)
+# version: '3.8' on VALIKULINE (optional) Compose v2's!
+# Võid selle ära jätta - Compose v2 kasutab automaatselt uusimat versiooni.
+#version: '3.8'
 
 services:
   # ==========================================================================

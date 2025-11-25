@@ -35,7 +35,8 @@ Iga peatükk on eraldi Markdown fail järgmise nimetusstandardiga:
 ├── resource/
 │   ├── 05-Docker-Pohimotted.md                                    ✅ VALMIS
 │   ├── 06-Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md   ✅ VALMIS
-│   └── 06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md ✅ VALMIS
+│   ├── 06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md ✅ VALMIS
+│   └── 08A-Docker-Compose-Production-Development-Seadistused.md   ✅ VALMIS
 ├── 07-Docker-Imagite-Haldamine-Optimeerimine.md
 ├── 08-Docker-Compose.md
 ├── 09-PostgreSQL-Konteinerites.md
@@ -331,6 +332,77 @@ Iga peatükk on eraldi Markdown fail järgmise nimetusstandardiga:
 - Database migrations (Liquibase eelvaade)
 
 **Seos laboritega:** Lab 2 (Docker Compose full-stack setup)
+
+---
+
+#### Peatükk 8A: Docker Compose Production vs Development Seadistused
+**Staatus:** ✅ **VALMIS** (2025-01-25)
+**Maht:** 15 lk (~7,500 sõna)
+**Kestus:** 3h teooria + 1h praktiline harjutus
+
+**Põhiteemad:**
+- **Kolm port binding strateegiat:**
+  - Avalik binding (0.0.0.0) - ohtlik, millal kasutada
+  - Localhost-only binding (127.0.0.1) - turvaline debug
+  - Pole porte - maksimaalne turvalisus
+- **Production lähenemine:**
+  - Ei avalda backend/database porte üldse
+  - Teenused suhtlevad ainult Docker võrgus
+  - Defense in depth, compliance (PCI-DSS, GDPR)
+  - Debug'imine: logs, exec
+- **Development lähenemine:**
+  - docker-compose.override.yml pattern
+  - Localhost-only port binding (127.0.0.1)
+  - SSH debug võimalus
+  - Turvaline + mugav
+- **Turvalisuse parimad tavad:**
+  - Defense in depth (Firewall → Port Binding → Network Segmentation → Auth)
+  - Principle of least privilege
+  - Network segmentation (frontend/backend/database võrgud)
+  - Regulaarne auditeerimine
+- **Otsustuspuu:** Kuidas valida õiget lähenemist
+- **Praktiline harjutus:** Turvalise stack'i loomine
+
+**Seos laboritega:** Lab 2 Exercise 3 (Network Segmentation, Steps 4-5)
+
+---
+
+#### Peatükk 8B: Nginx Reverse Proxy Docker Keskkonnas
+**Staatus:** ✅ **VALMIS** (2025-01-25)
+**Maht:** 18 lk (~9,000 sõna)
+**Kestus:** 3.5h teooria + 1.5h praktiline harjutus
+
+**Põhiteemad:**
+- **Reverse proxy kontseptsioon:**
+  - Forward proxy vs reverse proxy
+  - Nginx kui reverse proxy
+  - Kasutusjuhud mikroteenuste arhitektuuris
+- **Nginx konfiguratsioon Docker Compose's:**
+  - location block'id (frontend failid vs API routing)
+  - proxy_pass direktiiv ja trailing slash
+  - proxy_set_header direktiivid (Host, X-Real-IP, X-Forwarded-*)
+  - Volume mount'id nginx.conf jaoks
+- **CORS probleemide lahendamine:**
+  - Mis on CORS ja miks see tekib
+  - Kuidas reverse proxy lahendab CORS'i
+  - Relatiivne URL vs absoluutne URL frontend'is
+- **Arhitektuur ja turvalisus:**
+  - Üks avalik port (8080), backend'id peidetud
+  - Docker Compose teenuste definitsioonid
+  - Network segmentation (frontend-network, backend-network)
+  - Defense in depth
+- **Best practices:**
+  - Backend'id pole avalikud (pole porte)
+  - Read-only mount'id
+  - Rate limiting ja IP filtering
+  - Performance optimisatsioonid (caching, gzip, connection pooling)
+- **Troubleshooting:**
+  - 502 Bad Gateway
+  - 404 Not Found API päringutele
+  - CORS vead hoolimata proxy'st
+  - Timeout'id ja performance probleemid
+
+**Seos laboritega:** Lab 2 Exercise 2 (Frontend + Nginx reverse proxy)
 
 ---
 
@@ -981,13 +1053,15 @@ Sissejuhatavad teemad: DevOps, Linux, Git, Networking
 ### FAAS 2: Docker (Peatükid 5-9) ⭐ KÕRGE PRIORITEET
 **Kestus:** 2-3 nädalat
 **Prioriteet:** ✅ **KÕRGE** (toetab Lab 1-2)
-**Staatus:** 🏗️ **POOLELI** (3/5 valmis)
-**Järjekord:** 5 → 6 → 6A → 7 → 8 → 9
+**Staatus:** 🏗️ **POOLELI** (5/8 peatükki valmis, 62.5%)
+**Järjekord:** 5 → 6 → 6A → 7 → 8 → 8A → 8B → 9
 
 **Valmis:**
 - ✅ Peatükk 5: Docker Põhimõtted (16 lk, ~8000 sõna)
 - ✅ Peatükk 6: Dockerfile Detailid (18 lk, ~9000 sõna)
 - ✅ Peatükk 6A: Java/Spring Boot ja Node.js Spetsiifika (20 lk, ~10000 sõna)
+- ✅ Peatükk 8A: Production vs Development Seadistused (15 lk, ~7500 sõna)
+- ✅ Peatükk 8B: Nginx Reverse Proxy Docker Keskkonnas (18 lk, ~9000 sõna)
 
 **Järgmine:**
 - ⏳ Peatükk 7: Docker Image'ite Haldamine
