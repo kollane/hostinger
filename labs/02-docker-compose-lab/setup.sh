@@ -312,6 +312,9 @@ else
 fi
 echo ""
 
+# Kasutame solutions kausta docker-compose.yml faili
+COMPOSE_DIR="solutions/01-compose-basics"
+
 # =============================================================================
 # Samm 5: Stack'i Ajutine Käivitamine (AINULT automaatse režiimi korral)
 # =============================================================================
@@ -324,7 +327,7 @@ if [ "$DB_INIT_MODE" == "auto" ]; then
     echo "See võtab ~10-15 sekundit"
     echo ""
 
-    cd compose-project
+    cd "$COMPOSE_DIR"
 
     # Käivita AINULT PostgreSQL konteinerid (postgres-user ja postgres-todo)
     # Kasuta ainult docker-compose.yml (ignoreeri automaatset override faili)
@@ -332,8 +335,8 @@ if [ "$DB_INIT_MODE" == "auto" ]; then
 
     if [ $? -ne 0 ]; then
         echo "❌ PostgreSQL konteinrite käivitamine ebaõnnestus!"
-        echo "Proovi käsitsi: cd compose-project && docker compose -f docker-compose.yml up -d postgres-user postgres-todo"
-        cd ..
+        echo "Proovi käsitsi: cd $COMPOSE_DIR && docker compose -f docker-compose.yml up -d postgres-user postgres-todo"
+        cd ../..
         exit 1
     fi
 
@@ -526,8 +529,8 @@ EOF
     echo ""
 
     # Peata AINULT PostgreSQL konteinerid (mitte tervet stack'i)
-    docker compose -f docker-compose.yml stop postgres-user postgres-todo > /dev/null 2>&1
-    docker compose -f docker-compose.yml rm -f postgres-user postgres-todo > /dev/null 2>&1
+    (cd "$COMPOSE_DIR" && docker compose -f docker-compose.yml stop postgres-user postgres-todo > /dev/null 2>&1)
+    (cd "$COMPOSE_DIR" && docker compose -f docker-compose.yml rm -f postgres-user postgres-todo > /dev/null 2>&1)
 
     if [ $? -eq 0 ]; then
         echo "✓ PostgreSQL konteinerid peatatud ja eemaldatud"
@@ -536,7 +539,7 @@ EOF
         echo "⚠️  PostgreSQL konteinrite peatamine ebaõnnestus"
     fi
 
-    cd ..
+    cd ../..
     echo ""
 fi
 
