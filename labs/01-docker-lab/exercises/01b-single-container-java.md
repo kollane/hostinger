@@ -104,6 +104,8 @@ Loo fail nimega `Dockerfile`:
 vim Dockerfile
 ```
 
+**📖 Dockerfile põhitõed:** Kui vajad abi Dockerfile instruktsioonide (FROM, WORKDIR, COPY, CMD, EXPOSE) mõistmisega, loe [Peatükk 06: Dockerfile - Rakenduste Konteineriseerimise Detailid](../../../resource/06-Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md).
+
 **Ülesanne:** Kirjuta Dockerfile, mis:
 1. Kasutab Java 21 JRE alpine baaspilti (base image)
 2. Seadistab töökataloogiks `/app`
@@ -553,6 +555,8 @@ Sa õppisid:
 4. **Ehita (build) JAR enne Docker pildi (image) ehitamist (build)** - Kiire taasehitamine (rebuild), kui kood muutub
 5. **Kasuta EXPOSE** - Dokumenteeri, millist porti rakendus (application) kasutab
 6. **JWT_SECRET peab olema turvaline** - Min 32 tähemärki; testiks sobib lihtsalt string, tootmises kasuta `openssl rand -base64 32`
+
+**📖 Java konteineriseerimise parimad tavad:** Põhjalikum käsitlus JAR vs WAR, Spring Boot spetsiifikast, JVM memory tuning'ust ja teised Java spetsiifilised teemad leiad [Peatükk 06A: Java Spring Boot ja Node.js Konteineriseerimise Spetsiifika](../../../resource/06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md).
 
 ---
 

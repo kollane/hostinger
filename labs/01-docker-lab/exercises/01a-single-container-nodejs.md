@@ -104,6 +104,8 @@ Loo fail nimega `Dockerfile`:
 vim Dockerfile
 ```
 
+**📖 Dockerfile põhitõed:** Kui vajad abi Dockerfile instruktsioonide (FROM, WORKDIR, COPY, RUN, CMD) mõistmisega, loe [Peatükk 06: Dockerfile - Rakenduste Konteineriseerimise Detailid](../../../resource/06-Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md).
+
 **Ülesanne:** Kirjuta Dockerfile, mis:
 1. Kasutab Node.js 22 slim baaspilti (base image)
 2. Seadistab töökataloogiks `/app`
@@ -463,6 +465,8 @@ docker ps | grep user-service
 3. **RUN npm install --production** - Ära installi arenduse sõltuvusi (dev dependencies)
 4. **COPY package.json enne koodi** - Parem kihtide vahemälu (layer cache) kasutamine
 5. **Kasuta EXPOSE** - Dokumenteeri, millist porti rakendus (application) kasutab
+
+**📖 Node.js konteineriseerimise parimad tavad:** Põhjalikum käsitlus `npm ci`, Alpine images, bcrypt native moodulid, ja teised Node.js spetsiifilised teemad leiad [Peatükk 06A: Java Spring Boot ja Node.js Konteineriseerimise Spetsiifika](../../../resource/06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md).
 
 ---
 
