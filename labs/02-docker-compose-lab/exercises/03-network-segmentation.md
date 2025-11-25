@@ -611,7 +611,7 @@ See on asendatud uue 3-võrgu konfiguratsiooniga, mille lisasid Samm 2.3's.
 
 ## 🔀 Kaks Lähenemist: Production vs Development
 
-Enne kui jätkame sammudega 4 ja 5, on oluline mõista **kahte erinevat lähenemist** portide haldamiseks:
+Enne kui jätkame sammudega 4 ja 5, on oluline mõista **kahte erinevat lähenemist** portide haldamiseks.
 
 ### 📊 Võrdlus
 
@@ -624,127 +624,21 @@ Enne kui jätkame sammudega 4 ja 5, on oluline mõista **kahte erinevat lähenem
 | **Debug'imine** | ❌ Raskem (logs, exec) | ✅ Lihtne (curl, psql) |
 | **Kasutusjuht** | Production, staging | Development, debug |
 
-### 🏭 Samm 4: Production Lähenemine (Maksimaalne Turvalisus)
-
-**Mida teeme:**
-- Eemaldame **täielikult** `ports:` sektsioonid backend ja database teenustelt
-- Teenused on kättesaadavad **ainult Docker võrgu (network) sees**
-
-**Millal kasutada:**
-- ✅ **Production** keskkonnas (tootmises)
-- ✅ **Staging** keskkonnas
-- ✅ Kui ei vaja otseühendust teenustele SSH kaudu
-- ✅ Kui maksimum turvalisus on prioriteet
-
-**Eelised:**
-- ✅ **Maksimaalne turvalisus** - pordid ei eksisteeri host'is üldse
-- ✅ **Compliance** - vastab PCI-DSS, GDPR nõuetele
-- ✅ **Lihtsam firewall** - ei pea porte blokeerima
-
-**Puudused:**
-- ❌ **Raskem debug'ida** - ei saa SSH kaudu otse teenustele ligi
-- ❌ **Vajalikud alternatiivsed meetodid:**
-  ```bash
-  # Debug'imine ilma portideta:
-  docker compose logs user-service
-  docker compose exec user-service curl localhost:3000/health
-  docker compose exec postgres-user psql -U postgres
-  ```
-
-**Näide (Samm 4 tulemus):**
-```yaml
-user-service:
-  # ... konfiguratsioon ...
-  # ❌ POLE ports: sektsiooni
-  networks:
-    - backend-network
-    - database-network
-```
-
 ---
 
-### 💻 Samm 5: Development Lähenemine (Turvalisus + Debug'imine)
+### 📚 Põhjalik Teooria
 
-**Mida teeme:**
-- Loome `docker-compose.override.yml` faili
-- Lisame pordid, aga **ainult localhost'ile** (`127.0.0.1`)
+**💡 Täielik selgitus, turvalisuse parimad tavad ja otsustuspuu:**
 
-**Millal kasutada:**
-- ✅ **Development** keskkonnas (arenduses)
-- ✅ **Debug'imisel** ja troubleshooting'ul
-- ✅ Kui vajad otseühendust SSH kaudu
-- ✅ Kui töötad VPS'is, aga tahad debuggida
+👉 **Loe enne jätkamist:** [Peatükk 08A: Docker Compose Production vs Development Seadistused](../../../resource/08A-Docker-Compose-Production-Development-Seadistused.md)
 
-**Eelised:**
-- ✅ **Lihtne debug'ida** SSH sessioonis
-  ```bash
-  # SSH sessioonis töötab:
-  curl http://localhost:3000/health
-  psql -h localhost -p 5432 -U postgres
-  ```
-- ✅ **Ikkagi turvaline** - väliselt ei ole ligipääs
-  ```bash
-  # Väliselt FAILIB:
-  curl http://kirjakast.cloud:3000/health  # Connection refused
-  ```
-- ✅ **Parim mõlemast maailmast** - turvalisus + mugavus
-
-**Puudused:**
-- ❌ **Veidi keerukam** - vajab override faili
-- ❌ **Võimalik vale kasutus** - kui unustada maha production'is
-
-**Näide (Samm 5 tulemus):**
-
-**docker-compose.yml** (base fail):
-```yaml
-user-service:
-  # ... konfiguratsioon ...
-  # ❌ POLE ports: sektsiooni
-  networks:
-    - backend-network
-```
-
-**docker-compose.override.yml** (automaatselt laetakse):
-```yaml
-services:
-  user-service:
-    ports:
-      - "127.0.0.1:3000:3000"  # ✅ Localhost-only
-```
-
----
-
-### 🎯 Kuidas Valida?
-
-**Soovitatav lähenemine:**
-
-1. **Alusta Samm 4'ga** (Production lähenemine)
-   - Õpi maksimaalselt turvalise konfiguratsiooni loomist
-   - Mõista, kuidas teenused suhtlevad Docker võrgus
-
-2. **Lisa Samm 5 vajadusel** (Development override)
-   - Kui vajad SSH kaudu debug'imist
-   - Kui töötad VPS'is ja tahad testimist lihtsustada
-
-3. **Production'is:**
-   - ❌ **ÄRA kasuta** `docker-compose.override.yml`
-   - ✅ **Kasuta ainult** Samm 4 tulemust (pole porte)
-
-4. **Development'is:**
-   - ✅ **Kasuta mõlemat** - Samm 4 (base) + Samm 5 (override)
-   - ✅ Override fail annab debug'imise võimaluse
-
----
-
-### 📝 Järgmised Sammud
-
-Nüüd, kui mõistad kaht erinevat lähenemist, teeme **mõlemad sammud**:
-
-1. **Samm 4** - Õpid production lähenemist (pole porte)
-2. **Samm 5** - Õpid development override'i (localhost-only)
-3. **Samm 6** - Testid mõlemat lähenemist
-
-**Tulemus:** Sul on töötav konfiguratsioon, mis on turvaline production'is JA mugav development'is! 🎉
+**See peatükk käsitleb:**
+- ✅ Kolm port binding strateegiat (0.0.0.0, 127.0.0.1, pole porte)
+- ✅ Millal kasutada production vs development lähenemist
+- ✅ Turvalisuse parimad tavad (defense in depth, compliance, GDPR)
+- ✅ docker-compose.override.yml pattern ja automaatne laadimine
+- ✅ Otsustuspuu: kuidas valida õiget lähenemist
+- ✅ Näited reaalsest maailmast ja praktiline harjutus
 
 ---
 

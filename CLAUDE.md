@@ -33,7 +33,8 @@ This is a comprehensive **Estonian-language DevOps training program** combining:
 ├── resource/                                 # ALL theory chapters go here
 │   ├── 05-Docker-Pohimotted.md              ✅ (16 pages)
 │   ├── 06-Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md ✅ (18 pages)
-│   └── 06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md ✅ (20 pages)
+│   ├── 06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md ✅ (20 pages)
+│   └── 08A-Docker-Compose-Production-Development-Seadistused.md ✅ (15 pages)
 │
 └── labs/                                     # All 10 labs + microservices
     ├── README.md, CLAUDE.md
@@ -50,14 +51,14 @@ This is a comprehensive **Estonian-language DevOps training program** combining:
 | Phase | Chapters | Topics | Status |
 |-------|----------|--------|--------|
 | **FAAS 1** | 1-4 | DevOps basics, Linux, Git, Networking | ⏳ Planned |
-| **FAAS 2** | 5-9 | Docker, Dockerfile, Compose, PostgreSQL | 🏗️ 60% (3/5) |
+| **FAAS 2** | 5-9 | Docker, Dockerfile, Compose, PostgreSQL | 🏗️ 57% (4/7) |
 | **FAAS 3** | 10-17 | Kubernetes basics | ⏳ Planned |
 | **FAAS 4** | 18-21 | K8s advanced, Helm, CI/CD | ⏳ Planned |
 | **FAAS 5** | 22-24 | Monitoring, Logging, Alerting | ⏳ Planned |
 | **FAAS 6** | 25-27 | Security, Vault, RBAC | ⏳ Planned |
 | **FAAS 7** | 28-30 | GitOps, Backup, Terraform | ⏳ Planned |
 
-**Current Status (2025-11-25):** 3/31 chapters complete (9.7%), FAAS 2 in progress
+**Current Status (2025-01-25):** 4/31 chapters complete (12.9%), FAAS 2 in progress
 
 ---
 
@@ -199,6 +200,76 @@ After completing a chapter:
 
 ---
 
+## Theory Extraction Pattern ⭐ IMPORTANT
+
+**When lab exercises need extensive theoretical explanations:**
+
+### Pattern to Follow
+1. **Extract theory to a dedicated chapter** in `resource/`
+2. **Keep brief summary in lab** (comparison table, key points)
+3. **Add reference link** from lab to theory chapter
+4. **Update master plan** to include new chapter
+
+### Example (Lab 2, Exercise 3)
+**Situation:** Exercise needed 136 lines explaining production vs development port configurations
+
+**Solution Applied:**
+1. ✅ Created: `resource/08A-Docker-Compose-Production-Development-Seadistused.md` (15 pages)
+2. ✅ Lab kept: Comparison table + reference link to chapter
+3. ✅ Updated: `DEVOPS-KOOLITUSKAVA-PLAAN-2025.md` with chapter 8A details
+4. ✅ Updated: `README.md` progress tracking
+
+**Result:** Theory reusable across multiple labs, exercise remains focused on practice
+
+### When to Apply This Pattern
+Apply when:
+- ✅ Lab explanation exceeds 50-100 lines
+- ✅ Content is conceptual/theoretical rather than step-by-step
+- ✅ Same concepts apply to multiple scenarios
+- ✅ Topic deserves standalone reference material
+- ✅ User requests: "Kas selle saaks panna koolituskavas hoopis kuhugile?"
+
+**DO NOT apply when:**
+- ❌ Content is purely procedural (do step 1, 2, 3...)
+- ❌ Specific to this exact lab exercise only
+- ❌ Already covered in existing chapters
+
+### Checklist for Theory Extraction
+When extracting theory from lab to training materials:
+- [ ] Create chapter file in `resource/` with descriptive name
+- [ ] Add chapter to `DEVOPS-KOOLITUSKAVA-PLAAN-2025.md` (under correct FAAS)
+- [ ] Replace long explanation in lab with:
+  - [ ] Brief comparison table or bullet points
+  - [ ] Link to theory chapter: `[Peatükk XXX: Title](../../../resource/XX-Title.md)`
+  - [ ] Short context: what theory chapter covers
+- [ ] Update `README.md` with new chapter (if FAAS 2 or major)
+- [ ] Update progress tracking in both files
+- [ ] Verify link works from lab exercise
+
+**Template for lab reference section:**
+```markdown
+### 📚 Põhjalik Teooria
+
+**💡 Täielik selgitus:**
+
+👉 **Loe enne jätkamist:** [Peatükk XXX: Title](../../../resource/XX-Title.md)
+
+**See peatükk käsitleb:**
+- ✅ Topic 1
+- ✅ Topic 2
+- ✅ Topic 3
+
+---
+
+### 📝 Lühikokkuvõte
+
+| Aspekt | Variant A | Variant B |
+|--------|-----------|-----------|
+| ... | ... | ... |
+```
+
+---
+
 ## Chapter-Lab Mapping
 
 Each lab depends on specific theory chapters:
@@ -206,7 +277,7 @@ Each lab depends on specific theory chapters:
 | Lab | Duration | Topics | Supporting Chapters |
 |-----|----------|--------|-------------------|
 | **Lab 1** | 4h | Docker basics, multi-stage builds | 5, 6, 6A, 7 |
-| **Lab 2** | 5.25h | Docker Compose, PostgreSQL | 8, 9 |
+| **Lab 2** | 5.25h | Docker Compose, PostgreSQL | 8, 8A, 9 |
 | **Lab 3** | 5h | Kubernetes basics | 10-16 |
 | **Lab 4** | 5h | Ingress, HPA, Helm | 17-19 |
 | **Lab 5** | 4h | CI/CD with GitHub Actions | 20, 21 |
@@ -280,7 +351,13 @@ Examples:
 
 ---
 
-## Current Priority (2025-11-25)
+## Current Priority (2025-01-25)
+
+**Completed chapters (FAAS 2):**
+1. ✅ Peatükk 5: Docker Põhimõtted (16 pages)
+2. ✅ Peatükk 6: Dockerfile Detailid (18 pages)
+3. ✅ Peatükk 6A: Java/Spring Boot ja Node.js Spetsiifika (20 pages)
+4. ✅ Peatükk 8A: Production vs Development Seadistused (15 pages)
 
 **Next chapters to create:**
 1. Peatükk 7: Docker Image'ite Haldamine ja Optimeerimine (6-8 pages)
@@ -296,5 +373,5 @@ Examples:
 
 **Repository Type:** DevOps Training Program (Theory + Labs)
 **Language:** Estonian (primary) + English (technical terms)
-**Status:** In Progress (FAAS 2: 60% complete)
-**Last Updated:** 2025-11-25
+**Status:** In Progress (FAAS 2: 57% complete - 4/7 chapters)
+**Last Updated:** 2025-01-25
