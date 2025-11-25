@@ -32,9 +32,10 @@ Iga peatükk on eraldi Markdown fail järgmise nimetusstandardiga:
 ├── 02-Linux-Pohitoed-DevOps-Kontekstis.md
 ├── 03-Git-DevOps-Toovoos.md
 ├── 04-Vorgutehnoloogia-Alused.md
-├── 05-Docker-Pohimotted.md                                    ✅ VALMIS
-├── 06-Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md   ✅ VALMIS
-├── 06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md ✅ VALMIS
+├── resource/
+│   ├── 05-Docker-Pohimotted.md                                    ✅ VALMIS
+│   ├── 06-Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md   ✅ VALMIS
+│   └── 06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md ✅ VALMIS
 ├── 07-Docker-Imagite-Haldamine-Optimeerimine.md
 ├── 08-Docker-Compose.md
 ├── 09-PostgreSQL-Konteinerites.md
@@ -1107,13 +1108,35 @@ Iga peatüki peale kontrolli:
 
 ## Märkused
 
+### Uute Materjalide Loomine
+
+**Kodukataloog:** Kõik koolituskava materjalid luuakse `resource/` kataloogi.
+
+**Automaatne paigutamine:**
+- Uued peatükid → `/home/janek/projects/hostinger/resource/XX-Pealkiri.md`
+- Lisafailid (diagrammid, näited) → `resource/` alamkataloogidesse vastavalt vajadusele
+
+**OLULINE:** Claude Code loob uued koolitusmaterjalid automaatselt `resource/` kataloogi, mitte juurkataloogi.
+
 ### Terminoloogia
 
-Järgi **TERMINOLOOGIA.md** faili:
+**KOHUSTUSLIK:** Järgi **TERMINOLOOGIA.md** faili uute materjalide loomisel!
+
+Terminoloogia juhised:
 - Eesti terminid: "ehita" (build), "pilt" (image), "konteiner" (container)
 - Käsud inglise keeles: `docker build`, `kubectl apply`
 - Failinimed muutmata: `Dockerfile`, `package.json`
 - Pattern: "Loo Kubernetes deployment (deployment) kasutades kubectl apply käsku"
+
+**Viide:** `/home/janek/projects/hostinger/TERMINOLOOGIA.md` - Docker & DevOps terminoloogia sõnastik
+
+**Uute terminite käsitlemine:**
+- Kui uue materjali loomisel ilmnevad **uued tehnilised terminid**, mis puuduvad TERMINOLOOGIA.md failis
+- Küsi kasutajalt üle:
+  - Kas termin tuleks lisada TERMINOLOOGIA.md faili?
+  - Mis kujul (eestikeelne vaste + ingliskeelne termin)?
+  - Näide kasutusest
+- Hoia terminoloogia sõnastik ajakohane ja järjepidev
 
 ### Diagrammid
 

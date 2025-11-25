@@ -189,7 +189,6 @@ helm uninstall user-service -n production
 ```
 labs/
 ├── README.md                    # Main overview (10 labs, 45h)
-├── TERMINOLOOGIA.md             # Estonian/English terminology guide
 ├── CLAUDE.md                    # This file
 │
 ├── apps/                        # Pre-built applications

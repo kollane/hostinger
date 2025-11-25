@@ -94,9 +94,9 @@ See on **kahetasandiline õppeprogramm**, mis ühendab:
 
 | # | Peatükk | Staatus | Teemad |
 |---|---------|---------|--------|
-| 5 | **[Docker Põhimõtted](05-Docker-Pohimotted.md)** | ✅ **Valmis** | VM vs konteinerid, Docker arhitektuur, image vs container, workflow |
-| 6 | **[Dockerfile ja Konteineriseerimise Detailid](06-Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md)** | ✅ **Valmis** | Dockerfile instruktsionid, multi-stage builds, base image valik, optimization |
-| 6A | **[Java/Spring Boot ja Node.js Spetsiifika](06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md)** | ✅ **Valmis** | WAR Tomcat vs JAR konteiner, JVM tuning, Spring Boot embedded server, Node.js best practices |
+| 5 | **[Docker Põhimõtted](resource/05-Docker-Pohimotted.md)** | ✅ **Valmis** | VM vs konteinerid, Docker arhitektuur, image vs container, workflow |
+| 6 | **[Dockerfile ja Konteineriseerimise Detailid](resource/06-Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md)** | ✅ **Valmis** | Dockerfile instruktsionid, multi-stage builds, base image valik, optimization |
+| 6A | **[Java/Spring Boot ja Node.js Spetsiifika](resource/06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md)** | ✅ **Valmis** | WAR Tomcat vs JAR konteiner, JVM tuning, Spring Boot embedded server, Node.js best practices |
 | 7 | [Docker Image'ite Haldamine ja Optimeerimine](07-Docker-Imagite-Haldamine-Optimeerimine.md) | ⏳ Planeeritud | Build, tag, push, registry, versioning, security scanning |
 | 8 | [Docker Compose](08-Docker-Compose.md) | ⏳ Planeeritud | docker-compose.yml, multi-container apps, environments, migrations |
 | 9 | [PostgreSQL Konteinerites](09-PostgreSQL-Konteinerites.md) | ⏳ Planeeritud | Volumes, connection strings, backup/restore, Liquibase |
@@ -328,13 +328,15 @@ git --version            # Versioonikontroll
 ├── DEVOPS-KOOLITUSKAVA-PLAAN-2025.md           ← Master plan (detail)
 ├── TERMINOLOOGIA.md                             ← Eesti-inglise terminid
 │
+├── resource/
+│   ├── 05-Docker-Pohimotted.md                      ✅ VALMIS
+│   ├── 06-Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md  ✅ VALMIS
+│   └── 06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md  ✅ VALMIS
+│
 ├── 01-DevOps-Sissejuhatus-VPS-Setup.md         ⏳
 ├── 02-Linux-Pohitoed-DevOps-Kontekstis.md      ⏳
 ├── 03-Git-DevOps-Toovoos.md                     ⏳
 ├── 04-Vorgutehnoloogia-Alused.md                ⏳
-├── 05-Docker-Pohimotted.md                      ✅ VALMIS
-├── 06-Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md  ✅ VALMIS
-├── 06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md  ✅ VALMIS
 ├── 07-Docker-Imagite-Haldamine-Optimeerimine.md  ⏳
 ├── 08-Docker-Compose.md                          ⏳
 ├── 09-PostgreSQL-Konteinerites.md                ⏳
@@ -344,7 +346,7 @@ git --version            # Versioonikontroll
 │
 └── labs/
     ├── README.md                                 ← Laborite detailne ülevaade
-    ├── TERMINOLOOGIA.md                          ← Laborite terminoloogia
+    ├── CLAUDE.md                                 ← Juhised Claude Code'ile
     ├── apps/                                     ← Valmis mikroteenused
     │   ├── backend-nodejs/                       (User Service)
     │   ├── backend-java-spring/                  (Todo Service)
