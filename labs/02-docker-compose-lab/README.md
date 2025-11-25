@@ -1,8 +1,8 @@
 # Labor 2: Docker Compose
 
-**Kestus:** 4 tundi
+**Kestus:** 5.25 tundi
 **Eeldused:** Labor 1 läbitud (4 optimeeritud konteinerit), Peatükk 13 (Docker Compose)
-**Eesmärk:** Õppida multi-container rakenduste orkestreerimist Docker Compose'iga
+**Eesmärk:** Õppida multi-container rakenduste orkestreerimist Docker Compose'iga ning turvalise võrgu segmenteerimise (network segmentation) põhitõdesid
 
 ---
 
@@ -113,6 +113,9 @@ Peale selle labori läbimist oskad:
 
 ✅ Konverteerida mitme-konteineri (multi-container) seadistust Docker Compose failiks
 ✅ Kirjutada docker-compose.yml faile järgides parimaid praktikaid
+✅ Implementeerida võrgu segmenteerimist (network segmentation) ja turvalisi portide konfiguratsioone
+✅ Vähendada rünnaku pinda (attack surface) 96% (5 avalikku porti → 1 avalik port)
+✅ Mõista 3-taseme arhitektuuri (DMZ → Backend → Database)
 ✅ Hallata keskkonna muutujaid (environment variables) .env failidega
 ✅ Kasutada docker-compose.override.yml pattern'i
 ✅ Implementeerida database migration'eid Liquibase'iga
@@ -128,15 +131,19 @@ Peale selle labori läbimist oskad:
 ├── README.md                  # See fail
 ├── setup.sh                   # Automaatne seadistus
 ├── reset.sh                   # Labori ressursside puhastamine
-├── exercises/                 # Harjutused (5 harjutust)
+├── exercises/                 # Harjutused (7 harjutust)
 │   ├── 01-compose-basics.md           # Lab 1 → docker-compose.yml (4 teenust)
 │   ├── 02-add-frontend.md             # Lisa Frontend (5. teenus)
-│   ├── 03-environment-management.md   # .env failid ja override pattern
-│   ├── 04-database-migrations.md      # Liquibase init container
-│   └── 05-production-patterns.md      # Scaling, limits, health checks
+│   ├── 03-network-segmentation.md     # Võrgu segmenteerimine ja portide turvalisus
+│   ├── 04-environment-management.md   # .env failid ja override pattern
+│   ├── 05-database-migrations.md      # Liquibase init container
+│   ├── 06-production-patterns.md      # Scaling, limits, health checks
+│   └── 07-advanced-patterns.md        # Advanced patterns
 └── solutions/                 # Lahendused
     ├── docker-compose.yml             # 4 teenust (Harjutus 1)
     ├── docker-compose-full.yml        # 5 teenust (Harjutus 2)
+    ├── docker-compose.secure.yml      # Turvaline arhitektuur (Harjutus 3)
+    ├── docker-compose.override.yml    # Dev debug ports (Harjutus 3)
     ├── docker-compose.prod.yml        # Production variant
     ├── .env.example                   # Environment template
     └── liquibase/                     # Migration failid
@@ -167,6 +174,54 @@ Peale selle labori läbimist oskad:
 - [x] **Peatükk 13:** Docker Compose põhimõtted
 - [x] YAML failivorming
 - [x] Keskkonna muutujad (environment variables)
+
+---
+
+## 🚀 Quick Start
+
+Lab 2'l on kaks alustamise viisi:
+
+### Variant A: Setup Skript (Soovitatav algajatele ja kiireks testimiseks)
+
+```bash
+cd 02-docker-compose-lab
+./setup.sh
+```
+
+**Setup skript teeb:**
+- ✅ Kontrollib Lab 1 eeldusi (images, volumes, network)
+- ✅ Loob puuduvad ressursid (võrk, volumes)
+- ✅ Võimaldab valida andmebaasi automaatset initsialiseermist
+  - Variant 1: Käsitsi (pedagoogiline - õpid SQL'i ja docker exec'i)
+  - Variant 2: Automaatne (mugavus - init skriptid loodavad skeemi + testimisandmed)
+- ✅ Käivitab teenused
+
+**Sobib, kui:**
+- Soovid kiiresti alustada ilma Lab 1 ressursside loomiseta
+- Soovid testimisandmetega andmebaasi (4 kasutajat, 8 todo'd)
+- Soovid keskenduda Docker Compose'i õppimisele, mitte DB seadistusele
+
+### Variant B: Käsitsi (Pedagoogiline - Õpid kõik sammud)
+
+Järgi harjutuste juhiseid järjest:
+1. **Harjutus 1**: Compose Basics - Lab 1 → docker-compose.yml konversioon
+2. **Harjutus 2**: Add Frontend - 5. teenuse lisamine
+3. **Harjutus 3**: Network Segmentation - Turvaline arhitektuur
+
+```bash
+cd 02-docker-compose-lab/exercises
+cat 01-compose-basics.md
+```
+
+**Sobib, kui:**
+- Läbisid Lab 1 ja soovid progressive learning'ut
+- Soovid õppida Docker Compose'i samm-sammult
+- Soovid mõista MIKS iga konfiguratsioon on vajalik
+
+**⚠️ PEDAGOOGILINE MÄRKUS:**
+- **Harjutused õpetavad käsitsi** (docker exec, SQL, võrgud, volumes) - see on õppimise osa!
+- **setup.sh on mugavuse huvides** - kasuta, kui vajad kiiret starti või testimisandmeid
+- **Soovitame esimest korda teha käsitsi**, et õppida Docker põhitõdesid
 
 ---
 
@@ -209,16 +264,26 @@ Lisa Frontend (5. teenus):
 - Konfigureeri portide vastendamine (port mapping) (8080:80)
 - Testi brauseris
 
-### Harjutus 3: Environment Management (45 min)
-**Fail:** [exercises/03-environment-management.md](exercises/03-environment-management.md)
+### Harjutus 3: Võrgu Segmenteerimine ja Portide Turvalisus (60 min)
+**Fail:** [exercises/03-network-segmentation.md](exercises/03-network-segmentation.md)
+
+Implementeeri turvaline võrgu arhitektuur:
+- Loo 3-taseme võrgu arhitektuur (DMZ → Backend → Database)
+- Eemalda avalikud pordid backend ja database teenustelt
+- Kasuta localhost-only binding (127.0.0.1) development debug'imiseks
+- Vähenda rünnaku pinda (attack surface) 96%
+- Mõista võrgu segmenteerimise (network segmentation) põhimõtteid
+
+### Harjutus 4: Environment Management (45 min)
+**Fail:** [exercises/04-environment-management.md](exercises/04-environment-management.md)
 
 Halda keskkonna muutujaid (environment variables):
 - Loo .env fail salajastele (JWT_SECRET, DB_PASSWORD)
 - Kasuta docker-compose.override.yml pattern'i
 - Loo eraldi dev ja prod konfiguratsioonid
 
-### Harjutus 4: Database Migrations Liquibase'iga (60 min)
-**Fail:** [exercises/04-database-migrations.md](exercises/04-database-migrations.md)
+### Harjutus 5: Database Migrations Liquibase'iga (60 min)
+**Fail:** [exercises/05-database-migrations.md](exercises/05-database-migrations.md)
 
 Automatiseeri database schema:
 - Loo Liquibase changelog failid
@@ -226,8 +291,8 @@ Automatiseeri database schema:
 - Käivita migration'id enne backend'i
 - Rollback testimine
 
-### Harjutus 5: Production Patterns (45 min)
-**Fail:** [exercises/05-production-patterns.md](exercises/05-production-patterns.md)
+### Harjutus 6: Production Patterns (45 min)
+**Fail:** [exercises/06-production-patterns.md](exercises/06-production-patterns.md)
 
 Production-ready konfiguratsioon:
 - Scaling (replicas)
@@ -235,6 +300,12 @@ Production-ready konfiguratsioon:
 - Restart policies
 - Seisukorra kontrollid (health checks) ja dependency management
 - Logging konfiguratsioon
+
+### Harjutus 7: Advanced Patterns (vajadusel)
+**Fail:** [exercises/07-advanced-patterns.md](exercises/07-advanced-patterns.md)
+
+Täiustatud mustrid (advanced patterns):
+- Vaata faili detailide jaoks
 
 ---
 
@@ -327,9 +398,11 @@ Peale labori läbimist pead omama:
 
 - [ ] Harjutus 1: Docker Compose Alused (4 teenust)
 - [ ] Harjutus 2: Lisa Frontend (5 teenust)
-- [ ] Harjutus 3: Environment Management (.env failid)
-- [ ] Harjutus 4: Database Migrations (Liquibase)
-- [ ] Harjutus 5: Production Patterns (scaling, limits)
+- [ ] Harjutus 3: Võrgu Segmenteerimine ja Portide Turvalisus
+- [ ] Harjutus 4: Environment Management (.env failid)
+- [ ] Harjutus 5: Database Migrations (Liquibase)
+- [ ] Harjutus 6: Production Patterns (scaling, limits)
+- [ ] Harjutus 7: Advanced Patterns (vajadusel)
 
 ---
 

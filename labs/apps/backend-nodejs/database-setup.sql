@@ -1,8 +1,6 @@
--- Create database
-CREATE DATABASE user_service_db;
-
--- Connect to the database
-\c user_service_db;
+-- User Service Database Setup
+-- NOTE: Database is already created by POSTGRES_DB environment variable
+-- This script runs inside that database automatically
 
 -- Create users table
 CREATE TABLE IF NOT EXISTS users (
@@ -32,9 +30,3 @@ INSERT INTO users (name, email, password, role) VALUES
 ('John Doe', 'john@example.com', '$2b$10$YYlz1QfZ3R3X8X0X8X0X8examplehashedpassword2', 'user'),
 ('Jane Smith', 'jane@example.com', '$2b$10$YYlz1QfZ3R3X8X0X8X0X8examplehashedpassword3', 'user'),
 ('Bob Johnson', 'bob@example.com', '$2b$10$YYlz1QfZ3R3X8X0X8X0X8examplehashedpassword4', 'user');
-
--- Verify tables
-\dt
-
--- Show users
-SELECT id, name, email, role, created_at FROM users;

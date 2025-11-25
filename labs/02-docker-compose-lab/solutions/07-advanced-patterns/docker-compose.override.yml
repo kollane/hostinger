@@ -1,0 +1,114 @@
+# ==========================================================================
+# Docker Compose Override - Development Environment
+# ==========================================================================
+# See fail laetakse AUTOMAATSELT, kui käivitad: docker compose up
+#
+# Eesmärk: Võimalda debug'imist SSH sessioonis, aga EI avalda porte
+# välismaailmale (internet).
+#
+# Kasutamine:
+#   docker compose -f docker-compose.secure.yml up -d
+#   # Override fail laetakse automaatselt
+#
+# Turvaline Port Binding (127.0.0.1):
+#   ✅ curl http://localhost:3000/health (SSH sees)       → TÖÖTAB
+#   ❌ curl http://kirjakast.cloud:3000/health (väliselt) → CONNECTION REFUSED
+#   ✅ psql -h localhost -p 5432 -U postgres (SSH sees)   → TÖÖTAB
+#   ❌ psql -h kirjakast.cloud -p 5432 (väliselt)         → CONNECTION REFUSED
+#
+# Miks 127.0.0.1 (localhost-only)?
+# - Development: Saad debug'ida SSH sessioonis
+# - Turvaline: Välismaailm ei pääse ligi
+# - Production: Ära kasuta seda faili (pole porte üldse)
+# ==========================================================================
+
+version: '3.8'
+
+services:
+  # ==========================================================================
+  # Backend Services - Localhost-only Port Binding
+  # ==========================================================================
+  # Bind portid ainult 127.0.0.1'le (localhost), MITTE 0.0.0.0'le (avalik)
+  # ==========================================================================
+
+  user-service:
+    ports:
+      - "127.0.0.1:3000:3000"    # ✅ Localhost-only (NOT 0.0.0.0)
+    # Kasutamine:
+    #   Debug: curl http://localhost:3000/health (SSH kaudu)
+    #   Secure: curl http://kirjakast.cloud:3000 → CONNECTION REFUSED
+    # Miks see on turvaline?
+    #   - 127.0.0.1 on ainult local loopback interface
+    #   - Ei ole kättesaadav välisest võrgust (external network)
+    #   - SSH sessioonis saad debug'ida, aga välismaailm ei saa
+
+  todo-service:
+    ports:
+      - "127.0.0.1:8081:8081"    # ✅ Localhost-only
+    # Kasutamine:
+    #   Debug: curl http://localhost:8081/health (SSH kaudu)
+    #   Secure: curl http://kirjakast.cloud:8081 → CONNECTION REFUSED
+
+  # ==========================================================================
+  # Databases - Localhost-only Port Binding
+  # ==========================================================================
+  # Võimalda PostgreSQL ligipääs SSH sessioonis debug'imiseks
+  # ==========================================================================
+
+  postgres-user:
+    ports:
+      - "127.0.0.1:5432:5432"    # ✅ Localhost-only
+    # Kasutamine:
+    #   Debug: psql -h localhost -p 5432 -U postgres -d user_service_db (SSH kaudu)
+    #   Debug: pg_dump -h localhost -p 5432 -U postgres user_service_db
+    #   Secure: psql -h kirjakast.cloud -p 5432 → CONNECTION REFUSED
+    # Miks see on oluline?
+    #   - Saad teha andmebaasi backup'e SSH kaudu
+    #   - Saad käivitada SQL päringuid (queries) debug'imiseks
+    #   - Välismaailm ei pääse ligi (ainult localhost)
+
+  postgres-todo:
+    ports:
+      - "127.0.0.1:5433:5432"    # ✅ Localhost-only
+    # MÄRKUS: Host port 5433, konteiner port 5432
+    # Miks 5433? Väldi konflikte postgres-user'iga (mis kasutab 5432)
+    # Kasutamine:
+    #   Debug: psql -h localhost -p 5433 -U postgres -d todo_service_db (SSH kaudu)
+
+# ==========================================================================
+# MÄRKUSED (Notes)
+# ==========================================================================
+#
+# 1. Override Fail Laadimine:
+#    - Docker Compose laadib automaatselt docker-compose.override.yml
+#    - Käivita: docker compose -f docker-compose.secure.yml up -d
+#    - Override fail liitub (merges) automaatselt
+#
+# 2. Production Deployment:
+#    - Production'is ÄRA kasuta seda faili
+#    - Käivita: docker compose -f docker-compose.secure.yml -f docker-compose.prod.yml up -d
+#    - Või kustuta docker-compose.override.yml production serverist
+#
+# 3. Localhost vs 0.0.0.0:
+#    - 127.0.0.1:3000 - Ainult localhost (local loopback)
+#    - 0.0.0.0:3000   - Kõik network interface'd (AVALIK!)
+#    - localhost:3000 - Sama mis 127.0.0.1:3000
+#
+# 4. Testimine:
+#    # SSH sessioonis (peaks töötama):
+#    curl http://localhost:3000/health
+#    psql -h localhost -p 5432 -U postgres
+#
+#    # Väliselt (peaks failima):
+#    curl http://kirjakast.cloud:3000
+#    psql -h kirjakast.cloud -p 5432
+#
+# 5. Security Best Practice:
+#    - Dev: Kasuta 127.0.0.1 binding (see fail)
+#    - Prod: Ära avalda porte üldse (docker-compose.prod.yml)
+#    - Testing: Kasuta docker compose exec debug'imiseks
+#
+# 6. Alternative Debug Method (ilma portideta):
+#    docker compose exec user-service curl http://localhost:3000/health
+#    docker compose exec postgres-user psql -U postgres -d user_service_db
+# ==========================================================================
