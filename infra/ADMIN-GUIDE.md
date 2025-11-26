@@ -918,7 +918,7 @@ ssh labuser@localhost -p 2204
 
 **7. Uuenda dokumentatsiooni:**
 
-Lisa STUDENT-GUIDE.md faili student4 andmed.
+Lisa `labs/README.md` faili "Sinu Keskkond" sektsiooni student4 andmed (SSH port, API pordid).
 
 ---
 

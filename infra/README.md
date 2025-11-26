@@ -17,9 +17,9 @@ See kataloog sisaldab kogu dokumentatsiooni VPS-põhise LXD DevOps laborikeskkon
 |------|-----------|-----------|
 | **ARHITEKTUUR.md** | Süsteemi arhitektuur, diagrammid, komponendid | Admin, DevOps |
 | **ADMIN-GUIDE.md** | Administraatori juhend (konteinerite haldamine) | Admin |
-| **STUDENT-GUIDE.md** | Õpilase juhend (SSH, labid, käsud) | Õpilased |
 | **TECHNICAL-SPECS.md** | Tehnilised detailid, konfiguratsioonid | Admin, DevOps |
 | **README.md** | See fail (ülevaade) | Kõik |
+| **[../labs/README.md](../labs/README.md)** | Õpilase juhend (SSH, labid, käsud) | Õpilased |
 
 ---
 
@@ -69,12 +69,16 @@ Password: student3
 # Kontrolli ressursse
 check-resources
 
+# Loe juhend
+cd ~/labs/
+cat README.md
+
 # Alusta Lab 1
-cd ~/labs/01-docker-lab/
+cd 01-docker-lab/
 cat README.md
 ```
 
-**Täpsemad juhised:** Vaata [STUDENT-GUIDE.md](STUDENT-GUIDE.md)
+**Täpsemad juhised:** Vaata [labs/README.md](../labs/README.md)
 
 ---
 
@@ -417,7 +421,7 @@ See laborikeskkond pakub:
 
 **Alusta siit:**
 - Admin: [ADMIN-GUIDE.md](ADMIN-GUIDE.md)
-- Õpilane: [STUDENT-GUIDE.md](STUDENT-GUIDE.md)
+- Õpilane: [labs/README.md](../labs/README.md)
 - Tehniline: [TECHNICAL-SPECS.md](TECHNICAL-SPECS.md)
 - Arhitektuur: [ARHITEKTUUR.md](ARHITEKTUUR.md)
 

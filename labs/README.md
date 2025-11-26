@@ -4,19 +4,128 @@
 
 ---
 
-## 🚀 Kiirstart
+## 👋 Õpilastele
 
-Tere tulemast DevOps praktiliste laborite juurde! See on **praktiline õppeprogramm**, mis õpetab tõelisi DevOps administraatori oskusi hands-on harjutuste kaudu.
+### Tere tulemast!
 
-**Kuidas alustada:**
+Oled saanud juurdepääsu DevOps laborikeskkonnale. See on **praktiline õppeprogramm**, mis õpetab tõelisi DevOps administraatori oskusi hands-on harjutuste kaudu.
 
-1. **Kontrolli eeldused** - Docker, kubectl, Minikube/K3s, Git
-2. **Loe see README läbi** - Saa ülevaade kõigist laboritest
-3. **Alusta Lab 1'st** - `cd 01-docker-lab && cat README.md`
+### Sinu Keskkond
+
+**Konteiner:**
+- OS: Ubuntu 24.04 LTS
+- RAM: 2.5GB, CPU: 1 core, Disk: 20GB
+- Docker Engine 29.0.4, Docker Compose v2.40.3
+
+**SSH ühendus:**
+```bash
+# Student 1
+ssh labuser@<vps-ip> -p 2201
+
+# Student 2
+ssh labuser@<vps-ip> -p 2202
+
+# Student 3
+ssh labuser@<vps-ip> -p 2203
+```
+
+### Kiirstart
+
+```bash
+# Mine labori kataloogi
+cd ~/labs/
+
+# Loe see README läbi
+cat README.md
+
+# Alusta esimesest labist
+cd 01-docker-lab/
+cat README.md
+```
+
+### Kasulikud Käsud
+
+```bash
+# Kontrolli ressursse (RAM, disk, Docker)
+check-resources
+
+# Vaata protsesse
+htop                  # Interaktiivne (väljumine: q)
+ps aux | grep docker  # Docker protsessid
+
+# Lab'i haldamine
+cd ~/labs/XX-lab-name/
+./setup.sh    # Seadista lab (kui vaja)
+./reset.sh    # Lähtesta lab (alusta otsast)
+
+# Docker puhastamine (kustutab KÕIK!)
+docker-cleanup
+```
+
+### Rakenduste Juurdepääs
+
+**Väline juurdepääs (brauserist):**
+
+| Student | Frontend |
+|---------|----------|
+| **Student 1** | `http://<vps-ip>:8080` |
+| **Student 2** | `http://<vps-ip>:8180` |
+| **Student 3** | `http://<vps-ip>:8280` |
+
+**API-d (ainult konteineris/SSH kaudu):**
+```bash
+# Konteineris kasuta localhost
+curl http://localhost:3000/health  # User API
+curl http://localhost:8081/health  # Todo API
+```
+
+**⚠️ API-d ei ole väljast kättesaadavad** - kasuta Frontend UI'd või logi SSH kaudu sisse
+
+### Probleemide Lahendamine
+
+**Docker ei tööta:** Logi välja ja uuesti sisse
+```bash
+exit
+ssh labuser@<vps-ip> -p <sinu-port>
+```
+
+**RAM/disk otsa:**
+```bash
+check-resources           # Kontrolli kasutust
+docker-cleanup           # Puhasta kõik Docker ressursid
+./reset.sh              # Lähtesta lab
+```
+
+**Lab ei tööta:** Lähtesta lab
+```bash
+cd ~/labs/XX-lab-name/
+./reset.sh
+```
+
+### Best Practices
+
+✅ Kontrolli ressursse regulaarselt: `check-resources`
+✅ Puhasta pärast iga labi: `./reset.sh`
+✅ Kasuta lahendusi, kui kinni jääd: `solutions/`
+✅ Loe dokumentatsiooni: `cat README.md`
+
+❌ Ära käivita kõiki teenuseid korraga (RAM!)
+❌ Ära kustuta labori faile: `rm -rf ~/labs/`
+❌ Ära muuda süsteemi seadistusi
+
+---
+
+## 🚀 Kuidas Alustada
 
 **Fookus:** DevOps/infrastruktuuri haldamine, mitte rakenduste arendamine
 **Rakendused:** Kolm valmis mikroteenust (user-service, todo-service, frontend)
 **Sinu roll:** DevOps admin - dockerizing, orchestration, deployment, monitoring, security
+
+**Samm-sammult:**
+
+1. **Kontrolli eeldused** - Docker, kubectl, Minikube/K3s, Git
+2. **Loe see README läbi** - Saa ülevaade kõigist laboritest
+3. **Alusta Lab 1'st** - `cd 01-docker-lab && cat README.md`
 
 ---
 
@@ -158,158 +267,53 @@ Peale kõigi laborite läbimist oskad:
 
 ---
 
-## 📚 Detailsed Labori Kirjeldused
+## 📚 Laborite Kirjeldused
+
+Iga labori täpsem info on labori omas `README.md` failis.
 
 ### Lab 1: Docker Põhitõed (4h)
-
-**Eesmärk:** Õppida Docker image'ite ja containerite haldamist
-
-**Teemad:**
-- Single container rakendused (Node.js, Java Spring)
-- Multi-container setup (rakendus + PostgreSQL)
-- Container networking
-- Data persistence (volumes)
-- Image optimization (multi-stage builds)
-
-**Tulemus:** 3 optimeeritud Docker image'i (user-service, todo-service, frontend)
-
----
+Õpi Docker image'ite ja containerite haldamist - konteineriseerid kolm mikroteenust, optimeerid image'id multi-stage build'idega ja õpid volumes/networking'ut.
+👉 [Täpsem info: 01-docker-lab/README.md](01-docker-lab/README.md)
 
 ### Lab 2: Docker Compose (5.25h)
+Hallata multi-container rakendusi Docker Compose'iga - full-stack setup, turvaline võrgu segmenteerimine (3-tier), dev vs prod seadistused.
+👉 [Täpsem info: 02-docker-compose-lab/README.md](02-docker-compose-lab/README.md)
 
-**Eesmärk:** Hallata mitme-konteineri rakendusi Docker Compose'iga ning implementeerida turvaline võrgu segmenteerimine
-
-**Teemad:**
-- Basic docker-compose.yml struktuur
-- Full-stack setup (kõik teenused koos)
-- Võrgu segmenteerimine (network segmentation) - 3-tier arhitektuur (DMZ → Backend → Database)
-- Portide turvalisus (localhost-only binding, rünnaku pinna vähendamine 96%)
-- Environment management (dev vs prod)
-- Database migrations
-- Production patterns
-
-**Tulemus:** Turvaline docker-compose.yml, mis käivitab kogu süsteemi segmenteeritud võrkudega
-
----
+### Lab 2.5: Network Analysis & Testing (3h) 🔷 Valikuline
+Professionaalne võrgu analüüs ja turvalisuse testimine - Wireshark, tcpdump, nmap, põhjalik network segmentation audit.
+👉 [Täpsem info: 02.5-network-analysis-lab/README.md](02.5-network-analysis-lab/README.md)
 
 ### Lab 3: Kubernetes Alused (5h)
-
-**Eesmärk:** Deploy'da rakendused Kubernetes cluster'isse
-
-**Teemad:**
-- Pods ja cluster setup
-- Deployments ja ReplicaSets
-- Services (ClusterIP, NodePort, LoadBalancer)
-- ConfigMaps ja Secrets
-- Persistent storage
-- Init containers ja migrations
-
-**Tulemus:** Töötav Kubernetes deployment kõigi kolme teenusega
-
----
+Deploy'da rakendused Kubernetes cluster'isse - Pods, Deployments, Services, ConfigMaps, Secrets, persistent storage.
+👉 [Täpsem info: 03-kubernetes-basics-lab/README.md](03-kubernetes-basics-lab/README.md)
 
 ### Lab 4: Kubernetes Täiustatud (5h)
-
-**Eesmärk:** Kubernetes'e täiustatud funktsioonide kasutamine
-
-**Teemad:**
-- Ingress controller ja routing
-- Horizontal Pod Autoscaling
-- Rolling updates (zero-downtime)
-- Resource limits ja quotas
-- Helm chart'ide loomine
-
-**Tulemus:** Production-ready Kubernetes deployment koos Helm chart'idega
-
----
+Kubernetes'e täiustatud funktsioonid - Ingress routing, HPA, rolling updates, resource limits, Helm charts.
+👉 [Täpsem info: 04-kubernetes-advanced-lab/README.md](04-kubernetes-advanced-lab/README.md)
 
 ### Lab 5: CI/CD Pipeline (4h)
-
-**Eesmärk:** Automatiseerida build ja deploy protsess
-
-**Teemad:**
-- GitHub Actions workflows
-- Docker image build ja push (automated)
-- Helm deployment automation
-- Quality gates (testing, linting)
-- Production pipeline patterns
-
-**Tulemus:** Täielik CI/CD pipeline GitHub Actions'is
-
----
+Automatiseeri build ja deploy - GitHub Actions workflows, automated Docker builds, Helm deployment, quality gates.
+👉 [Täpsem info: 05-cicd-lab/README.md](05-cicd-lab/README.md)
 
 ### Lab 6: Monitoring & Logging (4h)
+Seadista monitoring ja logging - Prometheus metrics, Grafana dashboards, Loki log aggregation, alerting rules.
+👉 [Täpsem info: 06-monitoring-logging-lab/README.md](06-monitoring-logging-lab/README.md)
 
-**Eesmärk:** Seadistada monitoring ja logging production süsteemile
-
-**Teemad:**
-- Prometheus setup ja configuration
-- Application metrics (custom metrics)
-- Grafana dashboards
-- Alerting rules
-- Log aggregation (Loki)
-
-**Tulemus:** Täielik monitoring stack (Prometheus + Grafana + Loki)
-
----
-
-### Lab 7: Security & Secrets Management (5h)
-
-**Eesmärk:** Implementeerida production-ready security
-
-**Teemad:**
-- HashiCorp Vault secrets management
-- Kubernetes RBAC (Roles, RoleBindings)
-- Network Policies (zero-trust networking)
-- Security scanning (Trivy)
-- Sealed Secrets (encrypted secrets in Git)
-
-**Tulemus:** Production-ready security stack koos Vault ja RBAC'ga
-
----
+### Lab 7: Security & Secrets (5h)
+Implementeeri production security - Vault secrets management, RBAC, Network Policies, Trivy scanning, Sealed Secrets.
+👉 [Täpsem info: 07-security-secrets-lab/README.md](07-security-secrets-lab/README.md)
 
 ### Lab 8: GitOps with ArgoCD (5h)
-
-**Eesmärk:** Implementeerida GitOps deployment workflow
-
-**Teemad:**
-- ArgoCD setup ja configuration
-- Git-based deployment workflow
-- Multi-environment management (Kustomize)
-- ApplicationSet (dynamic Applications)
-- Progressive delivery (Canary deployments, Argo Rollouts)
-
-**Tulemus:** Täielik GitOps workflow kus Git on single source of truth
-
----
+GitOps deployment workflow - ArgoCD setup, Git-based deployments, Kustomize multi-env, Canary deployments.
+👉 [Täpsem info: 08-gitops-argocd-lab/README.md](08-gitops-argocd-lab/README.md)
 
 ### Lab 9: Backup & Disaster Recovery (5h)
+Backup ja disaster recovery - Velero setup, scheduled backups, DR drills, cross-cluster migration.
+👉 [Täpsem info: 09-backup-disaster-recovery-lab/README.md](09-backup-disaster-recovery-lab/README.md)
 
-**Eesmärk:** Implementeerida backup ja disaster recovery strateegia
-
-**Teemad:**
-- Velero setup (Kubernetes backup tool)
-- Application backups (manifests + PersistentVolumes)
-- Scheduled backups ja retention policies
-- Disaster recovery drills
-- Cross-cluster migration
-
-**Tulemus:** Automated backup workflow koos tested disaster recovery plan'iga
-
----
-
-### Lab 10: Terraform Infrastructure as Code (5h)
-
-**Eesmärk:** Provision'ida infrastructure Terraform'iga (IaC)
-
-**Teemad:**
-- Terraform basics (HCL, providers, state)
-- Kubernetes resources via Terraform
-- Terraform modules (DRY principle)
-- State management (local vs remote)
-- GitOps for infrastructure (Terraform + ArgoCD)
-
-**Tulemus:** Infrastructure as Code setup kus kogu infrastruktuur on version controlled
+### Lab 10: Terraform IaC (5h)
+Infrastructure as Code - Terraform Kubernetes resources, modules, state management, IaC + GitOps integration.
+👉 [Täpsem info: 10-terraform-iac-lab/README.md](10-terraform-iac-lab/README.md)
 
 ---
 
@@ -597,6 +601,7 @@ Laborid toetuvad järgmistele peatükkidele:
 
 ---
 
-**Viimane uuendus:** 2025-11-23
-**Kokku materjali:** 10 laborit, 45 tundi hands-on praktikat
+**Viimane uuendus:** 2025-11-26
+**Versioon:** 2.0 (lisatud õpilaste juhised, lühendatud labori kirjeldused)
+**Kokku materjali:** 10 laborit + 1 valikuline, 47h + 3h valikulist
 **Staatus:** Kõik laborid valmis ja testimiseks ready!
