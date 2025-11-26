@@ -55,7 +55,8 @@ Each lab builds on previous ones:
 - `README.md` - Lab overview and instructions
 - `exercises/` - Step-by-step exercises (typically 5-6 per lab)
 - `solutions/` - Reference solutions
-- `reset.sh` - Cleanup script (removes Docker containers/images/networks/volumes or K8s resources)
+
+**Note:** The `reset.sh` scripts have been replaced by the global `labs-reset` command that cleans ALL Docker resources system-wide.
 
 ---
 
@@ -93,9 +94,8 @@ curl http://localhost:3000/api/users -H "Authorization: Bearer $TOKEN"
 ### Lab Management
 
 ```bash
-# Reset a lab (cleanup all resources)
-cd 01-docker-lab/
-./reset.sh
+# Reset all Docker resources (global cleanup)
+labs-reset
 
 # Start a lab
 cd 01-docker-lab/
@@ -200,9 +200,9 @@ labs/
 │   ├── frontend/               # Web UI
 │   └── learning-materials/     # Auth tutorials, etc.
 │
-├── 01-docker-lab/              # 6 exercises, solutions/, reset.sh
-├── 02-docker-compose-lab/      # 6 exercises, solutions/, reset.sh
-├── 03-kubernetes-basics-lab/   # 6 exercises, reset.sh
+├── 01-docker-lab/              # 6 exercises, solutions/
+├── 02-docker-compose-lab/      # 6 exercises, solutions/
+├── 03-kubernetes-basics-lab/   # 6 exercises
 ├── 04-kubernetes-advanced-lab/ # 5 exercises, solutions/
 ├── 05-cicd-lab/                # 5 exercises, solutions/workflows/
 ├── 06-monitoring-logging-lab/  # 5 exercises, solutions/
@@ -324,7 +324,7 @@ Result: ~600MB → ~250MB image size
 
 3. **Test before committing:**
    - Run exercises start-to-finish
-   - Verify reset.sh cleans everything
+   - Verify labs-reset cleans Docker resources properly
    - Test on fresh Minikube/K3s cluster
    - Document prerequisites clearly
 
@@ -332,7 +332,7 @@ Result: ~600MB → ~250MB image size
 
 1. **Identify lab context:** Which lab (1-10) is the user working on?
 2. **Check prerequisites:** Previous labs completed? Required tools installed?
-3. **Use reset.sh liberally:** If something's broken, suggest cleanup and restart
+3. **Use labs-reset liberally:** If something's broken with Docker, suggest cleanup and restart
 4. **Reference architecture:** Point to apps/ARHITEKTUUR.md for microservices questions
 5. **Follow progression:** Don't skip labs - each builds on previous
 
@@ -354,12 +354,12 @@ Result: ~600MB → ~250MB image size
 - Focus is 100% on DevOps tasks: containerization, deployment, monitoring, security
 - If app bugs are found, document them but don't fix during labs
 
-### Reset scripts are critical
+### Cleanup is critical
 
-- Each lab's `reset.sh` must clean ALL resources created in that lab
-- Test reset scripts thoroughly - students rely on them when stuck
-- Reset should be idempotent (safe to run multiple times)
-- Should prompt before destructive operations
+- The `labs-reset` command cleans ALL Docker resources system-wide (containers, networks, volumes)
+- Students can choose to preserve Lab 1 base images (user-service:1.0, todo-service:1.0) or delete everything
+- labs-reset is idempotent (safe to run multiple times)
+- Prompts before destructive operations
 
 ### Lab dependencies
 
@@ -431,11 +431,11 @@ JWT_SECRET=<must-match-user-service>
 ### Lab seems stuck
 
 ```bash
-# Use reset script
-cd XX-name-lab/
-./reset.sh
+# Use reset command (cleans ALL Docker resources)
+labs-reset
 
 # Re-read README
+cd XX-name-lab/
 cat README.md
 
 # Start from exercise 1

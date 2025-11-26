@@ -92,7 +92,7 @@ See lab **KASUTAB** Lab 2 Harjutus 3 loodud docker-compose stack'i:
 
 ```bash
 # 1. Mine Lab 2 projekti kausta
-cd /home/janek/projects/hostinger/labs/02-docker-compose-lab/compose-project
+cd ~/labs/02-docker-compose-lab/compose-project
 
 # 2. Kontrolli, et stack töötab
 docker compose ps
@@ -115,14 +115,14 @@ docker compose exec frontend nc -zv postgres-user 5432 2>&1
 
 **Stack ei tööta?**
 ```bash
-cd /home/janek/projects/hostinger/labs/02-docker-compose-lab/compose-project
+cd ~/labs/02-docker-compose-lab/compose-project
 docker compose up -d
 ```
 
 **Võrgud puuduvad?**
 Tagasi Lab 2 Harjutus 3:
 ```bash
-cd /home/janek/projects/hostinger/labs/02-docker-compose-lab
+cd ~/labs/02-docker-compose-lab
 cat exercises/03-network-segmentation.md
 ```
 
@@ -246,7 +246,7 @@ user-service → postgres-todo:5432 ❌ SHOULD FAIL (wrong DB!)
 
 See lab **EI LOO** uut Docker Compose stack'i. Sa kasutad Lab 2 olemasolevat keskkonda:
 
-**Asukoht:** `/home/janek/projects/hostinger/labs/02-docker-compose-lab/compose-project/`
+**Asukoht:** `~/labs/02-docker-compose-lab/compose-project/`
 
 **Failid:**
 - `docker-compose.yml` - 5 teenust, 3 võrku
@@ -303,7 +303,7 @@ sudo yum install -y jq nmap-ncat bind-utils tcpdump nmap net-tools
 
 ```bash
 # Käivita eelduste kontroll (eespool kirjeldatud)
-cd /home/janek/projects/hostinger/labs/02-docker-compose-lab/compose-project
+cd ~/labs/02-docker-compose-lab/compose-project
 docker compose ps
 docker network ls | grep -E "frontend|backend|database"
 ```
@@ -311,7 +311,7 @@ docker network ls | grep -E "frontend|backend|database"
 ### 2. Alusta Harjutus 1'ga
 
 ```bash
-cd /home/janek/projects/hostinger/labs/02.5-network-analysis-lab
+cd ~/labs/02.5-network-analysis-lab
 cat exercises/01-network-inspection.md
 ```
 

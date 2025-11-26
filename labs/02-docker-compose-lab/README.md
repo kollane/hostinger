@@ -130,7 +130,6 @@ Peale selle labori läbimist oskad:
 02-docker-compose-lab/
 ├── README.md                  # See fail
 ├── setup.sh                   # Automaatne seadistus
-├── reset.sh                   # Labori ressursside puhastamine
 ├── exercises/                 # Harjutused (7 harjutust)
 │   ├── 01-compose-basics.md           # Lab 1 → docker-compose.yml (4 teenust)
 │   ├── 02-add-frontend.md             # Lisa Frontend (5. teenus)

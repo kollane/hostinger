@@ -41,7 +41,7 @@ docker rm postgres-todo postgres-user
 
 ## 📝 Sammud
 
-### Samm 1: Demonstreeri Probleemi (10 min)
+### Samm 1: Demonstreeri Probleemi
 
 **Esmalt näitame, mis juhtub ILMA andmehoidlateta (volumes) - MÕLEMAS andmebaasis:**
 
@@ -134,7 +134,7 @@ docker exec postgres-todo psql -U postgres -d todo_service_db -c "SELECT * FROM 
 
 **See on SUUR PROBLEEM tootmises!** Lahendame selle nüüd andmehoidlatega (volumes).
 
-### Samm 2: Loo Nimega Andmehoidlad (Named Volumes) (5 min)
+### Samm 2: Loo Nimega Andmehoidlad (Named Volumes)
 
 ```bash
 # Puhasta eelmine test
@@ -167,7 +167,7 @@ docker volume inspect postgres-todo-data
 - ✅ Eraldi varundamise (backup) strateegia
 - ✅ Paindlik skaleeritavus
 
-### Samm 3: Käivita MÕLEMAD PostgreSQL Konteinerid Andmehoidlatega (Volumes) (10 min)
+### Samm 3: Käivita MÕLEMAD PostgreSQL Konteinerid Andmehoidlatega (Volumes)
 
 ```bash
 # PostgreSQL User Teenusele (Service) andmehoidlaga (volume)
@@ -206,7 +206,7 @@ docker ps | grep postgres
 - ✅ Iga konteiner kasutab oma andmehoidlat (volume)
 - ✅ Andmed salvestatakse nüüd andmehoidlatesse (volumes), MITTE konteineritesse!
 
-### Samm 4: Seadista MÕLEMAD Andmebaasid ja Lisa Testandmeid (15 min)
+### Samm 4: Seadista MÕLEMAD Andmebaasid ja Lisa Testandmeid
 
 ```bash
 # Oota, et PostgreSQL on valmis
@@ -274,7 +274,7 @@ SELECT id, user_id, title, priority, created_at FROM todos ORDER BY id;"
 echo -e "\n✅ Mõlemad andmebaasid on seadistatud ja sisaldavad andmeid!"
 ```
 
-### Samm 5: Testi Andmete Püsivust (Data Persistence) - KÕIGE OLULISEM TEST! (15 min)
+### Samm 5: Testi Andmete Püsivust (Data Persistence) - KÕIGE OLULISEM TEST!
 
 **See on see hetk, kus andmehoidla (volume) väärtus selgub - testime MÕLEMAT teenust (service)!**
 
@@ -363,7 +363,7 @@ echo -e "\n✅ USER TEENUSE (SERVICE) ANDMED ON ALLES! 🎉\n"
 - ✅ Andmehoidlad (volumes) elavad konteineritest sõltumatult!
 - ✅ See on TÄPSELT see, mis tootmises vaja - konteinerid on efemeersed (ephemeral), andmed on püsivad (persistent)!
 
-### Samm 6: Varunda (Backup) MÕLEMAD Andmehoidlad (Volumes) (10 min)
+### Samm 6: Varunda (Backup) MÕLEMAD Andmehoidlad (Volumes)
 
 **Õpi, kuidas MITME andmehoidla (volume) andmeid varundada (backup) paralleelselt:**
 
@@ -409,7 +409,7 @@ tar -tzf postgres-todo-backup.tar.gz | head -10
 - ✅ Saad taastada (restore) ainult ühe teenuse (service) (kui vaja)
 - ✅ Väiksemad varukoopia (backup) failid (kiirem)
 
-### Samm 7: Taasta (Restore) Andmehoidla (Volume) Varukoopiast (Backup) - Katastroofist Taastumine (Disaster Recovery) (Bonus - 15 min)
+### Samm 7: Taasta (Restore) Andmehoidla (Volume) Varukoopiast (Backup) - Katastroofist Taastumine (Disaster Recovery)
 
 **Simuleerime "katastroofist taastumist" (disaster recovery):**
 
@@ -470,7 +470,7 @@ echo -e "\n🎉 KATASTROOFIST TAASTUMINE (DISASTER RECOVERY) ÕNNESTUS! Andmed o
 - ✅ Taastamise (restore) protsess töötab (katastroof ei ole lõplik!)
 - ✅ Alati tee varukoopia (backup) ENNE riskantset operatsiooni
 
-### Samm 8: Vaata Andmehoidla (Volume) Detaile (5 min)
+### Samm 8: Vaata Andmehoidla (Volume) Detaile
 
 ```bash
 # MÕLEMA andmehoidla (volume) täielik info
@@ -494,48 +494,6 @@ sudo ls -la /var/lib/docker/volumes/postgres-todo-data/_data/
 
 ---
 
-## ✅ Kontrolli Tulemusi
-
-Peale selle harjutuse läbimist peaksid omama:
-
-- [x] **2 nimega andmehoidlat (named volumes)** loodud (`docker volume ls`)
-  - postgres-user-data
-  - postgres-todo-data
-- [x] MÕLEMAD PostgreSQL konteinerid kasutavad andmehoidlaid (volumes) (`-v <volume>:/var/lib/postgresql/data`)
-- [x] **MÕLEMAD andmebaasid jäävad alles pärast konteineri kustutamist!** (KÕIGE OLULISEM! ✨)
-- [x] **2 varukoopia (backup) faili** loodud (postgres-user-backup.tar.gz, postgres-todo-backup.tar.gz)
-- [x] Oskad taastada (restore) varukoopiast (backup) (katastroofist taastumine (disaster recovery))
-- [x] Oskad inspekteerida andmehoidlaid (volumes) (`docker volume inspect`)
-- [x] Mõistad, miks andmehoidlad (volumes) on KRIITILISED tootmises
-
----
-
-## 🎓 Õpitud Mõisted
-
-### Nimega Andmehoidlad (Named Volumes):
-- `docker volume create <nimi>` - Loo andmehoidla (volume)
-- `docker volume ls` - Näita kõiki andmehoidlaid (volumes)
-- `docker volume inspect <nimi>` - Vaata detaile
-- `docker volume rm <nimi>` - Kustuta andmehoidla (volume) (ettevaatust!)
-- `-v <volume>:<path>` - Paigalda (mount) andmehoidla (volume) konteinerisse
-
-### Andmete Püsivus (Data Persistence):
-- **Konteiner on efemeerne (ajutine)** - võib kustuda
-- **Andmehoidla (volume) on püsiv (persistent)** - jääb alles
-- Konteiner + Andmehoidla (Volume) = Töötav rakendus (application) koos püsivate andmetega
-
-### Andmehoidla (Volume) Paigaldamine (Mounting):
-- Nimega andmehoidla (named volume): `-v postgres-todo-data:/var/lib/postgresql/data`
-- Siduspaigaldus (bind mount): `-v /host/path:/container/path` (host kausta paigaldamine (mount))
-- Anonüümne andmehoidla (anonymous volume): `-v /container/path` (Docker loob automaatselt)
-
-### Varundamise (Backup) Strateegia:
-- Kasuta ajutist konteinerit varundamiseks (backup)
-- `--rm` lipp kustutab varundamise (backup) konteineri automaatselt
-- tar.gz on hea formaat PostgreSQL andmete varundamiseks (backup)
-
----
-
 ## 💡 Millal Andmehoidlaid (Volumes) Kasutada?
 
 ✅ **Kasuta andmehoidlaid (volumes) kui:**
@@ -551,30 +509,7 @@ Peale selle harjutuse läbimist peaksid omama:
 
 ---
 
-## 🎉 Õnnitleme! Mida Sa Õppisid?
-
-### ✅ Tehnilised Oskused
-
-**Docker Andmehoidlad (Volumes):**
-- ✅ Lõid nimega andmehoidlad (named volumes) (`docker volume create`)
-- ✅ Käivitasid konteinerid andmehoidlatega (volumes) (`-v volume:/path`)
-- ✅ Testisid andmete püsivust (data persistence) (konteiner kustutatakse, andmed jäävad!)
-- ✅ Inspekteerisid andmehoidlaid (volumes) (`docker volume inspect`)
-- ✅ Varundamise (backup) ja taastamise (restore) strateegia
-
-**Mikroteenuste (Microservices) Andmete Haldus:**
-- ✅ Igal mikroteenusel (microservice) oma andmehoidla (volume) (postgres-user-data, postgres-todo-data)
-- ✅ Sõltumatu andmete haldamine
-- ✅ Eraldi varundamise (backup) strateegia igale teenusele (service)
-- ✅ Katastroofist taastumine (disaster recovery) (taastamine (restore) varukoopiast (backup))
-
-**Tootmise Parimad Praktikad (Best Practices):**
-- ✅ Konteinerid on efemeersed (ephemeral) (võivad kustuda)
-- ✅ Andmed on püsivad (persistent) (andmehoidlad (volumes) säilitavad)
-- ✅ Varundamine (backup) on KRIITILINE
-- ✅ Testi katastroofist taastumist (disaster recovery) regulaarselt
-
-### 🔄 Võrreldes Harjutus 3-ga
+## 🔄 Võrreldes Harjutus 3-ga
 
 **Harjutus 3 (ILMA andmehoidlateta (volumes)):**
 - ❌ Andmed kaovad kui konteiner kustutatakse

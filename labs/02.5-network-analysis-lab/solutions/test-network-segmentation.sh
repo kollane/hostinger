@@ -9,7 +9,7 @@
 
 set -e  # Exit on error (except where explicitly handled)
 
-PROJECT_DIR="/home/janek/projects/hostinger/labs/02-docker-compose-lab/compose-project"
+PROJECT_DIR="$HOME/labs/02-docker-compose-lab/compose-project"
 
 # Check if project directory exists
 if [ ! -d "$PROJECT_DIR" ]; then

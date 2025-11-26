@@ -60,14 +60,6 @@ ssh labuser@93.127.213.242 -p [SINU-PORT]
 | student2 | 2202 | student2 |
 | student3 | 2203 | student3 |
 
-### Testimine
-
-**SSH Sessioonis (VPS sees):**
-- Kõik `curl http://localhost:...` käsud käivita siin
-- Näide: `curl http://localhost:8081/health`
-
-💡 **Frontend ja brauserist testimine tuleb Lab 2 Exercise 2-s**
-
 ---
 
 ## 🏗️ Arhitektuur
@@ -93,14 +85,14 @@ ssh labuser@93.127.213.242 -p [SINU-PORT]
 
 ## 📝 Sammud
 
-### Samm 1: Tutvu Rakendusega (Application) (5 min)
+### Samm 1: Tutvu Rakendusega (Application)
 
-**Rakenduse (application) juurkataloog:** `/hostinger/labs/apps/backend-java-spring`
+**Rakenduse (application) juurkataloog:** `~/labs/apps/backend-java-spring`
 
 Vaata Todo teenuse (service) koodi:
 
 ```bash
-cd ../apps/backend-java-spring
+cd ~/labs/apps/backend-java-spring
 
 # Vaata faile
 ls -la
@@ -117,11 +109,11 @@ cat build.gradle
 - Millised sõltuvused (dependencies) on vajalikud? (vaata build.gradle)
 - Kas rakendus (application) vajab andmebaasi? (Jah, PostgreSQL)
 
-### Samm 2: Loo Dockerfile (15 min)
+### Samm 2: Loo Dockerfile
 
 Loo fail nimega `Dockerfile`:
 
-**⚠️ Oluline:** Dockerfail tuleb luua rakenduse (application) juurkataloogi `/hostinger/labs/apps/backend-java-spring`
+**⚠️ Oluline:** Dockerfail tuleb luua rakenduse (application) juurkataloogi `~/labs/apps/backend-java-spring`
 
 ```bash
 vim Dockerfile
@@ -140,7 +132,7 @@ vim Dockerfile
 
 **💡 Abi vajadusel:**
 - Vaata Docker dokumentatsiooni: https://docs.docker.com/engine/reference/builder/
-- Vaata näidislahendust lahenduste kataloogis: `/hostinger/labs/01-docker-lab/solutions/backend-java-spring/Dockerfile`
+- Vaata näidislahendust lahenduste kataloogis: `~/labs/01-docker-lab/solutions/backend-java-spring/Dockerfile`
 
 **💡 Näpunäide: Dockerfile struktuur**
 
@@ -159,18 +151,18 @@ EXPOSE 8081
 CMD ["java", "-jar", "app.jar"]
 ```
 
-### Samm 3: Loo .dockerignore (5 min)
+### Samm 3: Loo .dockerignore
 
 Loo `.dockerignore` fail, et vältida tarbetute failide kopeerimist:
 
-**⚠️ Oluline:** .dockerignore tuleb luua rakenduse (application) juurkataloogi `/hostinger/labs/apps/backend-java-spring`
+**⚠️ Oluline:** .dockerignore tuleb luua rakenduse (application) juurkataloogi `~/labs/apps/backend-java-spring`
 
 ```bash
 vim .dockerignore
 ```
 
 **💡 Abi vajadusel:**
-Vaata näidislahendust: `/hostinger/labs/01-docker-lab/solutions/backend-java-spring/.dockerignore`
+Vaata näidislahendust: `~/labs/01-docker-lab/solutions/backend-java-spring/.dockerignore`
 
 **Sisu:**
 ```
@@ -193,9 +185,9 @@ gradlew.bat
 - Turvalisem (ei kopeeri .env faile)
 - Ei kopeeri lähtekoodi (ainult JAR fail)
 
-### Samm 4: Ehita (build) Docker pilt (image) (10 min)
+### Samm 4: Ehita (build) Docker pilt (image)
 
-**Asukoht:** `/hostinger/labs/apps/backend-java-spring`
+**Asukoht:** `~/labs/apps/backend-java-spring`
 
 Esmalt ehita (build) JAR fail, seejärel Docker pilt (image):
 
@@ -233,7 +225,7 @@ docker images todo-service:1.0
 - Mitu kihti (layers) on pildil (image)?
 - Millal pilt (image) loodi?
 
-### Samm 5: Käivita Konteiner (10 min)
+### Samm 5: Käivita Konteiner
 
 **⚠️ OLULINE:** Järgnevad käsud käivitavad konteineri, aga rakendus (application) hangub, sest PostgreSQL puudub. See on **OODATUD** käitumine! Fookus on õppida Docker käske, mitte saada töötav rakendus (application).
 
@@ -339,7 +331,7 @@ docker logs todo-service
 - See on OODATUD käitumine Harjutus 1's!
 - Töötava lahenduse saad [Harjutus 2: Mitme Konteineri Käivitamine](02-multi-container.md)-s
 
-### Samm 6: Debug ja Troubleshoot (5 min)
+### Samm 6: Debug ja Troubleshoot
 
 ```bash
 # Vaata konteineri staatust
@@ -448,128 +440,6 @@ docker logs todo-service
 
 ---
 
-## ✅ Kontrolli Tulemusi
-
-Peale selle harjutuse läbimist peaksid omama:
-
-- [x] **Dockerfile** backend-java-spring/ kaustas
-- [x] **.dockerignore** fail
-- [x] **JAR fail** build/libs/todo-service.jar
-- [x] **Docker pilt (image)** `todo-service:1.0` (vaata `docker images`)
-- [x] **Konteiner käivitatud** (vaata `docker ps -a` - STATUS: Exited)
-- [x] Mõistad Dockerfile'i struktuuri
-- [x] Oskad ehitada (build) pilti (image)
-- [x] Oskad käivitada konteinerit
-- [x] Oskad vaadata logisid
-- [x] **Mõistad, miks hangub** (PostgreSQL puudub)
-
----
-
-## 🧪 Testimine
-
-### Test 1: Kas pilt (image) on loodud? ✅
-
-```bash
-docker images | grep todo-service
-# Oodatud: todo-service   1.0   ...   200-250MB
-```
-
-**Kui näed seda, siis pilt (image) on edukalt loodud!** 🎉
-
-### Test 2: Kas konteiner käivitus? ✅
-
-```bash
-docker ps -a | grep todo-service
-# Oodatud: Exited (1) - See on ÕIGE!
-```
-
-**Miks "Exited (1)" on hea?**
-- Konteiner käivitus (Docker pilt (image) toimib) ✅
-- Rakendus (application) käivitus (Java töötab) ✅
-- Rakendus (application) hangus (PostgreSQL puudub) ✅
-- See on TÄPSELT see, mida ootame! ✅
-
-### Test 3: Kas logid näitavad vea (error) sõnumit? ✅
-
-```bash
-docker logs todo-service | head -20
-# Peaks sisaldama:
-# - Spring Boot logo
-# - Error: Unable to connect to database
-# - Connection refused / Unknown host
-```
-
-**See on PERFEKTNE!** Sa õppisid:
-- Kuidas vaadata logisid hangunud konteineris
-- Kuidas debuggida vea (error) sõnumit
-- Miks mitme-konteineri (multi-container) lahendus on vajalik
-
-### Test 4: Kas konteiner ei ole `docker ps` väljundis? ✅
-
-```bash
-docker ps | grep todo-service
-# Oodatud: TÜHI (midagi ei näita)
-```
-
-**See on ÕIGE!**
-- `docker ps` näitab ainult TÖÖTAVAID konteinereid
-- Hangunud konteiner on peatatud
-- Kasuta `docker ps -a` et näha kõiki konteinereid
-
----
-
-## 🎓 Edukas Harjutus!
-
-**Kui kõik 4 testi läbisid, siis oled edukalt läbinud Harjutuse 1!**
-
-Sa õppisid:
-- ✅ Docker pildi (image) ehitamist (build)
-- ✅ Konteineri käivitamist
-- ✅ Vahet `docker ps` vs `docker ps -a`
-- ✅ Logide vaatamist hangunud konteineris
-- ✅ Vea (error) sõnumite debuggimist
-- ✅ Miks mitme-konteineri (multi-container) lahendus on vajalik
-
-**Järgmine samm:** [Harjutus 2: Mitme Konteineri Käivitamine](02-multi-container.md) - Lisame PostgreSQL ja saame töötava rakenduse (application)!
-
----
-
-## 🎓 Õpitud Mõisted
-
-### Dockerfile instruktsioonid:
-
-- `FROM` - Baaspilt (base image)
-- `WORKDIR` - Töökataloog
-- `COPY` - Kopeeri failid
-- `RUN` - Käivita käsk ehitamise (build) ajal
-- `EXPOSE` - Avalda port
-- `CMD` - Käivita käsk konteineri käivitamisel
-
-### Docker käsud:
-
-- `docker build` - Ehita (build) pilt (image)
-- `docker run` - Käivita konteiner
-- `docker ps` - Näita töötavaid konteinereid
-- `docker logs` - Vaata konteineri logisid
-- `docker exec` - Käivita käsk töötavas konteineris
-- `docker inspect` - Vaata konteineri/pildi (image) infot
-
-### Docker run parameetrid:
-
-- `-d` - Taustal töötav režiim (detached mode)
-- `-it` - Interactive + TTY (interaktiivne)
-- `-p 8081:8081` - Portide vastendamine (port mapping) (host:konteiner)
-- `-e KEY=value` - Keskkonna muutuja (environment variable)
-- `--name <nimi>` - Anna konteinerile nimi
-- `--link <konteiner>:<alias>` - Ühenda teise konteineriga (aegunud (deprecated), kasuta võrke (networks)!)
-
-### Õpitud probleemid ja lahendused:
-
-- **JWT_SECRET peab olema min 32 tähemärki** - Test: `my-test-secret-key-min-32-chars-long`, Tootmine: `openssl rand -base64 32`
-- **Konteiner hangub (PostgreSQL puudub)** - See on Harjutus 1's OODATUD! Lahendus tuleb Harjutus 2's
-
----
-
 ## 💡 Parimad Praktikad (Best Practices)
 
 1. **Kasuta `.dockerignore`** - Väldi tarbetute failide kopeerimist
@@ -582,6 +452,8 @@ Sa õppisid:
 **📖 Java konteineriseerimise parimad tavad:** Põhjalikum käsitlus JAR vs WAR, Spring Boot spetsiifikast, JVM memory tuning'ust ja teised Java spetsiifilised teemad leiad [Peatükk 06A: Java Spring Boot ja Node.js Konteineriseerimise Spetsiifika](../../../resource/06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md).
 
 ---
+
+**Õnnitleme! Oled loonud oma esimese Docker pildi (image)! 🎉**
 
 ## 🔗 Järgmine Samm
 
@@ -596,7 +468,3 @@ Järgmises harjutuses lisame PostgreSQL konteineri ja ühendame kaks konteinerit
 - [Dockerfile reference](https://docs.docker.com/engine/reference/builder/)
 - [Docker run reference](https://docs.docker.com/engine/reference/run/)
 - [Spring Boot Docker parimad praktikad (best practices)](https://spring.io/guides/topicals/spring-boot-docker/)
-
----
-
-**Õnnitleme! Oled loonud oma esimese Docker pildi (image)! 🎉**

@@ -27,17 +27,17 @@ Frontend (Port 8080)
 ### Tehnoloogiad
 
 - **Framework:** Spring Boot 3.2
-- **Java Version:** 17
+- **Java Version:** 21
 - **Database:** PostgreSQL 16 + Spring Data JPA
 - **Security:** Spring Security + JWT (io.jsonwebtoken)
 - **Build Tool:** Gradle 8.5
-- **Container Base:** eclipse-temurin:17-jre-alpine
+- **Container Base:** eclipse-temurin:21-jre-alpine
 
 ## 🚀 Kiirstart
 
 ### Eeldused
 
-- Java 17 või uuem
+- Java 21 või uuem
 - PostgreSQL 16
 - Gradle 8.5+ (või kasuta `./gradlew`)
 

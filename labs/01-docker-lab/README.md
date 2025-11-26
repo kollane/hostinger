@@ -64,7 +64,6 @@ Peale selle labori läbimist oskad:
 01-docker-lab/
 ├── README.md              # See fail
 ├── setup.sh               # Automaatne seadistus (setup) ja piltide (images) ehitamine
-├── reset.sh               # Labori ressursside puhastamine
 ├── exercises/             # Harjutused (6 harjutust)
 │   ├── 01a-single-container-nodejs.md        # User Teenus (Service) (Node.js)
 │   ├── 01b-single-container-java.md          # Todo Teenus (Service) (Java)
@@ -124,64 +123,19 @@ Labor 6 (Monitoring)
 
 ## 📝 Harjutused
 
-### Harjutus 1A: Üksik Konteiner (Single Container) - User Teenus (Service) (45 min)
-**Fail:** [exercises/01a-single-container-nodejs.md](exercises/01a-single-container-nodejs.md)
+1. **[Harjutus 1A](exercises/01a-single-container-nodejs.md)** (45 min) - Konteineriseeri Node.js User Service: loo Dockerfile, ehita pilt, käivita ja testi REST API.
 
-Konteineriseeri User Teenus (Service) (Node.js):
-- Loo Dockerfile
-- Ehita (build) user-service:1.0 pilt (image)
-- Käivita konteiner
-- Testi REST API (/api/auth/*, /api/users)
-- Debug logs
+2. **[Harjutus 1B](exercises/01b-single-container-java.md)** (45 min) - Konteineriseeri Java Spring Boot Todo Service: ehita JAR, loo Dockerfile, käivita ja testi API.
 
-### Harjutus 1B: Üksik Konteiner (Single Container) - Todo Teenus (Service) (45 min)
-**Fail:** [exercises/01b-single-container-java.md](exercises/01b-single-container-java.md)
+3. **[Harjutus 2](exercises/02-multi-container.md)** (90 min) - Käivita 4 konteinerit koos (2 teenust + 2 PostgreSQL) ja testi mikroteenuste vahelist JWT autentimist.
 
-Konteineriseeri Todo Teenus (Service) (Java Spring Boot):
-- Loo Dockerfile
-- Ehita (build) JAR fail
-- Ehita (build) todo-service:1.0 pilt (image)
-- Käivita konteiner
-- Testi REST API (/api/todos)
+4. **[Harjutus 3](exercises/03-networking.md)** (45 min) - Loo kohandatud Docker võrk, käivita kõik 4 konteinerit ühes võrgus ja testi DNS lahendust.
 
-💡 **Kiirvalik:** Käivita `./setup.sh` ja vali `Y` → ehitab mõlemad pildid (images) automaatselt
+5. **[Harjutus 4](exercises/04-volumes.md)** (45 min) - Lisa PostgreSQL andmehoidlad, testi andmete püsivust ja tee backup/restore.
 
-### Harjutus 2: Mitme-Konteineri (Multi-Container) Seadistus (Setup) (90 min)
-**Fail:** [exercises/02-multi-container.md](exercises/02-multi-container.md)
+6. **[Harjutus 5](exercises/05-optimization.md)** (45 min) - Optimeeri pildid multi-stage build'idega (Node.js 200MB→50MB, Java 370MB→180MB) ja lisa health checks.
 
-Käivita User Teenus (Service) + Todo Teenus (Service) + 2x PostgreSQL:
-- Käivita 2 PostgreSQL konteinerit (portid 5432, 5433)
-- Ühenda mõlemad teenused (services) oma andmebaasidega
-- Testi mikroteenuste (microservices) suhtlust (JWT workflow)
-- Troubleshoot connectivity
-
-### Harjutus 3: Docker Võrgundus (Networking) (45 min)
-**Fail:** [exercises/03-networking.md](exercises/03-networking.md)
-
-Loo kohandatud võrk (custom network) (4 konteinerit):
-- Loo todo-network
-- Käivita kõik konteinerid samas võrgus (network)
-- Testi DNS lahendust (resolution)
-- Test End-to-End JWT workflow
-
-### Harjutus 4: Docker Andmehoidlad (Volumes) (45 min)
-**Fail:** [exercises/04-volumes.md](exercises/04-volumes.md)
-
-Andmete säilitamine (2 andmehoidlat (volumes)):
-- Loo postgres-user-data ja postgres-todo-data
-- Paigalda (mount) andmehoidlad (volumes) PostgreSQL'idele
-- Testi andmete püsivust (persistence)
-- Backup ja restore mõlemast andmebaasist
-
-### Harjutus 5: Pildi (Image) Optimeerimine (45 min)
-**Fail:** [exercises/05-optimization.md](exercises/05-optimization.md)
-
-Optimeeri mõlema teenuse (service) pildid (images):
-- Node.js: Mitme-sammuline (multi-stage) ehitus (build) (200MB → 50MB)
-- Java: Mitme-sammuline (multi-stage) ehitus (build) (370MB → 180MB)
-- Seisukorra kontrollid (Health checks)
-- Kihtide vahemälu (Layer caching)
-- .dockerignore
+💡 **Kiirvalik:** Käivita `./setup.sh` ja vali `Y` → ehitab mõlemad baaspildid automaatselt, saad alustada otse Harjutus 2'st.
 
 ---
 
@@ -225,20 +179,21 @@ chmod +x setup.sh
 
 ## 🔄 Labori Ressursside Haldamine
 
-### reset.sh - Puhasta ja Alusta Uuesti
+### labs-reset - Laborite Täielik Reset
 
-Kui soovid labori ressursse puhastada ja alustada uuesti:
+Kui soovid kõiki labori ressursse puhastada ja alustada uuesti:
 
 ```bash
-chmod +x reset.sh
-./reset.sh
+labs-reset
 ```
 
+**⚠️ HOIATUS:** labs-reset kustutab KÕIK Docker ressursid süsteemis (mitte ainult Lab 1)!
+
 **Script kustutab:**
-- 🗑️ Kõik Lab 1 konteinerid (user-service*, todo-service*, postgres-*)
-- 🗑️ Lab 1 võrgud (networks) (todo-network)
-- 🗑️ Lab 1 andmehoidlad (volumes) (postgres-user-data, postgres-todo-data)
-- 🗑️ Apps kaustadest harjutuste failid (Dockerfile, .dockerignore)
+- 🗑️ KÕIK Docker konteinerid (töötavad ja peatatud)
+- 🗑️ KÕIK kohandatud Docker võrgud (networks) (välja arvatud bridge, host, none)
+- 🗑️ KÕIK Docker andmehoidlad (volumes)
+- 🗑️ Apps kaustadest harjutuste failid (Dockerfile, Dockerfile.optimized, .dockerignore, healthcheck.js)
 
 **Interaktiivne valik: Piltide (Images) Kustutamine**
 
@@ -246,9 +201,10 @@ Script küsib, kas kustutada ka Docker pildid (images):
 
 ```
 Kas soovid kustutada ka Docker pilte (images)?
-  [N] Ei, jäta base pildid (images) alles (user-service:1.0, todo-service:1.0)
+  [N] Ei, säilita Lab 1 baaspildid (user-service:1.0, todo-service:1.0)
+      → Kustutab ülejäänud pildid, aga säilitab Lab 1 baaspildid
       → Saad alustada otse Harjutus 2'st ilma uuesti ehitamata (build)
-      → Kiire restart Harjutuste 2-5 jaoks
+      → Kiire restart Harjutuste 2-6 jaoks
   [Y] Jah, kustuta KÕIK pildid (images) (täielik reset)
       → Pead alustama Harjutus 1'st ja ehitama (build) pilte (images) uuesti
       → Täielik "puhas leht" algusest
@@ -257,21 +213,21 @@ Kas soovid kustutada ka Docker pilte (images)?
 **Kasutusstsenaariume:**
 
 ```bash
-# Stsenaarium 1: Kiire restart (säilita pildid (images))
-./reset.sh
+# Stsenaarium 1: Kiire restart (säilita Lab 1 baaspildid)
+labs-reset
 # Vali: N
-# → Konteinerid/võrgud (networks)/andmehoidlad (volumes) kustutatakse
-# → Baaspildid (base images) säilitatakse
+# → Kõik konteinerid/võrgud (networks)/andmehoidlad (volumes) kustutatakse
+# → Lab 1 baaspildid (user-service:1.0, todo-service:1.0) säilitatakse
 # → Alusta uuesti Harjutus 2'st või 3'st
 
 # Stsenaarium 2: Täielik reset (kustuta kõik)
-./reset.sh
+labs-reset
 # Vali: Y
 # → Kõik kustutatakse (sh pildid (images))
 # → Alusta päris algusest (Harjutus 1)
 
 # Stsenaarium 3: Automaatne reset (sh pildid (images))
-echo "y" | ./reset.sh  # Kustutab KÕIK
+echo "y" | labs-reset  # Kustutab KÕIK
 ```
 
 ---
@@ -316,7 +272,7 @@ free -h
 
 ```bash
 # Mine labori kataloogi
-cd /home/janek/projects/hostinger/labs/01-docker-lab
+cd ~/labs/01-docker-lab
 
 # Kontrolli rakenduste (applications) kättesaadavust
 ls ../apps/backend-java-spring
@@ -471,7 +427,7 @@ Peale selle labori läbimist oled:
 
 **Abiskriptid:**
 - `./setup.sh` - Automaatne seadistus (setup) ja piltide (images) ehitamine
-- `./reset.sh` - Labori ressursside puhastamine
+- `labs-reset` - Laborite täielik reset (kustutab KÕIK Docker ressursid)
 
 **Harjutused:**
 - 6 harjutust: 2x Üksik Konteiner (Single Container), Mitme-Konteineri (Multi-Container), Võrgundus (Networking), Andmehoidlad (Volumes), Optimeerimine (Optimization)

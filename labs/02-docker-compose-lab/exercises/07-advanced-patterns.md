@@ -382,7 +382,7 @@ docker compose watch
 # ...watching 1 service
 
 # Nüüd tee muudatus source code'is (TEISES TERMINALIS):
-cd ../../apps/backend-nodejs
+cd ~/labs/apps/backend-nodejs
 echo "// Test comment" >> server.js
 
 # Vaata watch terminali:

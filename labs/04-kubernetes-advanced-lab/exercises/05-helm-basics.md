@@ -142,7 +142,7 @@ helm repo update
 
 ```bash
 # Navigeeri Lab 4 solutions/ kataloogi
-cd /home/user/hostinger/labs/04-kubernetes-advanced-lab/solutions
+cd ~/labs/04-kubernetes-advanced-lab/solutions
 
 # Loo Helm chart scaffold
 helm create user-service

@@ -78,19 +78,11 @@ ssh labuser@93.127.213.242 -p [SINU-PORT]
 | student2 | 2202 | student2 |
 | student3 | 2203 | student3 |
 
-### Testimine
-
-**SSH Sessioonis (VPS sees):**
-- Kõik `curl http://localhost:...` käsud käivita siin
-- Näide: `curl http://localhost:3000/health`
-
-💡 **Frontend ja brauserist testimine tuleb Lab 2 Exercise 2-s**
-
 ---
 
 ## 📝 Sammud
 
-### Samm 1: Uuri mõlema teenuse algset suurust (10 min)
+### Samm 1: Uuri mõlema teenuse algset suurust
 
 ```bash
 # Vaata mõlema Harjutus 1-st loodud pildi (image) suurust
@@ -120,7 +112,7 @@ docker history todo-service:1.0
 - Mitu layer'it on igal? (5-6 layer'it)
 - Kui kiire on rebuild, kui muudad source code'i? (Aeglane - kõik rebuilditakse!)
 
-### Samm 2: Optimeeri mõlema rakenduse Dockerfaili (30 min)
+### Samm 2: Optimeeri mõlema rakenduse Dockerfaili
 
 Loome optimeeritud Dockerfailid mõlemale teenusele.
 
@@ -128,10 +120,10 @@ Loome optimeeritud Dockerfailid mõlemale teenusele.
 
 **⚠️ Oluline:** Dockerfile asub rakenduse juurkataloogis.
 
-**Rakenduse juurkataloog:** `/hostinger/labs/apps/backend-nodejs`
+**Rakenduse juurkataloog:** `~/labs/apps/backend-nodejs`
 
 ```bash
-cd ../apps/backend-nodejs
+cd ~/labs/apps/backend-nodejs
 ```
 
 Loo uus `Dockerfile.optimized`:
@@ -141,7 +133,7 @@ vim Dockerfile.optimized
 ```
 
 **💡 Abi vajadusel:**
-Vaata näidislahendust: `/hostinger/labs/01-docker-lab/solutions/backend-nodejs/Dockerfile.optimized`
+Vaata näidislahendust: `~/labs/01-docker-lab/solutions/backend-nodejs/Dockerfile.optimized`
 
 **📖 Multi-stage builds ja Node.js optimeerimine:**
 - [Peatükk 06: Dockerfile - Multi-stage Builds](../../../resource/06-Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md) selgitab multi-stage build'ide põhitõed
@@ -220,10 +212,10 @@ req.end();
 
 #### 2b. Todo Service (Java) Optimization
 
-**Rakenduse juurkataloog:** `/hostinger/labs/apps/backend-java-spring`
+**Rakenduse juurkataloog:** `~/labs/apps/backend-java-spring`
 
 ```bash
-cd ../backend-java-spring
+cd ~/labs/apps/backend-java-spring
 ```
 
 Loo uus `Dockerfile.optimized`:
@@ -233,7 +225,7 @@ vim Dockerfile.optimized
 ```
 
 **💡 Abi vajadusel:**
-Vaata näidislahendust: `/hostinger/labs/01-docker-lab/solutions/backend-java-spring/Dockerfile.optimized`
+Vaata näidislahendust: `~/labs/01-docker-lab/solutions/backend-java-spring/Dockerfile.optimized`
 
 **📖 Multi-stage builds ja Java optimeerimine:**
 - [Peatükk 06: Dockerfile - Multi-stage Builds](../../../resource/06-Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md) selgitab multi-stage build'ide põhitõed (JDK → JRE)
@@ -312,22 +304,22 @@ Multi-stage build koosneb kahest põhietapist:
 
 Tulemus: efektiivne, turvaline ja skaleeritav konteineripilt.
 
-### Samm 3: Ehita mõlemad optimeeritud Docker pildid (Images) (15 min)
+### Samm 3: Ehita mõlemad optimeeritud Docker pildid (Images)
 
-**Rakenduse juurkataloog (User Service):** `/hostinger/labs/apps/backend-nodejs`
+**Rakenduse juurkataloog (User Service):** `~/labs/apps/backend-nodejs`
 
 **⚠️ Oluline:** Docker pildi (image) ehitamiseks pead olema rakenduse juurkataloogis (kus asub `Dockerfile.optimized`).
 
 ```bash
 # === BUILD USER SERVICE (Node.js) ===
-cd ../backend-nodejs
+cd ~/labs/apps/backend-nodejs
 
 # Build optimeeritud image
 docker build -f Dockerfile.optimized -t user-service:1.0-optimized .
 
 # === BUILD TODO SERVICE (Java) ===
-# Asukoht: /hostinger/labs/apps/backend-java-spring
-cd ../backend-java-spring
+# Asukoht: ~/labs/apps/backend-java-spring
+cd ~/labs/apps/backend-java-spring
 
 # Build optimeeritud image (multi-stage build teeb ka JAR'i)
 docker build -f Dockerfile.optimized -t todo-service:1.0-optimized .
@@ -352,7 +344,7 @@ User Service pilt (image) jääb samaks (~305MB), sest mõlemad versioonid kasut
 ✅ Health check (automaatne tervise kontroll)
 ✅ -60% kiirem rebuild (dependency cache)
 
-### Samm 4: Testi MÕLEMAD Optimeeritud Images (20 min)
+### Samm 4: Testi MÕLEMAD Optimeeritud Images
 
 ```bash
 # Genereeri JWT_SECRET (kui pole veel)
@@ -424,7 +416,7 @@ docker ps -a --format "table {{.Names}}\t{{.Image}}\t{{.Status}}"
 # user-service         user-service:1.0                Up
 ```
 
-### Samm 5: Testi End-to-End JWT Workflow Optimeeritud Süsteemiga (15 min)
+### Samm 5: Testi End-to-End JWT Workflow Optimeeritud Süsteemiga
 
 **See on KÕIGE OLULISEM TEST - kinnitame, et optimeeritud süsteem töötab identitsioonilt!**
 
@@ -487,7 +479,7 @@ docker stats --no-stream --format "table {{.Name}}\t{{.MemUsage}}\t{{.CPUPerc}}"
 4. ✅ AGA: Väiksemad images (-25-33%), health checks, non-root users!
 5. ✅ TOOTMISEKS VALMIS mikroteenuste süsteem! 🚀
 
-### Samm 6: Security Scan ja Vulnerability Assessment (10 min)
+### Samm 6: Security Scan ja Vulnerability Assessment
 
 **Image'i turvaaukude (vulnerabilities) skannimine on KRIITILINE tootmises!**
 
@@ -542,23 +534,23 @@ docker run --rm \
 2. Parandanud CRITICAL ja HIGH CVE'd enne production'i
 3. Lisa automaatne skannimine CI/CD pipeline'i (juhised peatükis 06B)
 
-### Samm 7: Layer Caching Test (10 min)
+### Samm 7: Layer Caching Test
 
 **Testime, kui hästi layer caching töötab rebuild'imisel:**
 
-**Rakenduse juurkataloog (User Service):** `/hostinger/labs/apps/backend-nodejs`
+**Rakenduse juurkataloog (User Service):** `~/labs/apps/backend-nodejs`
 
 ```bash
 # === TEST 1: Rebuild ILMA muudatusteta ===
-cd ../apps/backend-nodejs
+cd ~/labs/apps/backend-nodejs
 pwd  # Veendu, et oled õiges kataloogis
 
 # Rebuild User Service (peaks olema VÄGA kiire!)
 time docker build -f Dockerfile.optimized -t user-service:1.0-optimized .
 # Oodatud: "CACHED" iga layer jaoks, build ~2-5s
 
-# Asukoht: /hostinger/labs/apps/backend-java-spring
-cd ../backend-java-spring
+# Asukoht: ~/labs/apps/backend-java-spring
+cd ~/labs/apps/backend-java-spring
 pwd  # Veendu, et oled õiges kataloogis
 
 # Rebuild Todo Service (peaks olema VÄGA kiire!)
@@ -568,8 +560,8 @@ time docker build -f Dockerfile.optimized -t todo-service:1.0-optimized .
 # === TEST 2: Rebuild KUI source code muutub ===
 
 # User Service - muuda source code
-# Asukoht: /hostinger/labs/apps/backend-nodejs
-cd ../backend-nodejs
+# Asukoht: ~/labs/apps/backend-nodejs
+cd ~/labs/apps/backend-nodejs
 pwd  # Veendu, et oled õiges kataloogis
 echo "// test comment" >> server.js
 
@@ -578,8 +570,8 @@ time docker build -f Dockerfile.optimized -t user-service:1.0-optimized .
 # Oodatud: Dependencies layer CACHED, ainult COPY . ja pärast rebuilditakse (~10-15s)
 
 # Todo Service - muuda source code
-# Asukoht: /hostinger/labs/apps/backend-java-spring
-cd ../backend-java-spring
+# Asukoht: ~/labs/apps/backend-java-spring
+cd ~/labs/apps/backend-java-spring
 pwd  # Veendu, et oled õiges kataloogis
 echo "// test comment" >> src/main/java/com/hostinger/todoapp/TodoApplication.java
 
@@ -657,28 +649,6 @@ docker images | grep -E 'user-service|todo-service' | sort
 
 ---
 
-## ✅ Kontrolli Tulemusi
-
-Peale selle harjutuse läbimist peaksid omama:
-
-- [x] **2 optimeeritud pilti (images)** loodud
-  - user-service:1.0-optimized (~305MB, sama kui 1.0)
-  - todo-service:1.0-optimized (~180MB, -22% ✅)
-- [x] Multi-stage builds töötavad (Node.js: deps → runtime, Java: JDK → JRE)
-- [x] Layer caching toimib SUUREPÄRASELT (rebuild -60-80% kiirem!)
-- [x] Non-root users kasutusel
-  - User Service: nodejs:1001
-  - Todo Service: spring:1001
-- [x] Health checks lisatud MÕLEMASSE teenusesse
-  - User Service: healthcheck.js
-  - Todo Service: /health endpoint
-- [x] Optimeeritud konteinerid töötavad (`docker ps` näitab "healthy")
-- [x] End-to-End JWT workflow töötab identitsioonilt
-- [x] .dockerignore failid on optimeeritud
-- [x] Security scan läbitud (Docker Scout + Trivy)
-
----
-
 ## 🎓 Parimad Tavad
 
 1. ✅ Multi-stage builds (JDK → JRE, dependencies → runtime)
@@ -690,51 +660,6 @@ Peale selle harjutuse läbimist peaksid omama:
 7. ✅ Testi optimeeritud pilte (images) end-to-end workflow'ga
 
 ---
-
-## 🎉 Õnnitleme! Mida Sa Õppisid?
-
-### ✅ Tehnilised Oskused
-
-**Docker Optimization:**
-- ✅ Multi-stage builds (Node.js: deps → runtime, Java: JDK → JRE)
-- ✅ Layer caching optimization (dependencies eraldi layer)
-- ✅ .dockerignore optimization (väiksem build context)
-- ✅ Non-root users (security)
-- ✅ Health checks (monitoring)
-
-**Võrdlus Enne vs Pärast:**
-- 📉 Todo Service: -22% väiksem pilt (image)
-- ⚠️ User Service: sama suurus, mõlemad kasutavad `node:21-slim`
-- 📉 Rebuild kiirus: -60-80% MÕLEMAS teenuses
-- ✅ Security: root → non-root
-- ✅ Monitoring: ❌ → health checks
-- ✅ Caching: halb → suurepärane (dependencies cached)
-
-### 🔄 Progressioon Läbi Kõigi 5 Harjutuse
-
-**Harjutus 1: Single Container**
-- ✅ Lõime esimesed Dockerfile'id (User Service + Todo Service)
-- ✅ Build'isime Docker images
-- ✅ Õppisid, miks containerid crashivad (andmebaas puudub)
-- ❌ Ei optimeeri midagi
-
-**Harjutus 2: Multi-Container**
-- ✅ Käivitasime 4 containerit koos (2 DB + 2 teenust)
-- ✅ Implementeerisime JWT-põhise autentimise
-- ✅ End-to-End mikroteenuste workflow
-- ❌ Kasutasime deprecated --link
-
-**Harjutus 3: Custom Networks**
-- ✅ Lõime custom Docker network
-- ✅ Proper networking DNS-iga (automaatne!)
-- ✅ Network isolation (security)
-- ❌ Andmed kaovad container kustutamisel
-
-**Harjutus 4: Volumes**
-- ✅ Data persistence! (containers can fail, data survives)
-- ✅ Backup/restore strateegia
-- ✅ Disaster recovery
-- ❌ Images siiski optimeerimata
 
 **Harjutus 5: Optimization (PRAEGU)**
 - ✅ Multi-stage builds (mõlemas teenuses)
@@ -792,21 +717,4 @@ Sa oskad nüüd:
 
 ---
 
-**🎉 ÕNNITLEME! OLED EDUKALT LÄBINUD LAB 01! 🎉**
-
-**Mida saavutasid 5 harjutusega:**
-- ✅ Docker põhitõed (pildid/images, konteinerid, võrgud/networks, andmehoidlad/volumes)
-- ✅ Mikroteenuste arhitektuur (User Service + Todo Service)
-- ✅ Production best practices (optimization, security, monitoring)
-- ✅ End-to-End tested süsteem (JWT workflow)
-- 📚 **Praktiline õppetund:** Multi-stage builds ja layer caching optimeerimiseks
-
 **Järgmine:** [Lab 2: Docker Compose](../../02-docker-compose-lab/README.md)
-
-Seal õpid:
-- 🚀 Halda multi-container setup'e YAML failidega
-- 🚀 Üks käsk käivitab KOGU süsteemi: `docker compose up`
-- 🚀 Development vs Production konfiguratsioonid
-- 🚀 Scaling (käivita 3 Todo Service instance't korraga!)
-
-**Näeme Lab 2-s!** 🐳

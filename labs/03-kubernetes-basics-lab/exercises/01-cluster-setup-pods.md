@@ -447,7 +447,7 @@ Nüüd deploy'me Lab 1'st loodud `user-service` image.
 eval $(minikube docker-env)
 
 # Build või lae image Minikube'i
-cd ../../apps/backend-nodejs
+cd ~/labs/apps/backend-nodejs
 docker build -t user-service:1.0-optimized -f Dockerfile.optimized .
 
 # Kontrolli
@@ -463,7 +463,7 @@ cd -
 **Kui kasutad K3s:**
 ```bash
 # Build image lokaalselt (kui pole juba)
-cd ../../apps/backend-nodejs
+cd ~/labs/apps/backend-nodejs
 docker build -t user-service:1.0-optimized -f Dockerfile.optimized .
 
 # Salvesta tar failina
@@ -788,7 +788,7 @@ kubectl describe pod user-service | grep -A10 Events
 eval $(minikube docker-env)
 docker images | grep user-service
 # Kui puudub:
-cd ../../apps/backend-nodejs
+cd ~/labs/apps/backend-nodejs
 docker build -t user-service:1.0-optimized -f Dockerfile.optimized .
 
 # K3s:

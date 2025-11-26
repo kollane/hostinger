@@ -24,7 +24,16 @@
 **User Teenuse (Service) roll:**
 - Genereerib JWT tokeneid autentimiseks
 - Annab tokeneid teistele mikroteenustele (microservices) (nt Todo Teenus (Service))
-- Töötava süsteemi saad Harjutus 2-s!
+
+**📖 Põhjalik selgitus:** [User Service README](../../apps/backend-nodejs/README.md) selgitab:
+- Mis on User Service ja miks see on vajalik (kontorihoone analoogia)
+- Mis asi on JWT token (digitaalne visiitkaart)
+- Kuidas JWT töötab mikroteenuste arhitektuuris
+
+**Harjutus 1 fookus:**
+- Õpid konteineriseerima User Service rakendust
+- Rakendus EI TÖÖTA täielikult (PostgreSQL puudub)
+- **Harjutus 2** toob PostgreSQL ja töötava süsteemi
 
 ---
 
@@ -60,14 +69,6 @@ ssh labuser@93.127.213.242 -p [SINU-PORT]
 | student2 | 2202 | student2 |
 | student3 | 2203 | student3 |
 
-### Testimine
-
-**SSH Sessioonis (VPS sees):**
-- Kõik `curl http://localhost:...` käsud käivita siin
-- Näide: `curl http://localhost:3000/health`
-
-💡 **Frontend ja brauserist testimine tuleb Lab 2 Exercise 2-s**
-
 ---
 
 ## 🏗️ Arhitektuur
@@ -93,14 +94,14 @@ ssh labuser@93.127.213.242 -p [SINU-PORT]
 
 ## 📝 Sammud
 
-### Samm 1: Tutvu Rakendusega (Application) (5 min)
+### Samm 1: Tutvu Rakendusega (Application)
 
-**Rakenduse (application) juurkataloog:** `/hostinger/labs/apps/backend-nodejs`
+**Rakenduse (application) juurkataloog:** `~/labs/apps/backend-nodejs`
 
 Vaata rakenduse (application) "User Teenus (Service)" koodi:
 
 ```bash
-cd ../../apps/backend-nodejs
+cd ~/labs/apps/backend-nodejs
 
 # Vaata faile
 ls -la
@@ -117,11 +118,25 @@ head -50 server.js
 - Millised sõltuvused (dependencies) on vajalikud? (vaata package.json)
 - Kas rakendus (application) vajab andmebaasi? (Jah, PostgreSQL)
 
-### Samm 2: Loo Dockerfile (15 min)
+**📖 Põhjalikum info:** [User Service README](../../apps/backend-nodejs/README.md) selgitab, mida see rakendus teeb ja kuidas see seostub JWT tokenitega.
+
+**Kiire kokkuvõte:**
+- 🔐 Registreerib uusi kasutajaid
+- 🎫 Loob JWT tokeneid (digitaalsed visiitkaardid)
+- ✅ Kontrollib kasutajate õigusi (user/admin roll)
+- 💾 Salvestab kasutajate andmed PostgreSQL andmebaasi
+
+**Miks see hangub selles harjutuses?**
+- User Service vajab PostgreSQL andmebaasi
+- Docker konteiner käivitub, aga ei saa andmebaasiga ühendust
+- See on **OODATUD käitumine** Lab 1's!
+- Harjutus 2 lisab PostgreSQL ja kõik töötab
+
+### Samm 2: Loo Dockerfile
 
 Loo fail nimega `Dockerfile`:
 
-**⚠️ Oluline:** Dockerfail tuleb luua rakenduse (application) juurkataloogi `/hostinger/labs/apps/backend-nodejs`. 
+**⚠️ Oluline:** Dockerfail tuleb luua rakenduse (application) juurkataloogi `~/labs/apps/backend-nodejs`. 
 
 ```bash
 vim Dockerfile
@@ -163,11 +178,11 @@ EXPOSE 3000
 CMD ["node", "server.js"]
 ```
 
-### Samm 3: Loo .dockerignore (5 min)
+### Samm 3: Loo .dockerignore
 
 Loo `.dockerignore` fail, et vältida tarbetute failide kopeerimist:
 
-**⚠️ Oluline:** .dockerignore tuleb luua rakenduse (application) juurkataloogi `/hostinger/labs/apps/backend-nodejs`. 
+**⚠️ Oluline:** .dockerignore tuleb luua rakenduse (application) juurkataloogi `~/labs/apps/backend-nodejs`. 
 
 ```bash
 vim .dockerignore
@@ -189,9 +204,9 @@ README.md
 - Kiirem ehitamine (build)
 - Turvalisem (ei kopeeri .env faile)
 
-### Samm 4: Ehita (build) Docker pilt (image) (10 min)
+### Samm 4: Ehita (build) Docker pilt (image)
 
-**Asukoht:** `/hostinger/labs/apps/backend-nodejs`
+**Asukoht:** `~/labs/apps/backend-nodejs`
 
 Ehita (build) oma esimene Docker pilt (image):
 
@@ -223,7 +238,7 @@ docker images user-service:1.0
 - Mitu kihti (layers) on pildil (image)?
 - Millal pilt (image) loodi?
 
-### Samm 5: Käivita Konteiner (10 min)
+### Samm 5: Käivita Konteiner
 
 #### Variant A: Ilma andmebaasita (testimiseks)
 
@@ -302,49 +317,24 @@ docker ps -a
 - `docker ps` näitab ainult TÖÖTAVAID konteinereid
 - `docker ps -a` näitab KÕIKI konteinereid (ka peatatud)
 
-### Samm 6: Mõista JWT Tokeni Rolli (10 min)
+### Samm 6: Vaata User Service dokumentatsiooni
 
-**Miks User Teenus (Service) on oluline?**
+**📖 Täielik selgitus User Service ja JWT tokeni kohta:**
 
-User Teenus (Service) on **autentimise keskus (authentication hub)** mikroteenuste (microservices) arhitektuuris:
+Loe läbi: [User Service README](../../apps/backend-nodejs/README.md)
 
-1. **Kasutaja registreerib** → POST /api/auth/register
-2. **Kasutaja logib sisse** → POST /api/auth/login
-3. **Saab JWT tokeni** → `{"token": "eyJhbGci..."}`
-4. **Kasutab tokenit teistes teenustes (services)** → Todo Teenus (Service), Product Teenus (Service) jne
+**Seal saad teada:**
+- ✅ Mis on User Service ja miks see on vajalik (kontorihoone analoogia)
+- ✅ Mis asi on JWT token (digitaalne visiitkaart)
+- ✅ Kuidas JWT token seostub User Service'ga
+- ✅ Miks on vaja jagatud JWT_SECRET võtit
 
-**JWT token sisaldab:**
-- `userId` - Kasutaja ID
-- `email` - Kasutaja email
-- `role` - Kasutaja roll (user/admin)
-- `exp` - Token'i aegumisaeg
+**Harjutus 1 olukord:**
+- User Service konteiner hangub (PostgreSQL puudub)
+- JWT tokenit EI SAA praegu testida (andmebaas puudub)
+- **Harjutus 2** lisab PostgreSQL ja saame töötava autentimise süsteemi!
 
-**Kui andmebaas töötaks, saaksid teha:**
-```bash
-# Login tagastab JWT tokeni
-curl -X POST http://localhost:3000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"test123"}'
-
-# Vastus sisaldaks:
-# {
-#   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-#   "user": {
-#     "id": 1,
-#     "email": "test@example.com",
-#     "name": "Test User",
-#     "role": "user"
-#   }
-# }
-
-# See token on nüüd kasutatav Todo Teenuses (Service) (Harjutus 2!)
-```
-
-**Probleem Harjutus 1's:** PostgreSQL puudub, seega ei saa registreerida ega logida!
-
-**Lahendus:** Harjutus 2 lisab PostgreSQL ja saame töötava süsteemi!
-
-### Samm 7: Debug ja Troubleshoot (5 min)
+### Samm 7: Debug ja Troubleshoot
 
 ```bash
 # Vaata konteineri staatust
@@ -399,88 +389,6 @@ docker stats user-service
 
 ---
 
-## ✅ Kontrolli Tulemusi
-
-Peale selle harjutuse läbimist peaksid omama:
-
-- [x] **Dockerfile** backend-nodejs/ kaustas
-- [x] **.dockerignore** fail
-- [x] **Docker pilt (image)** `user-service:1.0` (vaata `docker images`)
-- [x] **Konteiner** käivitatud (vaata `docker ps`)
-- [x] Mõistad Dockerfile'i struktuuri
-- [x] Oskad ehitada (build) pilti (image)
-- [x] Oskad käivitada konteinerit
-- [x] Oskad vaadata logisid
-
----
-
-## 🧪 Testimine
-
-### Test 1: Kas pilt (image) on loodud?
-
-```bash
-docker images | grep user-service
-# Peaks näitama: user-service 1.0 ...
-```
-
-### Test 2: Kas konteiner töötab?
-
-```bash
-docker ps | grep user-service
-# Peaks näitama töötavat konteinerit
-```
-
-### Test 3: Kas logid näitavad vea (error) sõnumit? ✅
-
-```bash
-docker logs user-service | head -20
-# Peaks sisaldama:
-# - "Server running on port 3000" VÕI
-# - Error: Unable to connect to database
-# - Connection refused / ECONNREFUSED
-```
-
-**See on PERFEKTNE!** Sa õppisid:
-- Kuidas vaadata logisid hangunud konteineris
-- Kuidas debuggida vea (error) sõnumit
-- Miks mitme-konteineri (multi-container) lahendus on vajalik
-
-### Test 4: Kas konteiner ei ole `docker ps` väljundis? ✅
-
-```bash
-docker ps | grep user-service
-# Oodatud: TÜHI (midagi ei näita)
-```
-
-**See on ÕIGE!**
-- `docker ps` näitab ainult TÖÖTAVAID konteinereid
-- Hangunud konteiner on peatatud
-- Kasuta `docker ps -a` et näha kõiki konteinereid
-
----
-
-## 🎓 Õpitud Mõisted
-
-### Dockerfile instruktsioonid:
-
-- `FROM` - Baaspilt (base image)
-- `WORKDIR` - Töökataloog
-- `COPY` - Kopeeri failid
-- `RUN` - Käivita käsk ehitamise (build) ajal
-- `EXPOSE` - Avalda port
-- `CMD` - Käivita käsk konteineri käivitamisel
-
-### Docker käsud:
-
-- `docker build` - Ehita (build) pilt (image)
-- `docker run` - Käivita konteiner
-- `docker ps` - Näita töötavaid konteinereid
-- `docker logs` - Vaata konteineri logisid
-- `docker exec` - Käivita käsk töötavas konteineris
-- `docker inspect` - Vaata konteineri/pildi (image) infot
-
----
-
 ## 💡 Parimad Praktikad (Best Practices)
 
 1. **Kasuta `.dockerignore`** - Väldi tarbetute failide kopeerimist
@@ -493,11 +401,13 @@ docker ps | grep user-service
 
 ---
 
+**Õnnitleme! Oled loonud oma esimese Docker pildi (image)! 🎉**
+
 ## 🔗 Järgmine Samm
 
 Järgmises harjutuses lisame PostgreSQL konteineri ja ühendame kaks konteinerit!
 
-**Jätka:** [Harjutus 1B: Üksik-Konteiner-Java (Single-Container-Java)] (https://github.com/kollane/hostinger/blob/master/labs/01-docker-lab/exercises/01b-single-container-java.md)
+**Jätka:** [Harjutus 1B: Üksik-Konteiner-Java (Single-Container-Java)](https://github.com/kollane/hostinger/blob/master/labs/01-docker-lab/exercises/01b-single-container-java.md)
 
 ---
 
@@ -506,7 +416,3 @@ Järgmises harjutuses lisame PostgreSQL konteineri ja ühendame kaks konteinerit
 - [Dockerfile reference](https://docs.docker.com/engine/reference/builder/)
 - [Docker run reference](https://docs.docker.com/engine/reference/run/)
 - [Node.js Docker parimad praktikad (best practices)](https://github.com/nodejs/docker-node/blob/main/docs/BestPractices.md)
-
----
-
-**Õnnitleme! Oled loonud oma esimese Docker pildi (image)! 🎉**
