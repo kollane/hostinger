@@ -296,7 +296,21 @@ docker ps -a
 
 ### Samm 6: Mõista JWT Tokeni Rolli (10 min)
 
-**Miks User Teenus (Service) on oluline?**
+**💡 Mis asi on JWT token lihtsustatult?**
+
+JWT token on nagu **digitaalne visiitkaart**, mis tõestab, kes sa oled ilma parooliga.
+
+**Analoogia igapäevaelust:**
+- 🏢 Kui lähed kontorisse, annavad esimesel korral **külastuskaardi** (pärast parooli kontrolli)
+- 🚪 Järgmistel kordadel näitad ainult kaarti, ei pea parooli mitte kunagi enam sisestama
+- ✅ Kaart sisaldab infot: nimi, roll, kehtivusaeg
+
+**JWT token töötab täpselt samamoodi:**
+1. 🔐 **Login kord** (email + parool) → Saad JWT tokeni
+2. 🎫 **Järgmised päringud** → Näitad ainult tokenit, EI KÜSI PAROOLI
+3. ⏰ Token kehtib teatud aja (nt 24h), siis tuleb uuesti sisse logida
+
+**Praktiline näide:**
 
 User Teenus (Service) on **autentimise keskus (authentication hub)** mikroteenuste (microservices) arhitektuuris:
 
@@ -305,36 +319,15 @@ User Teenus (Service) on **autentimise keskus (authentication hub)** mikroteenus
 3. **Saab JWT tokeni** → `{"token": "eyJhbGci..."}`
 4. **Kasutab tokenit teistes teenustes (services)** → Todo Teenus (Service), Product Teenus (Service) jne
 
-**JWT token sisaldab:**
-- `userId` - Kasutaja ID
-- `email` - Kasutaja email
+**JWT token sisaldab krüpteeritud infot:**
+- `userId` - Kasutaja ID (nt 123)
+- `email` - Kasutaja email (nt test@example.com)
 - `role` - Kasutaja roll (user/admin)
-- `exp` - Token'i aegumisaeg
+- `exp` - Token'i aegumisaeg (nt "kehtib kuni 2025-01-27 10:00")
 
-**Kui andmebaas töötaks, saaksid teha:**
-```bash
-# Login tagastab JWT tokeni
-curl -X POST http://localhost:3000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"test123"}'
+**Probleem Harjutus 1's:** PostgreSQL puudub, seega ei saa praegu JWT tokenit testida!
 
-# Vastus sisaldaks:
-# {
-#   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-#   "user": {
-#     "id": 1,
-#     "email": "test@example.com",
-#     "name": "Test User",
-#     "role": "user"
-#   }
-# }
-
-# See token on nüüd kasutatav Todo Teenuses (Service) (Harjutus 2!)
-```
-
-**Probleem Harjutus 1's:** PostgreSQL puudub, seega ei saa registreerida ega logida!
-
-**Lahendus:** Harjutus 2 lisab PostgreSQL ja saame töötava süsteemi!
+**Lahendus:** Harjutus 2 lisab PostgreSQL andmebaasi ja saame töötava autentimise süsteemi!
 
 ### Samm 7: Debug ja Troubleshoot (5 min)
 
