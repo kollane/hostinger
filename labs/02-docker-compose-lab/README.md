@@ -67,7 +67,7 @@ Lab 1 lõpus oli sul töötamas **4 konteinerit** (manuaalsete `docker run` käs
 Lab 2 lõpus on sul töötamas **5 teenust (services)** Docker Compose'iga:
 
 ```
-               Browser (http://kirjakast:8080)
+               Browser (http://93.127.213.242:[SINU-PORT])
                          │
                          ▼
         ┌────────────────────────────────┐
@@ -378,7 +378,7 @@ Peale labori läbimist pead omama:
 ### Testimine:
 
 **Frontend:**
-- [ ] `http://kirjakast:8080` - avab login lehte
+- [ ] `http://93.127.213.242:[SINU-PORT]` - avab login lehte (student1: 8080, student2: 8180, student3: 8280)
 - [ ] Login toimib (suhtleb User Service'iga)
 - [ ] Todo list kuvatakse (suhtleb Todo Service'iga)
 
