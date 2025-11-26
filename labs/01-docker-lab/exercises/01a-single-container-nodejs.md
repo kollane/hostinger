@@ -87,7 +87,7 @@ ssh labuser@93.127.213.242 -p [SINU-PORT]
 
 ### Samm 1: Tutvu Rakendusega (Application)
 
-**Rakenduse (application) juurkataloog:** `~/labs/apps/backend-nodejs` ehk `/home/labuser/labs/apps/backend-nodejs`
+**Rakenduse (application) juurkataloog:** `~/labs/apps/backend-nodejs`
 
 Vaata rakenduse (application) "User Teenus (Service)" koodi:
 

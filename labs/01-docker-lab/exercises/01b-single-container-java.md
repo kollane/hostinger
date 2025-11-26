@@ -87,7 +87,7 @@ ssh labuser@93.127.213.242 -p [SINU-PORT]
 
 ### Samm 1: Tutvu Rakendusega (Application)
 
-**Rakenduse (application) juurkataloog:** `~/labs/apps/backend-java-spring` ehk `/home/labuser/labs/apps/backend-java-spring`
+**Rakenduse (application) juurkataloog:** `~/labs/apps/backend-java-spring`
 
 Vaata Todo teenuse (service) koodi:
 
