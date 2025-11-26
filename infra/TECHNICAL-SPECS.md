@@ -347,11 +347,23 @@ Sudo access: Limited (no password sudo not enabled)
 
 **Bash aliases (in .bashrc):**
 ```bash
-# NUCLEAR OPTION - Kustutab KÕIK Docker ressursid (ka töötavad!)
-alias nuclear-cleanup="docker stop \$(docker ps -aq) 2>/dev/null; docker rm \$(docker ps -aq) 2>/dev/null; docker system prune -af --volumes"
 alias docker-stop-all="docker stop \$(docker ps -aq) 2>/dev/null || echo No containers running"
 alias check-resources="echo === RAM === && free -h && echo && echo === DISK === && df -h / && echo && echo === DOCKER === && docker ps -a && docker images"
+
+# Laborite täielik reset skript
+alias labs-reset="~/labs/labs-reset.sh"
 ```
+
+**labs-reset skript** (`~/labs/labs-reset.sh`):
+- **Asukoht:** `/home/labuser/labs/labs-reset.sh` (executable bash skript)
+- **Käivitamine:** Otse käsurealt: `labs-reset` (alias .bashrc'is)
+- Peatab ja kustutab **KÕIK Docker konteinerid**
+- **Küsib kasutajalt**: Kas kustutada kõik image'd või säilitada Lab 1 base image'd (user-service:1.0, todo-service:1.0)
+- Kustutab **KÕIK Docker network'id** (välja arvatud defaults: bridge, host, none)
+- Kustutab **KÕIK Docker volume'd**
+- Koristab apps/ kaust(ad)est Lab 1 failid (Dockerfile, Dockerfile.optimized, .dockerignore, healthcheck.js)
+- **Asendab:** Kõik Lab 1-10 reset.sh skriptid ja nuclear-cleanup käsu
+- **HOIATUS:** Kustutab ka teiste projektide Docker ressursid!
 
 ---
 

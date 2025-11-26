@@ -56,11 +56,10 @@ ps aux | grep docker  # Docker protsessid
 # Lab'i haldamine
 cd ~/labs/XX-lab-name/
 ./setup.sh    # Seadista lab (kui vaja)
-./reset.sh    # Lähtesta lab (alusta otsast)
 
-# Docker puhastamine - NUCLEAR OPTION!
-# Kustutab KÕIK Docker ressursid (ka töötavad konteinerid!)
-nuclear-cleanup
+# Docker puhastamine
+labs-reset          # Täielik reset (KÕIK Docker ressursid + apps failid, küsib image'ite kohta)
+docker-stop-all     # Peata kõik Docker konteinerid
 ```
 
 ### Rakenduste Juurdepääs
@@ -93,20 +92,18 @@ ssh labuser@<vps-ip> -p <sinu-port>
 **RAM/disk otsa:**
 ```bash
 check-resources           # Kontrolli kasutust
-nuclear-cleanup           # Kustutab KÕIK Docker ressursid (ka töötavad!)
-./reset.sh              # Lähtesta lab
+labs-reset              # Täielik reset (KÕIK Docker + apps, küsib image'ite kohta)
 ```
 
-**Lab ei tööta:** Lähtesta lab
+**Lab ei tööta:** Täielik reset
 ```bash
-cd ~/labs/XX-lab-name/
-./reset.sh
+labs-reset
 ```
 
 ### Best Practices
 
 ✅ Kontrolli ressursse regulaarselt: `check-resources`
-✅ Puhasta pärast iga labi: `./reset.sh`
+✅ Puhasta pärast iga labi: `labs-reset`
 ✅ Kasuta lahendusi, kui kinni jääd: `solutions/`
 ✅ Loe dokumentatsiooni: `cat README.md`
 
@@ -401,30 +398,25 @@ Kui kõik töötavad, oled valmis alustama!
 
 ### 4. Puhastamine ja Reset
 
-Iga labor sisaldab `reset.sh` skripti:
+Laborite puhastamiseks kasuta `labs-reset` käsku:
 
 ```bash
-# Lab ressursside puhastamine
-cd 01-docker-lab
-./reset.sh
+# Täielik reset - kustutab KÕIK Docker ressursid + apps/ failid
+labs-reset
 
-# Alusta laborit uuesti puhtalt lehelt
+# Skript küsib kinnitust ja image'ite säilitamise kohta
 ```
 
-**Mida reset.sh teeb:**
-- Kustutab **selle konkreetse labi** Docker containerid ja image'd
-- Eemaldab **selle labi** Docker network'id ja volume'd
-- Kustutab Kubernetes ressursid (kui kohaldatav)
-- Puhastab Helm releases (kui kohaldatav)
-
-**Mida nuclear-cleanup teeb:**
-- Kustutab **KÕIK Docker ressursid süsteemis** (kõik labid korraga!)
-- Peatab ja kustutab kõik töötavad containerid
-- Kustutab kõik image'd, volume'd, network'id, cache
+**Mida labs-reset teeb:**
+- Kustutab **KÕIK Docker ressursid süsteemis** (konteinerid, networks, volumes)
+- **Küsib kasutajalt**, kas säilitada Lab 1 base image'd (user-service:1.0, todo-service:1.0)
+- Koristab apps/ kaustadest Lab 1 failid (Dockerfile, .dockerignore, healthcheck.js)
+- **Asendab:** Kõik Lab 1-10 reset.sh skriptid (enam pole vaja)
+- **HOIATUS:** Kustutab ka teiste projektide Docker ressursid!
 
 **Millal kasutada:**
-- `./reset.sh` - Ühe labi reset (soovitatav!)
-- `nuclear-cleanup` - KÕIK puhastada (tuumapomm!)
+- `labs-reset` - Täielik laborite reset (KÕIK Docker + apps)
+- `docker-stop-all` - Ainult peatab konteinerid, ei kustuta ressursse
 
 ---
 
@@ -492,19 +484,16 @@ labs/
 ├── 01-docker-lab/                 # Lab 1: Docker Põhitõed
 │   ├── README.md
 │   ├── exercises/                 # 6 harjutust
-│   ├── solutions/                 # Lahendused
-│   └── reset.sh
+│   └── solutions/                 # Lahendused
 │
 ├── 02-docker-compose-lab/         # Lab 2: Docker Compose
 │   ├── README.md
 │   ├── exercises/                 # 6 harjutust
-│   ├── solutions/
-│   └── reset.sh
+│   └── solutions/
 │
 ├── 03-kubernetes-basics-lab/      # Lab 3: Kubernetes Alused
 │   ├── README.md
-│   ├── exercises/                 # 6 harjutust
-│   └── reset.sh
+│   └── exercises/                 # 6 harjutust
 │
 ├── 04-kubernetes-advanced-lab/    # Lab 4: Kubernetes Täiustatud
 │   ├── README.md
