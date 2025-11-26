@@ -45,7 +45,7 @@ Peale selle harjutuse läbimist oskad:
 ```bash
 # 1. Kas oled compose-project kaustas?
 pwd
-# Peaks olema: /home/janek/projects/hostinger/labs/02-docker-compose-lab/compose-project
+# Peaks olema: ~/labs/02-docker-compose-lab/compose-project
 
 # 2. Kas docker-compose.yml on olemas?
 ls -la docker-compose.yml nginx.conf
