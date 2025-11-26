@@ -30,6 +30,40 @@ Peale selle harjutuse läbimist oskad:
 
 ---
 
+## 🖥️ Sinu Testimise Konfiguratsioon
+
+### SSH Ühendus VPS-iga
+```bash
+ssh labuser@93.127.213.242 -p [SINU-PORT]
+```
+
+| Õpilane | SSH Port | Password |
+|---------|----------|----------|
+| student1 | 2201 | student1 |
+| student2 | 2202 | student2 |
+| student3 | 2203 | student3 |
+
+### Teenuste URL-id
+
+**SSH Sessioonis (VPS sees):**
+- Kõik `curl http://localhost:...` käsud töötavad
+
+**Brauserist (oma arvutist):**
+
+| Õpilane | Frontend | User Service API | Todo Service API |
+|---------|----------|------------------|------------------|
+| student1 | http://93.127.213.242:8080 | http://93.127.213.242:3000 | http://93.127.213.242:8081 |
+| student2 | http://93.127.213.242:8180 | http://93.127.213.242:3100 | http://93.127.213.242:8181 |
+| student3 | http://93.127.213.242:8280 | http://93.127.213.242:3200 | http://93.127.213.242:8281 |
+
+### Kus kasutada millist URL-i?
+
+- ✅ **SSH sessioonis (VPS sees):** `curl http://localhost:3000/health`
+- ✅ **Brauseris (oma arvutist):** `http://93.127.213.242:3000/health`
+- ✅ **Docker konteinerite vahel:** Service nimed (`http://user-service:3000`, Docker võrgus)
+
+---
+
 ## 🏗️ Arhitektuur
 
 ### Enne (Harjutus 1):
@@ -283,6 +317,59 @@ grep "nginx.conf" docker-compose.yml
 
 ---
 
+### 🎓 Reverse Proxy Töö Sinu Keskkonnas
+
+**OLULINE:** Ülal olev nginx.conf konfiguratsioon töötab **täpselt ühtemoodi** kõigile kolmele kasutajale (student1, student2, student3).
+
+#### Kuidas See Töötab?
+
+**1. Docker võrgus (container to container):**
+```nginx
+proxy_pass http://user-service:3000/api/auth/;
+proxy_pass http://todo-service:8081/api/todos;
+```
+- Nginx kasutab **Docker service nimesid** (`user-service`, `todo-service`)
+- See on võrgu sisene suhtlus Docker'i `todo-network` võrgus
+- **Sama kõigile kasutajatele** - service nimed on identsed
+
+**2. Brauseri päringud:**
+
+Sinu brauserist tuleb päring vastavalt sinu kasutajale:
+
+| Kasutaja | Brauseri URL | LXD Port Mapping | Jõuab Nginx'ni |
+|----------|--------------|------------------|----------------|
+| student1 | `http://93.127.213.242:8080/api/auth/login` | Host:8080 → Container:80 | ✅ Port 80 |
+| student2 | `http://93.127.213.242:8180/api/auth/login` | Host:8180 → Container:80 | ✅ Port 80 |
+| student3 | `http://93.127.213.242:8280/api/auth/login` | Host:8280 → Container:80 | ✅ Port 80 |
+
+**3. Mis juhtub sammhaaval (student1 näitel):**
+
+```
+1. Brauseris sisestada: http://93.127.213.242:8080/api/auth/login
+                           ↓
+2. LXD port mapping: Host port 8080 → devops-student1 konteiner port 8080
+                           ↓
+3. Docker port mapping: Host port 8080 → frontend konteiner port 80
+                           ↓
+4. Nginx (frontend konteiner) saab: GET /api/auth/login
+                           ↓
+5. Nginx proxy_pass reegel: location /api/auth/ → http://user-service:3000
+                           ↓
+6. user-service konteiner vastab: 200 OK + JWT token
+                           ↓
+7. Vastus tagasi läbi sama tee: user-service → Nginx → Docker → LXD → Brauser
+```
+
+#### Miks See Töötab Kõigile Ühtemoodi?
+
+✅ **nginx.conf konfiguratsioon on identne** - kasutab Docker service nimesid
+✅ **LXD port mapping** eristab kasutajaid (8080/8180/8280)
+✅ **Docker võrk siseselt** on sama kõigile (todo-network)
+
+**Järeldus:** Sa ei pea nginx.conf faili muutma oma kasutaja järgi! LXD port mapping teeb eristamise sinu eest.
+
+---
+
 ### Samm 3: Mõista Frontend Konfiguratsiooni (3 min)
 
 **Analüüsi olulisemad osad docker-compose.yml'ist:**
@@ -346,15 +433,13 @@ docker compose logs frontend
 
 #### Test 1: Ava Frontend
 
-Ava brauseris:
-```
-http://kirjakast:8080
-```
+**Brauseris (oma arvutist):**
 
-või kui töötad lokaalselt:
-```
-http://localhost:8080
-```
+Ava üks järgnevatest URL-idest vastavalt oma kasutajale (vaata "Sinu Testimise Konfiguratsioon" sektsiooni üleval):
+
+- **student1:** `http://93.127.213.242:8080`
+- **student2:** `http://93.127.213.242:8180`
+- **student3:** `http://93.127.213.242:8280`
 
 **Peaksid nägema:**
 - Login / Register vorm

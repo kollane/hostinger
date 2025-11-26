@@ -29,6 +29,40 @@ Peale selle harjutuse läbimist oskad:
 
 ---
 
+## 🖥️ Sinu Testimise Konfiguratsioon
+
+### SSH Ühendus VPS-iga
+```bash
+ssh labuser@93.127.213.242 -p [SINU-PORT]
+```
+
+| Õpilane | SSH Port | Password |
+|---------|----------|----------|
+| student1 | 2201 | student1 |
+| student2 | 2202 | student2 |
+| student3 | 2203 | student3 |
+
+### Teenuste URL-id
+
+**SSH Sessioonis (VPS sees):**
+- Kõik `curl http://localhost:...` käsud töötavad
+
+**Brauserist (oma arvutist):**
+
+| Õpilane | Frontend | User Service API | Todo Service API |
+|---------|----------|------------------|------------------|
+| student1 | http://93.127.213.242:8080 | http://93.127.213.242:3000 | http://93.127.213.242:8081 |
+| student2 | http://93.127.213.242:8180 | http://93.127.213.242:3100 | http://93.127.213.242:8181 |
+| student3 | http://93.127.213.242:8280 | http://93.127.213.242:3200 | http://93.127.213.242:8281 |
+
+### Kus kasutada millist URL-i?
+
+- ✅ **SSH sessioonis (VPS sees):** `curl http://localhost:3000/health`
+- ✅ **Brauseris (oma arvutist):** `http://93.127.213.242:3000/health`
+- ✅ **Docker konteinerite vahel:** Service nimed (`http://user-service:3000`, Docker võrgus)
+
+---
+
 ## 🏗️ Mis Konverteerime?
 
 ### Lab 1 Lõpuseisu (Stardipunkt)
