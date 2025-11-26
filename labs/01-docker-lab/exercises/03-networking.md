@@ -53,14 +53,6 @@ ssh labuser@93.127.213.242 -p [SINU-PORT]
 | student2 | 2202 | student2 |
 | student3 | 2203 | student3 |
 
-### Testimine
-
-**SSH Sessioonis (VPS sees):**
-- Kõik `curl http://localhost:...` käsud käivita siin
-- Näide: `curl http://localhost:3000/health`
-
-💡 **Frontend ja brauserist testimine tuleb Lab 2 Exercise 2-s**
-
 ---
 
 ## 📝 Sammud
@@ -463,87 +455,6 @@ docker exec postgres-todo psql -U postgres -d todo_service_db -c "SELECT id, use
 **See on täielik mikroteenuste (microservices) arhitektuur kohandatud võrgus (custom network)!** 🚀
 
 ---
-
-## 🎓 Õpitud Mõisted
-
-### Kohandatud Silla (Bridge) Võrgud (Networks):
-- `docker network create <nimi>` - Loo võrk (network)
-- `docker network ls` - Näita kõiki võrke (networks)
-- `docker network inspect <nimi>` - Vaata detaile
-- `--network <nimi>` - Ühenda konteiner võrguga (network)
-
-### DNS Lahendus (Resolution):
-- Konteineri nimi = automaatne hostname
-- Docker sisseehitatud DNS server (127.0.0.11)
-- Ei vaja --link ega IP aadresse
-
-### Võrgu Isolatsioon (Network Isolation):
-- Erinevad võrgud (networks) = isoleeritud
-- Ainult sama võrgu (network) konteinerid saavad omavahel rääkida
-- Turvalisuse eelis!
-
----
-
-## 📊 Võrdlus: --link (Harjutus 2) vs Kohandatud Võrk (Custom Network) (Harjutus 3)
-
-| Aspekt | --link (Harjutus 2) | Kohandatud Võrk (Custom Network) (Harjutus 3) |
-|--------|---------------------|----------------------------|
-| **Staatus** | ❌ Aegunud (deprecated) | ✅ Soovitatav (recommended) |
-| **DNS** | `--link postgres-todo:postgres` (alias) | `DB_HOST=postgres-todo` (automaatne!) |
-| **Isolatsioon** | ❌ Kõik samas vaikimisi sillas (default bridge) | ✅ Eraldi võrk (network) (todo-network) |
-| **Skaleeritavus** | ❌ --link on 1:1 seos | ✅ Lisa/eemalda konteinereid lihtsalt |
-| **Teenuste (services) suhtlus** | ❌ Ainult --link'itud konteinerid | ✅ Kõik sama võrgu (network) konteinerid |
-| **Turvalisus** | ❌ Madalam (jagatud vaikimisi võrk (default network)) | ✅ Kõrgem (isoleeritud võrk (network)) |
-| **Keerukus** | Vajab --link iga ühenduse jaoks | Lihtsalt lisa --network todo-network |
-| **Parim praktika (best practice)** | ❌ EI (Docker soovitab mitte kasutada) | ✅ JAH (tänapäevane standard) |
-
-**Järeldus:** Kasuta ALATI kohandatud võrke (custom networks), mitte --link!
----
-
-## 🎉 Õnnitleme! Mida Sa Õppisid?
-
-### ✅ Tehnilised Oskused
-
-**Kohandatud (Custom) Docker Võrgud (Networks):**
-- ✅ Lõid kohandatud silla (bridge) võrgu (network) (`docker network create`)
-- ✅ Käivitasid 4 konteinerit samas võrgus (network)
-- ✅ Kasutasid automaatset DNS lahendust (resolution) (konteineri nimi = hostname)
-- ✅ Inspekteerisid võrgu (network) konfiguratsiooni
-- ✅ Testisid teenuste (services) vahelist suhtlust
-
-**Mikroteenuste (Microservices) Arhitektuur:**
-- ✅ Käivitasid täieliku mikroteenuste (microservices) süsteemi (2 DB + 2 teenust (services))
-- ✅ Testisid End-to-End JWT workflow'i
-- ✅ Mõistsid, kuidas teenused (services) omavahel suhtlevad
-- ✅ Kasutasid võrgu isolatsiooni (network isolation) turvalisuse jaoks
-
-**Docker Võrgunduse (Networking) Kontseptsioonid:**
-- ✅ Kohandatud võrgud (custom networks) vs vaikimisi sild (default bridge)
-- ✅ DNS lahendus (resolution) konteinerite vahel
-- ✅ Võrgu isolatsioon (network isolation) (PostgreSQL ei ole väliselt kättesaadav)
-- ✅ Portide vastendamine (port mapping) (ainult teenused (services) on väliselt kättesaadavad: 3000, 8081)
-- ✅ Konteinerite-vaheline (container-to-container) kommunikatsioon
-
-### 🔄 Võrreldes Harjutus 2-ga
-
-**Mida muutsime:**
-- ❌ `--link postgres-todo:postgres` (aegunud (deprecated))
-- ✅ `--network todo-network` (soovitatav)
-
-**Mida võitsime:**
-- ✅ Automaatne DNS lahendus (resolution) (ei vaja aliaseid)
-- ✅ Parem isolatsioon (eraldi võrk (network))
-- ✅ Lihtsam skaleerida (lisa uusi konteinereid lihtsalt)
-- ✅ Tänapäevane parim praktika (best practice)
-
-### 🚀 Järgmised Sammud
-
-**Harjutus 4: Andmehoidlad (Volumes)** õpetab:
-- Kuidas säilitada andmed pärast konteineri kustutamist
-- Miks andmehoidlad (volumes) on kriitilised tootmises
-- Kuidas teha varukoopiat/taastada (backup/restore)
-
-**Jätka:** [Harjutus 4: Andmehoidlad (Volumes)](04-volumes.md)
 
 ---
 

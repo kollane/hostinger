@@ -60,14 +60,6 @@ ssh labuser@93.127.213.242 -p [SINU-PORT]
 | student2 | 2202 | student2 |
 | student3 | 2203 | student3 |
 
-### Testimine
-
-**SSH Sessioonis (VPS sees):**
-- Kõik `curl http://localhost:...` käsud käivita siin
-- Näide: `curl http://localhost:8081/health`
-
-💡 **Frontend ja brauserist testimine tuleb Lab 2 Exercise 2-s**
-
 ---
 
 ## 🏗️ Arhitektuur
@@ -465,109 +457,6 @@ Peale selle harjutuse läbimist peaksid omama:
 
 ---
 
-## 🧪 Testimine
-
-### Test 1: Kas pilt (image) on loodud? ✅
-
-```bash
-docker images | grep todo-service
-# Oodatud: todo-service   1.0   ...   200-250MB
-```
-
-**Kui näed seda, siis pilt (image) on edukalt loodud!** 🎉
-
-### Test 2: Kas konteiner käivitus? ✅
-
-```bash
-docker ps -a | grep todo-service
-# Oodatud: Exited (1) - See on ÕIGE!
-```
-
-**Miks "Exited (1)" on hea?**
-- Konteiner käivitus (Docker pilt (image) toimib) ✅
-- Rakendus (application) käivitus (Java töötab) ✅
-- Rakendus (application) hangus (PostgreSQL puudub) ✅
-- See on TÄPSELT see, mida ootame! ✅
-
-### Test 3: Kas logid näitavad vea (error) sõnumit? ✅
-
-```bash
-docker logs todo-service | head -20
-# Peaks sisaldama:
-# - Spring Boot logo
-# - Error: Unable to connect to database
-# - Connection refused / Unknown host
-```
-
-**See on PERFEKTNE!** Sa õppisid:
-- Kuidas vaadata logisid hangunud konteineris
-- Kuidas debuggida vea (error) sõnumit
-- Miks mitme-konteineri (multi-container) lahendus on vajalik
-
-### Test 4: Kas konteiner ei ole `docker ps` väljundis? ✅
-
-```bash
-docker ps | grep todo-service
-# Oodatud: TÜHI (midagi ei näita)
-```
-
-**See on ÕIGE!**
-- `docker ps` näitab ainult TÖÖTAVAID konteinereid
-- Hangunud konteiner on peatatud
-- Kasuta `docker ps -a` et näha kõiki konteinereid
-
----
-
-## 🎓 Edukas Harjutus!
-
-**Kui kõik 4 testi läbisid, siis oled edukalt läbinud Harjutuse 1!**
-
-Sa õppisid:
-- ✅ Docker pildi (image) ehitamist (build)
-- ✅ Konteineri käivitamist
-- ✅ Vahet `docker ps` vs `docker ps -a`
-- ✅ Logide vaatamist hangunud konteineris
-- ✅ Vea (error) sõnumite debuggimist
-- ✅ Miks mitme-konteineri (multi-container) lahendus on vajalik
-
-**Järgmine samm:** [Harjutus 2: Mitme Konteineri Käivitamine](02-multi-container.md) - Lisame PostgreSQL ja saame töötava rakenduse (application)!
-
----
-
-## 🎓 Õpitud Mõisted
-
-### Dockerfile instruktsioonid:
-
-- `FROM` - Baaspilt (base image)
-- `WORKDIR` - Töökataloog
-- `COPY` - Kopeeri failid
-- `RUN` - Käivita käsk ehitamise (build) ajal
-- `EXPOSE` - Avalda port
-- `CMD` - Käivita käsk konteineri käivitamisel
-
-### Docker käsud:
-
-- `docker build` - Ehita (build) pilt (image)
-- `docker run` - Käivita konteiner
-- `docker ps` - Näita töötavaid konteinereid
-- `docker logs` - Vaata konteineri logisid
-- `docker exec` - Käivita käsk töötavas konteineris
-- `docker inspect` - Vaata konteineri/pildi (image) infot
-
-### Docker run parameetrid:
-
-- `-d` - Taustal töötav režiim (detached mode)
-- `-it` - Interactive + TTY (interaktiivne)
-- `-p 8081:8081` - Portide vastendamine (port mapping) (host:konteiner)
-- `-e KEY=value` - Keskkonna muutuja (environment variable)
-- `--name <nimi>` - Anna konteinerile nimi
-- `--link <konteiner>:<alias>` - Ühenda teise konteineriga (aegunud (deprecated), kasuta võrke (networks)!)
-
-### Õpitud probleemid ja lahendused:
-
-- **JWT_SECRET peab olema min 32 tähemärki** - Test: `my-test-secret-key-min-32-chars-long`, Tootmine: `openssl rand -base64 32`
-- **Konteiner hangub (PostgreSQL puudub)** - See on Harjutus 1's OODATUD! Lahendus tuleb Harjutus 2's
-
 ---
 
 ## 💡 Parimad Praktikad (Best Practices)
@@ -583,6 +472,8 @@ Sa õppisid:
 
 ---
 
+**Õnnitleme! Oled loonud oma esimese Docker pildi (image)! 🎉**
+
 ## 🔗 Järgmine Samm
 
 Järgmises harjutuses lisame PostgreSQL konteineri ja ühendame kaks konteinerit!
@@ -596,7 +487,3 @@ Järgmises harjutuses lisame PostgreSQL konteineri ja ühendame kaks konteinerit
 - [Dockerfile reference](https://docs.docker.com/engine/reference/builder/)
 - [Docker run reference](https://docs.docker.com/engine/reference/run/)
 - [Spring Boot Docker parimad praktikad (best practices)](https://spring.io/guides/topicals/spring-boot-docker/)
-
----
-
-**Õnnitleme! Oled loonud oma esimese Docker pildi (image)! 🎉**

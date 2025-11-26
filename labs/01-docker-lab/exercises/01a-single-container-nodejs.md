@@ -60,14 +60,6 @@ ssh labuser@93.127.213.242 -p [SINU-PORT]
 | student2 | 2202 | student2 |
 | student3 | 2203 | student3 |
 
-### Testimine
-
-**SSH Sessioonis (VPS sees):**
-- Kõik `curl http://localhost:...` käsud käivita siin
-- Näide: `curl http://localhost:3000/health`
-
-💡 **Frontend ja brauserist testimine tuleb Lab 2 Exercise 2-s**
-
 ---
 
 ## 🏗️ Arhitektuur
@@ -414,73 +406,6 @@ Peale selle harjutuse läbimist peaksid omama:
 
 ---
 
-## 🧪 Testimine
-
-### Test 1: Kas pilt (image) on loodud?
-
-```bash
-docker images | grep user-service
-# Peaks näitama: user-service 1.0 ...
-```
-
-### Test 2: Kas konteiner töötab?
-
-```bash
-docker ps | grep user-service
-# Peaks näitama töötavat konteinerit
-```
-
-### Test 3: Kas logid näitavad vea (error) sõnumit? ✅
-
-```bash
-docker logs user-service | head -20
-# Peaks sisaldama:
-# - "Server running on port 3000" VÕI
-# - Error: Unable to connect to database
-# - Connection refused / ECONNREFUSED
-```
-
-**See on PERFEKTNE!** Sa õppisid:
-- Kuidas vaadata logisid hangunud konteineris
-- Kuidas debuggida vea (error) sõnumit
-- Miks mitme-konteineri (multi-container) lahendus on vajalik
-
-### Test 4: Kas konteiner ei ole `docker ps` väljundis? ✅
-
-```bash
-docker ps | grep user-service
-# Oodatud: TÜHI (midagi ei näita)
-```
-
-**See on ÕIGE!**
-- `docker ps` näitab ainult TÖÖTAVAID konteinereid
-- Hangunud konteiner on peatatud
-- Kasuta `docker ps -a` et näha kõiki konteinereid
-
----
-
-## 🎓 Õpitud Mõisted
-
-### Dockerfile instruktsioonid:
-
-- `FROM` - Baaspilt (base image)
-- `WORKDIR` - Töökataloog
-- `COPY` - Kopeeri failid
-- `RUN` - Käivita käsk ehitamise (build) ajal
-- `EXPOSE` - Avalda port
-- `CMD` - Käivita käsk konteineri käivitamisel
-
-### Docker käsud:
-
-- `docker build` - Ehita (build) pilt (image)
-- `docker run` - Käivita konteiner
-- `docker ps` - Näita töötavaid konteinereid
-- `docker logs` - Vaata konteineri logisid
-- `docker exec` - Käivita käsk töötavas konteineris
-- `docker inspect` - Vaata konteineri/pildi (image) infot
-
----
-
 ## 💡 Parimad Praktikad (Best Practices)
 
 1. **Kasuta `.dockerignore`** - Väldi tarbetute failide kopeerimist
@@ -492,6 +417,8 @@ docker ps | grep user-service
 **📖 Node.js konteineriseerimise parimad tavad:** Põhjalikum käsitlus `npm ci`, Alpine images, bcrypt native moodulid, ja teised Node.js spetsiifilised teemad leiad [Peatükk 06A: Java Spring Boot ja Node.js Konteineriseerimise Spetsiifika](../../../resource/06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md).
 
 ---
+
+**Õnnitleme! Oled loonud oma esimese Docker pildi (image)! 🎉**
 
 ## 🔗 Järgmine Samm
 
@@ -506,7 +433,3 @@ Järgmises harjutuses lisame PostgreSQL konteineri ja ühendame kaks konteinerit
 - [Dockerfile reference](https://docs.docker.com/engine/reference/builder/)
 - [Docker run reference](https://docs.docker.com/engine/reference/run/)
 - [Node.js Docker parimad praktikad (best practices)](https://github.com/nodejs/docker-node/blob/main/docs/BestPractices.md)
-
----
-
-**Õnnitleme! Oled loonud oma esimese Docker pildi (image)! 🎉**

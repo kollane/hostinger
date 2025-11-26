@@ -50,14 +50,6 @@ ssh labuser@93.127.213.242 -p [SINU-PORT]
 | student2 | 2202 | student2 |
 | student3 | 2203 | student3 |
 
-### Testimine
-
-**SSH Sessioonis (VPS sees):**
-- Kõik `curl http://localhost:...` käsud käivita siin
-- Näide: `curl http://localhost:3000/health`
-
-💡 **Frontend ja brauserist testimine tuleb Lab 2 Exercise 2-s**
-
 ---
 
 ## 🏗️ Arhitektuur
@@ -763,81 +755,6 @@ Harjutus 3 õpetab **korralikku võrgundust (proper networking)** Docker Võrkud
 | **User teenus (service)** | ❌ Hangub (crashes) | ✅ Genereerib JWT |
 | **Todo teenus (service)** | ❌ Hangub (crashes) | ✅ Valideerib JWT |
 | **API testid** | ❌ Ei tööta | ✅ Töötavad |
-
----
-
-## 🧪 Testimine
-
-### Test 1: Kas kõik konteinerid töötavad?
-
-```bash
-docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
-
-# Oodatud väljund:
-# NAMES              STATUS          PORTS
-# todo-service       Up X minutes    0.0.0.0:8081->8081/tcp
-# user-service       Up X minutes    0.0.0.0:3000->3000/tcp
-# postgres-todo      Up X minutes    0.0.0.0:5433->5432/tcp
-# postgres-user      Up X minutes    0.0.0.0:5432->5432/tcp
-```
-
-### Test 2: Kas seisukorra kontrollid (health checks) töötavad?
-
-```bash
-# User teenus (service)
-curl -s http://localhost:3000/health | jq
-# Oodatud: {"status":"OK","database":"connected"}
-
-# Todo teenus (service)
-curl -s http://localhost:8081/health | jq
-# Oodatud: {"status":"UP"}
-```
-
-### Test 3: Kas autentimine töötab?
-
-```bash
-# Registreerimine
-curl -s -X POST http://localhost:3000/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"name":"Test2","email":"test2@example.com","password":"test123"}' | jq
-
-# Login
-TOKEN=$(curl -s -X POST http://localhost:3000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test2@example.com","password":"test123"}' \
-  | jq -r '.token')
-
-echo "Tokeni pikkus (length): ${#TOKEN}"
-# Oodatud: Token length: 150+ (JWT on pikk string)
-```
-
-### Test 4: Kas JWT token töötab Todo teenuses (service)?
-
-```bash
-# Loo todo
-curl -s -X POST http://localhost:8081/api/todos \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $TOKEN" \
-  -d '{"title":"Test todo","priority":"high"}' | jq
-
-# Loe todosid
-curl -s -X GET http://localhost:8081/api/todos \
-  -H "Authorization: Bearer $TOKEN" | jq
-
-# Oodatud: Peaksid nägema loodud todo'd
-```
-
-### Test 5: Kas andmebaasid sisaldavad andmeid?
-
-```bash
-# User teenuse (service) andmebaas
-docker exec postgres-user psql -U postgres -d user_service_db -c "SELECT id, email, role FROM users;"
-
-# Todo teenuse (service) andmebaas
-docker exec postgres-todo psql -U postgres -d todo_service_db -c "SELECT id, user_id, title, completed FROM todos;"
-```
-
-**Kui kõik 5 testi läbisid, siis oled edukalt läbinud Harjutuse 2!** 🎉
 
 ---
 

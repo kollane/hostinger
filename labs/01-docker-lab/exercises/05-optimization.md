@@ -78,14 +78,6 @@ ssh labuser@93.127.213.242 -p [SINU-PORT]
 | student2 | 2202 | student2 |
 | student3 | 2203 | student3 |
 
-### Testimine
-
-**SSH Sessioonis (VPS sees):**
-- Kõik `curl http://localhost:...` käsud käivita siin
-- Näide: `curl http://localhost:3000/health`
-
-💡 **Frontend ja brauserist testimine tuleb Lab 2 Exercise 2-s**
-
 ---
 
 ## 📝 Sammud
@@ -691,51 +683,6 @@ Peale selle harjutuse läbimist peaksid omama:
 
 ---
 
-## 🎉 Õnnitleme! Mida Sa Õppisid?
-
-### ✅ Tehnilised Oskused
-
-**Docker Optimization:**
-- ✅ Multi-stage builds (Node.js: deps → runtime, Java: JDK → JRE)
-- ✅ Layer caching optimization (dependencies eraldi layer)
-- ✅ .dockerignore optimization (väiksem build context)
-- ✅ Non-root users (security)
-- ✅ Health checks (monitoring)
-
-**Võrdlus Enne vs Pärast:**
-- 📉 Todo Service: -22% väiksem pilt (image)
-- ⚠️ User Service: sama suurus, mõlemad kasutavad `node:21-slim`
-- 📉 Rebuild kiirus: -60-80% MÕLEMAS teenuses
-- ✅ Security: root → non-root
-- ✅ Monitoring: ❌ → health checks
-- ✅ Caching: halb → suurepärane (dependencies cached)
-
-### 🔄 Progressioon Läbi Kõigi 5 Harjutuse
-
-**Harjutus 1: Single Container**
-- ✅ Lõime esimesed Dockerfile'id (User Service + Todo Service)
-- ✅ Build'isime Docker images
-- ✅ Õppisid, miks containerid crashivad (andmebaas puudub)
-- ❌ Ei optimeeri midagi
-
-**Harjutus 2: Multi-Container**
-- ✅ Käivitasime 4 containerit koos (2 DB + 2 teenust)
-- ✅ Implementeerisime JWT-põhise autentimise
-- ✅ End-to-End mikroteenuste workflow
-- ❌ Kasutasime deprecated --link
-
-**Harjutus 3: Custom Networks**
-- ✅ Lõime custom Docker network
-- ✅ Proper networking DNS-iga (automaatne!)
-- ✅ Network isolation (security)
-- ❌ Andmed kaovad container kustutamisel
-
-**Harjutus 4: Volumes**
-- ✅ Data persistence! (containers can fail, data survives)
-- ✅ Backup/restore strateegia
-- ✅ Disaster recovery
-- ❌ Images siiski optimeerimata
-
 **Harjutus 5: Optimization (PRAEGU)**
 - ✅ Multi-stage builds (mõlemas teenuses)
 - ✅ Layer caching (-60-80% kiirem rebuild)
@@ -792,21 +739,4 @@ Sa oskad nüüd:
 
 ---
 
-**🎉 ÕNNITLEME! OLED EDUKALT LÄBINUD LAB 01! 🎉**
-
-**Mida saavutasid 5 harjutusega:**
-- ✅ Docker põhitõed (pildid/images, konteinerid, võrgud/networks, andmehoidlad/volumes)
-- ✅ Mikroteenuste arhitektuur (User Service + Todo Service)
-- ✅ Production best practices (optimization, security, monitoring)
-- ✅ End-to-End tested süsteem (JWT workflow)
-- 📚 **Praktiline õppetund:** Multi-stage builds ja layer caching optimeerimiseks
-
 **Järgmine:** [Lab 2: Docker Compose](../../02-docker-compose-lab/README.md)
-
-Seal õpid:
-- 🚀 Halda multi-container setup'e YAML failidega
-- 🚀 Üks käsk käivitab KOGU süsteemi: `docker compose up`
-- 🚀 Development vs Production konfiguratsioonid
-- 🚀 Scaling (käivita 3 Todo Service instance't korraga!)
-
-**Näeme Lab 2-s!** 🐳
