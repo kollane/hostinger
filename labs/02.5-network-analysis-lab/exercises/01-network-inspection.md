@@ -22,7 +22,7 @@ Selles harjutuses õpid:
 
 ```bash
 # 1. Mine Lab 2 compose-project kausta
-cd /home/janek/projects/hostinger/labs/02-docker-compose-lab/compose-project
+cd ~/labs/02-docker-compose-lab/compose-project
 
 # 2. Kontrolli, et kõik teenused töötavad
 docker compose ps
@@ -505,7 +505,7 @@ networks:
     internal: true    # ← Lisa see!
 
 # Taaskäivita stack
-cd /home/janek/projects/hostinger/labs/02-docker-compose-lab/compose-project
+cd ~/labs/02-docker-compose-lab/compose-project
 docker compose down
 docker network rm database-network
 docker compose up -d

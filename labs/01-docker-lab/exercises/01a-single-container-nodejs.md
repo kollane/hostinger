@@ -95,12 +95,12 @@ ssh labuser@93.127.213.242 -p [SINU-PORT]
 
 ### Samm 1: Tutvu Rakendusega (Application) (5 min)
 
-**Rakenduse (application) juurkataloog:** `/hostinger/labs/apps/backend-nodejs`
+**Rakenduse (application) juurkataloog:** `~/labs/apps/backend-nodejs` ehk `/home/labuser/labs/apps/backend-nodejs`
 
 Vaata rakenduse (application) "User Teenus (Service)" koodi:
 
 ```bash
-cd ../../apps/backend-nodejs
+cd ~/labs/apps/backend-nodejs
 
 # Vaata faile
 ls -la
@@ -121,7 +121,7 @@ head -50 server.js
 
 Loo fail nimega `Dockerfile`:
 
-**⚠️ Oluline:** Dockerfail tuleb luua rakenduse (application) juurkataloogi `/hostinger/labs/apps/backend-nodejs`. 
+**⚠️ Oluline:** Dockerfail tuleb luua rakenduse (application) juurkataloogi `~/labs/apps/backend-nodejs`. 
 
 ```bash
 vim Dockerfile
@@ -167,7 +167,7 @@ CMD ["node", "server.js"]
 
 Loo `.dockerignore` fail, et vältida tarbetute failide kopeerimist:
 
-**⚠️ Oluline:** .dockerignore tuleb luua rakenduse (application) juurkataloogi `/hostinger/labs/apps/backend-nodejs`. 
+**⚠️ Oluline:** .dockerignore tuleb luua rakenduse (application) juurkataloogi `~/labs/apps/backend-nodejs`. 
 
 ```bash
 vim .dockerignore
@@ -191,7 +191,7 @@ README.md
 
 ### Samm 4: Ehita (build) Docker pilt (image) (10 min)
 
-**Asukoht:** `/hostinger/labs/apps/backend-nodejs`
+**Asukoht:** `~/labs/apps/backend-nodejs`
 
 Ehita (build) oma esimene Docker pilt (image):
 
@@ -497,7 +497,7 @@ docker ps | grep user-service
 
 Järgmises harjutuses lisame PostgreSQL konteineri ja ühendame kaks konteinerit!
 
-**Jätka:** [Harjutus 1B: Üksik-Konteiner-Java (Single-Container-Java)] (https://github.com/kollane/hostinger/blob/master/labs/01-docker-lab/exercises/01b-single-container-java.md)
+**Jätka:** [Harjutus 1B: Üksik-Konteiner-Java (Single-Container-Java)](https://github.com/kollane/hostinger/blob/master/labs/01-docker-lab/exercises/01b-single-container-java.md)
 
 ---
 

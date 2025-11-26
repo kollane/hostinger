@@ -272,7 +272,7 @@ free -h
 
 ```bash
 # Mine labori kataloogi
-cd /home/janek/projects/hostinger/labs/01-docker-lab
+cd ~/labs/01-docker-lab
 
 # Kontrolli rakenduste (applications) kättesaadavust
 ls ../apps/backend-java-spring

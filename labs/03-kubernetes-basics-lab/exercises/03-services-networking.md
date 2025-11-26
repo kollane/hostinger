@@ -464,13 +464,13 @@ Esmalt: Loo frontend Deployment (kui pole veel):
 # Lae frontend image cluster'isse
 # Minikube:
 eval $(minikube docker-env)
-cd ../../apps/frontend
+cd ~/labs/apps/frontend
 docker build -t frontend:1.0 .
 cd -
 eval $(minikube docker-env -u)
 
 # K3s:
-cd ../../apps/frontend
+cd ~/labs/apps/frontend
 docker build -t frontend:1.0 .
 docker save frontend:1.0 -o /tmp/frontend.tar
 sudo k3s ctr images import /tmp/frontend.tar

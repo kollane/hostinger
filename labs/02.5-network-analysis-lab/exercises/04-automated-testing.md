@@ -20,7 +20,7 @@ Selles harjutuses õpid:
 
 ```bash
 # Kontrolli, et Lab 2 stack töötab
-cd /home/janek/projects/hostinger/labs/02-docker-compose-lab/compose-project
+cd ~/labs/02-docker-compose-lab/compose-project
 docker compose ps
 
 # Installi nmap, kui puudub
@@ -48,7 +48,7 @@ cat > /tmp/test-network-full.sh << 'EOF'
 
 set -e  # Exit on error
 
-PROJECT_DIR="/home/janek/projects/hostinger/labs/02-docker-compose-lab/compose-project"
+PROJECT_DIR="$HOME/labs/02-docker-compose-lab/compose-project"
 cd "$PROJECT_DIR"
 
 echo "========================================================"
@@ -389,7 +389,7 @@ cat > /tmp/load-test.sh << 'EOF'
 echo "Starting load test: 100 parallel requests"
 echo ""
 
-cd /home/janek/projects/hostinger/labs/02-docker-compose-lab/compose-project
+cd ~/labs/02-docker-compose-lab/compose-project
 
 start_time=$(date +%s)
 
@@ -437,7 +437,7 @@ cat > /tmp/stress-test-db.sh << 'EOF'
 echo "Database connection stress test"
 echo ""
 
-cd /home/janek/projects/hostinger/labs/02-docker-compose-lab/compose-project
+cd ~/labs/02-docker-compose-lab/compose-project
 
 # Monitor initial connections
 initial=$(docker compose exec -T postgres-user psql -U postgres -d user_service_db -t -c "SELECT count(*) FROM pg_stat_activity WHERE datname='user_service_db';" | tr -d ' ')
@@ -489,7 +489,7 @@ Kopeeri valmisskriptid solutions/ kausta:
 
 ```bash
 # Kopeeri test skriptid solutions kausta
-cd /home/janek/projects/hostinger/labs/02.5-network-analysis-lab
+cd ~/labs/02.5-network-analysis-lab
 
 cp /tmp/test-network-full.sh solutions/test-network-segmentation.sh
 cp /tmp/load-test.sh solutions/test-performance.sh

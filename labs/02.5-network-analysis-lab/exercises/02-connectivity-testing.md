@@ -20,7 +20,7 @@ Selles harjutuses õpid:
 
 ```bash
 # Kontrolli, et Lab 2 stack töötab
-cd /home/janek/projects/hostinger/labs/02-docker-compose-lab/compose-project
+cd ~/labs/02-docker-compose-lab/compose-project
 docker compose ps
 
 # Oodatud: Kõik 5 teenust UP ja healthy
@@ -446,7 +446,7 @@ test_connection() {
     fi
 }
 
-cd /home/janek/projects/hostinger/labs/02-docker-compose-lab/compose-project
+cd ~/labs/02-docker-compose-lab/compose-project
 
 # Expected to work
 echo "Expected Connectivity:"

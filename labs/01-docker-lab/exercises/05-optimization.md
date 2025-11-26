@@ -128,10 +128,10 @@ Loome optimeeritud Dockerfailid mõlemale teenusele.
 
 **⚠️ Oluline:** Dockerfile asub rakenduse juurkataloogis.
 
-**Rakenduse juurkataloog:** `/hostinger/labs/apps/backend-nodejs`
+**Rakenduse juurkataloog:** `~/labs/apps/backend-nodejs`
 
 ```bash
-cd ../apps/backend-nodejs
+cd ~/labs/apps/backend-nodejs
 ```
 
 Loo uus `Dockerfile.optimized`:
@@ -141,7 +141,7 @@ vim Dockerfile.optimized
 ```
 
 **💡 Abi vajadusel:**
-Vaata näidislahendust: `/hostinger/labs/01-docker-lab/solutions/backend-nodejs/Dockerfile.optimized`
+Vaata näidislahendust: `~/labs/01-docker-lab/solutions/backend-nodejs/Dockerfile.optimized`
 
 **📖 Multi-stage builds ja Node.js optimeerimine:**
 - [Peatükk 06: Dockerfile - Multi-stage Builds](../../../resource/06-Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md) selgitab multi-stage build'ide põhitõed
@@ -220,10 +220,10 @@ req.end();
 
 #### 2b. Todo Service (Java) Optimization
 
-**Rakenduse juurkataloog:** `/hostinger/labs/apps/backend-java-spring`
+**Rakenduse juurkataloog:** `~/labs/apps/backend-java-spring`
 
 ```bash
-cd ../backend-java-spring
+cd ~/labs/apps/backend-java-spring
 ```
 
 Loo uus `Dockerfile.optimized`:
@@ -233,7 +233,7 @@ vim Dockerfile.optimized
 ```
 
 **💡 Abi vajadusel:**
-Vaata näidislahendust: `/hostinger/labs/01-docker-lab/solutions/backend-java-spring/Dockerfile.optimized`
+Vaata näidislahendust: `~/labs/01-docker-lab/solutions/backend-java-spring/Dockerfile.optimized`
 
 **📖 Multi-stage builds ja Java optimeerimine:**
 - [Peatükk 06: Dockerfile - Multi-stage Builds](../../../resource/06-Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md) selgitab multi-stage build'ide põhitõed (JDK → JRE)
@@ -314,20 +314,20 @@ Tulemus: efektiivne, turvaline ja skaleeritav konteineripilt.
 
 ### Samm 3: Ehita mõlemad optimeeritud Docker pildid (Images) (15 min)
 
-**Rakenduse juurkataloog (User Service):** `/hostinger/labs/apps/backend-nodejs`
+**Rakenduse juurkataloog (User Service):** `~/labs/apps/backend-nodejs`
 
 **⚠️ Oluline:** Docker pildi (image) ehitamiseks pead olema rakenduse juurkataloogis (kus asub `Dockerfile.optimized`).
 
 ```bash
 # === BUILD USER SERVICE (Node.js) ===
-cd ../backend-nodejs
+cd ~/labs/apps/backend-nodejs
 
 # Build optimeeritud image
 docker build -f Dockerfile.optimized -t user-service:1.0-optimized .
 
 # === BUILD TODO SERVICE (Java) ===
-# Asukoht: /hostinger/labs/apps/backend-java-spring
-cd ../backend-java-spring
+# Asukoht: ~/labs/apps/backend-java-spring
+cd ~/labs/apps/backend-java-spring
 
 # Build optimeeritud image (multi-stage build teeb ka JAR'i)
 docker build -f Dockerfile.optimized -t todo-service:1.0-optimized .
@@ -546,19 +546,19 @@ docker run --rm \
 
 **Testime, kui hästi layer caching töötab rebuild'imisel:**
 
-**Rakenduse juurkataloog (User Service):** `/hostinger/labs/apps/backend-nodejs`
+**Rakenduse juurkataloog (User Service):** `~/labs/apps/backend-nodejs`
 
 ```bash
 # === TEST 1: Rebuild ILMA muudatusteta ===
-cd ../apps/backend-nodejs
+cd ~/labs/apps/backend-nodejs
 pwd  # Veendu, et oled õiges kataloogis
 
 # Rebuild User Service (peaks olema VÄGA kiire!)
 time docker build -f Dockerfile.optimized -t user-service:1.0-optimized .
 # Oodatud: "CACHED" iga layer jaoks, build ~2-5s
 
-# Asukoht: /hostinger/labs/apps/backend-java-spring
-cd ../backend-java-spring
+# Asukoht: ~/labs/apps/backend-java-spring
+cd ~/labs/apps/backend-java-spring
 pwd  # Veendu, et oled õiges kataloogis
 
 # Rebuild Todo Service (peaks olema VÄGA kiire!)
@@ -568,8 +568,8 @@ time docker build -f Dockerfile.optimized -t todo-service:1.0-optimized .
 # === TEST 2: Rebuild KUI source code muutub ===
 
 # User Service - muuda source code
-# Asukoht: /hostinger/labs/apps/backend-nodejs
-cd ../backend-nodejs
+# Asukoht: ~/labs/apps/backend-nodejs
+cd ~/labs/apps/backend-nodejs
 pwd  # Veendu, et oled õiges kataloogis
 echo "// test comment" >> server.js
 
@@ -578,8 +578,8 @@ time docker build -f Dockerfile.optimized -t user-service:1.0-optimized .
 # Oodatud: Dependencies layer CACHED, ainult COPY . ja pärast rebuilditakse (~10-15s)
 
 # Todo Service - muuda source code
-# Asukoht: /hostinger/labs/apps/backend-java-spring
-cd ../backend-java-spring
+# Asukoht: ~/labs/apps/backend-java-spring
+cd ~/labs/apps/backend-java-spring
 pwd  # Veendu, et oled õiges kataloogis
 echo "// test comment" >> src/main/java/com/hostinger/todoapp/TodoApplication.java
 

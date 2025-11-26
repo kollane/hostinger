@@ -376,12 +376,12 @@ Loo teine Deployment - Todo Service (Java Spring Boot).
 ```bash
 # Minikube:
 eval $(minikube docker-env)
-cd ../../apps/backend-java-spring
+cd ~/labs/apps/backend-java-spring
 docker build -t todo-service:1.0-optimized -f Dockerfile.optimized .
 cd -
 
 # K3s:
-cd ../../apps/backend-java-spring
+cd ~/labs/apps/backend-java-spring
 docker build -t todo-service:1.0-optimized -f Dockerfile.optimized .
 docker save todo-service:1.0-optimized -o /tmp/todo-service.tar
 sudo k3s ctr images import /tmp/todo-service.tar

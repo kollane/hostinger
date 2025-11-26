@@ -4,7 +4,7 @@
 # Tests connectivity matrix between all services
 # ======================================================
 
-PROJECT_DIR="/home/janek/projects/hostinger/labs/02-docker-compose-lab/compose-project"
+PROJECT_DIR="$HOME/labs/02-docker-compose-lab/compose-project"
 cd "$PROJECT_DIR"
 
 echo "========================================"

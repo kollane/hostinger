@@ -579,7 +579,7 @@ kubectl describe pod <pod-name>
 eval $(minikube docker-env)
 docker images | grep user-service
 # Kui puudub:
-cd ../apps/backend-nodejs
+cd ~/labs/apps/backend-nodejs
 docker build -t user-service:1.0-optimized -f Dockerfile.optimized .
 
 # K3s: import image

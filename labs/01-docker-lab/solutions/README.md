@@ -30,7 +30,7 @@ solutions/
 
 ```bash
 # Mine apps/backend-nodejs kausta
-cd ../../apps/backend-nodejs
+cd ~/labs/apps/backend-nodejs
 
 # Kopeeri Dockerfile
 cp ../../01-docker-lab/solutions/backend-nodejs/Dockerfile .
@@ -68,7 +68,7 @@ docker images | grep user-service
 
 ```bash
 # Mine apps/backend-java-spring kausta
-cd ../../apps/backend-java-spring
+cd ~/labs/apps/backend-java-spring
 
 # Kopeeri Dockerfile
 cp ../../01-docker-lab/solutions/backend-java-spring/Dockerfile .

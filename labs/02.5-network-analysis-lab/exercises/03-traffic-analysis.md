@@ -21,7 +21,7 @@ Selles harjutuses õpid:
 
 ```bash
 # Kontrolli, et Lab 2 stack töötab
-cd /home/janek/projects/hostinger/labs/02-docker-compose-lab/compose-project
+cd ~/labs/02-docker-compose-lab/compose-project
 docker compose ps
 
 # Installi vajalikud tööriistad
@@ -397,7 +397,7 @@ echo ""
 CONTAINER=${1:-user-service}
 DURATION=${2:-10}
 
-cd /home/janek/projects/hostinger/labs/02-docker-compose-lab/compose-project
+cd ~/labs/02-docker-compose-lab/compose-project
 
 echo "Monitoring container: $CONTAINER"
 echo "Duration: ${DURATION}s"

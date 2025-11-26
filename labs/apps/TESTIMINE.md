@@ -9,7 +9,7 @@
 ### 1. Kontrolli teenuste staatust
 
 ```bash
-cd /home/janek/projects/hostinger/labs/apps
+cd ~/labs/apps
 docker compose ps
 ```
 
@@ -472,7 +472,7 @@ chmod +x test-app.sh
 
 **Lahendus:**
 ```bash
-cd /home/janek/projects/hostinger/labs/apps
+cd ~/labs/apps
 docker compose ps
 docker compose restart user-service todo-service
 ```
@@ -518,7 +518,7 @@ curl -X POST http://localhost:3000/api/auth/register \
 **Lahendus:**
 ```bash
 # Käivita database setup
-cd /home/janek/projects/hostinger/labs/apps/backend-java-spring
+cd ~/labs/apps/backend-java-spring
 docker exec -i postgres-todo psql -U postgres -d todo_service_db < database-setup.sql
 ```
 

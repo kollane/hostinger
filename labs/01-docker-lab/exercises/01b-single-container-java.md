@@ -95,12 +95,12 @@ ssh labuser@93.127.213.242 -p [SINU-PORT]
 
 ### Samm 1: Tutvu Rakendusega (Application) (5 min)
 
-**Rakenduse (application) juurkataloog:** `/hostinger/labs/apps/backend-java-spring`
+**Rakenduse (application) juurkataloog:** `~/labs/apps/backend-java-spring` ehk `/home/labuser/labs/apps/backend-java-spring`
 
 Vaata Todo teenuse (service) koodi:
 
 ```bash
-cd ../apps/backend-java-spring
+cd ~/labs/apps/backend-java-spring
 
 # Vaata faile
 ls -la
@@ -121,7 +121,7 @@ cat build.gradle
 
 Loo fail nimega `Dockerfile`:
 
-**⚠️ Oluline:** Dockerfail tuleb luua rakenduse (application) juurkataloogi `/hostinger/labs/apps/backend-java-spring`
+**⚠️ Oluline:** Dockerfail tuleb luua rakenduse (application) juurkataloogi `~/labs/apps/backend-java-spring`
 
 ```bash
 vim Dockerfile
@@ -140,7 +140,7 @@ vim Dockerfile
 
 **💡 Abi vajadusel:**
 - Vaata Docker dokumentatsiooni: https://docs.docker.com/engine/reference/builder/
-- Vaata näidislahendust lahenduste kataloogis: `/hostinger/labs/01-docker-lab/solutions/backend-java-spring/Dockerfile`
+- Vaata näidislahendust lahenduste kataloogis: `~/labs/01-docker-lab/solutions/backend-java-spring/Dockerfile`
 
 **💡 Näpunäide: Dockerfile struktuur**
 
@@ -163,14 +163,14 @@ CMD ["java", "-jar", "app.jar"]
 
 Loo `.dockerignore` fail, et vältida tarbetute failide kopeerimist:
 
-**⚠️ Oluline:** .dockerignore tuleb luua rakenduse (application) juurkataloogi `/hostinger/labs/apps/backend-java-spring`
+**⚠️ Oluline:** .dockerignore tuleb luua rakenduse (application) juurkataloogi `~/labs/apps/backend-java-spring`
 
 ```bash
 vim .dockerignore
 ```
 
 **💡 Abi vajadusel:**
-Vaata näidislahendust: `/hostinger/labs/01-docker-lab/solutions/backend-java-spring/.dockerignore`
+Vaata näidislahendust: `~/labs/01-docker-lab/solutions/backend-java-spring/.dockerignore`
 
 **Sisu:**
 ```
@@ -195,7 +195,7 @@ gradlew.bat
 
 ### Samm 4: Ehita (build) Docker pilt (image) (10 min)
 
-**Asukoht:** `/hostinger/labs/apps/backend-java-spring`
+**Asukoht:** `~/labs/apps/backend-java-spring`
 
 Esmalt ehita (build) JAR fail, seejärel Docker pilt (image):
 
