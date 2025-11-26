@@ -155,8 +155,7 @@ Peale selle labori läbimist oskad:
 │   ├── 05-storage/
 │   ├── 06-full-stack/                 # Täielik süsteem (kõik 5 teenust)
 │   └── README.md
-├── setup.sh                           # Cluster setup automation
-└── reset.sh                           # Cleanup script
+└── setup.sh                           # Cluster setup automation
 ```
 
 ---

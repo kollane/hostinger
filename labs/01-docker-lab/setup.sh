@@ -271,8 +271,8 @@ done
 
 if [ $FOUND_FILES -eq 1 ]; then
     echo ""
-    echo -e "${YELLOW}💡 Soovitus: Käivita reset.sh, et puhastada apps kaustad:${NC}"
-    echo "   ./reset.sh"
+    echo -e "${YELLOW}💡 Soovitus: Käivita labs-reset, et puhastada apps kaustad:${NC}"
+    echo "   labs-reset"
 else
     echo -e "${GREEN}✅ Apps kaustad on puhtad (Dockerfile'e pole, nagu peab olema)${NC}"
 fi
