@@ -45,22 +45,22 @@ ssh labuser@93.127.213.242 -p [SINU-PORT]
 
 ### Teenuste URL-id
 
-**SSH Sessioonis (VPS sees):**
-- Kõik `curl http://localhost:...` käsud töötavad
-
 **Brauserist (oma arvutist):**
 
-| Õpilane | Frontend | User Service API | Todo Service API |
-|---------|----------|------------------|------------------|
-| student1 | http://93.127.213.242:8080 | http://93.127.213.242:3000 | http://93.127.213.242:8081 |
-| student2 | http://93.127.213.242:8180 | http://93.127.213.242:3100 | http://93.127.213.242:8181 |
-| student3 | http://93.127.213.242:8280 | http://93.127.213.242:3200 | http://93.127.213.242:8281 |
+| Õpilane | Frontend |
+|---------|----------|
+| student1 | http://93.127.213.242:8080 |
+| student2 | http://93.127.213.242:8180 |
+| student3 | http://93.127.213.242:8280 |
 
-### Kus kasutada millist URL-i?
+💡 **API'd on kättesaadavad läbi frontend reverse proxy:**
+- `/api/auth/*` → user-service:3000
+- `/api/users*` → user-service:3000
+- `/api/todos*` → todo-service:8081
 
-- ✅ **SSH sessioonis (VPS sees):** `curl http://localhost:3000/health`
-- ✅ **Brauseris (oma arvutist):** `http://93.127.213.242:3000/health`
-- ✅ **Docker konteinerite vahel:** Service nimed (`http://user-service:3000`, Docker võrgus)
+**SSH Sessioonis (debugging):**
+- `curl http://localhost:3000/health`
+- `curl http://localhost:8081/health`
 
 ---
 

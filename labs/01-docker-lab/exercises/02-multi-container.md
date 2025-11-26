@@ -50,24 +50,13 @@ ssh labuser@93.127.213.242 -p [SINU-PORT]
 | student2 | 2202 | student2 |
 | student3 | 2203 | student3 |
 
-### Teenuste URL-id
+### Testimine
 
 **SSH Sessioonis (VPS sees):**
-- Kõik `curl http://localhost:...` käsud töötavad
+- Kõik `curl http://localhost:...` käsud käivita siin
+- Näide: `curl http://localhost:3000/health`
 
-**Brauserist (oma arvutist):**
-
-| Õpilane | Frontend | User Service API | Todo Service API |
-|---------|----------|------------------|------------------|
-| student1 | http://93.127.213.242:8080 | http://93.127.213.242:3000 | http://93.127.213.242:8081 |
-| student2 | http://93.127.213.242:8180 | http://93.127.213.242:3100 | http://93.127.213.242:8181 |
-| student3 | http://93.127.213.242:8280 | http://93.127.213.242:3200 | http://93.127.213.242:8281 |
-
-### Kus kasutada millist URL-i?
-
-- ✅ **SSH sessioonis (VPS sees):** `curl http://localhost:3000/health`
-- ✅ **Brauseris (oma arvutist):** `http://93.127.213.242:3000/health`
-- ✅ **Docker konteinerite vahel:** Service nimed (`http://user-service:3000`, Docker võrgus)
+💡 **Frontend ja brauserist testimine tuleb Lab 2 Exercise 2-s**
 
 ---
 
