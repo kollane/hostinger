@@ -82,7 +82,7 @@ ssh labuser@93.127.213.242 -p [SINU-PORT]
 
 ## 📝 Sammud
 
-### Samm 1: Uuri mõlema teenuse algset suurust (10 min)
+### Samm 1: Uuri mõlema teenuse algset suurust
 
 ```bash
 # Vaata mõlema Harjutus 1-st loodud pildi (image) suurust
@@ -112,7 +112,7 @@ docker history todo-service:1.0
 - Mitu layer'it on igal? (5-6 layer'it)
 - Kui kiire on rebuild, kui muudad source code'i? (Aeglane - kõik rebuilditakse!)
 
-### Samm 2: Optimeeri mõlema rakenduse Dockerfaili (30 min)
+### Samm 2: Optimeeri mõlema rakenduse Dockerfaili
 
 Loome optimeeritud Dockerfailid mõlemale teenusele.
 
@@ -304,7 +304,7 @@ Multi-stage build koosneb kahest põhietapist:
 
 Tulemus: efektiivne, turvaline ja skaleeritav konteineripilt.
 
-### Samm 3: Ehita mõlemad optimeeritud Docker pildid (Images) (15 min)
+### Samm 3: Ehita mõlemad optimeeritud Docker pildid (Images)
 
 **Rakenduse juurkataloog (User Service):** `~/labs/apps/backend-nodejs`
 
@@ -344,7 +344,7 @@ User Service pilt (image) jääb samaks (~305MB), sest mõlemad versioonid kasut
 ✅ Health check (automaatne tervise kontroll)
 ✅ -60% kiirem rebuild (dependency cache)
 
-### Samm 4: Testi MÕLEMAD Optimeeritud Images (20 min)
+### Samm 4: Testi MÕLEMAD Optimeeritud Images
 
 ```bash
 # Genereeri JWT_SECRET (kui pole veel)
@@ -416,7 +416,7 @@ docker ps -a --format "table {{.Names}}\t{{.Image}}\t{{.Status}}"
 # user-service         user-service:1.0                Up
 ```
 
-### Samm 5: Testi End-to-End JWT Workflow Optimeeritud Süsteemiga (15 min)
+### Samm 5: Testi End-to-End JWT Workflow Optimeeritud Süsteemiga
 
 **See on KÕIGE OLULISEM TEST - kinnitame, et optimeeritud süsteem töötab identitsioonilt!**
 
@@ -479,7 +479,7 @@ docker stats --no-stream --format "table {{.Name}}\t{{.MemUsage}}\t{{.CPUPerc}}"
 4. ✅ AGA: Väiksemad images (-25-33%), health checks, non-root users!
 5. ✅ TOOTMISEKS VALMIS mikroteenuste süsteem! 🚀
 
-### Samm 6: Security Scan ja Vulnerability Assessment (10 min)
+### Samm 6: Security Scan ja Vulnerability Assessment
 
 **Image'i turvaaukude (vulnerabilities) skannimine on KRIITILINE tootmises!**
 
@@ -534,7 +534,7 @@ docker run --rm \
 2. Parandanud CRITICAL ja HIGH CVE'd enne production'i
 3. Lisa automaatne skannimine CI/CD pipeline'i (juhised peatükis 06B)
 
-### Samm 7: Layer Caching Test (10 min)
+### Samm 7: Layer Caching Test
 
 **Testime, kui hästi layer caching töötab rebuild'imisel:**
 

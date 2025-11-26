@@ -75,7 +75,7 @@ User (browser/cURL)
 
 ## 📝 Sammud
 
-### Samm 1: Käivita PostgreSQL Konteinerid (15 min)
+### Samm 1: Käivita PostgreSQL Konteinerid
 
 ```bash
 # PostgreSQL User teenusele (service)
@@ -121,7 +121,7 @@ docker logs postgres-todo
 - `5432` → User teenuse (service) PostgreSQL
 - `5433` → Todo teenuse (service) PostgreSQL
 
-### Samm 2: Seadista User teenuse (service) Andmebaas (10 min)
+### Samm 2: Seadista User teenuse (service) Andmebaas
 
 ```bash
 # Loo users tabel
@@ -152,7 +152,7 @@ docker exec postgres-user psql -U postgres -d user_service_db -c "\d users"
 - `password` - `bcrypt` hashitud parool
 - `role` - kasutaja roll (user/admin)
 
-### Samm 3: Seadista Todo teenuse (service) Andmebaas (10 min)
+### Samm 3: Seadista Todo teenuse (service) Andmebaas
 
 ```bash
 # Loo todos tabel
@@ -187,7 +187,7 @@ docker exec postgres-todo psql -U postgres -d todo_service_db -c "\d todos"
 
 **📖 Java/Spring Boot JPA ja PostgreSQL:** Põhjalikum selgitus Spring Boot JPA Entity tüüpide ja PostgreSQL andmetüüpide vastavuse kohta (Long vs BIGINT, Integer vs INT) leiad [Peatükk 06A: Java Spring Boot ja Node.js Konteineriseerimise Spetsiifika](../../../resource/06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md).
 
-### Samm 4: Genereeri Jagatud JWT Saladus (Shared Secret) (5 min)
+### Samm 4: Genereeri Jagatud JWT Saladus (Shared Secret)
 
 **OLULINE:** Mõlemad teenused (services) peavad kasutama SAMA `JWT_SECRET`'i!
 
@@ -224,7 +224,7 @@ Todo teenus (service) (valideerib JWT)
 - ❌ Todo teenus (service) proovib valideerida teise võtmega
 - ❌ Tulemus: "Invalid signature" viga (error)
 
-### Samm 5: Käivita User teenus (service) (10 min)
+### Samm 5: Käivita User teenus (service)
 
 ```bash
 # Puhasta varasemad konteinerid Harjutus 1-st
@@ -275,7 +275,7 @@ docker logs user-service
 # - JWT_SECRET puudub → kontrolli echo $JWT_SECRET
 ```
 
-### Samm 6: Käivita Todo teenus (service) (10 min)
+### Samm 6: Käivita Todo teenus (service)
 
 ```bash
 # Puhasta varasemad konteinerid Harjutus 1-st
@@ -322,7 +322,7 @@ docker ps -a
 docker logs <container-name>
 ```
 
-### Samm 7: Testi Autentimist (User teenus (service)) (10 min)
+### Samm 7: Testi Autentimist (User teenus (service))
 
 ```bash
 # Seisukorra kontroll (health check)
@@ -411,7 +411,7 @@ echo $TOKEN | cut -d'.' -f2 | base64 -d 2>/dev/null | jq
 - ✅ Token on allkirjastatud JWT_SECRET'iga
 - ✅ Token aegub pärast 24h (JWT_EXPIRES_IN)
 
-### Samm 8: Testi Todo teenust (service) JWT Tokeniga (15 min)
+### Samm 8: Testi Todo teenust (service) JWT Tokeniga
 
 ```bash
 # Seisukorra kontroll (health check)
@@ -491,7 +491,7 @@ docker exec postgres-todo psql -U postgres -d todo_service_db -c "SELECT * FROM 
 - ✅ CRUD operatsioonid töötavad mikroteenuste (microservices) vahel
 - ✅ Mõlemad teenused (services) usaldavad sama JWT_SECRET'i
 
-### Samm 9: Mõista Mikroteenuste (Microservices) Suhtlust (10 min)
+### Samm 9: Mõista Mikroteenuste (Microservices) Suhtlust
 
 **Mis toimus?**
 
@@ -556,7 +556,7 @@ API Gateway (Nginx/Kong)
             └──> PostgreSQL (master-slave)
 ```
 
-### Samm 10: Tõrkeotsing (Troubleshooting) (10 min)
+### Samm 10: Tõrkeotsing (Troubleshooting)
 
 **1. JWT token ei tööta Todo teenuses (service):**
 

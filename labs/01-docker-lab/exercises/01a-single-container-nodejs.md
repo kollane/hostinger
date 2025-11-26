@@ -85,7 +85,7 @@ ssh labuser@93.127.213.242 -p [SINU-PORT]
 
 ## 📝 Sammud
 
-### Samm 1: Tutvu Rakendusega (Application) (5 min)
+### Samm 1: Tutvu Rakendusega (Application)
 
 **Rakenduse (application) juurkataloog:** `~/labs/apps/backend-nodejs` ehk `/home/labuser/labs/apps/backend-nodejs`
 
@@ -109,7 +109,7 @@ head -50 server.js
 - Millised sõltuvused (dependencies) on vajalikud? (vaata package.json)
 - Kas rakendus (application) vajab andmebaasi? (Jah, PostgreSQL)
 
-### Samm 2: Loo Dockerfile (15 min)
+### Samm 2: Loo Dockerfile
 
 Loo fail nimega `Dockerfile`:
 
@@ -155,7 +155,7 @@ EXPOSE 3000
 CMD ["node", "server.js"]
 ```
 
-### Samm 3: Loo .dockerignore (5 min)
+### Samm 3: Loo .dockerignore
 
 Loo `.dockerignore` fail, et vältida tarbetute failide kopeerimist:
 
@@ -181,7 +181,7 @@ README.md
 - Kiirem ehitamine (build)
 - Turvalisem (ei kopeeri .env faile)
 
-### Samm 4: Ehita (build) Docker pilt (image) (10 min)
+### Samm 4: Ehita (build) Docker pilt (image)
 
 **Asukoht:** `~/labs/apps/backend-nodejs`
 
@@ -215,7 +215,7 @@ docker images user-service:1.0
 - Mitu kihti (layers) on pildil (image)?
 - Millal pilt (image) loodi?
 
-### Samm 5: Käivita Konteiner (10 min)
+### Samm 5: Käivita Konteiner
 
 #### Variant A: Ilma andmebaasita (testimiseks)
 
@@ -294,7 +294,7 @@ docker ps -a
 - `docker ps` näitab ainult TÖÖTAVAID konteinereid
 - `docker ps -a` näitab KÕIKI konteinereid (ka peatatud)
 
-### Samm 6: Mõista JWT Tokeni Rolli (10 min)
+### Samm 6: Mõista JWT Tokeni Rolli
 
 **💡 Mis asi on JWT token lihtsustatult?**
 
@@ -329,7 +329,7 @@ User Teenus (Service) on **autentimise keskus (authentication hub)** mikroteenus
 
 **Lahendus:** Harjutus 2 lisab PostgreSQL andmebaasi ja saame töötava autentimise süsteemi!
 
-### Samm 7: Debug ja Troubleshoot (5 min)
+### Samm 7: Debug ja Troubleshoot
 
 ```bash
 # Vaata konteineri staatust

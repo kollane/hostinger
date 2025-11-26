@@ -57,7 +57,7 @@ ssh labuser@93.127.213.242 -p [SINU-PORT]
 
 ## 📝 Sammud
 
-### Samm 1: Puhasta Keskkond (5 min)
+### Samm 1: Puhasta Keskkond
 
 ```bash
 # Stopp ja eemalda vanad konteinerid Harjutus 2-st
@@ -69,7 +69,7 @@ docker ps -a | grep -E 'user-service|todo-service|postgres'
 # Peaks olema tühi
 ```
 
-### Samm 2: Loo Kohandatud Võrk (Custom Network) (5 min)
+### Samm 2: Loo Kohandatud Võrk (Custom Network)
 
 ```bash
 # Loo silla (bridge) võrk (network) todo-network
@@ -93,7 +93,7 @@ docker network inspect todo-network
 - Gateway: näiteks 172.18.0.1
 - Konteinerid: [] (tühi, sest pole veel ühtegi konteinerit lisatud)
 
-### Samm 3: Käivita PostgreSQL Konteinerid Samas Võrgus (Network) (10 min)
+### Samm 3: Käivita PostgreSQL Konteinerid Samas Võrgus (Network)
 
 **Nüüd käivitame MÕLEMAD PostgreSQL konteinerit samas kohandatud võrgus (custom network):**
 
@@ -123,7 +123,7 @@ docker ps | grep postgres
 
 **Märka:** EI kasuta `-p` portide vastendamist (port mapping), sest PostgreSQL on ainult sisemiselt kättesaadav (võrgu isolatsioon (network isolation)!)
 
-### Samm 4: Seadista Andmebaasid (10 min)
+### Samm 4: Seadista Andmebaasid
 
 ```bash
 # Loo users tabel User Teenuse (Service) andmebaasis
@@ -163,7 +163,7 @@ docker exec postgres-todo psql -U postgres -d todo_service_db -c "\dt"
 # Peaks näitama: todos tabel
 ```
 
-### Samm 5: Genereeri Jagatud JWT Secret (5 min)
+### Samm 5: Genereeri Jagatud JWT Secret
 
 **OLULINE:** Mõlemad teenused (services) peavad kasutama SAMA JWT_SECRET'i!
 
@@ -179,7 +179,7 @@ export JWT_SECRET
 echo "Kontroll: $JWT_SECRET"
 ```
 
-### Samm 6: Käivita User Teenus (Service) (10 min)
+### Samm 6: Käivita User Teenus (Service)
 
 ```bash
 # User Teenuse (Service) konteiner samas võrgus (network)
@@ -207,7 +207,7 @@ docker logs -f user-service
 - ❌ Harjutus 2: Vajasime `--link postgres-user:postgres`
 - ✅ Harjutus 3: Lihtsalt kasuta `DB_HOST=postgres-user` (automaatne DNS!)
 
-### Samm 7: Käivita Todo Teenus (Service) (10 min)
+### Samm 7: Käivita Todo Teenus (Service)
 
 ```bash
 # Todo Teenuse (Service) konteiner samas võrgus (network)
@@ -244,7 +244,7 @@ docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 # postgres-user      Up X minutes    5432/tcp (sisemiselt!)
 ```
 
-### Samm 8: Testi DNS Lahendust (Resolution) (15 min)
+### Samm 8: Testi DNS Lahendust (Resolution)
 
 **See on kõige huvitavam osa!** Vaatame, kuidas Docker automaatselt lahendab (resolves) konteinerite nimesid.
 
@@ -312,7 +312,7 @@ exit
 - Ei vaja --link ega IP aadresse!
 - Teenused (services) saavad omavahel suhelda HTTP kaudu
 
-### Samm 9: Inspekteeri Võrku (Network) (5 min)
+### Samm 9: Inspekteeri Võrku (Network)
 
 ```bash
 # Vaata todo-network detaile
@@ -348,7 +348,7 @@ docker network inspect todo-network | grep -E '"Name"|"IPv4Address"'
 - Need IP'd on samast alamvõrgust (subnet) (172.18.0.0/16) ✅
 - Võrgu isolatsioon (network isolation) toimib (välismaailm ei näe PostgreSQL porte!) ✅
 
-### Samm 10: Testi Seisukorra Kontroll (Health Check) (5 min)
+### Samm 10: Testi Seisukorra Kontroll (Health Check)
 
 ```bash
 # User Teenuse (Service) seisukorra kontroll (health check)
@@ -373,7 +373,7 @@ curl http://localhost:8081/health
 - DNS lahendus (resolution) toimib ✅
 - Mõlemad teenused (services) on terved ✅
 
-### Samm 11: Testi End-to-End JWT Workflow'i (15 min)
+### Samm 11: Testi End-to-End JWT Workflow'i
 
 **See on KÕIGE OLULISEM TEST!** Testib täielikku mikroteenuste (microservices) suhtlust kohandatud võrgus (custom network).
 

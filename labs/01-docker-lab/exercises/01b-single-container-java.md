@@ -85,7 +85,7 @@ ssh labuser@93.127.213.242 -p [SINU-PORT]
 
 ## 📝 Sammud
 
-### Samm 1: Tutvu Rakendusega (Application) (5 min)
+### Samm 1: Tutvu Rakendusega (Application)
 
 **Rakenduse (application) juurkataloog:** `~/labs/apps/backend-java-spring` ehk `/home/labuser/labs/apps/backend-java-spring`
 
@@ -109,7 +109,7 @@ cat build.gradle
 - Millised sõltuvused (dependencies) on vajalikud? (vaata build.gradle)
 - Kas rakendus (application) vajab andmebaasi? (Jah, PostgreSQL)
 
-### Samm 2: Loo Dockerfile (15 min)
+### Samm 2: Loo Dockerfile
 
 Loo fail nimega `Dockerfile`:
 
@@ -151,7 +151,7 @@ EXPOSE 8081
 CMD ["java", "-jar", "app.jar"]
 ```
 
-### Samm 3: Loo .dockerignore (5 min)
+### Samm 3: Loo .dockerignore
 
 Loo `.dockerignore` fail, et vältida tarbetute failide kopeerimist:
 
@@ -185,7 +185,7 @@ gradlew.bat
 - Turvalisem (ei kopeeri .env faile)
 - Ei kopeeri lähtekoodi (ainult JAR fail)
 
-### Samm 4: Ehita (build) Docker pilt (image) (10 min)
+### Samm 4: Ehita (build) Docker pilt (image)
 
 **Asukoht:** `~/labs/apps/backend-java-spring`
 
@@ -225,7 +225,7 @@ docker images todo-service:1.0
 - Mitu kihti (layers) on pildil (image)?
 - Millal pilt (image) loodi?
 
-### Samm 5: Käivita Konteiner (10 min)
+### Samm 5: Käivita Konteiner
 
 **⚠️ OLULINE:** Järgnevad käsud käivitavad konteineri, aga rakendus (application) hangub, sest PostgreSQL puudub. See on **OODATUD** käitumine! Fookus on õppida Docker käske, mitte saada töötav rakendus (application).
 
@@ -331,7 +331,7 @@ docker logs todo-service
 - See on OODATUD käitumine Harjutus 1's!
 - Töötava lahenduse saad [Harjutus 2: Mitme Konteineri Käivitamine](02-multi-container.md)-s
 
-### Samm 6: Debug ja Troubleshoot (5 min)
+### Samm 6: Debug ja Troubleshoot
 
 ```bash
 # Vaata konteineri staatust

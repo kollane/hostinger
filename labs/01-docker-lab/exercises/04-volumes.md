@@ -41,7 +41,7 @@ docker rm postgres-todo postgres-user
 
 ## 📝 Sammud
 
-### Samm 1: Demonstreeri Probleemi (10 min)
+### Samm 1: Demonstreeri Probleemi
 
 **Esmalt näitame, mis juhtub ILMA andmehoidlateta (volumes) - MÕLEMAS andmebaasis:**
 
@@ -134,7 +134,7 @@ docker exec postgres-todo psql -U postgres -d todo_service_db -c "SELECT * FROM 
 
 **See on SUUR PROBLEEM tootmises!** Lahendame selle nüüd andmehoidlatega (volumes).
 
-### Samm 2: Loo Nimega Andmehoidlad (Named Volumes) (5 min)
+### Samm 2: Loo Nimega Andmehoidlad (Named Volumes)
 
 ```bash
 # Puhasta eelmine test
@@ -167,7 +167,7 @@ docker volume inspect postgres-todo-data
 - ✅ Eraldi varundamise (backup) strateegia
 - ✅ Paindlik skaleeritavus
 
-### Samm 3: Käivita MÕLEMAD PostgreSQL Konteinerid Andmehoidlatega (Volumes) (10 min)
+### Samm 3: Käivita MÕLEMAD PostgreSQL Konteinerid Andmehoidlatega (Volumes)
 
 ```bash
 # PostgreSQL User Teenusele (Service) andmehoidlaga (volume)
@@ -206,7 +206,7 @@ docker ps | grep postgres
 - ✅ Iga konteiner kasutab oma andmehoidlat (volume)
 - ✅ Andmed salvestatakse nüüd andmehoidlatesse (volumes), MITTE konteineritesse!
 
-### Samm 4: Seadista MÕLEMAD Andmebaasid ja Lisa Testandmeid (15 min)
+### Samm 4: Seadista MÕLEMAD Andmebaasid ja Lisa Testandmeid
 
 ```bash
 # Oota, et PostgreSQL on valmis
@@ -274,7 +274,7 @@ SELECT id, user_id, title, priority, created_at FROM todos ORDER BY id;"
 echo -e "\n✅ Mõlemad andmebaasid on seadistatud ja sisaldavad andmeid!"
 ```
 
-### Samm 5: Testi Andmete Püsivust (Data Persistence) - KÕIGE OLULISEM TEST! (15 min)
+### Samm 5: Testi Andmete Püsivust (Data Persistence) - KÕIGE OLULISEM TEST!
 
 **See on see hetk, kus andmehoidla (volume) väärtus selgub - testime MÕLEMAT teenust (service)!**
 
@@ -363,7 +363,7 @@ echo -e "\n✅ USER TEENUSE (SERVICE) ANDMED ON ALLES! 🎉\n"
 - ✅ Andmehoidlad (volumes) elavad konteineritest sõltumatult!
 - ✅ See on TÄPSELT see, mis tootmises vaja - konteinerid on efemeersed (ephemeral), andmed on püsivad (persistent)!
 
-### Samm 6: Varunda (Backup) MÕLEMAD Andmehoidlad (Volumes) (10 min)
+### Samm 6: Varunda (Backup) MÕLEMAD Andmehoidlad (Volumes)
 
 **Õpi, kuidas MITME andmehoidla (volume) andmeid varundada (backup) paralleelselt:**
 
@@ -409,7 +409,7 @@ tar -tzf postgres-todo-backup.tar.gz | head -10
 - ✅ Saad taastada (restore) ainult ühe teenuse (service) (kui vaja)
 - ✅ Väiksemad varukoopia (backup) failid (kiirem)
 
-### Samm 7: Taasta (Restore) Andmehoidla (Volume) Varukoopiast (Backup) - Katastroofist Taastumine (Disaster Recovery) (Bonus - 15 min)
+### Samm 7: Taasta (Restore) Andmehoidla (Volume) Varukoopiast (Backup) - Katastroofist Taastumine (Disaster Recovery)
 
 **Simuleerime "katastroofist taastumist" (disaster recovery):**
 
@@ -470,7 +470,7 @@ echo -e "\n🎉 KATASTROOFIST TAASTUMINE (DISASTER RECOVERY) ÕNNESTUS! Andmed o
 - ✅ Taastamise (restore) protsess töötab (katastroof ei ole lõplik!)
 - ✅ Alati tee varukoopia (backup) ENNE riskantset operatsiooni
 
-### Samm 8: Vaata Andmehoidla (Volume) Detaile (5 min)
+### Samm 8: Vaata Andmehoidla (Volume) Detaile
 
 ```bash
 # MÕLEMA andmehoidla (volume) täielik info
