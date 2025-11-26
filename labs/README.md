@@ -58,8 +58,9 @@ cd ~/labs/XX-lab-name/
 ./setup.sh    # Seadista lab (kui vaja)
 ./reset.sh    # Lähtesta lab (alusta otsast)
 
-# Docker puhastamine (kustutab KÕIK!)
-docker-cleanup
+# Docker puhastamine - NUCLEAR OPTION!
+# Kustutab KÕIK Docker ressursid (ka töötavad konteinerid!)
+nuclear-cleanup
 ```
 
 ### Rakenduste Juurdepääs
@@ -92,7 +93,7 @@ ssh labuser@<vps-ip> -p <sinu-port>
 **RAM/disk otsa:**
 ```bash
 check-resources           # Kontrolli kasutust
-docker-cleanup           # Puhasta kõik Docker ressursid
+nuclear-cleanup           # Kustutab KÕIK Docker ressursid (ka töötavad!)
 ./reset.sh              # Lähtesta lab
 ```
 
@@ -410,17 +411,20 @@ cd 01-docker-lab
 # Alusta laborit uuesti puhtalt lehelt
 ```
 
-**Mida reset teeb:**
-- Kustutab Docker containerid ja image'd
-- Eemaldab Docker network'id ja volume'd
-- Kustutab Kubernetes ressursid
-- Puhastab Helm releases
+**Mida reset.sh teeb:**
+- Kustutab **selle konkreetse labi** Docker containerid ja image'd
+- Eemaldab **selle labi** Docker network'id ja volume'd
+- Kustutab Kubernetes ressursid (kui kohaldatav)
+- Puhastab Helm releases (kui kohaldatav)
+
+**Mida nuclear-cleanup teeb:**
+- Kustutab **KÕIK Docker ressursid süsteemis** (kõik labid korraga!)
+- Peatab ja kustutab kõik töötavad containerid
+- Kustutab kõik image'd, volume'd, network'id, cache
 
 **Millal kasutada:**
-- Soovid harjutust uuesti teha
-- Süsteem on segane, alusta puhtalt
-- Midagi läks katki
-- Liigud järgmise labori juurde
+- `./reset.sh` - Ühe labi reset (soovitatav!)
+- `nuclear-cleanup` - KÕIK puhastada (tuumapomm!)
 
 ---
 

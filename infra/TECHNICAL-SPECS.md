@@ -347,7 +347,8 @@ Sudo access: Limited (no password sudo not enabled)
 
 **Bash aliases (in .bashrc):**
 ```bash
-alias docker-cleanup="docker system prune -af --volumes"
+# NUCLEAR OPTION - Kustutab KÕIK Docker ressursid (ka töötavad!)
+alias nuclear-cleanup="docker stop \$(docker ps -aq) 2>/dev/null; docker rm \$(docker ps -aq) 2>/dev/null; docker system prune -af --volumes"
 alias docker-stop-all="docker stop \$(docker ps -aq) 2>/dev/null || echo No containers running"
 alias check-resources="echo === RAM === && free -h && echo && echo === DISK === && df -h / && echo && echo === DOCKER === && docker ps -a && docker images"
 ```
