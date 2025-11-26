@@ -294,6 +294,65 @@ Põhimõte (Principle):
 
 ---
 
+## 🖥️ Sinu Testimise Konfiguratsioon
+
+### SSH Ühendus VPS-iga
+
+```bash
+ssh labuser@93.127.213.242 -p [SINU-PORT]
+```
+
+| Õpilane | SSH Port | Password |
+|---------|----------|----------|
+| student1 | 2201 | student1 |
+| student2 | 2202 | student2 |
+| student3 | 2203 | student3 |
+
+### Testimine: Turva Kontrollimine
+
+Selles harjutuses testid **KAHEL** viisil, et kontrollida võrgu segmenteerimise (network segmentation) turvalisust:
+
+#### 1. SSH Sessioonis (localhost) - Peaks TÖÖTAMA:
+
+```bash
+# User Service health
+curl http://localhost:3000/health
+
+# Todo Service health
+curl http://localhost:8081/health
+
+# PostgreSQL portide kontrollimine
+nc -zv localhost 5432
+nc -zv localhost 5433
+```
+
+#### 2. Väliselt (internet) - Peaks FAILIMA (see on õige!):
+
+| Õpilane | Välised URL-id Testimiseks |
+|---------|----------------------------|
+| student1 | `curl http://93.127.213.242:3000/health` |
+| student1 | `curl http://93.127.213.242:8081/health` |
+| student2 | `curl http://93.127.213.242:3100/health` |
+| student2 | `curl http://93.127.213.242:8181/health` |
+| student3 | `curl http://93.127.213.242:3200/health` |
+| student3 | `curl http://93.127.213.242:8281/health` |
+
+**Oodatud tulemus väliselt:** ❌ `Connection refused` või timeout
+
+✅ **See on TURVALINE! Backend API'd ei tohiks olla internetist kättesaadavad!**
+
+#### 3. Frontend - Ainult see peaks olema avalik:
+
+| Õpilane | Frontend URL |
+|---------|--------------|
+| student1 | http://93.127.213.242:8080 |
+| student2 | http://93.127.213.242:8180 |
+| student3 | http://93.127.213.242:8280 |
+
+💡 **Selle harjutuse eesmärk:** Demonstreerida, et ainult frontend (port 8080) on avalik, kõik backend'id ja andmebaasid on kaitstud!
+
+---
+
 ## 📝 Sammud
 
 ### Samm 1: Analüüsi Praegust Turvariski (10 min)

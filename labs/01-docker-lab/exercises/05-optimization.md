@@ -65,6 +65,29 @@ docker images | grep -E 'user-service|todo-service'
 
 ---
 
+## 🖥️ Sinu Testimise Konfiguratsioon
+
+### SSH Ühendus VPS-iga
+```bash
+ssh labuser@93.127.213.242 -p [SINU-PORT]
+```
+
+| Õpilane | SSH Port | Password |
+|---------|----------|----------|
+| student1 | 2201 | student1 |
+| student2 | 2202 | student2 |
+| student3 | 2203 | student3 |
+
+### Testimine
+
+**SSH Sessioonis (VPS sees):**
+- Kõik `curl http://localhost:...` käsud käivita siin
+- Näide: `curl http://localhost:3000/health`
+
+💡 **Frontend ja brauserist testimine tuleb Lab 2 Exercise 2-s**
+
+---
+
 ## 📝 Sammud
 
 ### Samm 1: Uuri mõlema teenuse algset suurust (10 min)

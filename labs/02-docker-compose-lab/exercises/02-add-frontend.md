@@ -30,6 +30,40 @@ Peale selle harjutuse läbimist oskad:
 
 ---
 
+## 🖥️ Sinu Testimise Konfiguratsioon
+
+### SSH Ühendus VPS-iga
+```bash
+ssh labuser@93.127.213.242 -p [SINU-PORT]
+```
+
+| Õpilane | SSH Port | Password |
+|---------|----------|----------|
+| student1 | 2201 | student1 |
+| student2 | 2202 | student2 |
+| student3 | 2203 | student3 |
+
+### Teenuste URL-id
+
+**Brauserist (oma arvutist):**
+
+| Õpilane | Frontend |
+|---------|----------|
+| student1 | http://93.127.213.242:8080 |
+| student2 | http://93.127.213.242:8180 |
+| student3 | http://93.127.213.242:8280 |
+
+💡 **API'd on kättesaadavad läbi frontend reverse proxy:**
+- `/api/auth/*` → user-service:3000
+- `/api/users*` → user-service:3000
+- `/api/todos*` → todo-service:8081
+
+**SSH Sessioonis (debugging):**
+- `curl http://localhost:3000/health`
+- `curl http://localhost:8081/health`
+
+---
+
 ## 🏗️ Arhitektuur
 
 ### Enne (Harjutus 1):
@@ -72,6 +106,42 @@ Peale selle harjutuse läbimist oskad:
     │  Port: 5432     │    │  Port: 5433     │
     └─────────────────┘    └─────────────────┘
 ```
+
+---
+
+## ⚠️ TURVAHOIATUS: Avalikud Pordid!
+
+**🚨 OLULINE: Selles harjutuses on KÕIK 5 porti avalikud (0.0.0.0):**
+
+| Port | Teenus | Oht |
+|------|--------|-----|
+| 8080 | Frontend | ✅ OK - avalik UI |
+| 3000 | User Service API | ⚠️ Backend peaks olema kaitstud |
+| 8081 | Todo Service API | ⚠️ Backend peaks olema kaitstud |
+| 5432 | PostgreSQL (users) | 🚨 **KRIITILINE TURVARISK!** |
+| 5433 | PostgreSQL (todos) | 🚨 **KRIITILINE TURVARISK!** |
+
+### Mis võib juhtuda?
+
+**Internetis botid skaneerivad pidevalt PostgreSQL porte:**
+- 🤖 Automaatsed skännerid otsivad porti 5432 ja 5433
+- 🔓 Brute force rünnakud PostgreSQL paroolidele (postgres/postgres on liiga nõrk!)
+- 💉 SQL injection katsed
+- 📊 Andmebaasi enumeratsioon (tabelite ja veergude avastamine)
+- 💣 Pahatahtlikud päringud (DROP TABLE, DELETE, jne)
+- 📉 DDoS rünnakud (liiga palju ühendusi)
+
+**Production keskkonnas see on VASTUVÕETAMATU!**
+
+### 🛡️ Lahendus
+
+👉 **Järgmine harjutus (Exercise 3) õpetab:**
+- ✅ Võrgu segmenteerimine (network segmentation)
+- ✅ Portide 127.0.0.1 binding (localhost-only)
+- ✅ 3-tier arhitektuur (DMZ → Backend → Database)
+- ✅ Ainult frontend port 8080 jääb avalikuks
+
+**Praegu õpid, kuidas Docker Compose töötab. Exercise 3's õpid, kuidas seda TURVALISELT teha!**
 
 ---
 
@@ -283,6 +353,59 @@ grep "nginx.conf" docker-compose.yml
 
 ---
 
+### 🎓 Reverse Proxy Töö Sinu Keskkonnas
+
+**OLULINE:** Ülal olev nginx.conf konfiguratsioon töötab **täpselt ühtemoodi** kõigile kolmele kasutajale (student1, student2, student3).
+
+#### Kuidas See Töötab?
+
+**1. Docker võrgus (container to container):**
+```nginx
+proxy_pass http://user-service:3000/api/auth/;
+proxy_pass http://todo-service:8081/api/todos;
+```
+- Nginx kasutab **Docker service nimesid** (`user-service`, `todo-service`)
+- See on võrgu sisene suhtlus Docker'i `todo-network` võrgus
+- **Sama kõigile kasutajatele** - service nimed on identsed
+
+**2. Brauseri päringud:**
+
+Sinu brauserist tuleb päring vastavalt sinu kasutajale:
+
+| Kasutaja | Brauseri URL | LXD Port Mapping | Jõuab Nginx'ni |
+|----------|--------------|------------------|----------------|
+| student1 | `http://93.127.213.242:8080/api/auth/login` | Host:8080 → Container:80 | ✅ Port 80 |
+| student2 | `http://93.127.213.242:8180/api/auth/login` | Host:8180 → Container:80 | ✅ Port 80 |
+| student3 | `http://93.127.213.242:8280/api/auth/login` | Host:8280 → Container:80 | ✅ Port 80 |
+
+**3. Mis juhtub sammhaaval (student1 näitel):**
+
+```
+1. Brauseris sisestada: http://93.127.213.242:8080/api/auth/login
+                           ↓
+2. LXD port mapping: Host port 8080 → devops-student1 konteiner port 8080
+                           ↓
+3. Docker port mapping: Host port 8080 → frontend konteiner port 80
+                           ↓
+4. Nginx (frontend konteiner) saab: GET /api/auth/login
+                           ↓
+5. Nginx proxy_pass reegel: location /api/auth/ → http://user-service:3000
+                           ↓
+6. user-service konteiner vastab: 200 OK + JWT token
+                           ↓
+7. Vastus tagasi läbi sama tee: user-service → Nginx → Docker → LXD → Brauser
+```
+
+#### Miks See Töötab Kõigile Ühtemoodi?
+
+✅ **nginx.conf konfiguratsioon on identne** - kasutab Docker service nimesid
+✅ **LXD port mapping** eristab kasutajaid (8080/8180/8280)
+✅ **Docker võrk siseselt** on sama kõigile (todo-network)
+
+**Järeldus:** Sa ei pea nginx.conf faili muutma oma kasutaja järgi! LXD port mapping teeb eristamise sinu eest.
+
+---
+
 ### Samm 3: Mõista Frontend Konfiguratsiooni (3 min)
 
 **Analüüsi olulisemad osad docker-compose.yml'ist:**
@@ -346,15 +469,13 @@ docker compose logs frontend
 
 #### Test 1: Ava Frontend
 
-Ava brauseris:
-```
-http://kirjakast:8080
-```
+**Brauseris (oma arvutist):**
 
-või kui töötad lokaalselt:
-```
-http://localhost:8080
-```
+Ava üks järgnevatest URL-idest vastavalt oma kasutajale (vaata "Sinu Testimise Konfiguratsioon" sektsiooni üleval):
+
+- **student1:** `http://93.127.213.242:8080`
+- **student2:** `http://93.127.213.242:8180`
+- **student3:** `http://93.127.213.242:8280`
 
 **Peaksid nägema:**
 - Login / Register vorm
