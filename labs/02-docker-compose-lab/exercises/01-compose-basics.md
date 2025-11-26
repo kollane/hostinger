@@ -254,7 +254,7 @@ Loo eraldi kataloog Docker Compose projektile:
 
 ```bash
 # SSH VPS-i (kui pole juba ühendatud)
-ssh janek@kirjakast
+ssh labuser@93.127.213.242 -p [SINU-PORT]
 
 # Mine Lab 2 juurde
 cd /home/janek/projects/hostinger/labs/02-docker-compose-lab

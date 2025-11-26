@@ -84,7 +84,7 @@ ssh labuser@93.127.213.242 -p [SINU-PORT]
 ### Peale (Harjutus 2):
 
 ```
-               Browser (http://kirjakast:8080)
+               Browser (http://93.127.213.242:8080)
                          │
                          ▼
         ┌────────────────────────────────┐
@@ -268,7 +268,7 @@ Frontend JavaScript teeb API päringuid relatiivse URL-iga `/api`, aga backend t
 
 ```
 Browser
-  ↓ http://kirjakast.cloud:8080/api/auth/login
+  ↓ http://93.127.213.242:8080/api/auth/login
 Nginx (port 8080)
   ↓ proxy_pass
   ├─ /api/auth/*  → user-service:3000
@@ -529,9 +529,9 @@ Vajuta `F12` ja ava "Console" tab.
 
 **Peaksid nägema:**
 ```
-API Request: POST http://kirjakast.cloud:8080/api/auth/register
+API Request: POST http://93.127.213.242:8080/api/auth/register
 API Response: { message: "User created successfully", ... }
-API Request: GET http://kirjakast.cloud:8080/api/todos
+API Request: GET http://93.127.213.242:8080/api/todos
 API Response: { content: [...], totalElements: 1 }
 ```
 
@@ -542,12 +542,12 @@ API Response: { content: [...], totalElements: 1 }
 Vajuta `F12` → "Network" tab → refresh leht.
 
 **Peaksid nägema päringuid (requests):**
-- `http://kirjakast.cloud:8080/api/auth/login` (POST)
-- `http://kirjakast.cloud:8080/api/todos` (GET)
+- `http://93.127.213.242:8080/api/auth/login` (POST)
+- `http://93.127.213.242:8080/api/todos` (GET)
 - Response koodid: `200 OK` või `201 Created`
 
 **Network tab'is näed:**
-1. Request URL: `http://kirjakast.cloud:8080/api/...` (läbi Nginx)
+1. Request URL: `http://93.127.213.242:8080/api/...` (läbi Nginx)
 2. Status: 200 või 201
 3. Response Headers: `X-Forwarded-For`, `X-Real-IP` (Nginx lisab need)
 

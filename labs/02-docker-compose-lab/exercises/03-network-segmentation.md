@@ -838,7 +838,7 @@ Vajuta `i` (insert mode) ja lisa:
 #
 # Turvaline:
 #   ✅ curl http://localhost:3000/health (SSH sees)       → TÖÖTAB
-#   ❌ curl http://kirjakast.cloud:3000/health (väliselt) → CONNECTION REFUSED
+#   ❌ curl http://93.127.213.242:3000/health (väliselt) → CONNECTION REFUSED
 # ==========================================================================
 
 # MÄRKUS: Docker Compose v2 (2025)
@@ -854,7 +854,7 @@ services:
     ports:
       - "127.0.0.1:3000:3000"    # ✅ Localhost-only (NOT 0.0.0.0)
     # Debug: curl http://localhost:3000/health (SSH kaudu)
-    # Secure: curl http://kirjakast.cloud:3000 → CONNECTION REFUSED
+    # Secure: curl http://93.127.213.242:3000 → CONNECTION REFUSED
 
   todo-service:
     ports:
@@ -868,7 +868,7 @@ services:
     ports:
       - "127.0.0.1:5432:5432"    # ✅ Localhost-only
     # Debug: psql -h localhost -p 5432 -U postgres (SSH kaudu)
-    # Secure: psql -h kirjakast.cloud -p 5432 → CONNECTION REFUSED
+    # Secure: psql -h 93.127.213.242 -p 5432 → CONNECTION REFUSED
 
   postgres-todo:
     ports:
@@ -907,7 +907,7 @@ curl http://localhost:3000/health
 **Kuidas see töötab?**
 - `127.0.0.1:3000:3000` seob porti **ainult localhost'ile**
 - SSH sessioonis saad debug'ida: `curl localhost:3000`
-- Väline maailm EI pääse ligi: `curl kirjakast.cloud:3000` → Connection refused
+- Väline maailm EI pääse ligi: `curl 93.127.213.242:3000` → Connection refused
 - Parim mõlemast maailmast: debug'imine + turvalisus!
 
 ---
@@ -960,7 +960,7 @@ curl http://localhost:8081/health
 # ✅ ÕIGE: Localhost binding töötab
 
 # VÄLISELT (kui sul on võimalik testida teisest masinast):
-# curl http://kirjakast.cloud:3000/health
+# curl http://93.127.213.242:3000/health
 # Oodatud: Connection refused
 # ✅ ÕIGE: Port ei ole avalikult kättesaadav
 ```
@@ -978,7 +978,7 @@ nc -zv localhost 5433
 # ✅ ÕIGE: Localhost binding töötab
 
 # VÄLISELT (kui sul on võimalik testida teisest masinast):
-# nc -zv kirjakast.cloud 5432
+# nc -zv 93.127.213.242 5432
 # Oodatud: Connection refused
 # ✅ ÕIGE: Port ei ole avalikult kättesaadav
 ```

@@ -26,9 +26,9 @@ public class CorsConfig {
 		// Allowed origins
 		config.setAllowedOrigins(Arrays.asList(
 				"http://localhost:8080",           // Local frontend
-				"http://93.127.213.242:8080",      // VPS IP
-				"http://kirjakast:8080",           // VPS hostname
-				"http://kirjakast.cloud:8080"      // VPS domain with .cloud
+				"http://93.127.213.242:8080",      // VPS IP (student1)
+				"http://93.127.213.242:8180",      // VPS IP (student2)
+				"http://93.127.213.242:8280"       // VPS IP (student3)
 		));
 
 		// Allowed headers

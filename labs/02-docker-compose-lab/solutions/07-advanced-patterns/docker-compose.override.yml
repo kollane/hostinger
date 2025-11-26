@@ -12,9 +12,9 @@
 #
 # Turvaline Port Binding (127.0.0.1):
 #   ✅ curl http://localhost:3000/health (SSH sees)       → TÖÖTAB
-#   ❌ curl http://kirjakast.cloud:3000/health (väliselt) → CONNECTION REFUSED
+#   ❌ curl http://93.127.213.242:3000/health (väliselt)  → CONNECTION REFUSED
 #   ✅ psql -h localhost -p 5432 -U postgres (SSH sees)   → TÖÖTAB
-#   ❌ psql -h kirjakast.cloud -p 5432 (väliselt)         → CONNECTION REFUSED
+#   ❌ psql -h 93.127.213.242 -p 5432 (väliselt)          → CONNECTION REFUSED
 #
 # Miks 127.0.0.1 (localhost-only)?
 # - Development: Saad debug'ida SSH sessioonis
@@ -39,7 +39,7 @@ services:
       - "127.0.0.1:3000:3000"    # ✅ Localhost-only (NOT 0.0.0.0)
     # Kasutamine:
     #   Debug: curl http://localhost:3000/health (SSH kaudu)
-    #   Secure: curl http://kirjakast.cloud:3000 → CONNECTION REFUSED
+    #   Secure: curl http://93.127.213.242:3000 → CONNECTION REFUSED
     # Miks see on turvaline?
     #   - 127.0.0.1 on ainult local loopback interface
     #   - Ei ole kättesaadav välisest võrgust (external network)
@@ -50,7 +50,7 @@ services:
       - "127.0.0.1:8081:8081"    # ✅ Localhost-only
     # Kasutamine:
     #   Debug: curl http://localhost:8081/health (SSH kaudu)
-    #   Secure: curl http://kirjakast.cloud:8081 → CONNECTION REFUSED
+    #   Secure: curl http://93.127.213.242:8081 → CONNECTION REFUSED
 
   # ==========================================================================
   # Databases - Localhost-only Port Binding
@@ -64,7 +64,7 @@ services:
     # Kasutamine:
     #   Debug: psql -h localhost -p 5432 -U postgres -d user_service_db (SSH kaudu)
     #   Debug: pg_dump -h localhost -p 5432 -U postgres user_service_db
-    #   Secure: psql -h kirjakast.cloud -p 5432 → CONNECTION REFUSED
+    #   Secure: psql -h 93.127.213.242 -p 5432 → CONNECTION REFUSED
     # Miks see on oluline?
     #   - Saad teha andmebaasi backup'e SSH kaudu
     #   - Saad käivitada SQL päringuid (queries) debug'imiseks
@@ -103,8 +103,8 @@ services:
 #    psql -h localhost -p 5432 -U postgres
 #
 #    # Väliselt (peaks failima):
-#    curl http://kirjakast.cloud:3000
-#    psql -h kirjakast.cloud -p 5432
+#    curl http://93.127.213.242:3000
+#    psql -h 93.127.213.242 -p 5432
 #
 # 5. Security Best Practice:
 #    - Dev: Kasuta 127.0.0.1 binding (see fail)
