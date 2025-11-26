@@ -136,79 +136,25 @@ RUN npm install
 
 COPY kopeerib faile **sinu arvutist (host masina rakenduse kataloog)** → **konteineri failisüsteemi sisse**.
 
-**Visuaalne näide:**
+- **KUST:** Build context (kataloog, kus Dockerfile asub)
+- **KUHU:** Konteineri failisüsteem (tavaliselt /app/)
 
-```
-Sinu arvuti (host):                     Docker konteiner:
-/home/labuser/labs/apps/backend-nodejs/ /app/
-├── package.json          COPY →        ├── package.json
-├── src/                  COPY →        ├── src/
-│   └── server.js                       │   └── server.js
-├── Dockerfile            (ei kopeerita)
-└── node_modules/         (ei kopeerita, .dockerignore)
-```
-
-**Build context:** See on kataloog, kus sinu `Dockerfile` asub. Tavaliselt on see rakenduse juurkataloog (`~/labs/apps/backend-nodejs/`). Kõik COPY käsud töötavad sellest kataloogist.
-
-**Kuidas COPY töötab sammhaaval:**
-
+**Näide:**
 ```dockerfile
 FROM node:18-alpine
-WORKDIR /app                          # Konteineri töökataloog on nüüd /app
-
-COPY package.json /app/package.json   # Host: ./package.json → Konteiner: /app/package.json
-COPY src/ /app/src/                   # Host: ./src/* → Konteiner: /app/src/*
-COPY . .                              # Host: ./* → Konteiner: /app/* (kõik failid)
+WORKDIR /app
+COPY package.json .     # Host: ./package.json → Konteiner: /app/package.json
+COPY src/ ./src/        # Host: ./src/* → Konteiner: /app/src/*
+COPY . .                # Host: ./* → Konteiner: /app/* (kõik failid)
 ```
-
-**Täpsemalt:**
-- **COPY package.json /app/package.json**
-  - **KUST:** Build context'ist (kus Dockerfile asub): `./package.json`
-  - **KUHU:** Konteineri sisse: `/app/package.json`
-
-- **COPY . .**
-  - **KUST:** Build context'i juurkataloog (`.` = kõik failid praeguses kataloogis)
-  - **KUHU:** WORKDIR (`.` = `/app`, sest WORKDIR /app on seatud)
-
-**Miks see oluline on:**
-- COPY ei kopeeri faile **konteineri seest konteinerisse** - see kopeerib **sinu arvutist konteinerisse**
-- Kui `docker build` käivitad kataloogis `~/labs/apps/backend-nodejs/`, siis COPY käsud näevad ainult selle kataloogi faile
 
 ---
 
-**COPY süntaks:** `COPY <src> <dest>`
-**ADD süntaks:** `ADD <src> <dest>`
+**Süntaks:**
+- **COPY:** `COPY <src> <dest>` - lihtne failide kopeerimine
+- **ADD:** `ADD <src> <dest>` - COPY + URL download + auto-extract
 
-```dockerfile
-# COPY - lihtne failide kopeerimine
-COPY package.json /app/
-COPY src/ /app/src/
-COPY . .
-
-# ADD - nagu COPY, aga lisafunktsioonidega
-ADD https://example.com/file.tar.gz /app/  # Download URL
-ADD archive.tar.gz /app/                    # Auto-extract archives
-```
-
-**COPY vs ADD võrdlus:**
-
-| Funktsioon | COPY | ADD |
-|-----------|------|-----|
-| Kopeeri lokaal faile | ✅ | ✅ |
-| Auto-extract tar/gzip | ❌ | ✅ (auto) |
-| Download URL'idest | ❌ | ✅ |
-| **Best practice** | **✅ Kasuta COPY** | ❌ Väldi (välja arvatud special cases) |
-
-**Best practice:** Kasuta **COPY**, mitte ADD (vähem "magic", predictable behavior).
-
-```dockerfile
-# GOOD: Eksplicitne
-COPY package.json .
-RUN tar -xzf archive.tar.gz && rm archive.tar.gz
-
-# BAD: ADD "magic" behavior võib üllatada
-ADD archive.tar.gz .
-```
+**Best practice:** Kasuta **COPY** (ADD on less predictable).
 
 #### RUN - Käskude Käivitamine Build Ajal
 
@@ -224,57 +170,20 @@ RUN käivitab käsu **siis, kui Docker image't ehitatakse** (`docker build`), mi
 
 ---
 
-**Süntaks:**
-- **Shell form:** `RUN <command>` (käivitatakse `/bin/sh -c` kaudu)
-- **Exec form:** `RUN ["executable", "param1", "param2"]`
-
-RUN käivitab käsud **build time'il** (image'i loomise ajal), mitte runtime'il (konteineri käivitamisel).
-
-```dockerfile
-# Shell form (tavaline)
-RUN apt-get update && apt-get install -y curl
-
-# Exec form (no shell)
-RUN ["apt-get", "update"]
-RUN ["apt-get", "install", "-y", "curl"]
-
-# Multi-line (loetavam)
-RUN apt-get update && \
-    apt-get install -y \
-        curl \
-        wget \
-        vim && \
-    rm -rf /var/lib/apt/lists/*
-```
+**Süntaks:** `RUN <command>` või `RUN ["executable", "param1"]`
 
 **Best practices:**
-
-1. **Chain käsud `&&` abil** (vähendab layer'ite arvu):
 ```dockerfile
-# BAD: 3 layer'i
-RUN apt-get update
-RUN apt-get install -y curl
-RUN rm -rf /var/lib/apt/lists/*
-
-# GOOD: 1 layer
+# Chain käsud && abil (vähendab layer'eid)
 RUN apt-get update && \
     apt-get install -y curl && \
-    rm -rf /var/lib/apt/lists/*
-```
-
-2. **Puhasta cache** (vähendab image size):
-```dockerfile
-# Debian/Ubuntu
-RUN apt-get update && \
-    apt-get install -y package && \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/*  # Puhasta cache
 
 # Alpine
 RUN apk add --no-cache package
 
 # Node.js
-RUN npm install --production && \
-    npm cache clean --force
+RUN npm install --production && npm cache clean --force
 ```
 
 #### ENV - Environment Variables
@@ -291,34 +200,14 @@ ENV määrab muutujad (environment variables), mis on konteineri sees alati kät
 
 ---
 
-**Süntaks:** `ENV <key>=<value>` või `ENV <key> <value>`
-
-Määrab environment variable'id, mis on kättesaadavad **build time'il JA runtime'il**.
+**Süntaks:** `ENV <key>=<value>`
 
 ```dockerfile
-# Single variable
 ENV NODE_ENV=production
-
-# Multiple variables
-ENV NODE_ENV=production \
-    PORT=3000 \
-    LOG_LEVEL=info
+ENV PORT=3000
 
 # Kasutamine
-ENV APP_DIR=/usr/src/app
 WORKDIR $APP_DIR
-COPY . $APP_DIR
-```
-
-**Build time vs Runtime:**
-```dockerfile
-ENV NODE_ENV=production
-
-# Build time: RUN käsud näevad ENV
-RUN echo "Building for $NODE_ENV"
-
-# Runtime: CMD/ENTRYPOINT näevad ENV
-CMD ["node", "-e", "console.log(process.env.NODE_ENV)"]
 ```
 
 #### ARG - Build Arguments
@@ -335,38 +224,17 @@ ARG määrab muutuja, mida saad kasutada **ainult image'i ehitamise ajal**. Pär
 
 ---
 
-**Süntaks:** `ARG <name>[=<default value>]`
-
-ARG määrab variable, mis on kättesaadavad **AINULT build time'il** (mitte runtime'il).
+**Süntaks:** `ARG <name>[=<default>]`
 
 ```dockerfile
-# Defineeri ARG default väärtusega
 ARG NODE_VERSION=18
 FROM node:${NODE_VERSION}-alpine
-
-ARG APP_ENV=development
-RUN echo "Building for environment: $APP_ENV"
-
-# Runtime'il APP_ENV pole kättesaadav (erinevalt ENV'ist)
 ```
 
-**Kasutamine build ajal:**
+**Kasutamine:**
 ```bash
-# Kasuta default'i
-docker build -t myapp .
-
-# Override build argument
-docker build --build-arg NODE_VERSION=20 --build-arg APP_ENV=production -t myapp .
+docker build --build-arg NODE_VERSION=20 -t myapp .
 ```
-
-**ARG vs ENV:**
-
-| Aspekt | ARG | ENV |
-|--------|-----|-----|
-| Build time | ✅ | ✅ |
-| Runtime | ❌ | ✅ |
-| Override buildil | ✅ (`--build-arg`) | ❌ |
-| Override runtime'il | ❌ | ✅ (`docker run -e`) |
 
 #### EXPOSE - Portide Deklareerimine
 
@@ -382,26 +250,15 @@ EXPOSE on **dokumentatsioon** - see ütleb, et su rakendus kuulab seda porti. Se
 
 ---
 
-**Süntaks:** `EXPOSE <port> [<port>/<protocol>...]`
-
-EXPOSE dokumenteerib, milliseid porte konteiner kuulab. **See EI avalda porte automaatselt** (see on ainult dokumentatsioon).
+**Süntaks:** `EXPOSE <port>`
 
 ```dockerfile
-# HTTP port
 EXPOSE 3000
-
-# Multiple ports
-EXPOSE 8080 8443
-
-# Protocol määramine
-EXPOSE 53/udp
-EXPOSE 53/tcp
 ```
 
-**OLULINE:** EXPOSE on **ainult dokumentatsioon**. Portide avamiseks kasuta `-p` flag'i:
+**Pordi avamiseks:**
 ```bash
-docker run -p 8080:3000 myapp
-# Host port 8080 -> Container port 3000
+docker run -p 8080:3000 myapp  # Host:8080 → Konteiner:3000
 ```
 
 #### USER - Non-Root User
@@ -418,53 +275,13 @@ USER määrab, millise kasutajana rakendus käivitub. Vaikimisi on see **root** 
 
 ---
 
-**Süntaks:** `USER <username|UID>[:<groupname|GID>]`
-
-Määrab user'i (ja optionally group'i), millega järgnevad RUN, CMD, ENTRYPOINT käsud käivitatakse.
+**Süntaks:** `USER <username>`
 
 ```dockerfile
-FROM node:18-alpine
-
-# Default: kõik käsud jooksevad root'ina (OHTLIK!)
-
-WORKDIR /app
-COPY package.json .
-RUN npm install
-
-# Vaheta non-root user'ile (TURVALISEM)
-USER node
-
-# Nüüd CMD jookseb node user'ina (mitte root)
-CMD ["node", "server.js"]
-```
-
-**Best practice:** Ära käivita rakendusi **root user'ina** (security risk).
-
-**Node.js official image'il on juba `node` user olemas:**
-```dockerfile
-FROM node:18-alpine
-
 WORKDIR /app
 COPY --chown=node:node . .
-# --chown määrab omanikuks node:node (mitte root)
-
 USER node
 CMD ["node", "server.js"]
-```
-
-**Ubuntu/Debian base image'il loo user:**
-```dockerfile
-FROM ubuntu:22.04
-
-# Loo non-root user
-RUN groupadd -r appuser && \
-    useradd -r -g appuser appuser
-
-WORKDIR /app
-COPY --chown=appuser:appuser . .
-
-USER appuser
-CMD ["./my-app"]
 ```
 
 #### CMD vs ENTRYPOINT - Konteineri Käivituskäsk
@@ -481,78 +298,17 @@ CMD määrab käsu, mis **käivitub iga kord, kui konteiner starditakse** (`dock
 
 ---
 
-**CMD süntaks:**
-- **Exec form (soovitatav):** `CMD ["executable", "param1", "param2"]`
-- **Shell form:** `CMD command param1 param2`
-
-**ENTRYPOINT süntaks:**
-- **Exec form:** `ENTRYPOINT ["executable", "param1"]`
-- **Shell form:** `ENTRYPOINT command param1`
-
-**CMD - Default käsk:**
-CMD määrab default käsu, mis käivitatakse konteineri startimisel. **Lihtne override'ida** `docker run` käsuga.
+**Süntaks:** `CMD ["executable", "param1"]`
 
 ```dockerfile
-FROM node:18-alpine
-WORKDIR /app
-COPY . .
 CMD ["node", "server.js"]
 ```
 
-```bash
-# Kasutab CMD default'i
-docker run myapp
-# Käivitab: node server.js
-
-# Override CMD
-docker run myapp node worker.js
-# Käivitab: node worker.js (mitte server.js!)
-```
-
-**ENTRYPOINT - Peamine executable:**
-ENTRYPOINT määrab peamise käsu, mis **alati käivitatakse**. CMD argumendid lisatakse ENTRYPOINT'ile.
+**ENTRYPOINT:** Kasuta, kui konteiner on CLI tool (mitte web app).
 
 ```dockerfile
-FROM node:18-alpine
-WORKDIR /app
-COPY . .
-ENTRYPOINT ["node"]
-CMD ["server.js"]
-```
-
-```bash
-# Käivitab: node server.js
-docker run myapp
-
-# Override ainult CMD (node jääb alles)
-docker run myapp worker.js
-# Käivitab: node worker.js
-
-# Override ENTRYPOINT (harv)
-docker run --entrypoint sh myapp
-# Käivitab: sh (ignore'ib node)
-```
-
-**CMD vs ENTRYPOINT kombinatsioonid:**
-
-| Dockerfile | `docker run myapp` | `docker run myapp arg1` |
-|------------|-------------------|------------------------|
-| `CMD ["node", "server.js"]` | `node server.js` | `arg1` (override!) |
-| `ENTRYPOINT ["node"]`<br>`CMD ["server.js"]` | `node server.js` | `node arg1` |
-| `ENTRYPOINT ["node", "server.js"]` | `node server.js` | `node server.js arg1` (lisab lõppu) |
-
-**Best practice:**
-- Kui konteiner on **rakendus** (nt web server), kasuta **CMD**
-- Kui konteiner on **tool/utility** (nt CLI), kasuta **ENTRYPOINT + CMD**
-
-```dockerfile
-# Rakendus (web server)
-CMD ["node", "server.js"]
-
-# Tool (CLI utility)
 ENTRYPOINT ["aws"]
-CMD ["--help"]
-# Võimaldab: docker run myaws s3 ls
+CMD ["--help"]  # Default argumendid
 ```
 
 #### HEALTHCHECK - Tervise Kontroll
@@ -569,39 +325,11 @@ HEALTHCHECK käivitab perioodiliselt käsu, mis kontrollib, kas su rakendus tö�
 
 ---
 
-**Süntaks:** `HEALTHCHECK [OPTIONS] CMD command`
-
-Määrab käsu, mis kontrollib konteineri tervist (health).
+**Süntaks:** `HEALTHCHECK CMD <command>`
 
 ```dockerfile
-FROM node:18-alpine
-WORKDIR /app
-COPY . .
-
-# Health check: curl http://localhost:3000/health
-HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=5s \
   CMD curl -f http://localhost:3000/health || exit 1
-
-CMD ["node", "server.js"]
-```
-
-**Optsioonid:**
-- `--interval=30s`: Kui tihti kontrollida (default 30s)
-- `--timeout=5s`: Max aeg vastuse ootamiseks (default 30s)
-- `--retries=3`: Mitu korda proovida enne "unhealthy" staatust (default 3)
-- `--start-period=60s`: Kui kaua oodata enne esimest kontrolli (default 0s)
-
-**Exit code'd:**
-- `0`: Healthy (success)
-- `1`: Unhealthy (failure)
-
-```bash
-# Vaata health state'i
-docker ps
-# STATUS: Up 2 minutes (healthy)
-
-docker inspect --format='{{.State.Health.Status}}' my-container
-# healthy
 ```
 
 ### Multi-Stage Builds - Image Optimeerimine
