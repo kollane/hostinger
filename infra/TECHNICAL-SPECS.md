@@ -223,7 +223,7 @@ Development tools:
   - python3-pip: 24.0
 
 Java (for backend-java-spring):
-  - openjdk-17-jdk: 17.0.12
+  - openjdk-21-jdk: 21.0.x
 
 Node.js (for backend-nodejs):
   - nodejs: 20.x LTS (via NodeSource)
@@ -345,8 +345,13 @@ Password: Set per container (student1, student2, student3)
 Sudo access: Limited (no password sudo not enabled)
 ```
 
-**Bash aliases (in .bashrc):**
+**Bash configuration (in .bashrc):**
 ```bash
+# Java environment
+export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
+export PATH=$JAVA_HOME/bin:$PATH
+
+# Aliases
 alias docker-stop-all="docker stop \$(docker ps -aq) 2>/dev/null || echo No containers running"
 alias check-resources="echo === RAM === && free -h && echo && echo === DISK === && df -h / && echo && echo === DOCKER === && docker ps -a && docker images"
 
