@@ -24,7 +24,16 @@
 **User Teenuse (Service) roll:**
 - Genereerib JWT tokeneid autentimiseks
 - Annab tokeneid teistele mikroteenustele (microservices) (nt Todo Teenus (Service))
-- Töötava süsteemi saad Harjutus 2-s!
+
+**📖 Põhjalik selgitus:** [User Service README](../../apps/backend-nodejs/README.md) selgitab:
+- Mis on User Service ja miks see on vajalik (kontorihoone analoogia)
+- Mis asi on JWT token (digitaalne visiitkaart)
+- Kuidas JWT töötab mikroteenuste arhitektuuris
+
+**Harjutus 1 fookus:**
+- Õpid konteineriseerima User Service rakendust
+- Rakendus EI TÖÖTA täielikult (PostgreSQL puudub)
+- **Harjutus 2** toob PostgreSQL ja töötava süsteemi
 
 ---
 
@@ -108,6 +117,20 @@ head -50 server.js
 - Millise pordiga rakendus (application) käivitub? (3000)
 - Millised sõltuvused (dependencies) on vajalikud? (vaata package.json)
 - Kas rakendus (application) vajab andmebaasi? (Jah, PostgreSQL)
+
+**📖 Põhjalikum info:** [User Service README](../../apps/backend-nodejs/README.md) selgitab, mida see rakendus teeb ja kuidas see seostub JWT tokenitega.
+
+**Kiire kokkuvõte:**
+- 🔐 Registreerib uusi kasutajaid
+- 🎫 Loob JWT tokeneid (digitaalsed visiitkaardid)
+- ✅ Kontrollib kasutajate õigusi (user/admin roll)
+- 💾 Salvestab kasutajate andmed PostgreSQL andmebaasi
+
+**Miks see hangub selles harjutuses?**
+- User Service vajab PostgreSQL andmebaasi
+- Docker konteiner käivitub, aga ei saa andmebaasiga ühendust
+- See on **OODATUD käitumine** Lab 1's!
+- Harjutus 2 lisab PostgreSQL ja kõik töötab
 
 ### Samm 2: Loo Dockerfile
 
@@ -294,40 +317,22 @@ docker ps -a
 - `docker ps` näitab ainult TÖÖTAVAID konteinereid
 - `docker ps -a` näitab KÕIKI konteinereid (ka peatatud)
 
-### Samm 6: Mõista JWT Tokeni Rolli
+### Samm 6: Vaata User Service dokumentatsiooni
 
-**💡 Mis asi on JWT token lihtsustatult?**
+**📖 Täielik selgitus User Service ja JWT tokeni kohta:**
 
-JWT token on nagu **digitaalne visiitkaart**, mis tõestab, kes sa oled ilma parooliga.
+Loe läbi: [User Service README](../../apps/backend-nodejs/README.md)
 
-**Analoogia igapäevaelust:**
-- 🏢 Kui lähed kontorisse, annavad esimesel korral **külastuskaardi** (pärast parooli kontrolli)
-- 🚪 Järgmistel kordadel näitad ainult kaarti, ei pea parooli mitte kunagi enam sisestama
-- ✅ Kaart sisaldab infot: nimi, roll, kehtivusaeg
+**Seal saad teada:**
+- ✅ Mis on User Service ja miks see on vajalik (kontorihoone analoogia)
+- ✅ Mis asi on JWT token (digitaalne visiitkaart)
+- ✅ Kuidas JWT token seostub User Service'ga
+- ✅ Miks on vaja jagatud JWT_SECRET võtit
 
-**JWT token töötab täpselt samamoodi:**
-1. 🔐 **Login kord** (email + parool) → Saad JWT tokeni
-2. 🎫 **Järgmised päringud** → Näitad ainult tokenit, EI KÜSI PAROOLI
-3. ⏰ Token kehtib teatud aja (nt 24h), siis tuleb uuesti sisse logida
-
-**Praktiline näide:**
-
-User Teenus (Service) on **autentimise keskus (authentication hub)** mikroteenuste (microservices) arhitektuuris:
-
-1. **Kasutaja registreerib** → POST /api/auth/register
-2. **Kasutaja logib sisse** → POST /api/auth/login
-3. **Saab JWT tokeni** → `{"token": "eyJhbGci..."}`
-4. **Kasutab tokenit teistes teenustes (services)** → Todo Teenus (Service), Product Teenus (Service) jne
-
-**JWT token sisaldab krüpteeritud infot:**
-- `userId` - Kasutaja ID (nt 123)
-- `email` - Kasutaja email (nt test@example.com)
-- `role` - Kasutaja roll (user/admin)
-- `exp` - Token'i aegumisaeg (nt "kehtib kuni 2025-01-27 10:00")
-
-**Probleem Harjutus 1's:** PostgreSQL puudub, seega ei saa praegu JWT tokenit testida!
-
-**Lahendus:** Harjutus 2 lisab PostgreSQL andmebaasi ja saame töötava autentimise süsteemi!
+**Harjutus 1 olukord:**
+- User Service konteiner hangub (PostgreSQL puudub)
+- JWT tokenit EI SAA praegu testida (andmebaas puudub)
+- **Harjutus 2** lisab PostgreSQL ja saame töötava autentimise süsteemi!
 
 ### Samm 7: Debug ja Troubleshoot
 

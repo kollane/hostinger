@@ -189,6 +189,13 @@ docker exec postgres-todo psql -U postgres -d todo_service_db -c "\d todos"
 
 ### Samm 4: Genereeri Jagatud JWT Saladus (Shared Secret)
 
+**📖 Täielik JWT ja JWT_SECRET selgitus:** [User Service README](../../apps/backend-nodejs/README.md) selgitab:
+- Mis on JWT token (digitaalne visiitkaart)
+- Miks kõik teenused peavad kasutama SAMA JWT_SECRET võtit
+- Kuidas JWT töötab mikroteenuste arhitektuuris
+
+---
+
 **OLULINE:** Mõlemad teenused (services) peavad kasutama SAMA `JWT_SECRET`'i!
 
 ```bash

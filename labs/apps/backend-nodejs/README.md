@@ -412,4 +412,150 @@ See rakendus on valmis kasutamiseks järgmistes laborites:
 
 ---
 
+## 📘 Mis on User Service ja miks see on vajalik?
+
+### 💡 Lihtsustatult
+
+User Service on nagu **turvatöötaja kontori sissepääsu juures**, kes:
+1. 🔐 Kontrollib, kes sa oled (login)
+2. 🎫 Annab sulle **digitaalse visiitkaardi** (JWT token)
+3. ✅ Teised teenused usaldavad seda visiitkaart
+
+### Igapäevaelu analoogia: Kontorihoone
+
+Kujuta ette **suurt kontorihoone** (mikroteenuste süsteem):
+
+```
+🏢 Kontorihoone
+│
+├── 🚪 Sissepääs (User Service)
+│   └── Turvatöötaja kontrollib ID'd ja annab külastuskaardi
+│
+├── 🏬 Esimene korrus: Köök (Todo Service)
+│   └── Kui on külastuskaart, saad süüa
+│
+├── 🏬 Teine korrus: Raamatukogu (Product Service)
+│   └── Kui on külastuskaart, saad raamatuid
+│
+└── 🏬 Kolmas korrus: Konverentsiruum (Analytics Service)
+    └── Kui on külastuskaart, saad siseneda
+```
+
+**User Service roll:**
+- Ainult **üks sissepääs** kogu hoonesse (centralized authentication)
+- Kontrollib kasutajanime ja parooli **ÜHEAINSA** korra
+- Annab **külastuskaardi** (JWT token), mis kehtib kõigil korrustel
+- Teised teenused usaldavad seda kaarti ilma, et peaksid ise parooli küsima
+
+### Miks see on parem kui iga teenus eraldi?
+
+❌ **Ilma User Service'ta:**
+- Todo teenus küsib parooli → kontrollib andmebaasist
+- Product teenus küsib parooli → kontrollib andmebaasist
+- Analytics teenus küsib parooli → kontrollib andmebaasist
+- **Probleem:** Kasutaja peab sisestama parooli KOLM KORDA
+
+✅ **User Service'ga:**
+- **Login ÜHEAINSA korra** → Saad JWT tokeni
+- Todo teenus usaldab tokenit (ei küsi parooli)
+- Product teenus usaldab tokenit (ei küsi parooli)
+- Analytics teenus usaldab tokenit (ei küsi parooli)
+- **Tulemus:** Kasutaja sisestab parooli ainult üks kord! 🎉
+
+---
+
+## 🎫 Mis asi on JWT token?
+
+### 💡 Lihtsustatult
+
+JWT token on nagu **digitaalne visiitkaart**, mis tõestab, kes sa oled ilma parooliga.
+
+### Analoogia igapäevaelust: Kontori külastuskaart
+
+- 🏢 Kui lähed kontorisse, annavad esimesel korral **külastuskaardi** (pärast parooli kontrolli)
+- 🚪 Järgmistel kordadel näitad ainult kaarti, ei pea parooli mitte kunagi enam sisestama
+- ✅ Kaart sisaldab infot: nimi, roll, kehtivusaeg
+
+### JWT token töötab täpselt samamoodi
+
+1. 🔐 **Login kord** (email + parool) → Saad JWT tokeni
+2. 🎫 **Järgmised päringud** → Näitad ainult tokenit, EI KÜSI PAROOLI
+3. ⏰ Token kehtib teatud aja (nt 24h), siis tuleb uuesti sisse logida
+
+### Kuidas see seostub User Service'ga?
+
+Meenuta kontorihoone analogiat:
+- 🏢 User Service = turvatöötaja sissepääsu juures
+- 🎫 JWT token = digitaalne külastuskaart
+- 🚪 Login = kontrollib ID'd ja annab kaardi
+- ✅ Teised teenused = usaldavad kaarti, ei küsi parooli enam
+
+See on täpselt see, mida User Service teeb mikroteenuste arhitektuuris!
+
+### Praktiline näide: User Service töövoog
+
+User Teenus (Service) on **autentimise keskus (authentication hub)** mikroteenuste (microservices) arhitektuuris:
+
+1. **Kasutaja registreerib** → POST /api/auth/register
+2. **Kasutaja logib sisse** → POST /api/auth/login
+3. **Saab JWT tokeni** → `{"token": "eyJhbGci..."}`
+4. **Kasutab tokenit teistes teenustes (services)** → Todo Teenus (Service), Product Teenus (Service) jne
+
+### JWT token sisu
+
+**JWT token sisaldab krüpteeritud infot:**
+- `userId` - Kasutaja ID (nt 123)
+- `email` - Kasutaja email (nt test@example.com)
+- `role` - Kasutaja roll (user/admin)
+- `exp` - Token'i aegumisaeg (nt "kehtib kuni 2025-01-27 10:00")
+
+### Tehniliselt
+
+- User Service on **autentimise keskus (authentication hub)**
+- JWT token sisaldab kasutaja infot (ID, email, roll)
+- Teised teenused saavad JWT-st lugeda, kes kasutaja on
+- Ei ole vaja iga teenuse jaoks eraldi kasutajate andmebaasi
+
+### JWT Secret - jagatud saladus
+
+**Oluline:** Kõik teenused (User Service, Todo Service jne) peavad kasutama **SAMA JWT_SECRET** võtit!
+
+**Miks?**
+- User Service allkirjastab JWT tokeni `JWT_SECRET` võtmega
+- Todo Service kontrollib tokeni **SAMA** `JWT_SECRET` võtmega
+- Kui võtmed erinevad, token ei kehti! ❌
+
+**Näide:**
+
+```bash
+# ÕIGE: Mõlemad teenused kasutavad SAMA võtit
+JWT_SECRET="minu-super-turvaline-secret-12345"
+
+# User Service kasutab: JWT_SECRET="minu-super-turvaline-secret-12345"
+# Todo Service kasutab: JWT_SECRET="minu-super-turvaline-secret-12345"
+# ✅ Token töötab!
+
+# VALE: Erinevad võtmed
+# User Service kasutab: JWT_SECRET="secret-A"
+# Todo Service kasutab: JWT_SECRET="secret-B"
+# ❌ Token EI tööta!
+```
+
+**Genereeri turvaline secret:**
+
+```bash
+# Linuxis/macOS
+openssl rand -base64 32
+
+# Tulemus: juhuslik 32-tähemärgiline string
+# Näide: "xK7mP9vL2nQ8wR5tY6uI0oP3jH4kF1gS2dA9bN7cM5v="
+```
+
+**Kuidas seda laborites kasutatakse:**
+- **Lab 1:** User Service konteiner hangub (PostgreSQL puudub, JWT-d ei saa testida)
+- **Lab 2:** Lisame PostgreSQL + jagatud JWT_SECRET → töötav süsteem!
+- **Lab 3+:** Kasutame Kubernetes Secrets JWT_SECRET salvestamiseks
+
+---
+
 **Valmis DevOps harjutusteks! 🚀**
