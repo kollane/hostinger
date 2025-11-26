@@ -170,6 +170,8 @@ docker exec postgres-todo psql -U postgres -d todo_service_db -c "\d todos"
 - ✅ `BIGSERIAL` = BIGINT (64-bit) → Sobib Spring Boot `Long`'iga
 - ❌ Kui kasutad `SERIAL`, saad vea (error): "wrong column type encountered"
 
+**📖 Java/Spring Boot JPA ja PostgreSQL:** Põhjalikum selgitus Spring Boot JPA Entity tüüpide ja PostgreSQL andmetüüpide vastavuse kohta (Long vs BIGINT, Integer vs INT) leiad [Peatükk 06A: Java Spring Boot ja Node.js Konteineriseerimise Spetsiifika](../../../resource/06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md).
+
 ### Samm 4: Genereeri Jagatud JWT Saladus (Shared Secret) (5 min)
 
 **OLULINE:** Mõlemad teenused (services) peavad kasutama SAMA `JWT_SECRET`'i!

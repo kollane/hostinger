@@ -210,6 +210,51 @@ labs/
 ├── 08-gitops-argocd-lab/       # 5 exercises, solutions/
 ├── 09-backup-disaster-recovery-lab/ # 5 exercises, solutions/
 └── 10-terraform-iac-lab/       # 5 exercises, solutions/
+
+resource/                        # Theory chapters (extracted from labs)
+├── 05-Docker-Pohimotted.md     # Docker fundamentals
+├── 06-Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md  # Dockerfile instructions, multi-stage builds
+├── 06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md  # Java/Node.js containerization specifics
+├── 06B-Docker-Image-Security-ja-Vulnerability-Scanning.md  # Docker security, CVE/CVSS, Scout, Trivy, CI/CD integration
+├── 08A-Docker-Compose-Production-Development-Seadistused.md  # Docker Compose dev vs prod patterns
+└── 08B-Nginx-Reverse-Proxy-Docker-Keskkonnas.md  # Nginx reverse proxy, CORS, API gateway
+```
+
+---
+
+## Theory Chapters (resource/)
+
+Theory chapters extract long conceptual explanations from lab exercises into dedicated files.
+
+**Pattern:** When lab exercises contain 50-100+ lines of theoretical content, extract to `resource/` and add reference link in exercise.
+
+**Current theory chapters:**
+
+| Chapter | Title | Topics | Referenced in Labs |
+|---------|-------|--------|-------------------|
+| **05** | Docker-Pohimotted.md | Docker fundamentals, architecture, images vs containers | Lab 1 prerequisite |
+| **06** | Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md | Dockerfile instructions (FROM, RUN, COPY, CMD, EXPOSE), multi-stage builds, layer caching, best practices | Lab 1 (exercises 01a, 01b, 05) |
+| **06A** | Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md | Java Spring Boot specifics (JAR vs WAR, JVM tuning, Gradle dependency caching), Node.js specifics (npm ci, bcrypt native modules, Alpine compatibility), PostgreSQL data types (BIGSERIAL vs SERIAL) | Lab 1 (exercises 01a, 01b, 02, 05) |
+| **06B** | Docker-Image-Security-ja-Vulnerability-Scanning.md | CVE and CVSS scoring, Docker Scout usage, Trivy installation and usage (local + Docker container), security best practices (non-root users, minimal base images, read-only filesystem, health checks), base image update strategy, CI/CD integration (GitHub Actions, GitLab CI) | Lab 1 (exercise 05, Samm 6) |
+| **08A** | Docker-Compose-Production-Development-Seadistused.md | Docker Compose dev vs prod patterns, environment-specific configs, secrets management | Lab 2 (exercises 01, 02) |
+| **08B** | Nginx-Reverse-Proxy-Docker-Keskkonnas.md | Nginx reverse proxy concepts, CORS problem solving, API gateway patterns, security, troubleshooting | Lab 2 (exercise 02) |
+
+**How to use theory chapters:**
+
+1. **When creating new lab content:** If you write 50+ lines of theory, extract to `resource/XX-Topic.md`
+2. **In lab exercises:** Add reference link: `📖 **Topic:** [Peatükk XX](../../../resource/XX-Topic.md)`
+3. **Keep practical info in labs:** Labs should focus on hands-on steps, not long explanations
+4. **Update CLAUDE.md:** Add new chapter to table above
+
+**Example (from Lab 1, Exercise 05, Samm 6):**
+
+```markdown
+### Samm 6: Security Scan (10 min)
+
+📖 **Põhjalik käsitlus:** [Peatükk 06B: Docker Image Security](../../../resource/06B-Docker-Image-Security-ja-Vulnerability-Scanning.md)
+
+Siin on kiired käsud testimiseks:
+[practical commands only]
 ```
 
 ---
