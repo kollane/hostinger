@@ -232,7 +232,7 @@ Node.js (for backend-nodejs):
 Docker:
   - docker-ce: 29.0.4
   - docker-ce-cli: 29.0.4
-  - containerd.io: 1.7.x
+  - containerd.io: 1.7.28-1 (LOCKED - see Known Issues)
   - docker-buildx-plugin: latest
   - docker-compose-plugin: 2.40.3
 
@@ -257,6 +257,48 @@ Docker service:
   Status: enabled
   Started: automatic on boot
 ```
+
+**Known Issues and Workarounds:**
+
+⚠️ **CRITICAL: containerd.io 2.1.x sysctl bug**
+
+**Problem:**
+- containerd.io versions 1.7.29+ and 2.x have a bug with LXD unprivileged containers
+- Symptoms: `Error: unable to start container process: open sysctl net.ipv4.ip_unprivileged_port_start file: permission denied`
+- Affects: ALL Docker containers (PostgreSQL, nginx, etc.)
+- Ubuntu 24.04 + LXD + Docker combination triggers this AppArmor/sysctl conflict
+- Bug reports: [LP#2131008](https://bugs.launchpad.net/ubuntu/+source/apparmor/+bug/2131008)
+
+**Solution applied (2025-11-26):**
+```bash
+# In each LXD container, downgrade containerd:
+apt install -y --allow-downgrades containerd.io=1.7.28-1~ubuntu.24.04~noble
+apt-mark hold containerd.io
+
+# Verify version:
+containerd --version
+# Output: containerd containerd.io 1.7.28 ...
+
+# Restart Docker:
+systemctl restart docker
+```
+
+**Verification:**
+```bash
+# Test if containers work:
+docker run --rm alpine:3.16 echo "OK"
+# Should print "OK" without sysctl errors
+
+# Test PostgreSQL 16-alpine:
+docker run --rm -e POSTGRES_PASSWORD=test postgres:16-alpine postgres --version
+# Should print version without errors
+```
+
+**Important:**
+- Version is LOCKED with `apt-mark hold containerd.io`
+- Do NOT run `apt upgrade` without checking containerd version first
+- When rebuilding template image, apply this fix BEFORE publishing
+- Monitor upstream bug for resolution (expected fix in containerd 2.2+)
 
 ### File Structure
 
@@ -872,7 +914,10 @@ sysctl -p
 
 ---
 
-**Viimane uuendus:** 2025-11-25
-**Versioon:** 1.0
+**Viimane uuendus:** 2025-11-26
+**Versioon:** 1.1
 **Vastutav:** VPS Admin
 **Järgmine ülevaatus:** 2025-12-25
+**Muudatuste logi:**
+- 2025-11-26: Lisa containerd.io 1.7.28 downgrade info ja sysctl bug workaround
+- 2025-11-25: Esialgne versioon

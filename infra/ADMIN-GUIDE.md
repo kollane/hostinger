@@ -945,9 +945,20 @@ sg lxd -c "lxc launch devops-lab-base temp-update -p default -p devops-lab"
 # Logi konteinerisse
 sg lxd -c "lxc exec temp-update -- bash"
 
-# Näiteks: uuenda Docker
+# ⚠️ KRIITILINE: Rakenda containerd fix (kui uuendad Docker'it)
 apt-get update
-apt-get upgrade docker-ce docker-ce-cli containerd.io docker-compose-plugin
+apt-get upgrade docker-ce docker-ce-cli docker-buildx-plugin docker-compose-plugin
+# NB! ÄRA upgrade containerd.io - see on lukustatud versioonil 1.7.28
+
+# Verifitseeri containerd versiooni
+containerd --version
+# Peaks olema: 1.7.28
+apt-mark showhold | grep containerd
+# Peaks olema: containerd.io
+
+# Kui containerd on 1.7.29+ või 2.x, downgrade:
+apt install -y --allow-downgrades containerd.io=1.7.28-1~ubuntu.24.04~noble
+apt-mark hold containerd.io
 
 # Või: uuenda labs
 rm -rf /home/labuser/labs
@@ -1253,6 +1264,65 @@ sg lxd -c "lxc exec devops-student1 -- systemctl restart docker"
 sg lxd -c "lxc exec devops-student1 -- groups labuser"
 ```
 
+### ⚠️ Docker konteinerid ei käivitu - sysctl permission denied
+
+**Sümptom:**
+```
+Error: unable to start container process:
+open sysctl net.ipv4.ip_unprivileged_port_start file:
+reopen fd 8: permission denied
+```
+
+**Põhjus:**
+- `containerd.io` versioon 1.7.29+ või 2.x on bugine LXD keskkonnas
+- Ubuntu 24.04 + LXD + Docker kombinatsioon
+- Mõjutab KÕIKI Docker konteinereid (PostgreSQL, nginx, jne)
+
+**Lahendus (RAKENDATUD 2025-11-26):**
+
+```bash
+# 1. Kontrolli containerd versiooni kõigis konteinerites
+for container in devops-student1 devops-student2 devops-student3; do
+  echo "=== $container ==="
+  sg lxd -c "lxc exec $container -- containerd --version"
+done
+
+# 2. Kui versioon on 1.7.29+ või 2.x, downgrade kõigis konteinerites
+for container in devops-student1 devops-student2 devops-student3; do
+  echo "=== Downgrading containerd in $container ==="
+  sg lxd -c "lxc exec $container -- bash -c '
+    systemctl stop docker
+    apt install -y --allow-downgrades containerd.io=1.7.28-1~ubuntu.24.04~noble
+    apt-mark hold containerd.io
+    systemctl restart containerd
+    systemctl restart docker
+  '"
+done
+
+# 3. Verifitseeri fix'i
+sg lxd -c "lxc exec devops-student1 -- su - labuser -c 'docker run --rm alpine:3.16 echo OK'"
+# Peaks väljastama: OK
+```
+
+**Testimine PostgreSQL 16-alpine'iga:**
+```bash
+# Kui varem kasutasid PostgreSQL 14, loo volumes uuesti
+sg lxd -c "lxc exec devops-student1 -- su - labuser -c '
+  docker volume rm postgres-user-data postgres-todo-data 2>/dev/null || true
+  docker volume create postgres-user-data
+  docker volume create postgres-todo-data
+'"
+
+# Test PostgreSQL 16-alpine
+sg lxd -c "lxc exec devops-student1 -- su - labuser -c 'docker run --rm -e POSTGRES_PASSWORD=test postgres:16-alpine postgres --version'"
+```
+
+**OLULINE:**
+- ✅ Versioon on lukustatud: `apt-mark hold containerd.io`
+- ⚠️ ÄRA käivita `apt upgrade` ilma kontrolli
+- ⚠️ Template image vajab sama fix'i enne uuendamist
+- 📖 Detailne info: `TECHNICAL-SPECS.md` → Known Issues
+
 ### RAM otsa
 
 ```bash
@@ -1337,6 +1407,9 @@ sg lxd -c "lxc console devops-student1"
 
 ---
 
-**Viimane uuendus:** 2025-11-25
-**Versioon:** 1.0
+**Viimane uuendus:** 2025-11-26
+**Versioon:** 1.1
 **Hooldaja:** VPS Admin
+**Muudatused:**
+- 2025-11-26: Lisa containerd.io 1.7.28 downgrade juhend (sysctl bug fix)
+- 2025-11-25: Esialgne versioon
