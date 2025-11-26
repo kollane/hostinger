@@ -494,22 +494,6 @@ sudo ls -la /var/lib/docker/volumes/postgres-todo-data/_data/
 
 ---
 
-## ✅ Kontrolli Tulemusi
-
-Peale selle harjutuse läbimist peaksid omama:
-
-- [x] **2 nimega andmehoidlat (named volumes)** loodud (`docker volume ls`)
-  - postgres-user-data
-  - postgres-todo-data
-- [x] MÕLEMAD PostgreSQL konteinerid kasutavad andmehoidlaid (volumes) (`-v <volume>:/var/lib/postgresql/data`)
-- [x] **MÕLEMAD andmebaasid jäävad alles pärast konteineri kustutamist!** (KÕIGE OLULISEM! ✨)
-- [x] **2 varukoopia (backup) faili** loodud (postgres-user-backup.tar.gz, postgres-todo-backup.tar.gz)
-- [x] Oskad taastada (restore) varukoopiast (backup) (katastroofist taastumine (disaster recovery))
-- [x] Oskad inspekteerida andmehoidlaid (volumes) (`docker volume inspect`)
-- [x] Mõistad, miks andmehoidlad (volumes) on KRIITILISED tootmises
-
----
-
 ## 💡 Millal Andmehoidlaid (Volumes) Kasutada?
 
 ✅ **Kasuta andmehoidlaid (volumes) kui:**

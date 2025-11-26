@@ -391,21 +391,6 @@ docker stats user-service
 
 ---
 
-## ✅ Kontrolli Tulemusi
-
-Peale selle harjutuse läbimist peaksid omama:
-
-- [x] **Dockerfile** backend-nodejs/ kaustas
-- [x] **.dockerignore** fail
-- [x] **Docker pilt (image)** `user-service:1.0` (vaata `docker images`)
-- [x] **Konteiner** käivitatud (vaata `docker ps`)
-- [x] Mõistad Dockerfile'i struktuuri
-- [x] Oskad ehitada (build) pilti (image)
-- [x] Oskad käivitada konteinerit
-- [x] Oskad vaadata logisid
-
----
-
 ## 💡 Parimad Praktikad (Best Practices)
 
 1. **Kasuta `.dockerignore`** - Väldi tarbetute failide kopeerimist

@@ -649,28 +649,6 @@ docker images | grep -E 'user-service|todo-service' | sort
 
 ---
 
-## ✅ Kontrolli Tulemusi
-
-Peale selle harjutuse läbimist peaksid omama:
-
-- [x] **2 optimeeritud pilti (images)** loodud
-  - user-service:1.0-optimized (~305MB, sama kui 1.0)
-  - todo-service:1.0-optimized (~180MB, -22% ✅)
-- [x] Multi-stage builds töötavad (Node.js: deps → runtime, Java: JDK → JRE)
-- [x] Layer caching toimib SUUREPÄRASELT (rebuild -60-80% kiirem!)
-- [x] Non-root users kasutusel
-  - User Service: nodejs:1001
-  - Todo Service: spring:1001
-- [x] Health checks lisatud MÕLEMASSE teenusesse
-  - User Service: healthcheck.js
-  - Todo Service: /health endpoint
-- [x] Optimeeritud konteinerid töötavad (`docker ps` näitab "healthy")
-- [x] End-to-End JWT workflow töötab identitsioonilt
-- [x] .dockerignore failid on optimeeritud
-- [x] Security scan läbitud (Docker Scout + Trivy)
-
----
-
 ## 🎓 Parimad Tavad
 
 1. ✅ Multi-stage builds (JDK → JRE, dependencies → runtime)

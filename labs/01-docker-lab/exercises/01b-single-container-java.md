@@ -440,25 +440,6 @@ docker logs todo-service
 
 ---
 
-## ✅ Kontrolli Tulemusi
-
-Peale selle harjutuse läbimist peaksid omama:
-
-- [x] **Dockerfile** backend-java-spring/ kaustas
-- [x] **.dockerignore** fail
-- [x] **JAR fail** build/libs/todo-service.jar
-- [x] **Docker pilt (image)** `todo-service:1.0` (vaata `docker images`)
-- [x] **Konteiner käivitatud** (vaata `docker ps -a` - STATUS: Exited)
-- [x] Mõistad Dockerfile'i struktuuri
-- [x] Oskad ehitada (build) pilti (image)
-- [x] Oskad käivitada konteinerit
-- [x] Oskad vaadata logisid
-- [x] **Mõistad, miks hangub** (PostgreSQL puudub)
-
----
-
----
-
 ## 💡 Parimad Praktikad (Best Practices)
 
 1. **Kasuta `.dockerignore`** - Väldi tarbetute failide kopeerimist

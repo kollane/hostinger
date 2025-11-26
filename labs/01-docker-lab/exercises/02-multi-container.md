@@ -682,23 +682,6 @@ docker run -p 3001:3000 ...  # Kasuta host porti 3001
 
 ---
 
-## ✅ Kontrolli Tulemusi
-
-- [x] Kaks PostgreSQL konteinerit töötavad (portid 5432 ja 5433)
-- [x] User teenuse (service) konteiner töötab (port 3000)
-- [x] Todo teenuse (service) konteiner töötab (port 8081)
-- [x] Mõlemad teenused (services) kasutavad SAMA JWT_SECRET'i
-- [x] User teenuse (service) `/health` tagastab `{"status":"OK","database":"connected"}`
-- [x] Todo teenuse (service) `/health` tagastab `{"status":"UP"}`
-- [x] Registreerimine töötab
-- [x] Login tagastab JWT tokeni
-- [x] Todo teenus (service) aktsepteerib User teenuse (service) tokenit
-- [x] CRUD operatsioonid töötavad (loo, loe, uuenda todos)
-- [x] Mõistad mikroteenuste (microservices) arhitektuuri
-- [x] Mõistad JWT-põhist autentimist
-
----
-
 ## 🎓 Õpitud Kontseptsioonid
 
 ### Mikroteenuste (Microservices) Arhitektuur:
