@@ -109,6 +109,42 @@ ssh labuser@93.127.213.242 -p [SINU-PORT]
 
 ---
 
+## ⚠️ TURVAHOIATUS: Avalikud Pordid!
+
+**🚨 OLULINE: Selles harjutuses on KÕIK 5 porti avalikud (0.0.0.0):**
+
+| Port | Teenus | Oht |
+|------|--------|-----|
+| 8080 | Frontend | ✅ OK - avalik UI |
+| 3000 | User Service API | ⚠️ Backend peaks olema kaitstud |
+| 8081 | Todo Service API | ⚠️ Backend peaks olema kaitstud |
+| 5432 | PostgreSQL (users) | 🚨 **KRIITILINE TURVARISK!** |
+| 5433 | PostgreSQL (todos) | 🚨 **KRIITILINE TURVARISK!** |
+
+### Mis võib juhtuda?
+
+**Internetis botid skaneerivad pidevalt PostgreSQL porte:**
+- 🤖 Automaatsed skännerid otsivad porti 5432 ja 5433
+- 🔓 Brute force rünnakud PostgreSQL paroolidele (postgres/postgres on liiga nõrk!)
+- 💉 SQL injection katsed
+- 📊 Andmebaasi enumeratsioon (tabelite ja veergude avastamine)
+- 💣 Pahatahtlikud päringud (DROP TABLE, DELETE, jne)
+- 📉 DDoS rünnakud (liiga palju ühendusi)
+
+**Production keskkonnas see on VASTUVÕETAMATU!**
+
+### 🛡️ Lahendus
+
+👉 **Järgmine harjutus (Exercise 3) õpetab:**
+- ✅ Võrgu segmenteerimine (network segmentation)
+- ✅ Portide 127.0.0.1 binding (localhost-only)
+- ✅ 3-tier arhitektuur (DMZ → Backend → Database)
+- ✅ Ainult frontend port 8080 jääb avalikuks
+
+**Praegu õpid, kuidas Docker Compose töötab. Exercise 3's õpid, kuidas seda TURVALISELT teha!**
+
+---
+
 ## ⚠️ Enne Alustamist: Kontrolli Eeldusi
 
 **Veendu, et Harjutus 1 on läbitud:**
