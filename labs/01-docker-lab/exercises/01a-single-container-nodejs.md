@@ -360,7 +360,7 @@ docker stats user-service
 
 ## 🔗 Järgmine Samm
 
-Järgmises harjutuses lisame PostgreSQL konteineri ja ühendame kaks konteinerit!
+Järgmises harjutuses konteineriseerid Java Spring Boot tehnoloogial põhineva Todo märkmete rakenduse!
 
 **Jätka:** [Harjutus 1B: Üksik-Konteiner-Java (Single-Container-Java)](https://github.com/kollane/hostinger/blob/master/labs/01-docker-lab/exercises/01b-single-container-java.md)
 
