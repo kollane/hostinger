@@ -2,7 +2,7 @@
 
 **Eesmärk:** Konteineriseeri Node.js User rakendus ja õpi Dockerfile'i loomist
 
-**User Service rakenduse lühitutvustus:**
+**Mida User Service teeb::**
 - 🔐 Registreerib uusi kasutajaid
 - 🎫 Loob JWT tokeneid (digitaalsed tõendid)
 - ✅ Kontrollib kasutajate õigusi (user/admin roll)
