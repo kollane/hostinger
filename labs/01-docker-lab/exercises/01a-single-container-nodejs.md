@@ -20,10 +20,9 @@
 - Dockerfile'i loomist Node.js rakendusele (application)
 - Docker pildi (image) ehitamist (build)
 - Konteineri käivitamist
-- JWT autentimise põhimõtteid
 - Logide vaatamist ja debuggimist
 
-❌ **Käesolevas harjutses rakendus veel TÖÖLE EI HAKKA:**
+❌ **Käesolevas harjutuses rakendus veel TÖÖLE EI HAKKA:**
 - User teenus (service) vajab PostgreSQL andmebaasi
 - Konteiner käivitub, aga hangub kohe (see on **OODATUD**)
 - Töötava rakendus tekib peale **Harjutus 2** läbimist.
