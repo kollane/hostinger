@@ -289,24 +289,7 @@ docker ps -a
 - `docker ps` näitab ainult TÖÖTAVAID konteinereid
 - `docker ps -a` näitab KÕIKI konteinereid (ka peatatud)
 
-### Samm 6: Vaata User Service dokumentatsiooni
-
-**📖 Täielik selgitus User Service ja JWT tokeni kohta:**
-
-Loe läbi: [User Service README](../../apps/backend-nodejs/README.md)
-
-**Seal saad teada:**
-- ✅ Mis on User Service ja miks see on vajalik (kontorihoone analoogia)
-- ✅ Mis asi on JWT token (digitaalne visiitkaart)
-- ✅ Kuidas JWT token seostub User Service'ga
-- ✅ Miks on vaja jagatud JWT_SECRET võtit
-
-**Harjutus 1 olukord:**
-- User Service konteiner hangub (PostgreSQL puudub)
-- JWT tokenit EI SAA praegu testida (andmebaas puudub)
-- **Harjutus 2** lisab PostgreSQL ja saame töötava autentimise süsteemi!
-
-### Samm 7: Debug ja Troubleshoot
+### Samm 6: Debug ja Troubleshoot
 
 ```bash
 # Vaata konteineri staatust
