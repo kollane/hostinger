@@ -80,7 +80,7 @@ ssh labuser@93.127.213.242 -p [SINU-PORT]
 
 ## 📝 Sammud
 
-### Samm 1: Tutvu Rakendusega (Application)
+### Samm 1: Tutvu rakenduse koodiga
 
 **Rakenduse (application) juurkataloog:** `~/labs/apps/backend-nodejs`
 
