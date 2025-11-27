@@ -365,7 +365,7 @@ kubectl apply -f sealed-secret.yaml
 ```bash
 # Käivita setup script
 chmod +x setup.sh
-./setup.sh
+lab1-setup
 ```
 
 **Script kontrollib:**
@@ -567,7 +567,7 @@ Peale Lab 7 läbimist on sul:
 
 ---
 
-**Alusta:** `./setup.sh` ja seejärel `cat exercises/01-vault-setup.md`
+**Alusta:** `lab1-setup` ja seejärel `cat exercises/01-vault-setup.md`
 
 **Kestus:** 5 tundi (5 × 60 min)
 
