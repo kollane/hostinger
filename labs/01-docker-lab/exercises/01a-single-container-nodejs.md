@@ -9,6 +9,7 @@
 - 💾 Salvestab kasutajate andmed PostgreSQL andmebaasi
   
 **📖 Rakenduse funktsionaalsuse kohta lähemalt lugeda siit:** [User Service README](../../apps/backend-nodejs/README.md)
+
 ---
 
 ## ⚠️ OLULINE: Harjutuse Fookus
