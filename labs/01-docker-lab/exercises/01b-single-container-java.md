@@ -3,6 +3,14 @@
 **Kestus:** 45 minutit
 **Eesmärk:** Konteineriseeri Java Spring Boot Todo teenus (service) ja õpi Dockerfile'i loomist
 
+**📖 Rakendus:** [Todo Service README](../../apps/backend-java-spring/README.md) - Todo ülesannete rakendus (to-do list), kus kasutajad saavad hallata oma ülesandeid.
+
+**Mis see rakendus teeb:**
+- ✍️ Loob ja haldab todo ülesandeid (CRUD)
+- 👀 Kuvab kasutaja ülesandeid (filtreerimine, sorteerimine)
+- 📊 Näitab statistikat (tehtud/pooleli ülesanded)
+- 🔐 Valideerib JWT tokeneid User Service'ilt
+
 ---
 
 ## ⚠️ OLULINE: Harjutuse Fookus
@@ -20,11 +28,6 @@
 - Todo teenus (service) vajab PostgreSQL andmebaasi
 - Konteiner käivitub, aga hangub kohe (see on **OODATUD**)
 - Töötava rakenduse (application) saad **Harjutus 2**-s (mitme konteineri käivitamine)
-
-**Miks see hea on?**
-- Õpid debuggima probleeme (`docker logs`, `docker exec`)
-- Mõistad, miks rakendused (applications) vajavad omavahel suhtlemist
-- Näed, kuidas Docker vea (error) sõnumid välja näevad
 
 ---
 

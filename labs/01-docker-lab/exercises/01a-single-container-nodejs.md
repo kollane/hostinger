@@ -3,6 +3,14 @@
 **Kestus:** 45 minutit
 **Eesmärk:** Konteineriseeri Node.js User teenus (service) ja õpi Dockerfile'i loomist
 
+**📖 Rakendus:** [User Service README](../../apps/backend-nodejs/README.md) - Autentimisteenus, mis haldab kasutajaid ja annab välja JWT tokeneid.
+
+**Mis see rakendus teeb:**
+- 🔐 Registreerib uusi kasutajaid
+- 🎫 Loob JWT tokeneid (digitaalsed tõendid)
+- ✅ Kontrollib kasutajate õigusi (user/admin roll)
+- 💾 Salvestab kasutajate andmed PostgreSQL andmebaasi
+
 ---
 
 ## ⚠️ OLULINE: Harjutuse Fookus
@@ -20,16 +28,6 @@
 - User teenus (service) vajab PostgreSQL andmebaasi
 - Konteiner käivitub, aga hangub kohe (see on **OODATUD**)
 - Töötava rakenduse (application) saad **Harjutus 2**-s (Mitme-Konteineri (Multi-Container))
-
-**User Teenuse (Service) roll:**
-- Genereerib JWT tokeneid autentimiseks
-- Annab tokeneid teistele mikroteenustele (microservices) (nt Todo Teenus (Service))
-- Kuidas JWT töötab mikroteenuste arhitektuuris
-
-**Harjutus 1 fookus:**
-- Õpid konteineriseerima User Service rakendust
-- Rakendus EI TÖÖTA täielikult (PostgreSQL puudub)
-- **Harjutus 2** toob PostgreSQL ja töötava süsteemi
 
 ---
 
