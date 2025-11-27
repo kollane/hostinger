@@ -62,6 +62,36 @@ labs-reset          # Täielik reset (KÕIK Docker ressursid + apps failid, küs
 docker-stop-all     # Peata kõik Docker konteinerid
 ```
 
+### Sudo Õigused
+
+Mõned troubleshooting käsud vajavad sudo õiguseid. Need käsud **ei küsi parooli**:
+
+```bash
+# Portide kontrollimine (kasutatud kõigis labides)
+sudo lsof -i :3000        # Kontrolli, kas port 3000 on kasutusel
+sudo lsof -i -P -n | grep LISTEN  # Näita kõiki listening porte
+
+# Port scanning (Lab 2.5 - Network Analysis)
+sudo nmap -sT localhost -p 8080,3000,8081
+
+# Packet capture (Lab 2.5 - Traffic Analysis)
+sudo tcpdump -i eth0 -c 10
+
+# Docker daemon haldamine (harva vajalik)
+sudo systemctl restart docker
+sudo systemctl status docker
+```
+
+**Miks need käsud on sudo'ga?**
+- `lsof` vajab root õiguseid võrgu sockettide nägemiseks
+- `nmap` vajab õiguseid portide skaneerimiseks
+- `tcpdump` vajab õiguseid võrgupakettide püüdmiseks
+
+**Turvalisus:**
+- Ainult diagnostika käsud on lubatud (read-only)
+- Muud sudo käsud (nt `apt-get install`) **küsivad parooli**
+- Kõik sudo kasutused logitakse
+
 ### Rakenduste Juurdepääs
 
 **Väline juurdepääs (brauserist):**

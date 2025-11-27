@@ -922,6 +922,136 @@ Lisa `labs/README.md` faili "Sinu Keskkond" sektsiooni student4 andmed (SSH port
 
 ---
 
+## Sudo Õiguste Haldamine
+
+### Ülevaade
+
+Õpilaskonteinerites on seadistatud **piiratud sudo ligipääs** diagnostika käskudele. See võimaldab õpilastel teha troubleshooting'ut ilma täielikke root õiguseid andmata.
+
+**Passwordless sudo käsud:**
+- `lsof` - Portide kontrollimine
+- `nmap` - Port scanning (Lab 2.5)
+- `tcpdump` - Packet capture (Lab 2.5)
+- `systemctl restart docker` / `systemctl status docker` - Docker daemon haldamine
+- `ls /var/lib/docker/volumes/*` - Docker volume'ite vaatamine (read-only)
+- `du /var/lib/docker/containers/*` - Log failide suuruse mõõtmine (read-only)
+
+**Sudoers konfiguratsioon:** `/etc/sudoers.d/labuser-devops` (mode 0440)
+
+### Kontrolli sudo seadistust
+
+```bash
+# Vaata sudoers faili
+sg lxd -c "lxc exec devops-student1 -- cat /etc/sudoers.d/labuser-devops"
+
+# Verifitseeri õigusi
+sg lxd -c "lxc exec devops-student1 -- ls -l /etc/sudoers.d/labuser-devops"
+# Peaks olema: -r--r----- 1 root root
+
+# Testi sudo käske (labuser'ina)
+sg lxd -c "lxc exec devops-student1 -- su - labuser -c 'sudo lsof -i :22'"
+# Peaks töötama ilma parooli küsimata
+```
+
+### Sudo seadistuse uuendamine
+
+**Kui vaja muuta sudo reegleid:**
+
+```bash
+# 1. Muuda sudoers faili
+sg lxd -c "lxc exec devops-student1 -- bash -c '
+cat > /etc/sudoers.d/labuser-devops << \"EOF\"
+# DevOps Training Lab - Limited Sudo Access
+Defaults:labuser !requiretty
+labuser ALL=(ALL) NOPASSWD: /usr/bin/lsof
+labuser ALL=(ALL) NOPASSWD: /usr/bin/nmap
+labuser ALL=(ALL) NOPASSWD: /usr/sbin/tcpdump
+labuser ALL=(ALL) NOPASSWD: /bin/systemctl restart docker
+labuser ALL=(ALL) NOPASSWD: /bin/systemctl status docker
+labuser ALL=(ALL) NOPASSWD: /bin/ls /var/lib/docker/volumes/*
+labuser ALL=(ALL) NOPASSWD: /usr/bin/du /var/lib/docker/containers/*
+EOF
+'"
+
+# 2. Sea õigused
+sg lxd -c "lxc exec devops-student1 -- chmod 0440 /etc/sudoers.d/labuser-devops"
+sg lxd -c "lxc exec devops-student1 -- chown root:root /etc/sudoers.d/labuser-devops"
+
+# 3. VALIDEERI (KOHUSTUSLIK!)
+sg lxd -c "lxc exec devops-student1 -- visudo -c -f /etc/sudoers.d/labuser-devops"
+# Peaks väljastama: parsed OK
+```
+
+**⚠️ HOIATUS:** Vigane sudoers fail võib süsteemi lukustada! Valideeri ALATI `visudo -c` käsuga.
+
+### Diagnostika tööriistad
+
+Kõik vajalikud diagnostika tööriistad on eelnevalt paigaldatud:
+
+```bash
+# Kontrolli paigaldatud tööriistu
+sg lxd -c "lxc exec devops-student1 -- bash -c '
+  which jq nmap tcpdump nc dig netstat lsof
+'"
+
+# Kui mõni puudub, paigalda:
+sg lxd -c "lxc exec devops-student1 -- apt-get update"
+sg lxd -c "lxc exec devops-student1 -- apt-get install -y jq nmap tcpdump netcat-openbsd dnsutils net-tools"
+```
+
+### Turvalisuse kontroll
+
+**Veendu, et sudo õigused on piiratud:**
+
+```bash
+# Test 1: lsof peaks töötama
+sg lxd -c "lxc exec devops-student1 -- su - labuser -c 'sudo lsof -i :22'" && echo "✅ lsof works"
+
+# Test 2: apt-get PEAKS küsima parooli (turvalisuse kontroll)
+sg lxd -c "lxc exec devops-student1 -- su - labuser -c 'timeout 2 sudo apt-get update 2>&1 | grep -q password'" && echo "✅ apt-get requires password (good!)"
+
+# Test 3: Kontrolli, et ainult spetsiifilised käsud on lubatud
+sg lxd -c "lxc exec devops-student1 -- cat /etc/sudoers.d/labuser-devops | grep NOPASSWD | wc -l"
+# Peaks olema: 7 rida
+```
+
+### Probleemide lahendamine
+
+**Probleem 1: "sudo: /etc/sudoers.d/labuser-devops is world writable"**
+
+**Lahendus:**
+```bash
+sg lxd -c "lxc exec devops-student1 -- chmod 0440 /etc/sudoers.d/labuser-devops"
+```
+
+**Probleem 2: "sudo: sorry, you must have a tty to run sudo"**
+
+**Lahendus:** Lisa `Defaults:labuser !requiretty` sudoers faili algusesse.
+
+**Probleem 3: Õpilane ei saa sudo't kasutada**
+
+**Lahendus:**
+```bash
+# Kontrolli sudoers faili olemasolu
+sg lxd -c "lxc exec devops-student1 -- ls -l /etc/sudoers.d/labuser-devops"
+
+# Kui puudub, loo uuesti (vt Template Uuendamine sektsiooni)
+```
+
+### Logi jälgimine
+
+Kõik sudo kasutused logitakse:
+
+```bash
+# Vaata sudo kasutusi
+sg lxd -c "lxc exec devops-student1 -- grep sudo /var/log/auth.log | tail -20"
+
+# Filtreeri labuser'i sudo kasutused
+sg lxd -c "lxc exec devops-student1 -- grep 'labuser.*sudo' /var/log/auth.log | tail -20"
+```
+
+---
+
 ## Template Uuendamine
 
 ### Millal uuendada template'i?
@@ -930,6 +1060,7 @@ Lisa `labs/README.md` faili "Sinu Keskkond" sektsiooni student4 andmed (SSH port
 - Labs uuendatud (uued ülesanded, parandused)
 - Security updates
 - Uued tööriistad vajalikud
+- **Sudo konfiguratsioon muutub**
 
 ### Template uuendamise protsess
 
@@ -959,6 +1090,32 @@ apt-mark showhold | grep containerd
 # Kui containerd on 1.7.29+ või 2.x, downgrade:
 apt install -y --allow-downgrades containerd.io=1.7.28-1~ubuntu.24.04~noble
 apt-mark hold containerd.io
+
+# Paigalda diagnostika tööriistad (kui pole juba)
+apt-get install -y jq nmap tcpdump netcat-openbsd dnsutils net-tools iproute2
+apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Loo/uuenda sudo konfiguratsioon
+cat > /etc/sudoers.d/labuser-devops << 'EOF'
+# DevOps Training Lab - Limited Sudo Access
+Defaults:labuser !requiretty
+labuser ALL=(ALL) NOPASSWD: /usr/bin/lsof
+labuser ALL=(ALL) NOPASSWD: /usr/bin/nmap
+labuser ALL=(ALL) NOPASSWD: /usr/sbin/tcpdump
+labuser ALL=(ALL) NOPASSWD: /bin/systemctl restart docker
+labuser ALL=(ALL) NOPASSWD: /bin/systemctl status docker
+labuser ALL=(ALL) NOPASSWD: /bin/ls /var/lib/docker/volumes/
+labuser ALL=(ALL) NOPASSWD: /bin/ls /var/lib/docker/volumes/*
+labuser ALL=(ALL) NOPASSWD: /usr/bin/du /var/lib/docker/containers/*
+EOF
+
+chmod 0440 /etc/sudoers.d/labuser-devops
+chown root:root /etc/sudoers.d/labuser-devops
+visudo -c -f /etc/sudoers.d/labuser-devops
+
+# Testi sudo (labuser'ina)
+su - labuser -c 'sudo lsof -i :22'
+# Peaks töötama ilma paroolita
 
 # Või: uuenda labs
 rm -rf /home/labuser/labs

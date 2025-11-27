@@ -217,6 +217,14 @@ Core utilities:
   - gnupg
   - lsb-release
 
+Network diagnostics:
+  - nmap: 7.94 (port scanner)
+  - tcpdump: 4.99.4 (packet analyzer)
+  - netcat-openbsd: 1.219 (TCP/UDP testing)
+  - dnsutils: bind9-tools (dig, nslookup)
+  - net-tools: (netstat, ifconfig, route)
+  - iproute2: (ip, ss - modern network tools)
+
 Development tools:
   - build-essential (gcc, g++, make)
   - python3: 3.12.3
@@ -342,7 +350,14 @@ Groups:
   - labuser (primary)
   - docker
 Password: Set per container (student1, student2, student3)
-Sudo access: Limited (no password sudo not enabled)
+Sudo access: Limited (passwordless for diagnostic commands only)
+  - lsof (port checking)
+  - nmap (port scanning)
+  - tcpdump (packet capture)
+  - systemctl restart/status docker
+  - ls /var/lib/docker/volumes/* (read-only)
+  - du /var/lib/docker/containers/* (read-only)
+Sudoers file: /etc/sudoers.d/labuser-devops (mode 0440)
 ```
 
 **Bash configuration (in .bashrc):**
