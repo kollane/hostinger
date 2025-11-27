@@ -15,7 +15,7 @@
 
 ## 📘 Mis on User Service rakendus?
 
-User Service on **autentimisteenus**, mis haldab kasutajaid ja annab välja JWT tokeneid.
+User Service on **kasutajahalduse ja autentimisteenus**, mis haldab kasutajaid ja annab välja JWT tokeneid.
 
 ### Mis rakendus teeb?
 
