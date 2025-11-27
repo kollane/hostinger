@@ -1,4 +1,4 @@
-# Harjutus 1: Üksik konteiner (User Service)
+# Harjutus 1: Üksiku konteineri loomine (User Service)
 
 **Eesmärk:** Konteineriseeri Node.js User rakendus ja õpi Dockerfile'i loomist
 
