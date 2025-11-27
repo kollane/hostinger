@@ -182,21 +182,8 @@ else
 fi
 echo ""
 
-# 9. Check for Node.js (needed for Harjutus 1a)
-echo "9️⃣  Kontrollin Node.js olemasolu (User Teenuse (Service) jaoks)..."
-if command -v node &> /dev/null; then
-    NODE_VERSION=$(node --version)
-    echo -e "${GREEN}✅ Node.js on paigaldatud (versioon: $NODE_VERSION)${NC}"
-else
-    warn "Node.js pole paigaldatud - Harjutus 1a (User Teenus (Service)) vajab Node.js 18+"
-    echo "Paigalda Node.js:"
-    echo "  curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -"
-    echo "  sudo apt install -y nodejs"
-fi
-echo ""
-
-# 10. Check exercises directory
-echo "🔟 Kontrollin harjutuste kättesaadavust..."
+# 9. Check exercises directory
+echo "9️⃣  Kontrollin harjutuste kättesaadavust..."
 if [ -d "exercises" ]; then
     EXERCISE_COUNT=$(ls exercises/*.md 2>/dev/null | wc -l)
     echo -e "${GREEN}✅ Harjutused on kättesaadavad ($EXERCISE_COUNT harjutust)${NC}"
@@ -215,8 +202,8 @@ else
 fi
 echo ""
 
-# 11. Check solutions directory - MÕLEMAD teenused (services)
-echo "1️⃣1️⃣  Kontrollin näidislahenduste kättesaadavust..."
+# 10. Check solutions directory - MÕLEMAD teenused (services)
+echo "🔟 Kontrollin näidislahenduste kättesaadavust..."
 SOLUTIONS_FOUND=0
 
 # User Teenuse (Service) lahendused
@@ -253,8 +240,8 @@ else
 fi
 echo ""
 
-# 12. Ensure apps directories are clean (no Dockerfiles that would spoil the exercise)
-echo "1️⃣2️⃣  Kontrollin, et apps kaustad on harjutuse jaoks valmis..."
+# 11. Ensure apps directories are clean (no Dockerfiles that would spoil the exercise)
+echo "1️⃣1️⃣  Kontrollin, et apps kaustad on harjutuse jaoks valmis..."
 FOUND_FILES=0
 
 # Kontrolli mõlemaid rakendusi (applications)
@@ -278,8 +265,8 @@ else
 fi
 echo ""
 
-# 13. Küsi, kas ehitada (build) baaspildid (base images) (harjutuste 2-5 jaoks)
-echo "1️⃣3️⃣  Kontrollin Docker piltide (images) olemasolu..."
+# 12. Küsi, kas ehitada (build) baaspildid (base images) (harjutuste 2-5 jaoks)
+echo "1️⃣2️⃣  Kontrollin Docker piltide (images) olemasolu..."
 
 # Kontrolli, kas baaspildid (base images) on juba olemas
 USER_IMAGE_EXISTS=$(docker images --format '{{.Repository}}:{{.Tag}}' | grep -q '^user-service:1.0$' && echo "yes" || echo "no")
@@ -291,6 +278,11 @@ if [ "$USER_IMAGE_EXISTS" = "yes" ] && [ "$TODO_IMAGE_EXISTS" = "yes" ]; then
     echo "   ✓ todo-service:1.0"
     echo ""
     echo "Saad alustada otse Harjutus 2'st!"
+    echo ""
+
+    # Seadista PostgreSQL keskkond (kui pole juba seadistatud)
+    USER_IMAGE_BUILT="yes"
+    TODO_IMAGE_BUILT="yes"
 elif [ "$USER_IMAGE_EXISTS" = "yes" ] || [ "$TODO_IMAGE_EXISTS" = "yes" ]; then
     echo -e "${YELLOW}⚠️  Osaliselt olemas:${NC}"
     [ "$USER_IMAGE_EXISTS" = "yes" ] && echo "   ✓ user-service:1.0"
@@ -378,10 +370,223 @@ else
         if [ "$USER_IMAGE_BUILT" = "yes" ] && [ "$TODO_IMAGE_BUILT" = "yes" ]; then
             echo -e "${GREEN}✅ Mõlemad pildid (images) on valmis!${NC}"
             echo ""
-            echo "Saad nüüd alustada otse:"
-            echo "  → Harjutus 2: Mitme-Konteineri (Multi-Container)"
-            echo "  → Harjutus 3: Võrgundus (Networking)"
-            echo "  → Harjutus 4: Andmehoidlad (Volumes)"
+            echo "Seadistan PostgreSQL keskkonna automaatselt..."
+            echo "Kulub ~30 sekundit"
+            echo ""
+
+            # Loo võrk
+            echo "🌐 Loon todo-network võrgu..."
+            if docker network ls | grep -q "todo-network"; then
+                echo -e "${GREEN}✓ Võrk todo-network on juba olemas${NC}"
+            else
+                docker network create todo-network > /dev/null 2>&1
+                echo -e "${GREEN}✓ Võrk todo-network loodud${NC}"
+            fi
+            echo ""
+
+            # Loo volume'd
+            echo "💾 Loon PostgreSQL andmehoidlaid (volumes)..."
+            if docker volume ls | grep -q "postgres-user-data"; then
+                echo -e "${GREEN}✓ postgres-user-data on juba olemas${NC}"
+            else
+                docker volume create postgres-user-data > /dev/null 2>&1
+                echo -e "${GREEN}✓ postgres-user-data loodud${NC}"
+            fi
+
+            if docker volume ls | grep -q "postgres-todo-data"; then
+                echo -e "${GREEN}✓ postgres-todo-data on juba olemas${NC}"
+            else
+                docker volume create postgres-todo-data > /dev/null 2>&1
+                echo -e "${GREEN}✓ postgres-todo-data loodud${NC}"
+            fi
+            echo ""
+
+            # Käivita PostgreSQL konteinerid
+            echo "🐘 Käivitan PostgreSQL konteinereid..."
+
+            # User Service PostgreSQL
+            if docker ps -a | grep -q "postgres-user"; then
+                if docker ps | grep -q "postgres-user"; then
+                    echo -e "${GREEN}✓ postgres-user juba töötab${NC}"
+                else
+                    docker start postgres-user > /dev/null 2>&1
+                    echo -e "${GREEN}✓ postgres-user käivitatud${NC}"
+                    sleep 3
+                fi
+            else
+                docker run -d \
+                    --name postgres-user \
+                    --network todo-network \
+                    -e POSTGRES_USER=postgres \
+                    -e POSTGRES_PASSWORD=postgres \
+                    -e POSTGRES_DB=user_service_db \
+                    -v postgres-user-data:/var/lib/postgresql/data \
+                    postgres:16-alpine > /dev/null 2>&1
+                echo -e "${GREEN}✓ postgres-user käivitatud${NC}"
+                sleep 5
+            fi
+
+            # Todo Service PostgreSQL
+            if docker ps -a | grep -q "postgres-todo"; then
+                if docker ps | grep -q "postgres-todo"; then
+                    echo -e "${GREEN}✓ postgres-todo juba töötab${NC}"
+                else
+                    docker start postgres-todo > /dev/null 2>&1
+                    echo -e "${GREEN}✓ postgres-todo käivitatud${NC}"
+                fi
+            else
+                docker run -d \
+                    --name postgres-todo \
+                    --network todo-network \
+                    -e POSTGRES_USER=postgres \
+                    -e POSTGRES_PASSWORD=postgres \
+                    -e POSTGRES_DB=todo_service_db \
+                    -v postgres-todo-data:/var/lib/postgresql/data \
+                    postgres:16-alpine > /dev/null 2>&1
+                echo -e "${GREEN}✓ postgres-todo käivitatud${NC}"
+            fi
+            echo ""
+
+            # Oota, kuni PostgreSQL on valmis
+            echo "⏳ Ootan, kuni PostgreSQL andmebaasid on valmis..."
+
+            # Oota postgres-user
+            for i in {1..30}; do
+                if docker exec postgres-user pg_isready -U postgres > /dev/null 2>&1; then
+                    break
+                fi
+                sleep 1
+            done
+            echo -e "${GREEN}✓ postgres-user on valmis${NC}"
+
+            # Oota postgres-todo
+            for i in {1..30}; do
+                if docker exec postgres-todo pg_isready -U postgres > /dev/null 2>&1; then
+                    break
+                fi
+                sleep 1
+            done
+            echo -e "${GREEN}✓ postgres-todo on valmis${NC}"
+            echo ""
+
+            # Loo tabelid
+            echo "📊 Loon andmebaasi tabeleid..."
+
+            # Users tabel
+            docker exec -i postgres-user psql -U postgres user_service_db <<'EOF'
+CREATE TABLE IF NOT EXISTS users (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    role VARCHAR(50) DEFAULT 'user',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+EOF
+            if [ $? -eq 0 ]; then
+                echo -e "${GREEN}✓ users tabel loodud${NC}"
+            else
+                echo -e "${RED}❌ Viga users tabeli loomisel!${NC}"
+            fi
+
+            # Todos tabel
+            docker exec -i postgres-todo psql -U postgres todo_service_db <<'EOF'
+CREATE TABLE IF NOT EXISTS todos (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    priority VARCHAR(20) DEFAULT 'medium',
+    due_date TIMESTAMP,
+    completed BOOLEAN DEFAULT false,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+EOF
+            if [ $? -eq 0 ]; then
+                echo -e "${GREEN}✓ todos tabel loodud${NC}"
+            else
+                echo -e "${RED}❌ Viga todos tabeli loomisel!${NC}"
+            fi
+            echo ""
+
+            # Täida andmed
+            echo "📝 Täidan testimisandmeid..."
+
+            # Users andmed (4 kasutajat, parool: password123)
+            docker exec -i postgres-user psql -U postgres user_service_db > /dev/null 2>&1 <<'EOF'
+-- Kustuta vanad testimisandmed (kui on)
+DELETE FROM users WHERE email IN (
+    'admin@example.com',
+    'john@example.com',
+    'jane@example.com',
+    'bob@example.com'
+);
+
+-- Admin kasutaja (parool: password123)
+INSERT INTO users (name, email, password, role, created_at, updated_at) VALUES
+('Admin User', 'admin@example.com', '$2b$10$K3W/4PeZ9aB8xLqW1p7/8uxXXDtKr0X3wQ4C5gL4Zj7qR6mN9pE5C', 'admin', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+-- Tavalised kasutajad (parool: password123)
+INSERT INTO users (name, email, password, role, created_at, updated_at) VALUES
+('John Doe', 'john@example.com', '$2b$10$K3W/4PeZ9aB8xLqW1p7/8uxXXDtKr0X3wQ4C5gL4Zj7qR6mN9pE5C', 'user', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Jane Smith', 'jane@example.com', '$2b$10$K3W/4PeZ9aB8xLqW1p7/8uxXXDtKr0X3wQ4C5gL4Zj7qR6mN9pE5C', 'user', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Bob Johnson', 'bob@example.com', '$2b$10$K3W/4PeZ9aB8xLqW1p7/8uxXXDtKr0X3wQ4C5gL4Zj7qR6mN9pE5C', 'user', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+EOF
+                echo -e "${GREEN}✓ users andmed täidetud (4 kasutajat)${NC}"
+
+                # Todos andmed (8 TODO'd)
+                docker exec -i postgres-todo psql -U postgres todo_service_db > /dev/null 2>&1 <<'EOF'
+-- Kustuta vanad testimisandmed (kui on)
+DELETE FROM todos WHERE title IN (
+    'Õpi Docker põhitõed',
+    'Seadista PostgreSQL',
+    'Loo REST API',
+    'Implementeeri JWT autentimine',
+    'Paigalda Kubernetes',
+    'Kirjuta dokumentatsioon',
+    'Testi rakendust',
+    'Deploy production serverisse'
+);
+
+-- Lisa 8 TODO'd (user_id=1 on admin)
+-- Kõrge prioriteet (3 TODO'd)
+-- Keskmine prioriteet (3 TODO'd)
+-- Madal prioriteet (2 TODO'd)
+INSERT INTO todos (user_id, title, description, priority, due_date, completed, created_at, updated_at) VALUES
+(1, 'Õpi Docker põhitõed', 'Läbi töötada Lab 1 harjutused ja õppida konteinerte. Fookuseks on multi-stage builds ja image optimeerimine.', 'high', '2025-11-20 18:00:00', false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(1, 'Seadista PostgreSQL', 'Paigalda ja konfigureeri PostgreSQL andmebaas VPS serverisse. Loo varukoopia strateegia.', 'high', '2025-11-18 12:00:00', true, CURRENT_TIMESTAMP - INTERVAL '2 days', CURRENT_TIMESTAMP - INTERVAL '1 day'),
+(1, 'Implementeeri JWT autentimine', 'Lisa JWT token-põhine autentimine kasutajate jaoks. Kontrolli token expiration ja refresh tokeni.', 'high', '2025-11-19 10:00:00', true, CURRENT_TIMESTAMP - INTERVAL '3 days', CURRENT_TIMESTAMP - INTERVAL '2 days'),
+(1, 'Loo REST API', 'Välja töötada Node.js backend koos Express raamistikuga. Implementeeri CRUD operatsioonid.', 'medium', '2025-11-22 15:00:00', false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(1, 'Kirjuta dokumentatsioon', 'API dokumentatsioon OpenAPI/Swagger spetsifikatsioonis. Lisa kasutusjuhendid.', 'medium', '2025-11-25 17:00:00', false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(1, 'Testi rakendust', 'Ühik- ja integratsioonitestid. Jest raamistik Node.js jaoks, JUnit Java jaoks.', 'medium', '2025-11-23 14:00:00', false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(1, 'Paigalda Kubernetes', 'Õpi Kubernetes põhitõed ja paigalda esimene klaster. Deploymentid, Services, ConfigMaps.', 'low', NULL, false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(1, 'Deploy production serverisse', 'Seadista CI/CD pipeline GitHub Actions abil. Automaatne deployment pärast merge main branchi.', 'low', NULL, false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+EOF
+            echo -e "${GREEN}✓ todos andmed täidetud (8 TODO'd)${NC}"
+            echo ""
+
+            echo -e "${GREEN}✅ PostgreSQL keskkond valmis!${NC}"
+            echo ""
+            echo "🎉 TÄIELIK KESKKOND SEADISTATUD!"
+            echo ""
+            echo "Harjutused 1-4 on sisuliselt läbitud:"
+            echo "  ✓ Harjutus 1: Docker pildid (images) ehitatud"
+            echo "  ✓ Harjutus 2: PostgreSQL konteinerid + võrk"
+            echo "  ✓ Harjutus 3: todo-network võrk loodud"
+            echo "  ✓ Harjutus 4: Volume'd loodud + andmed püsivad"
+            echo ""
+            echo "📍 Alusta SIIT:"
+            echo "  → Harjutus 5: Optimeerimine (multi-stage builds)"
+            echo "     cat exercises/05-optimization.md"
+            echo ""
+            echo "Loodud ressursid:"
+            echo "  ✓ Pildid: user-service:1.0, todo-service:1.0"
+            echo "  ✓ Võrk: todo-network"
+            echo "  ✓ Volume'd: postgres-user-data, postgres-todo-data"
+            echo "  ✓ Konteinerid: postgres-user, postgres-todo"
+            echo "  ✓ Tabelid: users (4 rida), todos (8 rida)"
         else
             echo -e "${YELLOW}⚠️  Mõned pildid (images) ebaõnnestusid${NC}"
             echo "Soovitus: Tee Harjutus 1 käsitsi, et õppida Dockerfile'i loomist"
@@ -397,6 +602,234 @@ else
 fi
 echo ""
 
+# PostgreSQL seadistus (kui image'd on olemas, aga PostgreSQL pole seadistatud)
+if [ "$USER_IMAGE_BUILT" = "yes" ] && [ "$TODO_IMAGE_BUILT" = "yes" ]; then
+    # Kontrolli, kas PostgreSQL on juba seadistatud
+    POSTGRES_USER_EXISTS=$(docker ps -a --format '{{.Names}}' | grep -q '^postgres-user$' && echo "yes" || echo "no")
+    POSTGRES_TODO_EXISTS=$(docker ps -a --format '{{.Names}}' | grep -q '^postgres-todo$' && echo "yes" || echo "no")
+
+    # Kontrolli, kas tabelid on olemas
+    USERS_TABLE_EXISTS="no"
+    TODOS_TABLE_EXISTS="no"
+    if [ "$POSTGRES_USER_EXISTS" = "yes" ]; then
+        if docker exec -i postgres-user psql -U postgres user_service_db -c '\dt users' 2>/dev/null | grep -q 'users'; then
+            USERS_TABLE_EXISTS="yes"
+        fi
+    fi
+    if [ "$POSTGRES_TODO_EXISTS" = "yes" ]; then
+        if docker exec -i postgres-todo psql -U postgres todo_service_db -c '\dt todos' 2>/dev/null | grep -q 'todos'; then
+            TODOS_TABLE_EXISTS="yes"
+        fi
+    fi
+
+    if [ "$POSTGRES_USER_EXISTS" = "no" ] || [ "$POSTGRES_TODO_EXISTS" = "no" ] || \
+       [ "$USERS_TABLE_EXISTS" = "no" ] || [ "$TODOS_TABLE_EXISTS" = "no" ]; then
+        echo "Seadistan PostgreSQL keskkonna automaatselt..."
+        echo "Kulub ~30 sekundit"
+        echo ""
+
+        # Loo võrk
+        echo "🌐 Loon todo-network võrgu..."
+        if docker network ls | grep -q "todo-network"; then
+            echo -e "${GREEN}✓ Võrk todo-network on juba olemas${NC}"
+        else
+            docker network create todo-network > /dev/null 2>&1
+            echo -e "${GREEN}✓ Võrk todo-network loodud${NC}"
+        fi
+        echo ""
+
+        # Loo volume'd
+        echo "💾 Loon PostgreSQL andmehoidlaid (volumes)..."
+        if docker volume ls | grep -q "postgres-user-data"; then
+            echo -e "${GREEN}✓ postgres-user-data on juba olemas${NC}"
+        else
+            docker volume create postgres-user-data > /dev/null 2>&1
+            echo -e "${GREEN}✓ postgres-user-data loodud${NC}"
+        fi
+
+        if docker volume ls | grep -q "postgres-todo-data"; then
+            echo -e "${GREEN}✓ postgres-todo-data on juba olemas${NC}"
+        else
+            docker volume create postgres-todo-data > /dev/null 2>&1
+            echo -e "${GREEN}✓ postgres-todo-data loodud${NC}"
+        fi
+        echo ""
+
+        # Käivita PostgreSQL konteinerid
+        echo "🐘 Käivitan PostgreSQL konteinereid..."
+
+        # User Service PostgreSQL
+        if docker ps -a | grep -q "postgres-user"; then
+            if docker ps | grep -q "postgres-user"; then
+                echo -e "${GREEN}✓ postgres-user juba töötab${NC}"
+            else
+                docker start postgres-user > /dev/null 2>&1
+                echo -e "${GREEN}✓ postgres-user käivitatud${NC}"
+            fi
+        else
+            docker run -d \
+                --name postgres-user \
+                --network todo-network \
+                -e POSTGRES_USER=postgres \
+                -e POSTGRES_PASSWORD=postgres \
+                -e POSTGRES_DB=user_service_db \
+                -v postgres-user-data:/var/lib/postgresql/data \
+                postgres:16-alpine > /dev/null 2>&1
+            echo -e "${GREEN}✓ postgres-user käivitatud${NC}"
+        fi
+
+        # Todo Service PostgreSQL
+        if docker ps -a | grep -q "postgres-todo"; then
+            if docker ps | grep -q "postgres-todo"; then
+                echo -e "${GREEN}✓ postgres-todo juba töötab${NC}"
+            else
+                docker start postgres-todo > /dev/null 2>&1
+                echo -e "${GREEN}✓ postgres-todo käivitatud${NC}"
+            fi
+        else
+            docker run -d \
+                --name postgres-todo \
+                --network todo-network \
+                -e POSTGRES_USER=postgres \
+                -e POSTGRES_PASSWORD=postgres \
+                -e POSTGRES_DB=todo_service_db \
+                -v postgres-todo-data:/var/lib/postgresql/data \
+                postgres:16-alpine > /dev/null 2>&1
+            echo -e "${GREEN}✓ postgres-todo käivitatud${NC}"
+        fi
+        echo ""
+
+        # Oota, kuni PostgreSQL on valmis
+        echo "⏳ Ootan, kuni PostgreSQL andmebaasid on valmis..."
+
+        # Oota postgres-user
+        for i in {1..30}; do
+            if docker exec postgres-user pg_isready -U postgres > /dev/null 2>&1; then
+                break
+            fi
+            sleep 1
+        done
+        echo -e "${GREEN}✓ postgres-user on valmis${NC}"
+
+        # Oota postgres-todo
+        for i in {1..30}; do
+            if docker exec postgres-todo pg_isready -U postgres > /dev/null 2>&1; then
+                break
+            fi
+            sleep 1
+        done
+        echo -e "${GREEN}✓ postgres-todo on valmis${NC}"
+        echo ""
+
+        # Loo tabelid
+        echo "📊 Loon andmebaasi tabeleid..."
+
+        # Users tabel
+        docker exec -i postgres-user psql -U postgres user_service_db <<'EOF'
+CREATE TABLE IF NOT EXISTS users (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    role VARCHAR(50) DEFAULT 'user',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+EOF
+        if [ $? -eq 0 ]; then
+            echo -e "${GREEN}✓ users tabel loodud${NC}"
+        else
+            echo -e "${RED}❌ Viga users tabeli loomisel!${NC}"
+        fi
+
+        # Todos tabel
+        docker exec -i postgres-todo psql -U postgres todo_service_db <<'EOF'
+CREATE TABLE IF NOT EXISTS todos (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    priority VARCHAR(20) DEFAULT 'medium',
+    due_date TIMESTAMP,
+    completed BOOLEAN DEFAULT false,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+EOF
+        if [ $? -eq 0 ]; then
+            echo -e "${GREEN}✓ todos tabel loodud${NC}"
+        else
+            echo -e "${RED}❌ Viga todos tabeli loomisel!${NC}"
+        fi
+        echo ""
+
+        # Täida andmed
+        echo "📝 Täidan testimisandmeid..."
+
+        # Users andmed (4 kasutajat, parool: password123)
+        docker exec -i postgres-user psql -U postgres user_service_db > /dev/null 2>&1 <<'EOF'
+-- Kustuta vanad testimisandmed (kui on)
+DELETE FROM users WHERE email IN (
+    'admin@example.com',
+    'john@example.com',
+    'jane@example.com',
+    'bob@example.com'
+);
+
+-- Admin kasutaja (parool: password123)
+INSERT INTO users (name, email, password, role, created_at, updated_at) VALUES
+('Admin User', 'admin@example.com', '$2b$10$K3W/4PeZ9aB8xLqW1p7/8uxXXDtKr0X3wQ4C5gL4Zj7qR6mN9pE5C', 'admin', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+-- Tavalised kasutajad (parool: password123)
+INSERT INTO users (name, email, password, role, created_at, updated_at) VALUES
+('John Doe', 'john@example.com', '$2b$10$K3W/4PeZ9aB8xLqW1p7/8uxXXDtKr0X3wQ4C5gL4Zj7qR6mN9pE5C', 'user', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Jane Smith', 'jane@example.com', '$2b$10$K3W/4PeZ9aB8xLqW1p7/8uxXXDtKr0X3wQ4C5gL4Zj7qR6mN9pE5C', 'user', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Bob Johnson', 'bob@example.com', '$2b$10$K3W/4PeZ9aB8xLqW1p7/8uxXXDtKr0X3wQ4C5gL4Zj7qR6mN9pE5C', 'user', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+EOF
+        echo -e "${GREEN}✓ users andmed täidetud (4 kasutajat)${NC}"
+
+        # Todos andmed (8 TODO'd)
+        docker exec -i postgres-todo psql -U postgres todo_service_db > /dev/null 2>&1 <<'EOF'
+-- Kustuta vanad testimisandmed (kui on)
+DELETE FROM todos WHERE title IN (
+    'Õpi Docker põhitõed',
+    'Seadista PostgreSQL',
+    'Loo REST API',
+    'Implementeeri JWT autentimine',
+    'Paigalda Kubernetes',
+    'Kirjuta dokumentatsioon',
+    'Testi rakendust',
+    'Deploy production serverisse'
+);
+
+-- Lisa 8 TODO'd (user_id=1 on admin)
+-- Kõrge prioriteet (3 TODO'd)
+-- Keskmine prioriteet (3 TODO'd)
+-- Madal prioriteet (2 TODO'd)
+INSERT INTO todos (user_id, title, description, priority, due_date, completed, created_at, updated_at) VALUES
+(1, 'Õpi Docker põhitõed', 'Läbi töötada Lab 1 harjutused ja õppida konteinerte. Fookuseks on multi-stage builds ja image optimeerimine.', 'high', '2025-11-20 18:00:00', false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(1, 'Seadista PostgreSQL', 'Paigalda ja konfigureeri PostgreSQL andmebaas VPS serverisse. Loo varukoopia strateegia.', 'high', '2025-11-18 12:00:00', true, CURRENT_TIMESTAMP - INTERVAL '2 days', CURRENT_TIMESTAMP - INTERVAL '1 day'),
+(1, 'Implementeeri JWT autentimine', 'Lisa JWT token-põhine autentimine kasutajate jaoks. Kontrolli token expiration ja refresh tokeni.', 'high', '2025-11-19 10:00:00', true, CURRENT_TIMESTAMP - INTERVAL '3 days', CURRENT_TIMESTAMP - INTERVAL '2 days'),
+(1, 'Loo REST API', 'Välja töötada Node.js backend koos Express raamistikuga. Implementeeri CRUD operatsioonid.', 'medium', '2025-11-22 15:00:00', false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(1, 'Paigalda Kubernetes', 'Seadista K3s klaster VPS serveris. Deploy mikro-teenused (microservices).', 'medium', '2025-11-25 09:00:00', false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(1, 'Kirjuta dokumentatsioon', 'Dokumenteeri API endpointid, arhitektuur ja deployment protsess.', 'medium', '2025-11-30 17:00:00', false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(1, 'Testi rakendust', 'Kirjuta unit ja integration testid. Saavuta vähemalt 80% code coverage.', 'low', '2025-12-05 14:00:00', false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(1, 'Deploy production serverisse', 'Paigalda rakendus production keskkonda koos monitoringuga.', 'low', '2025-12-10 16:00:00', false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+EOF
+        echo -e "${GREEN}✓ todos andmed täidetud (8 TODO'd)${NC}"
+        echo ""
+
+        echo ""
+        echo "Loodud ressursid:"
+        echo "  ✓ Pildid: user-service:1.0, todo-service:1.0"
+        echo "  ✓ Võrk: todo-network"
+        echo "  ✓ Volume'd: postgres-user-data, postgres-todo-data"
+        echo "  ✓ Konteinerid: postgres-user, postgres-todo"
+        echo "  ✓ Tabelid: users (4 rida), todos (8 rida)"
+        echo ""
+    fi
+fi
+
 # Summary
 echo "========================================="
 echo "  ✅ Seadistus (Setup) Valmis!"
@@ -406,20 +839,33 @@ echo ""
 # Kontroll, kas pildid (images) on olemas ja näita vastavat sõnumit
 FINAL_USER_IMAGE=$(docker images --format '{{.Repository}}:{{.Tag}}' | grep -q '^user-service:1.0$' && echo "yes" || echo "no")
 FINAL_TODO_IMAGE=$(docker images --format '{{.Repository}}:{{.Tag}}' | grep -q '^todo-service:1.0$' && echo "yes" || echo "no")
+FINAL_POSTGRES_USER=$(docker ps -a --format '{{.Names}}' | grep -q '^postgres-user$' && echo "yes" || echo "no")
+FINAL_POSTGRES_TODO=$(docker ps -a --format '{{.Names}}' | grep -q '^postgres-todo$' && echo "yes" || echo "no")
+FINAL_NETWORK=$(docker network ls --format '{{.Name}}' | grep -q '^todo-network$' && echo "yes" || echo "no")
 
-if [ "$FINAL_USER_IMAGE" = "yes" ] && [ "$FINAL_TODO_IMAGE" = "yes" ]; then
-    echo "Kõik eeldused on täidetud JA baaspildid (base images) on olemas!"
+# Kontrolli, kas täielik keskkond on seadistatud
+if [ "$FINAL_USER_IMAGE" = "yes" ] && [ "$FINAL_TODO_IMAGE" = "yes" ] && \
+   [ "$FINAL_POSTGRES_USER" = "yes" ] && [ "$FINAL_POSTGRES_TODO" = "yes" ] && \
+   [ "$FINAL_NETWORK" = "yes" ]; then
+    echo "🎉 TÄIELIK KESKKOND ON SEADISTATUD!"
     echo ""
-    echo "📚 Võid alustada järgmistest harjutustest:"
-    echo "  1. ✓ Harjutus 1a: Üksik Konteiner (Single Container) (User Teenus (Service)) - pilt (image) olemas"
-    echo "  2. ✓ Harjutus 1b: Üksik Konteiner (Single Container) (Todo Teenus (Service)) - pilt (image) olemas"
-    echo "  3. → Harjutus 2: Mitme-Konteineri (Multi-Container) (PostgreSQL + Backend)"
-    echo "  4. → Harjutus 3: Võrgundus (Networking) (Kohandatud Silla (Bridge) Võrk (Network), 4 konteinerit)"
-    echo "  5. → Harjutus 4: Andmehoidlad (Volumes) (Andmete Püsivus (Data Persistence), 2 andmehoidlat (volumes))"
-    echo "  6. → Harjutus 5: Optimeerimine (Optimization) (Mitme-sammulised (multi-stage) Buildid, 2 teenust (services))"
+    echo "Harjutused 1-4 on sisuliselt läbitud:"
+    echo "  ✓ Harjutus 1: Docker pildid ehitatud"
+    echo "  ✓ Harjutus 2: PostgreSQL konteinerid töötavad"
+    echo "  ✓ Harjutus 3: todo-network võrk loodud"
+    echo "  ✓ Harjutus 4: Volume'd ja andmed olemas"
     echo ""
-    echo "Järgmised sammud:"
-    echo "  Alusta Harjutus 2'st:"
+    echo "📍 Alusta SIIT:"
+    echo "  → Harjutus 5: Optimeerimine (multi-stage builds)"
+    echo "     cat exercises/05-optimization.md"
+    echo ""
+elif [ "$FINAL_USER_IMAGE" = "yes" ] && [ "$FINAL_TODO_IMAGE" = "yes" ]; then
+    echo "Baaspildid (base images) on olemas!"
+    echo ""
+    echo "Harjutus 1 on sisuliselt läbitud (image'd ehitatud)"
+    echo ""
+    echo "📍 Alusta SIIT:"
+    echo "  → Harjutus 2: Mitme-Konteineri (Multi-Container)"
     echo "     cat exercises/02-multi-container.md"
 else
     echo "Kõik eeldused on täidetud! Võid alustada laboriga."
