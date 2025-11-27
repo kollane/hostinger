@@ -1,6 +1,5 @@
 # Harjutus 1: Ühe Konteineri Käivitamine
 
-**Kestus:** 45 minutit
 **Eesmärk:** Konteineriseeri Java Spring Boot Todo teenus (service) ja õpi Dockerfile'i loomist
 
 **📖 Rakendus:** [Todo Service README](../../apps/backend-java-spring/README.md) - Todo ülesannete rakendus (to-do list), kus kasutajad saavad hallata oma ülesandeid.
