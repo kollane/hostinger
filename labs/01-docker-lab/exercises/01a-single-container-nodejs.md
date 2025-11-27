@@ -9,11 +9,10 @@
 **📖 Rakenduse funktsionaalsuse kohta lähemalt lugeda siit:** [User Service README](../../apps/backend-nodejs/README.md)
 
 ---
+## 📋 Harjutuse ülevaade
 
 **Harjutuse eesmärk:** Node.js kasutajahalduse rakenduse konteineriseerimine ja Dockerfile'i loomine
-## ⚠️ OLULINE: Harjutuse Fookus
-
-**See harjutus keskendub Docker põhitõdede õppimisele, MITTE töötavale rakendusele (application)!**
+**Harjutuse Fookus:** See harjutus keskendub Docker põhitõdede õppimisele, MITTE töötavale rakendusele (application)!**
 
 ✅ **Õpid:**
 - Dockerfile'i loomist Node.js rakendusele (application)
