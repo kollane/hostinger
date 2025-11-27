@@ -6,7 +6,7 @@
 - ✅ Kontrollib kasutajate õigusi (user/admin roll)
 - 💾 Salvestab kasutajate andmed PostgreSQL andmebaasi
   
-**📖 Rakenduse funktsionaalsuse kohta lähemalt lugeda siit:** [User Service README](../../apps/backend-nodejs/README.md)
+**📖 Rakenduse funktsionaalsuse kohta lähemalt siit:** [User Service README](../../apps/backend-nodejs/README.md)
 
 ---
 ## 📋 Harjutuse ülevaade
