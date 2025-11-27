@@ -13,7 +13,7 @@
 
 ---
 
-## 📘 Mis on User Service?
+## 📘 Mis on User Service rakendus?
 
 User Service on **autentimisteenus**, mis haldab kasutajaid ja annab välja JWT tokeneid.
 
