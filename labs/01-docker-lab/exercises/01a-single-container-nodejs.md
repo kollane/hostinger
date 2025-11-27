@@ -29,12 +29,6 @@
 
 ---
 
-## 📋 Ülevaade
-
-Selles harjutuses konteineriseerid Node.js User teenuse (service) rakenduse (application). Õpid looma Dockerfile'i, ehitama (build) Docker pilti (image) ja käivitama konteinerit (isegi kui see hangub andmebaasi puudumise tõttu).
-
----
-
 ## 🎯 Õpieesmärgid
 
 Peale selle harjutuse läbimist oskad:
