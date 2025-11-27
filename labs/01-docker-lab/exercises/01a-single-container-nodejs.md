@@ -1,6 +1,6 @@
 # Harjutus 1: Üksik Konteiner (Single Container)
 
-**Eesmärk:** Konteineriseeri Node.js User teenus (service) ja õpi Dockerfile'i loomist
+**Eesmärk:** Konteineriseeri Node.js User rakendus ja õpi Dockerfile'i loomist
 
 **📖 Soovi korral saad rakenduse kohta lähemalt lugeda siit:** [User Service README](../../apps/backend-nodejs/README.md)
 
