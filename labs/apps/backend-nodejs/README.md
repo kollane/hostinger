@@ -17,7 +17,7 @@
 
 User Service on **kasutajahalduse ja autentimisteenus**, mis haldab kasutajaid ja annab välja JWT tokeneid.
 
-### Mis rakendus teeb?
+### Mida rakendus teeb?
 
 1. 🔐 **Registreerimine ja sisselogimine** - kasutajad loovad konto ja logivad sisse
 2. 🎫 **JWT tokeni genereerimine** - pärast sisselogimist saab kasutaja tokeni
