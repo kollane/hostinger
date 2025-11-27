@@ -29,19 +29,6 @@
 
 ---
 
-## 🎯 Õpieesmärgid
-
-Peale selle harjutuse läbimist oskad:
-
-- ✅ Luua Dockerfile'i Node.js rakendusele (application)
-- ✅ Ehitada (build) Docker pilti (image)
-- ✅ Käivitada ja peatada konteinereid
-- ✅ Kasutada keskkonna muutujaid (environment variables)
-- ✅ Vaadata konteineri logisid
-- ✅ Debuggida konteineri probleeme
-
----
-
 ## 🖥️ Sinu Testimise Konfiguratsioon
 
 ### SSH Ühendus VPS-iga
