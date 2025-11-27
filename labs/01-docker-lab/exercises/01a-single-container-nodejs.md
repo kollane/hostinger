@@ -4,7 +4,7 @@
 
 **📖 Rakendus:** [User Service README](../../apps/backend-nodejs/README.md) - Autentimisteenus, mis haldab kasutajaid ja annab välja JWT tokeneid.
 
-**Mis see rakendus teeb:**
+**Mida see rakendus teeb:**
 - 🔐 Registreerib uusi kasutajaid
 - 🎫 Loob JWT tokeneid (digitaalsed tõendid)
 - ✅ Kontrollib kasutajate õigusi (user/admin roll)
@@ -23,10 +23,10 @@
 - JWT autentimise põhimõtteid
 - Logide vaatamist ja debuggimist
 
-❌ **Rakendus (application) EI TÖÖTA täielikult:**
+❌ **Käesolevas harjutses rakendus veel TÖÖLE EI HAKKA:**
 - User teenus (service) vajab PostgreSQL andmebaasi
 - Konteiner käivitub, aga hangub kohe (see on **OODATUD**)
-- Töötava rakenduse (application) saad **Harjutus 2**-s (Mitme-Konteineri (Multi-Container))
+- Töötava rakendus tekib peale **Harjutus 2** läbimist.
 
 ---
 
