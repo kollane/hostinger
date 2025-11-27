@@ -1,7 +1,14 @@
 # Harjutus 1: Üksik Konteiner (Single Container)
 
-**Kestus:** 45 minutit
-**Eesmärk:** Konteineriseeri Node.js User teenus (service) ja õpi Dockerfile'i loomist
+**Eesmärk:** Konteineriseeri Node.js User rakendus ja õpi Dockerfile'i loomist
+
+**📖 Soovi korral saad rakenduse funktsionaalsuse kohta lähemalt lugeda siit:** [User Service README](../../apps/backend-nodejs/README.md)
+
+**Mida see rakendus teeb:**
+- 🔐 Registreerib uusi kasutajaid
+- 🎫 Loob JWT tokeneid (digitaalsed tõendid)
+- ✅ Kontrollib kasutajate õigusi (user/admin roll)
+- 💾 Salvestab kasutajate andmed PostgreSQL andmebaasi
 
 ---
 
@@ -13,31 +20,12 @@
 - Dockerfile'i loomist Node.js rakendusele (application)
 - Docker pildi (image) ehitamist (build)
 - Konteineri käivitamist
-- JWT autentimise põhimõtteid
 - Logide vaatamist ja debuggimist
 
-❌ **Rakendus (application) EI TÖÖTA täielikult:**
+❌ **Käesolevas harjutuses rakendus veel TÖÖLE EI HAKKA:**
 - User teenus (service) vajab PostgreSQL andmebaasi
 - Konteiner käivitub, aga hangub kohe (see on **OODATUD**)
-- Töötava rakenduse (application) saad **Harjutus 2**-s (Mitme-Konteineri (Multi-Container))
-
-**User Teenuse (Service) roll:**
-- Genereerib JWT tokeneid autentimiseks
-- Annab tokeneid teistele mikroteenustele (microservices) (nt Todo Teenus (Service))
-
-**📖 Rakenduse kohta:** [User Service README](../../apps/backend-nodejs/README.md) - Autentimisteenus, mis haldab kasutajaid ja annab välja JWT tokeneid.
-- Kuidas JWT töötab mikroteenuste arhitektuuris
-
-**Harjutus 1 fookus:**
-- Õpid konteineriseerima User Service rakendust
-- Rakendus EI TÖÖTA täielikult (PostgreSQL puudub)
-- **Harjutus 2** toob PostgreSQL ja töötava süsteemi
-
----
-
-## 📋 Ülevaade
-
-Selles harjutuses konteineriseerid Node.js User teenuse (service) rakenduse (application). Õpid looma Dockerfile'i, ehitama (build) Docker pilti (image) ja käivitama konteinerit (isegi kui see hangub andmebaasi puudumise tõttu).
+- Töötava rakendus tekib peale **Harjutus 2** läbimist.
 
 ---
 
@@ -92,7 +80,7 @@ ssh labuser@93.127.213.242 -p [SINU-PORT]
 
 ## 📝 Sammud
 
-### Samm 1: Tutvu Rakendusega (Application)
+### Samm 1: Tutvu rakenduse koodiga
 
 **Rakenduse (application) juurkataloog:** `~/labs/apps/backend-nodejs`
 
@@ -115,20 +103,6 @@ head -50 server.js
 - Millise pordiga rakendus (application) käivitub? (3000)
 - Millised sõltuvused (dependencies) on vajalikud? (vaata package.json)
 - Kas rakendus (application) vajab andmebaasi? (Jah, PostgreSQL)
-
-**📖 Põhjalikum info:** [User Service README](../../apps/backend-nodejs/README.md) selgitab, mida see rakendus teeb ja kuidas see seostub JWT tokenitega.
-
-**Kiire kokkuvõte:**
-- 🔐 Registreerib uusi kasutajaid
-- 🎫 Loob JWT tokeneid (digitaalsed visiitkaardid)
-- ✅ Kontrollib kasutajate õigusi (user/admin roll)
-- 💾 Salvestab kasutajate andmed PostgreSQL andmebaasi
-
-**Miks see hangub selles harjutuses?**
-- User Service vajab PostgreSQL andmebaasi
-- Docker konteiner käivitub, aga ei saa andmebaasiga ühendust
-- See on **OODATUD käitumine** Lab 1's!
-- Harjutus 2 lisab PostgreSQL ja kõik töötab
 
 ### Samm 2: Loo Dockerfile
 
@@ -315,24 +289,7 @@ docker ps -a
 - `docker ps` näitab ainult TÖÖTAVAID konteinereid
 - `docker ps -a` näitab KÕIKI konteinereid (ka peatatud)
 
-### Samm 6: Vaata User Service dokumentatsiooni
-
-**📖 Täielik selgitus User Service ja JWT tokeni kohta:**
-
-Loe läbi: [User Service README](../../apps/backend-nodejs/README.md)
-
-**Seal saad teada:**
-- ✅ Mis on User Service ja miks see on vajalik (kontorihoone analoogia)
-- ✅ Mis asi on JWT token (digitaalne visiitkaart)
-- ✅ Kuidas JWT token seostub User Service'ga
-- ✅ Miks on vaja jagatud JWT_SECRET võtit
-
-**Harjutus 1 olukord:**
-- User Service konteiner hangub (PostgreSQL puudub)
-- JWT tokenit EI SAA praegu testida (andmebaas puudub)
-- **Harjutus 2** lisab PostgreSQL ja saame töötava autentimise süsteemi!
-
-### Samm 7: Debug ja Troubleshoot
+### Samm 6: Debug ja Troubleshoot
 
 ```bash
 # Vaata konteineri staatust
@@ -403,7 +360,7 @@ docker stats user-service
 
 ## 🔗 Järgmine Samm
 
-Järgmises harjutuses lisame PostgreSQL konteineri ja ühendame kaks konteinerit!
+Järgmises harjutuses konteineriseerid Java Spring Boot tehnoloogial põhineva Todo märkmete rakenduse!
 
 **Jätka:** [Harjutus 1B: Üksik-Konteiner-Java (Single-Container-Java)](https://github.com/kollane/hostinger/blob/master/labs/01-docker-lab/exercises/01b-single-container-java.md)
 

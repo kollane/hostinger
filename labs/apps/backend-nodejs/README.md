@@ -2,8 +2,6 @@
 
 **Eesmärk:** REST API kasutajate haldamiseks JWT autentimisega ja RBAC-ga
 
-**Rakenduse eesmärk:** Autentimisteenus, mis haldab kasutajaid ja annab välja JWT tokeneid teistele teenustele.
-
 **Tehnoloogiad:**
 - Node.js 18+
 - Express.js
