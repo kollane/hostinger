@@ -2,7 +2,7 @@
 
 **Eesmärk:** Konteineriseeri Node.js User rakendus ja õpi Dockerfile'i loomist
 
-**📖 Soovi korral saad rakenduse kohta lähemalt lugeda siit:** [User Service README](../../apps/backend-nodejs/README.md)
+**📖 Soovi korral saad rakenduse funktsionaalsuse kohta lähemalt lugeda siit:** [User Service README](../../apps/backend-nodejs/README.md)
 
 **Mida see rakendus teeb:**
 - 🔐 Registreerib uusi kasutajaid
