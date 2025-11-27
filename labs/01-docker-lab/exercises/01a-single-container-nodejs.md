@@ -1,12 +1,14 @@
 # Harjutus 1: Üksik konteiner (User Service)
 
 **Eesmärk:** Konteineriseeri Node.js User rakendus ja õpi Dockerfile'i loomist
+
 **User Service rakenduse lühitutvustus:**
 - 🔐 Registreerib uusi kasutajaid
 - 🎫 Loob JWT tokeneid (digitaalsed tõendid)
 - ✅ Kontrollib kasutajate õigusi (user/admin roll)
 - 💾 Salvestab kasutajate andmed PostgreSQL andmebaasi
-**📖 Soovi korral saad rakenduse funktsionaalsuse kohta lähemalt lugeda siit:** [User Service README](../../apps/backend-nodejs/README.md)
+  
+**📖 Rakenduse funktsionaalsuse kohta lähemalt lugeda siit:** [User Service README](../../apps/backend-nodejs/README.md)
 ---
 
 ## ⚠️ OLULINE: Harjutuse Fookus
