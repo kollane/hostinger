@@ -111,20 +111,6 @@ head -50 server.js
 - Millised sõltuvused (dependencies) on vajalikud? (vaata package.json)
 - Kas rakendus (application) vajab andmebaasi? (Jah, PostgreSQL)
 
-**📖 Põhjalikum info:** [User Service README](../../apps/backend-nodejs/README.md) selgitab, mida see rakendus teeb ja kuidas see seostub JWT tokenitega.
-
-**Kiire kokkuvõte:**
-- 🔐 Registreerib uusi kasutajaid
-- 🎫 Loob JWT tokeneid (digitaalsed visiitkaardid)
-- ✅ Kontrollib kasutajate õigusi (user/admin roll)
-- 💾 Salvestab kasutajate andmed PostgreSQL andmebaasi
-
-**Miks see hangub selles harjutuses?**
-- User Service vajab PostgreSQL andmebaasi
-- Docker konteiner käivitub, aga ei saa andmebaasiga ühendust
-- See on **OODATUD käitumine** Lab 1's!
-- Harjutus 2 lisab PostgreSQL ja kõik töötab
-
 ### Samm 2: Loo Dockerfile
 
 Loo fail nimega `Dockerfile`:
