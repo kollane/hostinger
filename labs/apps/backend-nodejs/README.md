@@ -2,6 +2,8 @@
 
 **Eesmärk:** REST API kasutajate haldamiseks JWT autentimisega ja RBAC-ga
 
+**Rakenduse eesmärk:** Autentimisteenus, mis haldab kasutajaid ja annab välja JWT tokeneid teistele teenustele.
+
 **Tehnoloogiad:**
 - Node.js 18+
 - Express.js
@@ -13,87 +15,70 @@
 
 ---
 
-## 📘 Mis on User Service ja miks see on vajalik?
+## 📘 Mis on User Service?
 
-### 💡 Lihtsustatult
+User Service on **autentimisteenus**, mis haldab kasutajaid ja annab välja JWT tokeneid.
 
-User Service on nagu **turvatöötaja kontori sissepääsu juures**, kes:
-1. 🔐 Kontrollib, kes sa oled (login)
-2. 🎫 Annab sulle **digitaalse visiitkaardi** (JWT token)
-3. ✅ Teised teenused usaldavad seda visiitkaart
+### Mis rakendus teeb?
 
-### Igapäevaelu analoogia: Kontorihoone
+1. 🔐 **Registreerimine ja sisselogimine** - kasutajad loovad konto ja logivad sisse
+2. 🎫 **JWT tokeni genereerimine** - pärast sisselogimist saab kasutaja tokeni
+3. 👥 **Kasutajate haldamine** - loe, muuda, kustuta kasutajaid (CRUD)
+4. 🛡️ **Rollipõhine ligipääs** - admin ja user rollid (RBAC)
 
-Kujuta ette **suurt kontorihoone** (mikroteenuste süsteem):
+### Kuidas see töötab koos Todo Service'iga?
+
+See õpperakendus koosneb **kahest eraldi teenusest**:
 
 ```
-🏢 Kontorihoone
-│
-├── 🚪 Sissepääs (User Service)
-│   └── Turvatöötaja kontrollib ID'd ja annab külastuskaardi
-│
-├── 🏬 Esimene korrus: Köök (Todo Service)
-│   └── Kui on külastuskaart, saad süüa
-│
-├── 🏬 Teine korrus: Raamatukogu (Product Service)
-│   └── Kui on külastuskaart, saad raamatuid
-│
-└── 🏬 Kolmas korrus: Konverentsiruum (Analytics Service)
-    └── Kui on külastuskaart, saad siseneda
+┌─────────────────────┐      ┌──────────────────────┐
+│   User Service      │      │   Todo Service       │
+│   (Node.js)         │      │   (Java Spring Boot) │
+├─────────────────────┤      ├──────────────────────┤
+│ ✅ Autentimine      │      │ ✅ Todo ülesanded    │
+│ ✅ JWT genereerimine│──────│ ✅ JWT valideerimine │
+│ ✅ Kasutajate CRUD  │      │ ✅ Todo CRUD         │
+│ ✅ RBAC (rollid)    │      │ ✅ Statistika        │
+└─────────────────────┘      └──────────────────────┘
+         │                            │
+         ↓                            ↓
+  PostgreSQL (5432)           PostgreSQL (5433)
+  (kasutajad, rollid)         (todo ülesanded)
 ```
 
-**User Service roll:**
-- Ainult **üks sissepääs** kogu hoonesse (centralized authentication)
-- Kontrollib kasutajanime ja parooli **ÜHEAINSA** korra
-- Annab **külastuskaardi** (JWT token), mis kehtib kõigil korrustel
-- Teised teenused usaldavad seda kaarti ilma, et peaksid ise parooli küsima
+**Töövoog:**
 
-### Miks see on parem kui iga teenus eraldi?
+1. Kasutaja logib sisse **User Service'is** → saab JWT tokeni
+2. Kasutaja lisab todo **Todo Service'is** → saadab JWT tokeni kaasa
+3. Todo Service **valideerib tokenit** (jagavad sama JWT_SECRET)
+4. Todo Service näeb tokenist `userId` → salvestab todo õige kasutaja alla
 
-❌ **Ilma User Service'ta:**
-- Todo teenus küsib parooli → kontrollib andmebaasist
-- Product teenus küsib parooli → kontrollib andmebaasist
-- Analytics teenus küsib parooli → kontrollib andmebaasist
-- **Probleem:** Kasutaja peab sisestama parooli KOLM KORDA
+### Miks kaks eraldi teenust?
 
-✅ **User Service'ga:**
-- **Login ÜHEAINSA korra** → Saad JWT tokeni
-- Todo teenus usaldab tokenit (ei küsi parooli)
-- Product teenus usaldab tokenit (ei küsi parooli)
-- Analytics teenus usaldab tokenit (ei küsi parooli)
-- **Tulemus:** Kasutaja sisestab parooli ainult üks kord! 🎉
+- ✅ **Eraldi vastutusalad**: User Service = autentimine, Todo Service = ülesanded
+- ✅ **Eraldi andmebaasid**: Kasutajad ja todo'd ei sega üksteist
+- ✅ **Erinevad tehnoloogiad**: Node.js (User) + Java (Todo) - õpid mõlemat
+- ✅ **Iseseisev skaleerimine**: Saab teenuseid eraldi skaleerida vastavalt vajadusele
 
 ---
 
 ## 🎫 Mis asi on JWT token?
 
-### 💡 Lihtsustatult
+JWT token on **digitaalne tõend**, mis tõestab kasutaja isikut ilma parooliga.
 
-JWT token on nagu **digitaalne visiitkaart**, mis tõestab, kes sa oled ilma parooliga.
+**Kuidas see töötab:**
 
-### Analoogia igapäevaelust: Kontori külastuskaart
-
-- 🏢 Kui lähed kontorisse, annavad esimesel korral **külastuskaardi** (pärast parooli kontrolli)
-- 🚪 Järgmistel kordadel näitad ainult kaarti, ei pea parooli mitte kunagi enam sisestama
-- ✅ Kaart sisaldab infot: nimi, roll, kehtivusaeg
-
-### JWT token töötab täpselt samamoodi
-
-1. 🔐 **Login kord** (email + parool) → Saad JWT tokeni
-2. 🎫 **Järgmised päringud** → Näitad ainult tokenit, EI KÜSI PAROOLI
+1. 🔐 **Login** (email + parool) → User Service genereerib JWT tokeni
+2. 🎫 **Järgmised päringud** → Kasutaja saadab tokeni kaasa, EI KÜSI PAROOLI
 3. ⏰ Token kehtib teatud aja (nt 24h), siis tuleb uuesti sisse logida
 
-### Kuidas see seostub User Service'ga?
+**JWT token sisaldab:**
+- `userId` - kasutaja ID
+- `email` - kasutaja e-mail
+- `role` - kasutaja roll (admin, user)
+- `exp` - tokeni kehtivusaeg
 
-Meenuta kontorihoone analogiat:
-- 🏢 User Service = turvatöötaja sissepääsu juures
-- 🎫 JWT token = digitaalne külastuskaart
-- 🚪 Login = kontrollib ID'd ja annab kaardi
-- ✅ Teised teenused = usaldavad kaarti, ei küsi parooli enam
-
-See on täpselt see, mida User Service teeb mikroteenuste arhitektuuris!
-
-### Praktiline näide: User Service töövoog
+### Praktiline näide
 
 User Teenus (Service) on **autentimise keskus (authentication hub)** mikroteenuste (microservices) arhitektuuris:
 

@@ -25,9 +25,7 @@
 - Genereerib JWT tokeneid autentimiseks
 - Annab tokeneid teistele mikroteenustele (microservices) (nt Todo Teenus (Service))
 
-**📖 Põhjalik selgitus:** [User Service README](../../apps/backend-nodejs/README.md) selgitab:
-- Mis on User Service ja miks see on vajalik (kontorihoone analoogia)
-- Mis asi on JWT token (digitaalne visiitkaart)
+**📖 Rakenduse kohta:** [User Service README](../../apps/backend-nodejs/README.md) - Autentimisteenus, mis haldab kasutajaid ja annab välja JWT tokeneid.
 - Kuidas JWT töötab mikroteenuste arhitektuuris
 
 **Harjutus 1 fookus:**

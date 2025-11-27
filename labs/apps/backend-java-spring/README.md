@@ -1,11 +1,80 @@
 # Todo Service - Java Spring Boot Application
 
-Mikroteenuste arhitektuuri õpperakendus DevOps koolituseks.
+**Eesmärk:** REST API todo ülesannete haldamiseks JWT autentimisega
+
+**Rakenduse eesmärk:** Todo ülesannete rakendus (to-do list), kus kasutajad saavad hallata oma ülesandeid.
+
+**Tehnoloogiad:**
+- Java 21
+- Spring Boot 3.2
+- PostgreSQL 16
+- JWT (io.jsonwebtoken)
+- Gradle 8.5
+
+**Port:** 8081
+
+---
+
+## 📘 Mis on Todo Service?
+
+Todo Service on **todo ülesannete rakendus**, mis võimaldab kasutajatel hallata oma ülesandeid (to-do list).
+
+### Mis rakendus teeb?
+
+1. ✍️ **Todo ülesannete haldamine** - lisa, muuda, kustuta, märgi tehtuks
+2. 👀 **Ülesannete vaatamine** - näe kõiki oma todo'sid (filtreerimine, sorteerimine)
+3. 📊 **Statistika** - kui palju ülesandeid on tehtud, pooleli, ootel
+4. 🔐 **JWT autentimine** - ainult sisse loginud kasutajad saavad todo'sid luua
+
+### Kuidas see töötab koos User Service'iga?
+
+See õpperakendus koosneb **kahest eraldi teenusest**:
+
+```
+┌─────────────────────┐      ┌──────────────────────┐
+│   User Service      │      │   Todo Service       │
+│   (Node.js)         │      │   (Java Spring Boot) │
+├─────────────────────┤      ├──────────────────────┤
+│ ✅ Autentimine      │      │ ✅ Todo ülesanded    │
+│ ✅ JWT genereerimine│──────│ ✅ JWT valideerimine │
+│ ✅ Kasutajate CRUD  │      │ ✅ Todo CRUD         │
+│ ✅ RBAC (rollid)    │      │ ✅ Statistika        │
+└─────────────────────┘      └──────────────────────┘
+         │                            │
+         ↓                            ↓
+  PostgreSQL (5432)           PostgreSQL (5433)
+  (kasutajad, rollid)         (todo ülesanded)
+```
+
+**Töövoog:**
+
+1. Kasutaja logib sisse **User Service'is** → saab JWT tokeni
+2. Kasutaja lisab todo **Todo Service'is** → saadab JWT tokeni kaasa
+3. Todo Service **valideerib tokenit** (jagavad sama JWT_SECRET)
+4. Todo Service näeb tokenist `userId` → salvestab todo õige kasutaja alla
+
+**Näide:**
+
+```
+1. Alice logib sisse → saab JWT tokeni
+2. Alice lisab todo "Osta piima" → Todo Service salvestab Alice'i alla
+3. Bob logib sisse → saab OMA JWT tokeni
+4. Bob vaatab todo'sid → näeb ainult OMA todo'sid, mitte Alice'i omi!
+```
+
+### Miks kaks eraldi teenust?
+
+- ✅ **Eraldi vastutusalad**: User Service = autentimine, Todo Service = ülesanded
+- ✅ **Eraldi andmebaasid**: Kasutajad ja todo'd ei sega üksteist
+- ✅ **Erinevad tehnoloogiad**: Node.js (User) + Java (Todo) - õpid mõlemat
+- ✅ **Iseseisev skaleerimine**: Saab teenuseid eraldi skaleerida vastavalt vajadusele
+
+---
 
 ## 📋 Ülevaade
 
 Todo Service on RESTful API teenus todo märkmete haldamiseks, mis:
-- Kasutab Java 17 + Spring Boot 3 + PostgreSQL
+- Kasutab Java 21 + Spring Boot 3 + PostgreSQL
 - Autentib kasutajaid JWT tokenitega (integreerub User Service'iga)
 - Pakub täielikku CRUD funktsionaalsust
 - On containerized (Docker) ja orkestreeritav (Kubernetes)

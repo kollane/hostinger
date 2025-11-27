@@ -21,6 +21,8 @@
 - Konteiner käivitub, aga hangub kohe (see on **OODATUD**)
 - Töötava rakenduse (application) saad **Harjutus 2**-s (mitme konteineri käivitamine)
 
+**📖 Rakenduse kohta:** [Todo Service README](../../apps/backend-java-spring/README.md) - Todo ülesannete rakendus (to-do list), kus kasutajad saavad hallata oma ülesandeid.
+
 **Miks see hea on?**
 - Õpid debuggima probleeme (`docker logs`, `docker exec`)
 - Mõistad, miks rakendused (applications) vajavad omavahel suhtlemist
