@@ -1,6 +1,6 @@
 # Harjutus 1: Üksiku konteineri loomine (User Service)
 
-**Eesmärk:** Node.js kasutajahalduse rakenduse konteineriseerimine ja Dockerfile'i loomine
+**Harjutuse eesmärk:** Node.js kasutajahalduse rakenduse konteineriseerimine ja Dockerfile'i loomine
 
 **Mida User Service teeb::**
 - 🔐 Registreerib uusi kasutajaid
