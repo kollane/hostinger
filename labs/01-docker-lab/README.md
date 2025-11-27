@@ -4,6 +4,10 @@
 **Eeldused:** Peatükk 12 (Docker põhimõtted) läbitud
 **Eesmärk:** Õppida Docker piltide (images) ja konteinerite haldamist hands-on
 
+**📖 Kasutatavad rakendused:**
+- [User Service](../apps/backend-nodejs/README.md) - Autentimisteenus, mis haldab kasutajaid ja annab välja JWT tokeneid
+- [Todo Service](../apps/backend-java-spring/README.md) - Todo ülesannete rakendus (to-do list), kus kasutajad saavad hallata oma ülesandeid
+
 ---
 
 ## 📋 Ülevaade

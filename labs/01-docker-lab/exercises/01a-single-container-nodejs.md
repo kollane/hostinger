@@ -24,8 +24,6 @@
 **User Teenuse (Service) roll:**
 - Genereerib JWT tokeneid autentimiseks
 - Annab tokeneid teistele mikroteenustele (microservices) (nt Todo Teenus (Service))
-
-**📖 Rakenduse kohta:** [User Service README](../../apps/backend-nodejs/README.md) - Autentimisteenus, mis haldab kasutajaid ja annab välja JWT tokeneid.
 - Kuidas JWT töötab mikroteenuste arhitektuuris
 
 **Harjutus 1 fookus:**

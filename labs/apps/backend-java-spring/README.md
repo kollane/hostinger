@@ -2,8 +2,6 @@
 
 **Eesmärk:** REST API todo ülesannete haldamiseks JWT autentimisega
 
-**Rakenduse eesmärk:** Todo ülesannete rakendus (to-do list), kus kasutajad saavad hallata oma ülesandeid.
-
 **Tehnoloogiad:**
 - Java 21
 - Spring Boot 3.2
