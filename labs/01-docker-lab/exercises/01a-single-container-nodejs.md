@@ -2,7 +2,7 @@
 
 **Eesmärk:** Konteineriseeri Node.js User teenus (service) ja õpi Dockerfile'i loomist
 
-**📖 Rakendus:** [User Service README](../../apps/backend-nodejs/README.md) - Autentimisteenus, mis haldab kasutajaid ja annab välja JWT tokeneid.
+**📖 Soovi korral saad rakenduse kohta lähemalt lugeda siit:** [User Service README](../../apps/backend-nodejs/README.md) - Autentimisteenus, mis haldab kasutajaid ja annab välja JWT tokeneid.
 
 **Mida see rakendus teeb:**
 - 🔐 Registreerib uusi kasutajaid
