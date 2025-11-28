@@ -31,6 +31,8 @@ See juhend kirjeldab, kuidas paigaldada LXD-põhine DevOps laborikeskkond täies
 
 ### Miinimum Nõuded
 
+#### Docker Laboritele (Lab 1-2)
+
 | Komponent | Miinimum | Soovitatav | Ideaalne |
 |-----------|----------|------------|----------|
 | **OS** | Ubuntu 24.04 LTS | Ubuntu 24.04 LTS | Ubuntu 24.04 LTS Server |
@@ -40,7 +42,22 @@ See juhend kirjeldab, kuidas paigaldada LXD-põhine DevOps laborikeskkond täies
 | **Võrk** | 1 IP | Staatiline IP | Staatiline avalik IP |
 | **Virtualization** | AMD-V või VT-x | AMD-V või VT-x | AMD-V/VT-x enabled |
 
+#### Kubernetes Laboritele (Lab 3-10)
+
+| Komponent | Miinimum | Soovitatav | Ideaalne |
+|-----------|----------|------------|----------|
+| **OS** | Ubuntu 24.04 LTS | Ubuntu 24.04 LTS | Ubuntu 24.04 LTS Server |
+| **RAM** | 16GB | 24GB | 32GB+ |
+| **CPU** | 4 cores | 6 cores | 8+ cores |
+| **Disk** | 80GB | 120GB | 200GB+ SSD |
+| **Võrk** | 1 IP | Staatiline IP | Staatiline avalik IP |
+| **Virtualization** | AMD-V või VT-x | AMD-V või VT-x | AMD-V/VT-x enabled |
+
+**Märkus:** Kubernetes komponentide (kubelet, kube-proxy, etcd) ja monitoring tööriistade (Prometheus, Grafana) tõttu on mälu- ja CPU nõuded märgatavalt kõrgemad.
+
 ### Ressursside Kalkulaator
+
+#### Docker Laboritele (Lab 1-2)
 
 **Iga õpilane vajab:**
 - RAM: 2-2.5GB
@@ -50,15 +67,51 @@ See juhend kirjeldab, kuidas paigaldada LXD-põhine DevOps laborikeskkond täies
 **Näited:**
 
 ```
-3 õpilast:
+3 õpilast (Docker):
   RAM: 3 × 2.5GB = 7.5GB + 1GB host = 8.5GB total
   CPU: 2 cores minimum (3-4 soovitatav)
   Disk: 3 × 15GB + 20GB host = 65GB
 
-5 õpilast:
+5 õpilast (Docker):
   RAM: 5 × 2.5GB = 12.5GB + 1GB host = 13.5GB total
   CPU: 4 cores minimum
   Disk: 5 × 15GB + 20GB host = 95GB
+```
+
+#### Kubernetes Laboritele (Lab 3-10)
+
+**Iga õpilane vajab:**
+- RAM: 4-6GB (Kubernetes komponentid + pods)
+- CPU: 2 cores (shared)
+- Disk: ~20-30GB (Docker + Kubernetes images)
+
+**Näited:**
+
+```
+3 õpilast (Kubernetes):
+  RAM: 3 × 5GB = 15GB + 2GB host = 17GB total
+  CPU: 4 cores minimum (6 soovitatav)
+  Disk: 3 × 25GB + 30GB host = 105GB
+
+4 õpilast (Kubernetes, 24GB server):
+  RAM: 4 × 5GB = 20GB + 2GB host = 22GB total
+  CPU: 6 cores minimum (8 soovitatav)
+  Disk: 4 × 25GB + 30GB host = 130GB
+
+5 õpilast (Kubernetes, 32GB server):
+  RAM: 5 × 5GB = 25GB + 2GB host = 27GB total
+  CPU: 8 cores minimum
+  Disk: 5 × 25GB + 30GB host = 155GB
+```
+
+**Kubernetes Mälu Jaotus Konteineris:**
+```
+- Kubernetes süsteemikomponendid (kubelet, kube-proxy): ~500MB
+- Docker daemon: ~200MB
+- Control plane (kui single-node): ~1-1.5GB
+- Workload pods (rakendused, monitoring): ~2-3GB
+- OS + cache: ~500MB
+KOKKU: ~4.5-6GB
 ```
 
 ### Kontrollimise Käsud
@@ -520,12 +573,12 @@ sudo systemctl restart sshd
 
 ---
 
-## 6. DevOps Lab Profiili Loomine
+## 6. DevOps Lab Profiilide Loomine
 
-### 6.1 Profiili Loomine
+### 6.1 Docker Profiili Loomine (Lab 1-2)
 
 ```bash
-# Loo devops-lab profile
+# Loo devops-lab profile (Docker laboritele)
 lxc profile create devops-lab
 
 # Seadista profile
@@ -554,17 +607,68 @@ name: devops-lab
 
 **Salvesta ja välju:** Vim'is: `:wq` või Nano's: `Ctrl+O`, `Enter`, `Ctrl+X`
 
-### 6.2 Profiili Kontrollimine
+### 6.2 Kubernetes Profiili Loomine (Lab 3-10)
 
 ```bash
-# Vaata profiili
+# Loo devops-lab-k8s profile (Kubernetes laboritele)
+lxc profile create devops-lab-k8s
+
+# Seadista profile
+lxc profile edit devops-lab-k8s
+```
+
+**Lisa järgmine YAML konfiguratsioon:**
+
+```yaml
+config:
+  limits.cpu: "2"
+  limits.memory: 5120MiB
+  limits.memory.enforce: soft
+  security.nesting: "true"
+  security.privileged: "false"
+  security.syscalls.intercept.mknod: "true"
+  security.syscalls.intercept.setxattr: "true"
+  linux.kernel_modules: ip_tables,ip6_tables,nf_nat,overlay,br_netfilter
+  raw.lxc: |
+    lxc.apparmor.profile=unconfined
+    lxc.cap.drop=
+    lxc.cgroup.devices.allow=a
+    lxc.mount.auto=proc:rw sys:rw cgroup:rw
+description: DevOps Lab K8s Profile - 5GB RAM, 2 CPU, Kubernetes support
+devices:
+  root:
+    path: /
+    pool: default
+    type: disk
+  kmsg:
+    path: /dev/kmsg
+    source: /dev/kmsg
+    type: unix-char
+name: devops-lab-k8s
+```
+
+**Salvesta ja välju:** Vim'is: `:wq` või Nano's: `Ctrl+O`, `Enter`, `Ctrl+X`
+
+**⚠️ Kubernetes Profiili Märkused:**
+- Suurem RAM (5GB) ja 2 CPU tuuma Kubernetes komponentidele
+- `linux.kernel_modules`: Kubernetes vajalikud kernel moodulid
+- `raw.lxc` seadistused: Kubernetes nõuab rohkem õigusi (siiski turvalisem kui privileged)
+- `/dev/kmsg`: Kubernetes vajab ligipääsu kernel logidele
+
+### 6.3 Profiilide Kontrollimine
+
+```bash
+# Vaata mõlemat profiili
 lxc profile show devops-lab
+lxc profile show devops-lab-k8s
 
 # Listata kõik profiilid
 lxc profile list
 ```
 
-### 6.3 Security Settings Selgitus
+### 6.4 Security Settings Selgitus
+
+#### Docker Profil (devops-lab)
 
 | Setting | Väärtus | Selgitus |
 |---------|---------|----------|
@@ -573,6 +677,20 @@ lxc profile list
 | `security.syscalls.intercept.mknod` | `true` | Lubab device loomist (Docker vajab) |
 | `security.syscalls.intercept.setxattr` | `true` | Lubab extended attributes (Docker overlay2) |
 | `limits.memory.enforce` | `soft` | Lubab mälu ületamist kui host'il vaba |
+
+#### Kubernetes Profil (devops-lab-k8s)
+
+| Setting | Väärtus | Selgitus |
+|---------|---------|----------|
+| `limits.cpu` | `2` | 2 CPU tuuma (Kubernetes komponentidele) |
+| `limits.memory` | `5120MiB` | 5GB RAM (kubelet, kube-proxy, pods) |
+| `linux.kernel_modules` | `ip_tables,...` | Kubernetes võrgu moodulid |
+| `raw.lxc: lxc.apparmor.profile` | `unconfined` | Vähem piiratud AppArmor (K8s vajab) |
+| `raw.lxc: lxc.cap.drop` | tühi | Säilitab capabilities (K8s vajab) |
+| `raw.lxc: lxc.mount.auto` | `proc:rw...` | Kubernetes vajab kirjutamisõigust /proc'ile |
+| `kmsg device` | `/dev/kmsg` | Kubernetes logide jaoks |
+
+**Turvalisuse kompromiss:** Kubernetes profil on vähem piiratud kui Docker profil, kuna Kubernetes vajab rohkem süsteemitaseme juurdepääsu. Siiski on see turvalisem kui täielikult `privileged` konteiner.
 
 ---
 
@@ -955,9 +1073,16 @@ ls -lh ~/lxd-backups/
 
 ## 8. Õpilaskonteinerite Loomine
 
-Nüüd loome 3 õpilase konteinerit template'ist.
+**Vali üks järgmistest:**
+- **Variant A:** Docker laboritele (Lab 1-2) - kasuta `devops-lab` profiili
+- **Variant B:** Kubernetes laboritele (Lab 3-10) - kasuta `devops-lab-k8s` profiili
+- **Variant C:** Kombineeritud - loo mõlemad tüübid
 
-### 8.1 Student 1 Loomine
+### 8.1 Docker Konteinerite Loomine (Lab 1-2)
+
+**Kui kavatsed ainult Docker laboreid teha, kasuta seda varianti.**
+
+#### 8.1.1 Student 1 Loomine (Docker)
 
 ```bash
 # 1. Loo konteiner
@@ -1041,6 +1166,126 @@ lxc config device add devops-student3 user-api-proxy proxy \
 
 lxc config device add devops-student3 todo-api-proxy proxy \
   listen=tcp:0.0.0.0:8281 connect=tcp:127.0.0.1:8081 nat=true
+```
+
+### 8.2 Kubernetes Konteinerite Loomine (Lab 3-10)
+
+**Kui kavatsed Kubernetes laboreid teha, kasuta seda varianti.**
+
+**⚠️ Eeldus:** Serveris peab olema vähemalt 24GB RAM!
+
+#### 8.2.1 Student 1 Loomine (Kubernetes)
+
+```bash
+# 1. Loo konteiner Kubernetes profiiliga
+lxc launch devops-lab-base devops-k8s-student1 -p default -p devops-lab-k8s
+
+# 2. Oota, kuni saab IP (10-20 sekundit)
+lxc list devops-k8s-student1
+
+# 3. Sea parool
+lxc exec devops-k8s-student1 -- bash -c 'echo "labuser:student1" | chpasswd'
+
+# 4. Lisa SSH port forwarding (Host:2211 → Container:22)
+lxc config device add devops-k8s-student1 ssh-proxy proxy \
+  listen=tcp:0.0.0.0:2211 \
+  connect=tcp:127.0.0.1:22 \
+  nat=true
+
+# 5. Lisa Kubernetes API port (Host:6443 → Container:6443)
+lxc config device add devops-k8s-student1 k8s-api-proxy proxy \
+  listen=tcp:0.0.0.0:6443 \
+  connect=tcp:127.0.0.1:6443 \
+  nat=true
+
+# 6. Lisa Ingress HTTP port (Host:30080 → Container:30080)
+lxc config device add devops-k8s-student1 ingress-http-proxy proxy \
+  listen=tcp:0.0.0.0:30080 \
+  connect=tcp:127.0.0.1:30080 \
+  nat=true
+
+# 7. Lisa Ingress HTTPS port (Host:30443 → Container:30443)
+lxc config device add devops-k8s-student1 ingress-https-proxy proxy \
+  listen=tcp:0.0.0.0:30443 \
+  connect=tcp:127.0.0.1:30443 \
+  nat=true
+
+# 8. Kontrolli
+lxc config device show devops-k8s-student1
+```
+
+#### 8.2.2 Student 2 Loomine (Kubernetes)
+
+```bash
+# 1. Loo konteiner
+lxc launch devops-lab-base devops-k8s-student2 -p default -p devops-lab-k8s
+
+# 2. Sea parool
+lxc exec devops-k8s-student2 -- bash -c 'echo "labuser:student2" | chpasswd'
+
+# 3. Port forwarding (pordid erinevad!)
+lxc config device add devops-k8s-student2 ssh-proxy proxy \
+  listen=tcp:0.0.0.0:2212 connect=tcp:127.0.0.1:22 nat=true
+
+lxc config device add devops-k8s-student2 k8s-api-proxy proxy \
+  listen=tcp:0.0.0.0:6444 connect=tcp:127.0.0.1:6443 nat=true
+
+lxc config device add devops-k8s-student2 ingress-http-proxy proxy \
+  listen=tcp:0.0.0.0:30180 connect=tcp:127.0.0.1:30080 nat=true
+
+lxc config device add devops-k8s-student2 ingress-https-proxy proxy \
+  listen=tcp:0.0.0.0:30543 connect=tcp:127.0.0.1:30443 nat=true
+```
+
+#### 8.2.3 Student 3 Loomine (Kubernetes)
+
+```bash
+# 1. Loo konteiner
+lxc launch devops-lab-base devops-k8s-student3 -p default -p devops-lab-k8s
+
+# 2. Sea parool
+lxc exec devops-k8s-student3 -- bash -c 'echo "labuser:student3" | chpasswd'
+
+# 3. Port forwarding
+lxc config device add devops-k8s-student3 ssh-proxy proxy \
+  listen=tcp:0.0.0.0:2213 connect=tcp:127.0.0.1:22 nat=true
+
+lxc config device add devops-k8s-student3 k8s-api-proxy proxy \
+  listen=tcp:0.0.0.0:6445 connect=tcp:127.0.0.1:6443 nat=true
+
+lxc config device add devops-k8s-student3 ingress-http-proxy proxy \
+  listen=tcp:0.0.0.0:30280 connect=tcp:127.0.0.1:30080 nat=true
+
+lxc config device add devops-k8s-student3 ingress-https-proxy proxy \
+  listen=tcp:0.0.0.0:30643 connect=tcp:127.0.0.1:30443 nat=true
+```
+
+#### 8.2.4 Kubernetes Port Mapping Tabel
+
+| Service | Internal Port | Student 1 | Student 2 | Student 3 |
+|---------|--------------|-----------|-----------|-----------|
+| SSH | 22 | 2211 | 2212 | 2213 |
+| K8s API | 6443 | 6443 | 6444 | 6445 |
+| Ingress HTTP | 30080 | 30080 | 30180 | 30280 |
+| Ingress HTTPS | 30443 | 30443 | 30543 | 30643 |
+
+**Märkus:** Kubernetes kasutab NodePort vahemikku 30000-32767, seega kasutatakse erinevaid porte iga õpilase jaoks.
+
+### 8.3 Kombineeritud Variant (Docker + Kubernetes)
+
+**Kui soovid mõlemat tüüpi konteinereid:**
+
+```bash
+# Docker konteinerid (Lab 1-2)
+lxc launch devops-lab-base devops-docker-student1 -p default -p devops-lab
+lxc launch devops-lab-base devops-docker-student2 -p default -p devops-lab
+
+# Kubernetes konteinerid (Lab 3-10)
+lxc launch devops-lab-base devops-k8s-student1 -p default -p devops-lab-k8s
+lxc launch devops-lab-base devops-k8s-student2 -p default -p devops-lab-k8s
+
+# HOIATUS: Vaja vähemalt 24GB RAM!
+# 2 × 2.5GB (Docker) + 2 × 5GB (K8s) = 15GB + 2GB host = 17GB minimum
 ```
 
 ### 8.4 Kõigi Konteinerite Ülevaade

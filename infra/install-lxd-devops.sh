@@ -22,6 +22,7 @@ NC='\033[0m' # No Color
 
 # Configuration variables (will be set by user input)
 DEPLOYMENT_TYPE=""
+LAB_MODE=""  # docker or kubernetes
 NUM_STUDENTS=3
 RAM_PER_STUDENT="2560MiB"
 CPU_PER_STUDENT="1"
@@ -29,6 +30,9 @@ SSH_PORT_START=2201
 WEB_PORT_START=8080
 API1_PORT_START=3000
 API2_PORT_START=8081
+K8S_API_PORT_START=6443
+K8S_HTTP_PORT_START=30080
+K8S_HTTPS_PORT_START=30443
 INSTALL_GIT_REPO="n"
 GIT_REPO_URL=""
 INSTALL_FAIL2BAN="y"
@@ -173,6 +177,30 @@ interactive_config() {
       ;;
   esac
 
+  # Lab mode
+  echo ""
+  echo "Select lab mode:"
+  echo "  1) Docker only (Lab 1-2) - 2.5GB RAM per student"
+  echo "  2) Kubernetes (Lab 3-10) - 5GB RAM per student (requires 24GB+ server)"
+  read -p "Enter choice [1-2]: " lab_choice
+
+  case $lab_choice in
+    1)
+      LAB_MODE="docker"
+      info "Docker-only mode selected"
+      SSH_PORT_START=2201
+      ;;
+    2)
+      LAB_MODE="kubernetes"
+      info "Kubernetes mode selected"
+      warning "Kubernetes requires at least 24GB RAM!"
+      SSH_PORT_START=2211
+      ;;
+    *)
+      error "Invalid choice"
+      ;;
+  esac
+
   # Number of students
   echo ""
   read -p "Number of students/containers [default: 3]: " num_input
@@ -183,24 +211,33 @@ interactive_config() {
     error "Number of students must be between 1 and 10"
   fi
 
-  # RAM per student
+  # RAM per student (different for Docker vs Kubernetes)
   echo ""
-  echo "RAM per student container:"
-  echo "  1) 2GB (Minimum)"
-  echo "  2) 2.5GB (Recommended)"
-  echo "  3) 3GB (Comfortable)"
-  read -p "Enter choice [1-3, default: 2]: " ram_choice
-  case ${ram_choice:-2} in
-    1) RAM_PER_STUDENT="2048MiB" ;;
-    2) RAM_PER_STUDENT="2560MiB" ;;
-    3) RAM_PER_STUDENT="3072MiB" ;;
-    *) RAM_PER_STUDENT="2560MiB" ;;
-  esac
-
-  # CPU per student
-  echo ""
-  read -p "CPU cores per student [default: 1]: " cpu_input
-  CPU_PER_STUDENT=${cpu_input:-1}
+  if [ "$LAB_MODE" = "docker" ]; then
+    echo "RAM per student container (Docker mode):"
+    echo "  1) 2GB (Minimum)"
+    echo "  2) 2.5GB (Recommended)"
+    echo "  3) 3GB (Comfortable)"
+    read -p "Enter choice [1-3, default: 2]: " ram_choice
+    case ${ram_choice:-2} in
+      1) RAM_PER_STUDENT="2048MiB"; CPU_PER_STUDENT="1" ;;
+      2) RAM_PER_STUDENT="2560MiB"; CPU_PER_STUDENT="1" ;;
+      3) RAM_PER_STUDENT="3072MiB"; CPU_PER_STUDENT="1" ;;
+      *) RAM_PER_STUDENT="2560MiB"; CPU_PER_STUDENT="1" ;;
+    esac
+  else
+    echo "RAM per student container (Kubernetes mode):"
+    echo "  1) 4GB (Minimum)"
+    echo "  2) 5GB (Recommended)"
+    echo "  3) 6GB (Comfortable)"
+    read -p "Enter choice [1-3, default: 2]: " ram_choice
+    case ${ram_choice:-2} in
+      1) RAM_PER_STUDENT="4096MiB"; CPU_PER_STUDENT="2" ;;
+      2) RAM_PER_STUDENT="5120MiB"; CPU_PER_STUDENT="2" ;;
+      3) RAM_PER_STUDENT="6144MiB"; CPU_PER_STUDENT="2" ;;
+      *) RAM_PER_STUDENT="5120MiB"; CPU_PER_STUDENT="2" ;;
+    esac
+  fi
 
   # Resource calculation
   echo ""
@@ -264,10 +301,16 @@ interactive_config() {
   echo "╚════════════════════════════════════════════════════════════════╝"
   echo ""
   echo "Deployment type:     $DEPLOYMENT_TYPE"
+  echo "Lab mode:            $LAB_MODE"
   echo "Number of students:  $NUM_STUDENTS"
   echo "RAM per student:     $RAM_PER_STUDENT"
   echo "CPU per student:     $CPU_PER_STUDENT"
   echo "SSH port start:      $SSH_PORT_START"
+  if [ "$LAB_MODE" = "kubernetes" ]; then
+    echo "K8s API port start:  $K8S_API_PORT_START"
+    echo "Ingress HTTP start:  $K8S_HTTP_PORT_START"
+    echo "Ingress HTTPS start: $K8S_HTTPS_PORT_START"
+  fi
   echo "Git repository:      ${INSTALL_GIT_REPO}"
   if [[ "$INSTALL_GIT_REPO" =~ ^[Yy]$ ]]; then
     echo "Git URL:             $GIT_REPO_URL"
@@ -460,17 +503,18 @@ EOF
 
 # Create devops-lab profile
 create_lab_profile() {
-  log "Creating devops-lab profile..."
+  if [ "$LAB_MODE" = "docker" ]; then
+    log "Creating devops-lab profile (Docker mode)..."
 
-  # Check if already exists
-  if lxc profile list | grep -q devops-lab; then
-    warning "devops-lab profile already exists, skipping..."
-    return
-  fi
+    # Check if already exists
+    if lxc profile list | grep -q devops-lab; then
+      warning "devops-lab profile already exists, skipping..."
+      return
+    fi
 
-  lxc profile create devops-lab
+    lxc profile create devops-lab
 
-  cat <<EOF | lxc profile edit devops-lab
+    cat <<EOF | lxc profile edit devops-lab
 config:
   limits.cpu: "$CPU_PER_STUDENT"
   limits.memory: $RAM_PER_STUDENT
@@ -488,7 +532,48 @@ devices:
 name: devops-lab
 EOF
 
-  success "devops-lab profile created"
+    success "devops-lab profile created"
+  else
+    log "Creating devops-lab-k8s profile (Kubernetes mode)..."
+
+    # Check if already exists
+    if lxc profile list | grep -q devops-lab-k8s; then
+      warning "devops-lab-k8s profile already exists, skipping..."
+      return
+    fi
+
+    lxc profile create devops-lab-k8s
+
+    cat <<EOF | lxc profile edit devops-lab-k8s
+config:
+  limits.cpu: "$CPU_PER_STUDENT"
+  limits.memory: $RAM_PER_STUDENT
+  limits.memory.enforce: soft
+  security.nesting: "true"
+  security.privileged: "false"
+  security.syscalls.intercept.mknod: "true"
+  security.syscalls.intercept.setxattr: "true"
+  linux.kernel_modules: ip_tables,ip6_tables,nf_nat,overlay,br_netfilter
+  raw.lxc: |
+    lxc.apparmor.profile=unconfined
+    lxc.cap.drop=
+    lxc.cgroup.devices.allow=a
+    lxc.mount.auto=proc:rw sys:rw cgroup:rw
+description: DevOps Lab K8s Profile - $RAM_PER_STUDENT RAM, $CPU_PER_STUDENT CPU, Kubernetes support
+devices:
+  root:
+    path: /
+    pool: default
+    type: disk
+  kmsg:
+    path: /dev/kmsg
+    source: /dev/kmsg
+    type: unix-char
+name: devops-lab-k8s
+EOF
+
+    success "devops-lab-k8s profile created"
+  fi
 }
 
 # Create template image
@@ -661,36 +746,68 @@ create_students() {
   fi
 
   for i in $(seq 1 $NUM_STUDENTS); do
-    local container_name="devops-student$i"
     local password="student$i"
     local ssh_port=$((SSH_PORT_START + i - 1))
-    local web_port=$((WEB_PORT_START + (i - 1) * 100))
-    local api1_port=$((API1_PORT_START + (i - 1) * 100))
-    local api2_port=$((API2_PORT_START + (i - 1) * 100))
 
-    log "  Creating $container_name..."
+    if [ "$LAB_MODE" = "docker" ]; then
+      local container_name="devops-student$i"
+      local web_port=$((WEB_PORT_START + (i - 1) * 100))
+      local api1_port=$((API1_PORT_START + (i - 1) * 100))
+      local api2_port=$((API2_PORT_START + (i - 1) * 100))
 
-    # Launch container
-    lxc launch devops-lab-base $container_name -p default -p devops-lab >> "$LOG_FILE" 2>&1
-    sleep 5
+      log "  Creating $container_name (Docker)..."
 
-    # Set password
-    lxc exec $container_name -- bash -c "echo 'labuser:$password' | chpasswd" >> "$LOG_FILE" 2>&1
+      # Launch container
+      lxc launch devops-lab-base $container_name -p default -p devops-lab >> "$LOG_FILE" 2>&1
+      sleep 5
 
-    # Add port forwarding
-    lxc config device add $container_name ssh-proxy proxy \
-      listen=tcp:${listen_ip}:${ssh_port} connect=tcp:127.0.0.1:22 nat=true >> "$LOG_FILE" 2>&1
+      # Set password
+      lxc exec $container_name -- bash -c "echo 'labuser:$password' | chpasswd" >> "$LOG_FILE" 2>&1
 
-    lxc config device add $container_name web-proxy proxy \
-      listen=tcp:${listen_ip}:${web_port} connect=tcp:127.0.0.1:8080 nat=true >> "$LOG_FILE" 2>&1
+      # Add port forwarding
+      lxc config device add $container_name ssh-proxy proxy \
+        listen=tcp:${listen_ip}:${ssh_port} connect=tcp:127.0.0.1:22 nat=true >> "$LOG_FILE" 2>&1
 
-    lxc config device add $container_name user-api-proxy proxy \
-      listen=tcp:${listen_ip}:${api1_port} connect=tcp:127.0.0.1:3000 nat=true >> "$LOG_FILE" 2>&1
+      lxc config device add $container_name web-proxy proxy \
+        listen=tcp:${listen_ip}:${web_port} connect=tcp:127.0.0.1:8080 nat=true >> "$LOG_FILE" 2>&1
 
-    lxc config device add $container_name todo-api-proxy proxy \
-      listen=tcp:${listen_ip}:${api2_port} connect=tcp:127.0.0.1:8081 nat=true >> "$LOG_FILE" 2>&1
+      lxc config device add $container_name user-api-proxy proxy \
+        listen=tcp:${listen_ip}:${api1_port} connect=tcp:127.0.0.1:3000 nat=true >> "$LOG_FILE" 2>&1
 
-    success "  $container_name created (SSH: $ssh_port)"
+      lxc config device add $container_name todo-api-proxy proxy \
+        listen=tcp:${listen_ip}:${api2_port} connect=tcp:127.0.0.1:8081 nat=true >> "$LOG_FILE" 2>&1
+
+      success "  $container_name created (SSH: $ssh_port)"
+    else
+      local container_name="devops-k8s-student$i"
+      local k8s_api_port=$((K8S_API_PORT_START + i - 1))
+      local k8s_http_port=$((K8S_HTTP_PORT_START + (i - 1) * 100))
+      local k8s_https_port=$((K8S_HTTPS_PORT_START + (i - 1) * 100))
+
+      log "  Creating $container_name (Kubernetes)..."
+
+      # Launch container with k8s profile
+      lxc launch devops-lab-base $container_name -p default -p devops-lab-k8s >> "$LOG_FILE" 2>&1
+      sleep 5
+
+      # Set password
+      lxc exec $container_name -- bash -c "echo 'labuser:$password' | chpasswd" >> "$LOG_FILE" 2>&1
+
+      # Add port forwarding
+      lxc config device add $container_name ssh-proxy proxy \
+        listen=tcp:${listen_ip}:${ssh_port} connect=tcp:127.0.0.1:22 nat=true >> "$LOG_FILE" 2>&1
+
+      lxc config device add $container_name k8s-api-proxy proxy \
+        listen=tcp:${listen_ip}:${k8s_api_port} connect=tcp:127.0.0.1:6443 nat=true >> "$LOG_FILE" 2>&1
+
+      lxc config device add $container_name ingress-http-proxy proxy \
+        listen=tcp:${listen_ip}:${k8s_http_port} connect=tcp:127.0.0.1:30080 nat=true >> "$LOG_FILE" 2>&1
+
+      lxc config device add $container_name ingress-https-proxy proxy \
+        listen=tcp:${listen_ip}:${k8s_https_port} connect=tcp:127.0.0.1:30443 nat=true >> "$LOG_FILE" 2>&1
+
+      success "  $container_name created (SSH: $ssh_port, K8s API: $k8s_api_port)"
+    fi
   done
 
   success "All student containers created"
@@ -749,7 +866,11 @@ SYNCSCRIPT
     # Sync to all containers
     log "Syncing labs to containers..."
     for i in $(seq 1 $NUM_STUDENTS); do
-      bash "/home/$ADMIN_USER/scripts/sync-labs.sh" "devops-student$i" >> "$LOG_FILE" 2>&1
+      if [ "$LAB_MODE" = "docker" ]; then
+        bash "/home/$ADMIN_USER/scripts/sync-labs.sh" "devops-student$i" >> "$LOG_FILE" 2>&1
+      else
+        bash "/home/$ADMIN_USER/scripts/sync-labs.sh" "devops-k8s-student$i" >> "$LOG_FILE" 2>&1
+      fi
     done
 
     success "Labs synced to all containers"
@@ -769,6 +890,7 @@ generate_report() {
 
 Installation Date: $(date)
 Deployment Type: $DEPLOYMENT_TYPE
+Lab Mode: $LAB_MODE
 Number of Students: $NUM_STUDENTS
 
 STUDENT ACCESS INFORMATION
@@ -783,11 +905,13 @@ EOF
 
   for i in $(seq 1 $NUM_STUDENTS); do
     local ssh_port=$((SSH_PORT_START + i - 1))
-    local web_port=$((WEB_PORT_START + (i - 1) * 100))
-    local api1_port=$((API1_PORT_START + (i - 1) * 100))
-    local api2_port=$((API2_PORT_START + (i - 1) * 100))
 
-    cat >> "$report_file" <<EOF
+    if [ "$LAB_MODE" = "docker" ]; then
+      local web_port=$((WEB_PORT_START + (i - 1) * 100))
+      local api1_port=$((API1_PORT_START + (i - 1) * 100))
+      local api2_port=$((API2_PORT_START + (i - 1) * 100))
+
+      cat >> "$report_file" <<EOF
 Student $i (devops-student$i)
 ─────────────────────────────────────────────────────────────
 SSH Access:
@@ -800,6 +924,25 @@ Web Services (when running):
   Todo API:       http://${server_ip}:${api2_port}/api
 
 EOF
+    else
+      local k8s_api_port=$((K8S_API_PORT_START + i - 1))
+      local k8s_http_port=$((K8S_HTTP_PORT_START + (i - 1) * 100))
+      local k8s_https_port=$((K8S_HTTPS_PORT_START + (i - 1) * 100))
+
+      cat >> "$report_file" <<EOF
+Student $i (devops-k8s-student$i)
+─────────────────────────────────────────────────────────────
+SSH Access:
+  ssh labuser@${server_ip} -p ${ssh_port}
+  Password: student$i
+
+Kubernetes Access:
+  API Server:     https://${server_ip}:${k8s_api_port}
+  Ingress HTTP:   http://${server_ip}:${k8s_http_port}
+  Ingress HTTPS:  https://${server_ip}:${k8s_https_port}
+
+EOF
+    fi
   done
 
   cat >> "$report_file" <<EOF
