@@ -163,7 +163,7 @@ README.md
 - Kiirem ehitamine
 - Turvalisem (ei kopeeri .env faile)
 
-### Samm 4: Koosta (build) Docker tõmmis
+### Samm 4: Koosta Docker tõmmis (Docker image)
 
 **Asukoht:** `~/labs/apps/backend-nodejs`
 
