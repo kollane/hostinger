@@ -481,12 +481,6 @@ curl -X POST http://localhost:8081/api/todos \
 docker exec postgres-todo psql -U postgres -d todo_service_db -c "SELECT * FROM todos;"
 ```
 
-**Mida õppisid?**
-- ✅ Todo teenus (service) aktsepteerib User teenuse (service) JWT tokenit
-- ✅ Todo teenus (service) ekstraktis `userId` tokenist (userId: 1)
-- ✅ CRUD operatsioonid töötavad mikroteenuste (microservices) vahel
-- ✅ Mõlemad teenused (services) usaldavad sama JWT_SECRET'i
-
 ### Samm 9: Mõista mikroteenuste suhtlust
 
 **Mis toimus?**
