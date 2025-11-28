@@ -764,7 +764,7 @@ Harjutus 3 õpetab **korralikku võrgundust** Docker võrkude (networks) kasutad
 Järgmises harjutuses õpid **korralikku võrgundust** Docker võrkude kasutades!
 
 **Miks kohandatud võrgud (custom networks) on paremad kui --link?**
-- ✅ Pole aegunud
+- ✅ Pole aegunud (deprecated)
 - ✅ Parem DNS-i lahendus
 - ✅ Võrgu isolatsioon
 - ✅ Konteinerite avastamine
