@@ -166,7 +166,7 @@ gradlew.bat
 - Turvalisem (ei kopeeri .env faile)
 - Ei kopeeri lähtekoodi (ainult JAR fail)
 
-### Samm 4: Koosta (build) Docker tõmmis (image)
+### Samm 4: Koosta Docker tõmmis (Docker image)
 
 **Asukoht:** `~/labs/apps/backend-java-spring`
 
