@@ -419,7 +419,7 @@ argocd-image-updater.argoproj.io/user-service.update-strategy: latest
 ```bash
 # Käivita setup script
 chmod +x setup.sh
-./setup.sh
+lab1-setup
 ```
 
 **Script kontrollib:**
@@ -612,7 +612,7 @@ Peale Lab 8 läbimist on sul:
 
 ---
 
-**Alusta:** `./setup.sh` ja seejärel `cat exercises/01-argocd-setup.md`
+**Alusta:** `lab1-setup` ja seejärel `cat exercises/01-argocd-setup.md`
 
 **Kestus:** 5 tundi (5 × 60 min)
 
