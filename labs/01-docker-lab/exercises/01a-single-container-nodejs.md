@@ -18,14 +18,14 @@
 
 ✅ **Õpid:**
 - Dockerfile'i loomist Node.js rakendusele (application)
-- Docker pildi (image) ehitamist (build)
+- Docker tõmmise (image) ehitamist
 - Konteineri käivitamist
 - Logide vaatamist ja debuggimist
 
 ❌ **Käesolevas harjutuses rakendus veel TÖÖLE EI HAKKA:**
 - User teenus (service) vajab PostgreSQL andmebaasi
 - Konteiner käivitub, aga hangub kohe (see on **OODATUD**)
-- Töötava rakendus tekib peale **Harjutus 2** läbimist.
+- Töötav rakendus valmib peale **Harjutus 2** läbimist.
 
 ---
 
@@ -51,8 +51,8 @@ ssh labuser@93.127.213.242 -p [SINU-PORT]
 │   Docker Konteiner          │
 │                             │
 │  ┌───────────────────────┐  │
-│  │  Node.js Rakendus (Application)  │  │
-│  │  User Teenus (Service)         │  │
+│  │  Node.js Rakendus            │  │
+│  │  User Teenus                 │  │
 │  │  Port: 3000           │  │
 │  └───────────────────────┘  │
 │                             │
@@ -69,9 +69,9 @@ ssh labuser@93.127.213.242 -p [SINU-PORT]
 
 ### Samm 1: Tutvu rakenduse koodiga
 
-**Rakenduse (application) juurkataloog:** `~/labs/apps/backend-nodejs`
+**Rakenduse juurkataloog:** `~/labs/apps/backend-nodejs`
 
-Vaata rakenduse (application) "User Teenus (Service)" koodi:
+Vaata "User Teenuse" (service) koodi:
 
 ```bash
 cd ~/labs/apps/backend-nodejs
@@ -87,15 +87,15 @@ head -50 server.js
 ```
 
 **Küsimused:**
-- Millise pordiga rakendus (application) käivitub? (3000)
+- Millise pordiga rakendus käivitub? (3000)
 - Millised sõltuvused (dependencies) on vajalikud? (vaata package.json)
-- Kas rakendus (application) vajab andmebaasi? (Jah, PostgreSQL)
+- Kas rakendus vajab andmebaasi? (Jah, PostgreSQL)
 
 ### Samm 2: Loo Dockerfile
 
 Loo fail nimega `Dockerfile`:
 
-**⚠️ Oluline:** Dockerfail tuleb luua rakenduse (application) juurkataloogi `~/labs/apps/backend-nodejs`. 
+**⚠️ Oluline:** Dockerfail tuleb luua rakenduse juurkataloogi `~/labs/apps/backend-nodejs`. 
 
 ```bash
 vim Dockerfile
@@ -104,13 +104,13 @@ vim Dockerfile
 **📖 Dockerfile põhitõed:** Kui vajad abi Dockerfile instruktsioonide (FROM, WORKDIR, COPY, RUN, CMD) mõistmisega, loe [Peatükk 06: Dockerfile - Rakenduste Konteineriseerimise Detailid](../../../resource/06-Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md).
 
 **Ülesanne:** Kirjuta Dockerfile, mis:
-1. Kasutab Node.js 22 slim baaspilti (base image)
+1. Kasutab Node.js 22 slim baastõmmist (base image)
 2. Seadistab töökataloogiks `/app`
 3. Kopeerib `package*.json` failid
-4. Installib sõltuvused (dependencies)
-5. Kopeerib rakenduse (application) koodi
+4. Installib sõltuvused
+5. Kopeerib rakenduse koodi
 6. Avaldab pordi 3000
-7. Käivitab rakenduse (application)
+7. Käivitab rakenduse
 
 **Vihje:** Vaata Docker dokumentatsiooni või solutions/ kausta!
 
@@ -121,13 +121,13 @@ FROM node:22-slim
 
 WORKDIR /app
 
-# Kopeeri sõltuvuste (dependency) failid
+# Kopeeri sõltuvuste failid
 COPY package*.json ./
 
-# Paigalda sõltuvused (dependencies)
+# Paigalda sõltuvused
 RUN npm install --production
 
-# Kopeeri rakenduse (application) kood
+# Kopeeri rakenduse kood
 COPY . .
 
 # Avalda port
@@ -141,7 +141,7 @@ CMD ["node", "server.js"]
 
 Loo `.dockerignore` fail, et vältida tarbetute failide kopeerimist:
 
-**⚠️ Oluline:** .dockerignore tuleb luua rakenduse (application) juurkataloogi `~/labs/apps/backend-nodejs`. 
+**⚠️ Oluline:** .dockerignore tuleb luua rakenduse juurkataloogi `~/labs/apps/backend-nodejs`. 
 
 ```bash
 vim .dockerignore
@@ -159,33 +159,33 @@ README.md
 ```
 
 **Miks see oluline on?**
-- Väiksem pildi (image) suurus
-- Kiirem ehitamine (build)
+- Väiksem tõmmise suurus
+- Kiirem ehitamine
 - Turvalisem (ei kopeeri .env faile)
 
-### Samm 4: Ehita (build) Docker pilt (image)
+### Samm 4: Koosta (build) Docker tõmmis (image)
 
 **Asukoht:** `~/labs/apps/backend-nodejs`
 
-Ehita (build) oma esimene Docker pilt (image):
+Koosta oma esimene Docker tõmmis (image):
 
-**⚠️ Oluline:** Docker pildi (image) ehitamiseks (build) pead olema rakenduse (application) juurkataloogis (kus asub `Dockerfile`).
+**⚠️ Oluline:** Docker tõmmise ehitamiseks pead olema rakenduse juurkataloogis (kus asub `Dockerfile`).
 
 ```bash
-# Ehita (build) pilt (image) tag'iga
+# Koosta tõmmis sildiga (tag)
 docker build -t user-service:1.0 .
 
-# Vaata ehitamise (build) protsessi
+# Vaata ehitamise protsessi
 # Märka: iga RUN käsk loob uue kihi (layer)
 ```
 
-**Kontrolli pilti (image):**
+**Kontrolli tõmmist:**
 
 ```bash
-# Vaata kõiki pilte (images)
+# Vaata kõiki tõmmiseid (images)
 docker images
 
-# Vaata user-service pildi (image) infot
+# Vaata user-service tõmmise infot
 docker image inspect user-service:1.0
 
 # Kontrolli suurust
@@ -193,9 +193,9 @@ docker images user-service:1.0
 ```
 
 **Küsimused:**
-- Kui suur on sinu pilt (image)? (peaks olema ~150-200MB)
-- Mitu kihti (layers) on pildil (image)?
-- Millal pilt (image) loodi?
+- Kui suur on sinu tõmmis? (peaks olema ~150-200MB)
+- Mitu kihti (layers) on tõmmisel?
+- Millal tõmmis loodi?
 
 ### Samm 5: Käivita Konteiner
 
@@ -217,8 +217,8 @@ docker run -it --name user-service-test \
 **Märkused:**
 - `-it` - interactive + tty
 - `--name` - anna konteinerile nimi
-- `-p 3000:3000` - portide vastendamine (port mapping) 3000 host'ist konteinerisse
-- `-e` - keskkonna muutuja (environment variable)
+- `-p 3000:3000` - portide vastendamine hostist konteinerisse
+- `-e` - keskkonna muutuja
 
 **Oodatud tulemus:**
 ```
@@ -228,16 +228,16 @@ connect ECONNREFUSED 127.0.0.1:5432
 
 **See on TÄPSELT see, mida tahame näha!** 🎉
 - Konteiner käivitus ✅
-- Rakendus (application) proovis käivituda ✅
-- Vea (error) sõnum näitab probleemi (puuduv DB) ✅
-- Õppisid, kuidas Docker vigu (errors) näeb ✅
+- Rakendus proovis käivituda ✅
+- Veateade näitab probleemi (puuduv DB) ✅
+- Õppisid, kuidas Docker vigu näeb ✅
 
 Vajuta `Ctrl+C` et peatada.
 
 #### Variant B: Taustal töötav režiim (Detached Mode)
 
 ```bash
-# Käivita taustal (taustal töötav režiim (detached mode))
+# Käivita taustal ehk detached režiimis (-d)
 docker run -d --name user-service \
   -p 3000:3000 \
   -e DB_HOST=host.docker.internal \
@@ -271,7 +271,7 @@ docker ps -a
 ```
 
 **Miks konteiner puudub `docker ps` väljundis?**
-- Konteiner käivitus, aga rakendus (application) hangus kohe
+- Konteiner käivitus, aga rakendus hangus kohe
 - Docker peatas hangunud konteineri automaatselt
 - `docker ps` näitab ainult TÖÖTAVAID konteinereid
 - `docker ps -a` näitab KÕIKI konteinereid (ka peatatud)
@@ -312,7 +312,7 @@ docker stats user-service
    docker run -p 3001:3000 ...
    ```
 
-2. **Rakendus (application) hangub:**
+2. **Rakendus hangub:**
    ```bash
    # Vaata logisid
    docker logs user-service
@@ -334,16 +334,16 @@ docker stats user-service
 ## 💡 Parimad Praktikad (Best Practices)
 
 1. **Kasuta `.dockerignore`** - Väldi tarbetute failide kopeerimist
-2. **Kasuta alpine pilte (images)** - Väiksem suurus, kiirem
+2. **Kasuta alpine tõmmiseid (images)** - Väiksem suurus, kiirem
 3. **RUN npm install --production** - Ära installi arenduse sõltuvusi (dev dependencies)
 4. **COPY package.json enne koodi** - Parem kihtide vahemälu (layer cache) kasutamine
-5. **Kasuta EXPOSE** - Dokumenteeri, millist porti rakendus (application) kasutab
+5. **Kasuta EXPOSE** - Dokumenteeri, millist porti rakendus kasutab
 
-**📖 Node.js konteineriseerimise parimad tavad:** Põhjalikum käsitlus `npm ci`, Alpine images, bcrypt native moodulid, ja teised Node.js spetsiifilised teemad leiad [Peatükk 06A: Java Spring Boot ja Node.js Konteineriseerimise Spetsiifika](../../../resource/06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md).
+**📖 Node.js konteineriseerimise parimad tavad:**Põhjalikum käsitlus `npm ci`, Alpine images, bcrypt native moodulid, ja teised Node.js spetsiifilised teemad leiad [Peatükk 06A: Java Spring Boot ja Node.js Konteineriseerimise Spetsiifika](../../../resource/06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md).
 
 ---
 
-**Õnnitleme! Oled loonud oma esimese Docker pildi (image)! 🎉**
+**Õnnitleme! Oled loonud oma esimese Docker tõmmise! 🎉**
 
 ## 🔗 Järgmine Samm
 
