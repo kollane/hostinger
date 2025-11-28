@@ -9,10 +9,10 @@
 **📖 Rakenduse funktsionaalsuse kohta lähemalt siit:** [Todo Service README](../../apps/backend-java-spring/README.md)
 
 ---
+## 📋 Harjutuse ülevaade
+**Harjutuse eesmärk:** Selles harjutuses konteineriseerid Java Spring Boot Todo teenuse rakenduse. Õpid looma Dockerfile'i, ehitama Docker tõmmist ja käivitama konteinereid (isegi kui see hangub andmebaasi puudumise tõttu).
 
-## ⚠️ OLULINE: Harjutuse Fookus
-
-**See harjutus keskendub Docker põhitõdede õppimisele, MITTE töötavale rakendusele (application)!**
+**Harjutuse Fookus:** See harjutus keskendub Docker põhitõdede õppimisele, MITTE töötavale rakendusele (application)!
 
 ✅ **Õpid:**
 - Dockerfile'i loomist
@@ -25,25 +25,6 @@
 - Todo teenus vajab PostgreSQL andmebaasi
 - Konteiner käivitub, aga hangub kohe (see on **OODATUD**)
 - Töötava rakenduse saad **Harjutus 2**-s (mitme konteineri käivitamine)
-
----
-
-## 📋 Harjutuse ülevaade
-
-Selles harjutuses konteineriseerid Java Spring Boot Todo teenuse rakenduse. Õpid looma Dockerfile'i, ehitama Docker tõmmist ja käivitama konteinereid (isegi kui see hangub andmebaasi puudumise tõttu).
-
----
-
-## 🎯 Õpieesmärgid
-
-Peale selle harjutuse läbimist oskad:
-
-- ✅ Luua Dockerfile'i Java Spring Boot rakendusele
-- ✅ Ehitada Docker tõmmist
-- ✅ Käivitada ja peatada konteinereid
-- ✅ Kasutada keskkonna muutujaid (environment variables)
-- ✅ Vaadata konteineri logisid
-- ✅ Debuggida konteineri probleeme
 
 ---
 
