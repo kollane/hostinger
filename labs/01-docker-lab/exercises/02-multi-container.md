@@ -3,7 +3,7 @@
 **Eeldused:**
 - ✅ [Harjutus 1A: Üksiku konteineri loomine (User Teenus)](01a-single-container-nodejs.md) läbitud
 - ✅ [Harjutus 1B: Üksiku konteineri loomine (Todo Teenus)](01b-single-container-java.md) läbitud
-- 💡 **Alternatiiv:** Kui vahele jätsid, käivita `./setup.sh` ja vali `Y` - see koostab vajalikud tõmmised (images) automaatselt
+- 💡 **Alternatiiv:** Kui vahele jätsid, käivita `lab1-setup` ja vali `Y` - see koostab vajalikud tõmmised automaatselt
 
 ---
 
