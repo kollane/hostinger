@@ -1,14 +1,12 @@
-# Harjutus 1: Ühe Konteineri Käivitamine
+# Harjutus 1: Üksiku konteineri loomine (Todo Service)
 
-**Eesmärk:** Konteineriseeri Java Spring Boot Todo teenus (service) ja õpi Dockerfile'i loomist
-
-**📖 Rakendus:** [Todo Service README](../../apps/backend-java-spring/README.md) - Todo ülesannete rakendus (to-do list), kus kasutajad saavad hallata oma ülesandeid.
-
-**Mis see rakendus teeb:**
+**Todo Service rakenduse lühitutvustus:**
 - ✍️ Loob ja haldab todo ülesandeid (CRUD)
 - 👀 Kuvab kasutaja ülesandeid (filtreerimine, sorteerimine)
 - 📊 Näitab statistikat (tehtud/pooleli ülesanded)
 - 🔐 Valideerib JWT tokeneid User Service'ilt
+
+**📖 Rakenduse funktsionaalsuse kohta lähemalt siit:** [Todo Service README](../../apps/backend-java-spring/README.md)
 
 ---
 
@@ -30,7 +28,7 @@
 
 ---
 
-## 📋 Ülevaade
+## 📋 Harjutuse ülevaade
 
 Selles harjutuses konteineriseerid Java Spring Boot Todo teenuse rakenduse. Õpid looma Dockerfile'i, ehitama Docker tõmmist ja käivitama konteinereid (isegi kui see hangub andmebaasi puudumise tõttu).
 
@@ -87,7 +85,7 @@ ssh labuser@93.127.213.242 -p [SINU-PORT]
 
 ## 📝 Sammud
 
-### Samm 1: Tutvu Rakendusega
+### Samm 1: Tutvu rakenduse koodiga
 
 **Rakenduse juurkataloog:** `~/labs/apps/backend-java-spring`
 
@@ -202,7 +200,7 @@ Esmalt ehita JAR fail, seejärel Docker tõmmis:
 # Kontrolli, et JAR on loodud
 ls -lh build/libs/
 
-# Koosta (build) Docker tõmmis (image) sildiga (tag)
+# Koosta Docker tõmmis sildiga (tag)
 docker build -t todo-service:1.0 .
 
 # Vaata ehitamise protsessi
@@ -212,10 +210,10 @@ docker build -t todo-service:1.0 .
 Kontrolli tõmmist:
 
 ```bash
-# Vaata kõiki tõmmiseid (images)
+# Vaata kõiki tõmmiseid
 docker images
 
-# Vaata todo-service tõmmise (image) infot
+# Vaata todo-service tõmmise infot
 docker image inspect todo-service:1.0
 
 # Kontrolli suurust
@@ -428,7 +426,7 @@ docker logs todo-service
 ```
 
 ✅ **Oskad Docker käske kasutada:**
-- `docker build` - tõmmise (image) loomine
+- `docker build` - tõmmise loomine
 - `docker run` - konteineri käivitamine
 - `docker ps` vs `docker ps -a` - töötavad vs kõik konteinerid
 - `docker logs` - logide vaatamine
@@ -445,9 +443,9 @@ docker logs todo-service
 ## 💡 Parimad Praktikad (Best Practices)
 
 1. **Kasuta `.dockerignore`** - Väldi tarbetute failide kopeerimist
-2. **Kasuta alpine tõmmiseid (images)** - Väiksem suurus, kiirem
+2. **Kasuta alpine tõmmiseid** - Väiksem suurus, kiirem
 3. **Kasuta JRE (mitte JDK)** - Runtime ei vaja kompileerimise tööriistu
-4. **Ehita JAR enne Docker tõmmise (image) ehitamist** - Kiire taasehitamine, kui kood muutub
+4. **Ehita JAR enne Docker tõmmise ehitamist** - Kiire taasehitamine, kui kood muutub
 5. **Kasuta EXPOSE** - Dokumenteeri, millist porti rakendus kasutab
 6. **JWT_SECRET peab olema turvaline** - Min 32 tähemärki; testiks sobib lihtsalt string, tootmises kasuta `openssl rand -base64 32`
 

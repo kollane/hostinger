@@ -163,11 +163,11 @@ README.md
 - Kiirem ehitamine
 - Turvalisem (ei kopeeri .env faile)
 
-### Samm 4: Koosta (build) Docker tõmmis (image)
+### Samm 4: Koosta (build) Docker tõmmis
 
 **Asukoht:** `~/labs/apps/backend-nodejs`
 
-Koosta oma esimene Docker tõmmis (image):
+Koosta oma esimene Docker tõmmis:
 
 **⚠️ Oluline:** Docker tõmmise ehitamiseks pead olema rakenduse juurkataloogis (kus asub `Dockerfile`).
 
@@ -182,7 +182,7 @@ docker build -t user-service:1.0 .
 **Kontrolli tõmmist:**
 
 ```bash
-# Vaata kõiki tõmmiseid (images)
+# Vaata kõiki tõmmiseid
 docker images
 
 # Vaata user-service tõmmise infot
@@ -334,7 +334,7 @@ docker stats user-service
 ## 💡 Parimad Praktikad (Best Practices)
 
 1. **Kasuta `.dockerignore`** - Väldi tarbetute failide kopeerimist
-2. **Kasuta alpine tõmmiseid (images)** - Väiksem suurus, kiirem
+2. **Kasuta alpine tõmmiseid** - Väiksem suurus, kiirem
 3. **RUN npm install --production** - Ära installi arenduse sõltuvusi (dev dependencies)
 4. **COPY package.json enne koodi** - Parem kihtide vahemälu (layer cache) kasutamine
 5. **Kasuta EXPOSE** - Dokumenteeri, millist porti rakendus kasutab
