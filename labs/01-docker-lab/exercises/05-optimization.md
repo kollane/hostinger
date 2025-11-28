@@ -1,7 +1,6 @@
-# Harjutus 5: Pildi (Image) Optimeerimine
+# Harjutus 5: Tõmmise optimeerimine
 
-**Kestus:** 45 minutit
-**Eesmärk:** Optimeeri Docker pildi (image) suurust ja ehituse (build) kiirust
+**Eesmärk:** Optimeeri Docker tõmmise suurust ja ehituse kiirust
 
 ---
 
@@ -19,49 +18,49 @@ docker exec postgres-user psql -U postgres -d user_service_db -c "\dt"
 docker exec postgres-todo psql -U postgres -d todo_service_db -c "\dt"
 # Oodatud: "users" ja "todos" tabelid
 
-# 3. Kontrolli olemasolevaid pilte (images)
+# 3. Kontrolli olemasolevaid tõmmiseid
 docker images | grep -E 'user-service|todo-service'
 # Oodatud: user-service:1.0 ja todo-service:1.0
 ```
 
 **Kui midagi puudub:**
-- 🔗 Võrk (Network) `todo-network` → [Harjutus 3, Samm 2](03-networking.md)
-- 🔗 PostgreSQL seadistus (setup) (andmehoidlad (volumes) + tabelid) → [Harjutus 4, Sammud 2-4](04-volumes.md)
-- 🔗 Baaspildid (base images) → [Harjutus 1A](01a-single-container-nodejs.md) ja [Harjutus 1B](01b-single-container-java.md) või käivita `./setup.sh`
+- 🔗 Võrk `todo-network` → [Harjutus 3, Samm 2](03-networking.md)
+- 🔗 PostgreSQL seadistus (andmeköited + tabelid) → [Harjutus 4, Sammud 2-4](04-volumes.md)
+- 🔗 Baastõmmised → [Harjutus 1A](01a-single-container-nodejs.md) ja [Harjutus 1B](01b-single-container-java.md) või käivita `./setup.sh`
 
 **✅ Kui kõik ülalpool on OK, võid jätkata!**
 
 ---
 
-## 📋 Ülevaade
+## 📋 Harjutuse ülevaade
 
 **Mäletad Harjutus 1-st?** Lõime lihtsa Dockerfile'i, mis toimis. Aga nüüd õpime, kuidas teha seda **paremaks**!
 
-**Praegune Dockerfile (Harjutus 1) probleemid - MÕLEMAS teenuses (service):**
-- ❌ Liiga suur pilt (image) (~200-230MB)
-- ❌ Ehitus (build) on aeglane (rebuild iga source muudatuse korral)
-- ❌ Ei kasuta kihtide vahemälu (layer caching) efektiivselt
+**Praegune Dockerfile (Harjutus 1) probleemid - MÕLEMAS teenuses:**
+- ❌ Liiga suur tõmmis (~200-230MB)
+- ❌ Ehitus on aeglane (rebuild iga source muudatuse korral)
+- ❌ Ei kasuta kihtide vahemälu efektiivselt
 - ❌ Töötab root'ina (turvarisk!)
-- ❌ Pole seisukorra kontrolli (health check)
+- ❌ Pole tervisekontrolli (health check)
 
-**Selles harjutuses - optimeerime MÕLEMAT teenust (service):**
-- ✅ **Node.js (User Teenus (Service)):** Mitme-sammuline (multi-stage) ehitus (build) (sõltuvused (dependencies) → runtime)
-- ✅ **Java (Todo Teenus (Service)):** Mitme-sammuline (multi-stage) ehitus (build) (JDK build → JRE runtime)
-- ✅ Kihtide vahemälu (layer caching) optimeerimine (sõltuvused (dependencies) on vahemälus (cached))
-- ✅ Turvalisus (mitte-juurkasutajad (non-root users): nodejs:1001, spring:1001)
-- ✅ Seisukorra kontrollid (health checks)
+**Selles harjutuses - optimeerime MÕLEMAT teenust:**
+- ✅ **Node.js (User teenus):** Mitmeastmeline ehitus (sõltuvused → runtime)
+- ✅ **Java (Todo teenus):** Mitmeastmeline ehitus (JDK build → JRE runtime)
+- ✅ Kihtide vahemälu optimeerimine (sõltuvused on vahemälus)
+- ✅ Turvalisus (mitte-juurkasutajad: nodejs:1001, spring:1001)
+- ✅ Tervisekontrollid
 
 ---
 
 ## 🎯 Õpieesmärgid
 
-- ✅ Implementeerida mitme-sammulised (multi-stage) ehitused (builds) (Node.js ja Java)
-- ✅ Optimeerida kihtide vahemälu (layer caching) (sõltuvused (dependencies) eraldi)
+- ✅ Implementeerida mitmeastmelised ehitused (Node.js ja Java)
+- ✅ Optimeerida kihtide vahemälu (sõltuvused eraldi)
 - ✅ Parandada .dockerignore faile
-- ✅ Lisa seisukorra kontrollid (health checks) mõlemasse teenusesse (service)
-- ✅ Kasuta mitte-juurkasutajaid (non-root users) (nodejs:1001, spring:1001)
+- ✅ Lisa tervisekontrollid mõlemasse teenusesse
+- ✅ Kasuta mitte-juurkasutajaid (nodejs:1001, spring:1001)
 - ✅ Võrrelda Node.js vs Java optimeerimise tulemusi
-- ✅ Testida End-to-End workflow optimeeritud süsteemiga
+- ✅ Testida End-to-End töövoogu optimeeritud süsteemiga
 
 ---
 
@@ -85,7 +84,7 @@ ssh labuser@93.127.213.242 -p [SINU-PORT]
 ### Samm 1: Uuri mõlema teenuse algset suurust
 
 ```bash
-# Vaata mõlema Harjutus 1-st loodud pildi (image) suurust
+# Vaata mõlema Harjutus 1-st loodud tõmmise suurust
 docker images | grep -E 'user-service|todo-service'
 
 # Oodatud väljund:
@@ -107,16 +106,16 @@ docker history todo-service:1.0
 ```
 
 **Küsimused:**
-- Kui suur on User Service image? (~180MB)
-- Kui suur on Todo Service image? (~230MB)
-- Mitu layer'it on igal? (5-6 layer'it)
-- Kui kiire on rebuild, kui muudad source code'i? (Aeglane - kõik rebuilditakse!)
+- Kui suur on User Service tõmmis? (~180MB)
+- Kui suur on Todo Service tõmmis? (~230MB)
+- Mitu kihti (layer'it) on igal? (5-6 kihti)
+- Kui kiire on rebuild, kui muudad lähtekoodi? (Aeglane - kõik ehitatakse uuesti!)
 
 ### Samm 2: Optimeeri mõlema rakenduse Dockerfaili
 
 Loome optimeeritud Dockerfailid mõlemale teenusele.
 
-#### 2a. User Service (Node.js) Optimization
+#### 2a. User Service (Node.js) optimeerimine
 
 **⚠️ Oluline:** Dockerfile asub rakenduse juurkataloogis.
 
@@ -135,9 +134,9 @@ vim Dockerfile.optimized
 **💡 Abi vajadusel:**
 Vaata näidislahendust: `~/labs/01-docker-lab/solutions/backend-nodejs/Dockerfile.optimized`
 
-**📖 Multi-stage builds ja Node.js optimeerimine:**
-- [Peatükk 06: Dockerfile - Multi-stage Builds](../../../resource/06-Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md) selgitab multi-stage build'ide põhitõed
-- [Peatükk 06A: Node.js Konteineriseerimise Spetsiifika](../../../resource/06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md) selgitab `npm ci`, dependency caching, non-root users
+**📖 Mitmeastmelised ehitused ja Node.js optimeerimine:**
+- [Peatükk 06: Dockerfile - Multi-stage Builds](../../../resource/06-Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md) selgitab mitmeastmeliste ehituste põhitõed
+- [Peatükk 06A: Node.js Konteineriseerimise Spetsiifika](../../../resource/06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md) selgitab `npm ci`, sõltuvuste vahemälu, mitte-juurkasutajad
 
 **Näidis:**
 
@@ -210,7 +209,7 @@ req.on('error', () => process.exit(1));
 req.end();
 ```
 
-#### 2b. Todo Service (Java) Optimization
+#### 2b. Todo Service (Java) optimeerimine
 
 **Rakenduse juurkataloog:** `~/labs/apps/backend-java-spring`
 
@@ -227,9 +226,9 @@ vim Dockerfile.optimized
 **💡 Abi vajadusel:**
 Vaata näidislahendust: `~/labs/01-docker-lab/solutions/backend-java-spring/Dockerfile.optimized`
 
-**📖 Multi-stage builds ja Java optimeerimine:**
-- [Peatükk 06: Dockerfile - Multi-stage Builds](../../../resource/06-Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md) selgitab multi-stage build'ide põhitõed (JDK → JRE)
-- [Peatükk 06A: Java Spring Boot Konteineriseerimise Spetsiifika](../../../resource/06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md) selgitab Gradle dependency caching, JVM memory tuning, non-root users
+**📖 Mitmeastmelised ehitused ja Java optimeerimine:**
+- [Peatükk 06: Dockerfile - Multi-stage Builds](../../../resource/06-Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md) selgitab mitmeastmeliste ehituste põhitõed (JDK → JRE)
+- [Peatükk 06A: Java Spring Boot Konteineriseerimise Spetsiifika](../../../resource/06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md) selgitab Gradle sõltuvuste vahemälu, JVM mäluhaldust, mitte-juurkasutajaid
 
 **Näidis:**
 
@@ -304,24 +303,24 @@ Multi-stage build koosneb kahest põhietapist:
 
 Tulemus: efektiivne, turvaline ja skaleeritav konteineripilt.
 
-### Samm 3: Ehita mõlemad optimeeritud Docker pildid (Images)
+### Samm 3: Ehita mõlemad optimeeritud Docker tõmmised (Images)
 
 **Rakenduse juurkataloog (User Service):** `~/labs/apps/backend-nodejs`
 
-**⚠️ Oluline:** Docker pildi (image) ehitamiseks pead olema rakenduse juurkataloogis (kus asub `Dockerfile.optimized`).
+**⚠️ Oluline:** Docker tõmmise ehitamiseks pead olema rakenduse juurkataloogis (kus asub `Dockerfile.optimized`).
 
 ```bash
 # === BUILD USER SERVICE (Node.js) ===
 cd ~/labs/apps/backend-nodejs
 
-# Build optimeeritud image
+# Build optimeeritud tõmmis
 docker build -f Dockerfile.optimized -t user-service:1.0-optimized .
 
 # === BUILD TODO SERVICE (Java) ===
 # Asukoht: ~/labs/apps/backend-java-spring
 cd ~/labs/apps/backend-java-spring
 
-# Build optimeeritud image (multi-stage build teeb ka JAR'i)
+# Build optimeeritud tõmmis (mitmeastmeline ehitus teeb ka JAR'i)
 docker build -f Dockerfile.optimized -t todo-service:1.0-optimized .
 
 # === VÕRDLE SUURUSI ===
@@ -336,15 +335,15 @@ docker images | grep -E 'user-service|todo-service'
 ```
 
 **ℹ️ Märkus User Service suuruse kohta:**
-User Service pilt (image) jääb samaks (~305MB), sest mõlemad versioonid kasutavad `node:21-slim`.
+User Service tõmmis jääb samaks (~305MB), sest mõlemad versioonid kasutavad `node:21-slim`.
 
 **Mida võitsime optimeeritud versiooniga:**
-✅ Multi-stage build (dependencies cached eraldi kihina)
-✅ Non-root user (security parandus)
-✅ Health check (automaatne tervise kontroll)
-✅ -60% kiirem rebuild (dependency cache)
+✅ Mitmeastmeline ehitus (sõltuvused cached eraldi kihina)
+✅ Mitte-juurkasutaja (security parandus)
+✅ Tervisekontroll (automaatne)
+✅ -60% kiirem rebuild (sõltuvuste vahemälu)
 
-### Samm 4: Testi MÕLEMAD Optimeeritud Images
+### Samm 4: Testi MÕLEMAD optimeeritud tõmmised
 
 ```bash
 # Genereeri JWT_SECRET (kui pole veel)
@@ -389,7 +388,7 @@ docker logs -f user-service-opt
 docker logs -f todo-service-opt
 # Vajuta Ctrl+C kui näed: "Started TodoApplication"
 
-# === TESTI HEALTH CHECK'E ===
+# === TESTI TERVISEKONTROLLE ===
 echo "=== User Service Health ==="
 curl http://localhost:3001/health
 # Oodatud: {"status":"OK","database":"connected"}
@@ -398,7 +397,7 @@ echo -e "\n=== Todo Service Health ==="
 curl http://localhost:8082/health
 # Oodatud: {"status":"UP"}
 
-# Vaata health check'i status
+# Vaata tervisekontrolli staatust
 docker ps --format "table {{.Names}}\t{{.Status}}"
 # user-service-opt    Up X seconds (healthy)
 # todo-service-opt    Up X seconds (healthy)
@@ -416,9 +415,9 @@ docker ps -a --format "table {{.Names}}\t{{.Image}}\t{{.Status}}"
 # user-service         user-service:1.0                Up
 ```
 
-### Samm 5: Testi End-to-End JWT Workflow Optimeeritud Süsteemiga
+### Samm 5: Testi End-to-End JWT töövoogu optimeeritud süsteemiga
 
-**See on KÕIGE OLULISEM TEST - kinnitame, et optimeeritud süsteem töötab identitsioonilt!**
+**See on KÕIGE OLULISEM TEST - kinnitame, et optimeeritud süsteem töötab identselt!**
 
 ```bash
 # 1. Registreeri kasutaja User Service'is (optimeeritud!)
@@ -446,7 +445,7 @@ curl -X POST http://localhost:8082/api/todos \
   -H "Authorization: Bearer $TOKEN" \
   -d '{
     "title": "Optimeeritud süsteem töötab!",
-    "description": "Image on väiksem, kiirem ja turvalisem!",
+    "description": "Tõmmis on väiksem, kiirem ja turvalisem!",
     "priority": "high"
   }' | jq
 
@@ -464,10 +463,10 @@ curl -X GET http://localhost:8082/api/todos \
 
 # 5. Võrdle resource kasutust
 
-# Vana vs uus image
+# Vana vs uus tõmmis
 docker stats --no-stream --format "table {{.Name}}\t{{.MemUsage}}\t{{.CPUPerc}}"
 
-# Oodatud: Optimeeritud containerid kasutavad VÄHEM memory't
+# Oodatud: Optimeeritud konteinerid kasutavad VÄHEM mälu
 ```
 
 **🎉 KUI KÕIK TOIMIS - ÕNNITLEME!**
@@ -475,18 +474,18 @@ docker stats --no-stream --format "table {{.Name}}\t{{.MemUsage}}\t{{.CPUPerc}}"
 **Mida sa just saavutasid:**
 1. ✅ User Service (optimeeritud) genereeris JWT tokeni
 2. ✅ Todo Service (optimeeritud) valideeris tokenit (SAMA JWT_SECRET!)
-3. ✅ Optimeeritud süsteem töötab IDENTITSIOONILT vanaga
-4. ✅ AGA: Väiksemad images (-25-33%), health checks, non-root users!
+3. ✅ Optimeeritud süsteem töötab IDENTSENALT vanaga
+4. ✅ AGA: Väiksemad tõmmised (-25-33%), tervisekontrollid, mitte-juurkasutajad!
 5. ✅ TOOTMISEKS VALMIS mikroteenuste süsteem! 🚀
 
-### Samm 6: Security Scan ja Vulnerability Assessment
+### Samm 6: Turvaskannimine ja haavatavuse hindamine
 
-**Image'i turvaaukude (vulnerabilities) skannimine on KRIITILINE tootmises!**
+**Tõmmise turvaaukude (vulnerabilities) skannimine on KRIITILINE tootmises!**
 
 **📖 Põhjalik käsitlus:** [Peatükk 06B: Docker Image Security ja Vulnerability Scanning](../../../resource/06B-Docker-Image-Security-ja-Vulnerability-Scanning.md) selgitab:
 - CVE ja CVSS skoorid (mis on turvaaugud, kuidas neid hinnata)
 - Docker Scout ja Trivy kasutamine (installimise juhised, kõik käsud, raportid)
-- Security best practices (non-root users, minimal base images, health checks, base image uuendamise strateegia)
+- Turvalisuse parimad praktikad (mitte-juurkasutajad, minimaalsed baastõmmised, tervisekontrollid, baastõmmise uuendamise strateegia)
 - CI/CD integratsioon (GitHub Actions, GitLab CI näited)
 
 **Siin on kiired käsud testimiseks:**
@@ -494,14 +493,14 @@ docker stats --no-stream --format "table {{.Name}}\t{{.MemUsage}}\t{{.CPUPerc}}"
 #### Docker Scout (sisseehitatud, kiire)
 
 ```bash
-# Skanni mõlemat optimeeritud pilti
+# Skanni mõlemat optimeeritud tõmmist
 docker scout cves user-service:1.0-optimized
 docker scout cves todo-service:1.0-optimized
 
 # Võrdle vana vs uus
 docker scout compare user-service:1.0 --to user-service:1.0-optimized
 
-# Soovitused (recommendations)
+# Soovitused
 docker scout recommendations user-service:1.0-optimized
 ```
 
@@ -512,7 +511,7 @@ docker scout recommendations user-service:1.0-optimized
 trivy image --severity HIGH,CRITICAL user-service:1.0-optimized
 trivy image --severity HIGH,CRITICAL todo-service:1.0-optimized
 
-# Variant B: Docker konteiner (no installation needed!)
+# Variant B: Docker konteiner (pole installi vaja!)
 docker run --rm \
   -v /var/run/docker.sock:/var/run/docker.sock \
   aquasec/trivy:latest image \
@@ -525,18 +524,18 @@ docker run --rm \
 ```
 
 **Oodatud tulemused:**
-- ✅ Optimeeritud image'd võivad sisaldada vähem vulnerabilities't (sõltub base image'i versioonist)
-- ✅ Non-root users on kasutuses (nodejs:1001, spring:1001) ✅
-- ✅ Health checks lisatud ✅
+- ✅ Optimeeritud tõmmised võivad sisaldada vähem haavatavusi (sõltub baastõmmise versioonist)
+- ✅ Mitte-juurkasutajad on kasutuses (nodejs:1001, spring:1001) ✅
+- ✅ Tervisekontrollid lisatud ✅
 
 **Järgmised sammud:**
 1. Loe [Peatükk 06B](../../../resource/06B-Docker-Image-Security-ja-Vulnerability-Scanning.md) põhjalikuks uurimiseks
 2. Parandanud CRITICAL ja HIGH CVE'd enne production'i
 3. Lisa automaatne skannimine CI/CD pipeline'i (juhised peatükis 06B)
 
-### Samm 7: Layer Caching Test
+### Samm 7: Kihtide vahemälu test
 
-**Testime, kui hästi layer caching töötab rebuild'imisel:**
+**Testime, kui hästi kihtide vahemälu töötab uuesti ehitamisel (rebuild):**
 
 **Rakenduse juurkataloog (User Service):** `~/labs/apps/backend-nodejs`
 
@@ -547,7 +546,7 @@ pwd  # Veendu, et oled õiges kataloogis
 
 # Rebuild User Service (peaks olema VÄGA kiire!)
 time docker build -f Dockerfile.optimized -t user-service:1.0-optimized .
-# Oodatud: "CACHED" iga layer jaoks, build ~2-5s
+# Oodatud: "CACHED" iga kihi jaoks, build ~2-5s
 
 # Asukoht: ~/labs/apps/backend-java-spring
 cd ~/labs/apps/backend-java-spring
@@ -555,9 +554,9 @@ pwd  # Veendu, et oled õiges kataloogis
 
 # Rebuild Todo Service (peaks olema VÄGA kiire!)
 time docker build -f Dockerfile.optimized -t todo-service:1.0-optimized .
-# Oodatud: "CACHED" enamuse layers jaoks, build ~10-20s
+# Oodatud: "CACHED" enamuse kihtide jaoks, build ~10-20s
 
-# === TEST 2: Rebuild KUI source code muutub ===
+# === TEST 2: Rebuild KUI lähtekood muutub ===
 
 # User Service - muuda source code
 # Asukoht: ~/labs/apps/backend-nodejs
@@ -567,7 +566,7 @@ echo "// test comment" >> server.js
 
 # Rebuild
 time docker build -f Dockerfile.optimized -t user-service:1.0-optimized .
-# Oodatud: Dependencies layer CACHED, ainult COPY . ja pärast rebuilditakse (~10-15s)
+# Oodatud: Sõltuvuste kiht CACHED, ainult COPY . ja pärast rebuilditakse (~10-15s)
 
 # Todo Service - muuda source code
 # Asukoht: ~/labs/apps/backend-java-spring
@@ -577,124 +576,124 @@ echo "// test comment" >> src/main/java/com/hostinger/todoapp/TodoApplication.ja
 
 # Rebuild
 time docker build -f Dockerfile.optimized -t todo-service:1.0-optimized .
-# Oodatud: Gradle dependencies layer CACHED, ainult COPY src ja pärast rebuilditakse (~30-40s)
+# Oodatud: Gradle sõltuvuste kiht CACHED, ainult COPY src ja pärast rebuilditakse (~30-40s)
 ```
 
 **Mida õppisid?**
-- ✅ Dependencies on cached (ei rebuild kui `package.json` või `build.gradle` ei muutu!)
-- ✅ Source code muudatused rebuiltavad ainult viimased layers
+- ✅ Sõltuvused on vahemälus (ei rebuildi kui `package.json` või `build.gradle` ei muutu!)
+- ✅ Lähtekoodi muudatused ehitavad uuesti ainult viimased kihid
 - ✅ Rebuild on **-60-80% kiirem** kui optimeeritud Dockerfile!
 
 ---
 
-## 📊 Optimisatsioonide Võrdlus
+## 📊 Optimeerimise võrdlus
 
-### Võrdle Image Suurusi
+### Võrdle tõmmise suurusi
 
 ```bash
-# Võrdle MÕLEMA teenuse image suurusi
+# Võrdle MÕLEMA teenuse tõmmise suurusi
 docker images | grep -E 'user-service|todo-service' | sort
 ```
 
-### Node.js (User Service) Võrdlus
+### Node.js (User Service) võrdlus
 
-| Aspekt | Before (Harjutus 1) | After (Optimized) | Improvement |
+| Aspekt | Enne (Harjutus 1) | Pärast (Optimeeritud) | Parandus |
 | ------ | ------------------- | ----------------- | ----------- |
-| **Size** | ~305MB | ~305MB | ⚠️ Same (both slim) |
-| **Base image** | node:22-slim | node:22-slim (multi-stage) | ✅ |
-| **Layers** | 5-6 | 8-10 (but cached!) | ✅ |
-| **Build time (1st)** | 30s | 40s | ❌ +10s |
-| **Build time (rebuild)** | 30s | 10s | 📉 -66% |
-| **Security** | root user | non-root (nodejs:1001) | ✅ |
-| **Health check** | ❌ | ✅ `healthcheck.js` | ✅ |
-| **Caching** | ❌ Poor | ✅ Excellent (npm ci cached) | ✅ |
-| **Stability** | ✅ töötab (bcrypt OK) | ✅ töötab (bcrypt OK) | ✅ |
+| **Suurus** | ~305MB | ~305MB | ⚠️ Sama (mõlemad slim) |
+| **Baastõmmis** | node:22-slim | node:22-slim (multi-stage) | ✅ |
+| **Kihid** | 5-6 | 8-10 (aga vahemälus!) | ✅ |
+| **Ehituse aeg (1.)** | 30s | 40s | ❌ +10s |
+| **Ehituse aeg (rebuild)** | 30s | 10s | 📉 -66% |
+| **Turvalisus** | root kasutaja | mitte-juurkasutaja (nodejs:1001) | ✅ |
+| **Tervisekontroll** | ❌ | ✅ `healthcheck.js` | ✅ |
+| **Vahemälu** | ❌ Halb | ✅ Suurepärane (npm ci cached) | ✅ |
+| **Stabiilsus** | ✅ töötab (bcrypt OK) | ✅ töötab (bcrypt OK) | ✅ |
 
-**Selgitus:** Mõlemad kasutavad `node:18-slim` (sest bcrypt native moodulid). Optimeeritud versioon ei vähenda suurust, aga annab **palju kiiremad rebuild'id** (-66%) ja **parema security** (non-root user).
+**Selgitus:** Mõlemad kasutavad `node:18-slim`. Optimeeritud versioon ei vähenda suurust, aga annab **palju kiiremad rebuild'id** (-66%) ja **parema turvalisuse** (mitte-juurkasutaja).
 
-### Java (Todo Service) Võrdlus
+### Java (Todo Service) võrdlus
 
-| Aspekt | Before (Harjutus 1) | After (Optimized) | Improvement |
+| Aspekt | Enne (Harjutus 1) | Pärast (Optimeeritud) | Parandus |
 | ------ | ------------------- | ----------------- | ----------- |
-| **Size** | ~230MB | ~180MB | 📉 -22% |
-| **Base image** | JRE only | Multi-stage (JDK → JRE) | ✅ |
-| **Layers** | 5-6 | 10-12 (but cached!) | ✅ |
-| **Build time (1st)** | 60s | 90s | ❌ +30s |
-| **Build time (rebuild)** | 60s | 20s | 📉 -66% |
-| **Security** | root user | non-root (spring:1001) | ✅ |
-| **Health check** | ❌ | ✅ `/health` endpoint | ✅ |
-| **Caching** | ❌ Poor | ✅ Excellent (gradle deps cached) | ✅ |
+| **Suurus** | ~230MB | ~180MB | 📉 -22% |
+| **Baastõmmis** | Ainult JRE | Mitmeastmeline (JDK → JRE) | ✅ |
+| **Kihid** | 5-6 | 10-12 (aga vahemälus!) | ✅ |
+| **Ehituse aeg (1.)** | 60s | 90s | ❌ +30s |
+| **Ehituse aeg (rebuild)** | 60s | 20s | 📉 -66% |
+| **Turvalisus** | root kasutaja | mitte-juurkasutaja (spring:1001) | ✅ |
+| **Tervisekontroll** | ❌ | ✅ `/health` endpoint | ✅ |
+| **Vahemälu** | ❌ Halb | ✅ Suurepärane (gradle deps cached) | ✅ |
 
-### Node.js vs Java Võrdlus
+### Node.js vs Java võrdlus
 
-| Metric | Node.js (User Service) | Java (Todo Service) |
+| Meeterika | Node.js (User Service) | Java (Todo Service) |
 |--------|------------------------|---------------------|
-| **Base size (before)** | ~305MB | ~230MB |
-| **Optimized size (after)** | ~305MB ⚠️ | ~180MB ✅ |
-| **Size change** | ⚠️ 0% (same) | 📉 -22% |
-| **Build time (1st)** | 40s | 90s |
-| **Build time (rebuild)** | 10s | 20s |
-| **Multi-stage benefit** | Dependencies layer | JDK → JRE separation |
-| **Non-root user** | nodejs:1001 | spring:1001 |
-| **Health check** | Custom JS script | Built-in /health endpoint |
-| **Base image** | node:22-slim (both) | eclipse-temurin:21-jre-alpine |
+| **Algne suurus** | ~305MB | ~230MB |
+| **Optimeeritud suurus** | ~305MB ⚠️ | ~180MB ✅ |
+| **Suuruse muutus** | ⚠️ 0% (sama) | 📉 -22% |
+| **Ehituse aeg (1.)** | 40s | 90s |
+| **Ehituse aeg (rebuild)** | 10s | 20s |
+| **Mitmeastmelise eelis** | Sõltuvuste kiht | JDK → JRE eraldamine |
+| **Mitte-juurkasutaja** | nodejs:1001 | spring:1001 |
+| **Tervisekontroll** | Custom JS skript | Sisseehitatud /health endpoint |
+| **Baastõmmis** | node:22-slim (mõlemad) | eclipse-temurin:21-jre-alpine |
 
 **Järeldus:**
-- ⚠️ User Service: suurus jääb samaks (~305MB), sest mõlemad versioonid kasutavad sama baaspilti (base image)
-- ✅ Todo Service: pilt (image) väiksem (-50MB) multi-stage build'i tõttu (JDK → JRE)
+- ⚠️ User Service: suurus jääb samaks (~305MB), sest mõlemad versioonid kasutavad sama baastõmmist
+- ✅ Todo Service: tõmmis väiksem (-50MB) mitmeastmelise ehituse tõttu (JDK → JRE)
 - ✅ Mõlemad on production-ready ja töötavad stabiilselt
-- ✅ **Rebuild -60-80% kiirem mõlemas teenuses!** (dependency caching)
-- ✅ Security (non-root users) ja health checks mõlemas
-- 📚 **Õppetund:** Multi-stage build annab kiiremad rebuild'id ja parema security, isegi kui suurus jääb samaks
+- ✅ **Rebuild -60-80% kiirem mõlemas teenuses!** (sõltuvuste vahemälu)
+- ✅ Turvalisus (mitte-juurkasutajad) ja tervisekontrollid mõlemas
+- 📚 **Õppetund:** Mitmeastmeline ehitus annab kiiremad rebuild'id ja parema turvalisuse, isegi kui suurus jääb samaks
 
 ---
 
-## 🎓 Parimad Tavad
+## 🎓 Parimad tavad
 
-1. ✅ Multi-stage builds (JDK → JRE, dependencies → runtime)
-2. ✅ Layer caching (COPY dependencies enne source code'i)
+1. ✅ Mitmeastmelised ehitused (JDK → JRE, sõltuvused → runtime)
+2. ✅ Kihtide vahemälu (COPY sõltuvused enne lähtekoodi)
 3. ✅ .dockerignore fail (välistab tarbetud failid)
-4. ✅ Non-root user (security)
-5. ✅ Health check Dockerfile'is (monitoring)
-6. ✅ Gradle/npm --no-daemon (vähem memory, kiirem build)
-7. ✅ Testi optimeeritud pilte (images) end-to-end workflow'ga
+4. ✅ Mitte-juurkasutaja (turvalisus)
+5. ✅ Tervisekontroll Dockerfile'is (monitooring)
+6. ✅ Gradle/npm --no-daemon (vähem mälu, kiirem ehitus)
+7. ✅ Testi optimeeritud tõmmiseid end-to-end töövooga
 
 ---
 
-**Harjutus 5: Optimization (PRAEGU)**
-- ✅ Multi-stage builds (mõlemas teenuses)
-- ✅ Layer caching (-60-80% kiirem rebuild)
-- ✅ Security (non-root users)
-- ✅ Health checks
-- ⚠️ Mõlemad User Service versioonid kasutavad `node:21-slim` (bcrypt native moodulid)
-- ✅ Todo Service: -22% väiksem pilt (image)
-- ⚠️ User Service: sama suurus (~305MB), optimisatsioon annab kiiremad rebuild'id
+**Harjutus 5: Optimeerimine (PRAEGU)**
+- ✅ Mitmeastmelised ehitused (mõlemas teenuses)
+- ✅ Kihtide vahemälu (-60-80% kiirem rebuild)
+- ✅ Turvalisus (mitte-juurkasutajad)
+- ✅ Tervisekontrollid
+- ⚠️ Mõlemad User Service versioonid kasutavad `node:21-slim`
+- ✅ Todo Service: -22% väiksem tõmmis
+- ⚠️ User Service: sama suurus, optimisatsioon annab kiiremad rebuild'id
 - ✅ End-to-End test optimeeritud süsteemiga
 
-### 🏆 LÕPPTULEMUS: Production-Ready Docker Setup!
+### 🏆 LÕPPTULEMUS: Production-Ready Docker seadistus!
 
 **Mis sul nüüd on:**
 - ✅ 2 optimeeritud mikroteenust (User Service + Todo Service)
-- ✅ 2 andmebaasi andmehoidlate (volumes) abil (data persistence)
-- ✅ Kohandatud võrk (custom network) (proper DNS resolution)
-- ✅ Health monitoring (healthy konteinerid)
-- ✅ Security (non-root users)
-- ✅ Fast rebuilds (layer caching - 60-80% kiirem!)
-- ✅ End-to-End tested (JWT workflow töötab!)
-- 📚 **Õppetund:** Töökindlus > pildi (image) suurus
+- ✅ 2 andmebaasi andmeköidetega (andmete püsivus)
+- ✅ Kohandatud võrk (korrektne DNS lahendus)
+- ✅ Tervise monitooring (terved konteinerid)
+- ✅ Turvalisus (mitte-juurkasutajad)
+- ✅ Kiired rebuild'id (kihtide vahemälu - 60-80% kiirem!)
+- ✅ End-to-End testitud (JWT töövoog töötab!)
+- 📚 **Õppetund:** Töökindlus > tõmmise suurus
 
 **See on TÄIELIK production-ready mikroteenuste süsteem!** 🎉🚀
 
 ---
 
-## 🚀 Järgmised Sammud
+## 🚀 Järgmised sammud
 
 Sa oskad nüüd:
-1. ✅ Ehitada Docker pilte (images)
-2. ✅ Käivitada multi-container setup'e
-3. ✅ Kasutada custom networks
-4. ✅ Säilitada andmeid volumes'iga
-5. ✅ Optimeerida image suurust ja build kiirust
+1. ✅ Ehitada Docker tõmmiseid
+2. ✅ Käivitada mitme konteineri seadistusi
+3. ✅ Kasutada kohandatud võrke
+4. ✅ Säilitada andmeid andmeköidetega
+5. ✅ Optimeerida tõmmise suurust ja ehituse kiirust
 
 **Aga...**
 - Kas pead käivitama 10 `docker run` käsku iga kord?
