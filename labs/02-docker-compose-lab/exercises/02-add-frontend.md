@@ -1,18 +1,17 @@
-# Harjutus 2: Lisa Frontend Teenus
+# Harjutus 2: Lisa frontend teenus
 
-**Kestus:** 45 minutit
-**Eesmärk:** Lisa Frontend teenus (service) Nginx'iga (5. komponent)
+**Eesmärk:** Lisa Frontend teenus Nginx'iga (5. komponent)
 
 ---
 
-## 📋 Ülevaade
+## 📋 Harjutuse ülevaade
 
-Selles harjutuses laiendad Harjutus 1 docker-compose.yml faili, lisades **Frontend teenuse (service)**. Lood täieliku full-stack rakenduse koos kasutajaliidesega, mis suhtleb mõlema backend'iga.
+Selles harjutuses laiendad Harjutus 1 docker-compose.yml faili, lisades **Frontend teenuse**. Lood täieliku full-stack rakenduse koos kasutajaliidesega, mis suhtleb mõlema backend'iga.
 
 **Mis on uut:**
-- Frontend teenus (service) (Nginx + staatiline HTML/CSS/JS)
-- 5-tier arhitektuur (Presentation → Application → Data)
-- Volume mount staatiliste failide (static files) jaoks
+- Frontend teenus (Nginx + staatiline HTML/CSS/JS)
+- 5-kihiline arhitektuur (Presentation → Application → Data)
+- Andmeköite haakimine staatiliste failide jaoks
 - Teenuste vaheline suhtlus brauseri kaudu
 
 ---
@@ -21,10 +20,10 @@ Selles harjutuses laiendad Harjutus 1 docker-compose.yml faili, lisades **Fronte
 
 Peale selle harjutuse läbimist oskad:
 
-- ✅ Lisada Frontend teenust (service) Docker Compose stack'i
-- ✅ Konfigureerida Nginx teenust (service)
-- ✅ Mount'ida staatilisi faile (static files) volume'iga
-- ✅ Hallata 5-tier arhitektuuri
+- ✅ Lisada Frontend teenust Docker Compose stack'i
+- ✅ Konfigureerida Nginx teenust
+- ✅ Haakida (mount) staatilisi faile andmeköitega
+- ✅ Hallata 5-kihilist arhitektuuri
 - ✅ Testida täielikku rakendust brauseris
 - ✅ Debuggida frontend-backend suhtlust
 
@@ -172,7 +171,7 @@ curl http://localhost:8081/health
 
 ## 📝 Sammud
 
-### Samm 1: Tutvu Frontend Lähtekoodiga (5 min)
+### Samm 1: Tutvu frontend lähtekoodiga
 
 Frontend rakendus on juba valmis kirjutatud (`labs/apps/frontend/`):
 
@@ -187,9 +186,9 @@ ls -la ../../apps/frontend/
 ```
 
 **Frontend funktsioonid:**
-- Login vorm (suhtleb User Service'iga)
-- Register vorm (suhtleb User Service'iga)
-- Todo list (suhtleb Todo Service'iga)
+- Login vorm (suhtleb User teenusega)
+- Register vorm (suhtleb User teenusega)
+- Todo list (suhtleb Todo teenusega)
 - JWT token'i haldamine (localStorage)
 
 **Ava ja vaata faile:**
@@ -204,7 +203,7 @@ head -50 ../../apps/frontend/app.js
 
 ---
 
-### Samm 2: Lisa Frontend Teenus docker-compose.yml'i (15 min)
+### Samm 2: Lisa frontend teenus docker-compose.yml'i
 
 Ava docker-compose.yml fail:
 
@@ -213,7 +212,7 @@ cd compose-project
 vim docker-compose.yml
 ```
 
-Lisa **frontend teenus (service)** järgmise struktuuri järgi (peale todo-service'i, enne volumes:):
+Lisa **frontend teenus** järgmise struktuuri järgi (peale todo-service'i, enne volumes:):
 
 ```yaml
   # ==========================================================================
@@ -246,7 +245,7 @@ Salvesta: `Esc`, siis `:wq`, `Enter`
 
 ---
 
-### Samm 2.5: Lisa Nginx Reverse Proxy Konfiguratsioon (10 min)
+### Samm 2.5: Lisa Nginx reverse proxy konfiguratsioon
 
 **Miks see on vajalik?**
 
@@ -406,12 +405,12 @@ Sinu brauserist tuleb päring vastavalt sinu kasutajale:
 
 ---
 
-### Samm 3: Mõista Frontend Konfiguratsiooni (3 min)
+### Samm 3: Mõista frontend konfiguratsiooni
 
 **Analüüsi olulisemad osad docker-compose.yml'ist:**
 
 #### `image: nginx:alpine`
-- Kerge Nginx pilt (~10MB)
+- Kerge Nginx tõmmis (~10MB)
 
 #### `volumes:`
 ```yaml
@@ -430,7 +429,7 @@ Sinu brauserist tuleb päring vastavalt sinu kasutajale:
 
 ---
 
-### Samm 4: Valideeri ja Käivita (5 min)
+### Samm 4: Valideeri ja käivita
 
 ```bash
 # Valideeri YAML syntax'it
@@ -439,13 +438,13 @@ docker compose config
 # Peata olemasolev stack
 docker compose down
 
-# Käivita uuesti 5 teenusega (service)
+# Käivita uuesti 5 teenusega
 docker compose up -d
 
 # Kontrolli staatust
 docker compose ps
 
-# Peaksid nägema 5 teenust (services):
+# Peaksid nägema 5 teenust:
 # NAME            IMAGE                        STATUS
 # frontend        nginx:alpine                 Up (healthy)
 # postgres-todo   postgres:16-alpine           Up (healthy)
@@ -465,9 +464,9 @@ docker compose logs frontend
 
 ---
 
-### Samm 5: Testi Brauseris (10 min)
+### Samm 5: Testi brauseris
 
-#### Test 1: Ava Frontend
+#### Test 1: Ava frontend
 
 **Brauseris (oma arvutist):**
 
@@ -482,7 +481,7 @@ Ava üks järgnevatest URL-idest vastavalt oma kasutajale (vaata "Sinu Testimise
 - Pealkiri: "Todo Application"
 - Stiilitud liides
 
-#### Test 2: Registreeri Uus Kasutaja
+#### Test 2: Registreeri uus kasutaja
 
 1. Kliki "Register" tab'i
 2. Sisesta:
@@ -521,9 +520,9 @@ Ava üks järgnevatest URL-idest vastavalt oma kasutajale (vaata "Sinu Testimise
 
 ---
 
-### Samm 6: Debug Frontend-Backend Suhtlust (5 min)
+### Samm 6: Debug frontend-backend suhtlust
 
-#### Kontrolli Brauseri Console'i
+#### Kontrolli brauseri konsooli
 
 Vajuta `F12` ja ava "Console" tab.
 
@@ -562,7 +561,7 @@ docker compose logs frontend | tail -20
 
 # User Service logid (proxy'd päringud)
 docker compose logs user-service | tail -20
-# Peaksid nägema API päringuid (requests):
+# Peaksid nägema API päringuid:
 # user-service  | POST /api/auth/register 201
 # user-service  | POST /api/auth/login 200
 
@@ -577,11 +576,11 @@ docker compose logs -f
 
 ---
 
-## ✅ Kontrolli Tulemusi
+## ✅ Kontrolli tulemusi
 
 Peale selle harjutuse läbimist peaksid omama:
 
-- [ ] **docker-compose.yml** fail 5 teenusega (service)
+- [ ] **docker-compose.yml** fail 5 teenusega
 - [ ] **Frontend** käivitub ja on kättesaadav portis 8080
 - [ ] **Brauserist saab:**
   - [ ] Registreerida uut kasutajat
@@ -591,9 +590,9 @@ Peale selle harjutuse läbimist peaksid omama:
   - [ ] Kustutada todo'sid
   - [ ] Välja logida
 - [ ] **Frontend suhtleb edukalt:**
-  - [ ] User Service'iga (port 3000)
-  - [ ] Todo Service'iga (port 8081)
-- [ ] **End-to-End workflow toimib brauserist**
+  - [ ] User teenusega (port 3000)
+  - [ ] Todo teenusega (port 8081)
+- [ ] **End-to-End töövoog toimib brauserist**
 
 ---
 
@@ -602,7 +601,7 @@ Peale selle harjutuse läbimist peaksid omama:
 ### Kontroll-käsud:
 
 ```bash
-# 1. Kas kõik 5 teenust (services) töötavad?
+# 1. Kas kõik 5 teenust töötavad?
 docker compose ps
 # Kõik peaksid olema UP ja HEALTHY
 
@@ -610,7 +609,7 @@ docker compose ps
 curl http://localhost:8080
 # Peaks tagastama HTML
 
-# 3. Kas staatilised failid (static files) on õigesti mount'itud?
+# 3. Kas staatilised failid on õigesti mount'itud?
 docker compose exec frontend ls /usr/share/nginx/html
 # Peaks nägema: index.html, app.js, styles.css
 
@@ -621,15 +620,15 @@ docker compose exec frontend nginx -t
 
 ---
 
-## 🎓 Õpitud Mõisted
+## 🎓 Õpitud mõisted
 
-### Nginx Mõisted:
+### Nginx mõisted:
 
-- **nginx:alpine** - Kerge Nginx pilt (image) (~10MB)
+- **nginx:alpine** - Kerge Nginx tõmmis (~10MB)
 - **/usr/share/nginx/html** - Nginx vaikimisi web root kataloog
 - **:ro** (read-only) - Konteiner ei saa mount'itud faile muuta
 
-### Docker Compose Volume Mount:
+### Docker Compose andmeköite haakimine:
 
 ```yaml
 volumes:
@@ -640,25 +639,25 @@ volumes:
 **Tähendus:**
 - `../../apps/frontend` - Host masina kataloog
 - `/usr/share/nginx/html` - Konteineri kataloog
-- `:ro` - Read-only (optional)
+- `:ro` - Read-only (valikuline)
 
-### Frontend-Backend Suhtlus:
+### Frontend-Backend suhtlus:
 
 ```
 Browser → Frontend (Nginx:8080)
   → JavaScript (app.js) teeb API calls:
     → User Service (3000) - auth, users
     → Todo Service (8081) - todos
-  ← JSON vastused (responses)
+  ← JSON vastused
 ← Renderdab UI
 ```
 
 ---
 
-## 💡 Parimad Tavad
+## 💡 Parimad tavad
 
 1. **Kasuta read-only mount'e** - Nginx ei vaja write õigusi
-2. **Kasuta alpine pilte (images)** - Väiksemad, kiiremad
+2. **Kasuta alpine tõmmiseid** - Väiksemad, kiiremad
 3. **Määra depends_on** - Frontend vajab backend'i
 4. **Lisa healthcheck** - Tea, millal Nginx on valmis
 5. **Eraldi frontend ja backend portid** - Selgem debug
@@ -797,9 +796,9 @@ docker compose up -d --force-recreate user-service todo-service
 Suurepärane! Nüüd on sul täielik full-stack rakendus Docker Compose'iga!
 
 **Mis edasi?**
-- ✅ 5 teenust (services) töötavad
+- ✅ 5 teenust töötavad
 - ✅ Frontend suhtleb backend'idega
-- ✅ End-to-End workflow brauserist
+- ✅ End-to-End töövoog brauserist
 - ⏭️ **Järgmine:** Environment Management (.env failid)
 
 **Jätka:** [Harjutus 3: Environment Management](03-environment-management.md)

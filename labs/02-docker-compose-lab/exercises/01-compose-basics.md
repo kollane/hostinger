@@ -1,13 +1,12 @@
-# Harjutus 1: Docker Compose Alused
+# Harjutus 1: Docker Compose alused
 
-**Kestus:** 60 minutit
-**Eesmärk:** Konverteeri Lab 1 lõpuseisu (4 konteinerit) docker-compose.yml failiks
+**Eesmärk:** Konverteeri Lab 1 lõpuseis (4 konteinerit) docker-compose.yml failiks
 
 ---
 
-## 📋 Ülevaade
+## 📋 Harjutuse ülevaade
 
-Selles harjutuses võtad **Labor 1 lõpuseisu** (4 töötavat konteinerit manuaalsete `docker run` käskudega) ja konverteerid need üheks docker-compose.yml failiks. Õpid Docker Compose põhimõisteid: services, networks, volumes,  ja depends_on.
+Selles harjutuses võtad **Lab 1 lõpuseisu** (4 töötavat konteinerit manuaalsete `docker run` käskudega) ja konverteerid need üheks docker-compose.yml failiks. Õpid Docker Compose põhimõisteid: services, networks, volumes ja depends_on.
 
 **Enne vs Peale:**
 - **Enne (Lab 1):** 4 käsku `docker run` iga konteineri jaoks
@@ -20,12 +19,12 @@ Selles harjutuses võtad **Labor 1 lõpuseisu** (4 töötavat konteinerit manuaa
 Peale selle harjutuse läbimist oskad:
 
 - ✅ Konverteerida `docker run` käske docker-compose.yml failiks
-- ✅ Defineerida teenuseid (services)
-- ✅ Kasutada olemasolevaid pilte (images)
-- ✅ Konfigureerida võrke (networks) ja andmehoidlaid (volumes)
+- ✅ Defineerida teenuseid
+- ✅ Kasutada olemasolevaid tõmmiseid
+- ✅ Konfigureerida võrke ja andmeköiteid
 - ✅ Hallata teenuste sõltuvusi (`depends_on`)
 - ✅ Kasutada `docker compose` põhikäske
-- ✅ Testida End-to-End JWT workflow
+- ✅ Testida End-to-End JWT töövoogu
 
 ---
 
@@ -421,7 +420,7 @@ Salvesta: `Esc`, siis `:wq`, `Enter`
 
 ---
 
-### Samm 4: Mõista Struktuuri (10 min)
+### Samm 4: Mõista struktuuri
 
 **Võta aega ja analüüsi faili:**
 
@@ -431,21 +430,21 @@ Docker Compose faili versiooni number. Versioon 3.8 toetab kõiki uuemaid funkts
 
 #### `services:` Blokk
 
-Defineerib 4 teenust (service):
+Defineerib 4 teenust:
 - `postgres-user` - PostgreSQL kasutajate andmebaasile
 - `postgres-todo` - PostgreSQL todo'de andmebaasile
 - `user-service` - Node.js backend
 - `todo-service` - Java Spring Boot backend
 
-**Iga teenus (service) sisaldab:**
-- `image:` - Mis pilti (image) kasutada
+**Iga teenus sisaldab:**
+- `image:` - Mis tõmmist kasutada
 - `container_name:` - Konteineri nimi
-- `environment:` - Keskkonna muutujad (environment variables)
-- `ports:` - Portide vastendamine (port mapping)
-- `networks:` - Mis võrgus (network) käivitada
-- `volumes:` - Andmehoidlad (volumes)
+- `environment:` - Keskkonnamuutujad
+- `ports:` - Pordivastendus
+- `networks:` - Mis võrgus käivitada
+- `volumes:` - Andmeköited
 - `depends_on:` - Sõltuvused teistest teenustest
-- `healthcheck:` - Seisukorra kontroll (health check)
+- `healthcheck:` - Tervisekontroll
 - `restart:` - Restart poliitika
 
 #### `healthcheck:` - Oluline!
@@ -461,10 +460,10 @@ healthcheck:
 ```
 
 **Miks `node healthcheck.js`, mitte `wget` või `curl`?**
-- Node.js 22-slim pilt (image) **EI sisalda** `wget` ega `curl` tööriistu
+- Node.js 22-slim tõmmis **EI sisalda** `wget` ega `curl` tööriistu
 - `healthcheck.js` fail on juba konteineris olemas (Lab 1'st)
 - Node on garanteeritult olemas (kuna see on Node.js konteiner)
-- Docker Compose healthcheck **override'ib** Dockerfile HEALTHCHECK'i
+- Docker Compose healthcheck **kirjutab üle** Dockerfile HEALTHCHECK'i
 
 **Todo Service healthcheck:**
 ```yaml
@@ -473,7 +472,7 @@ healthcheck:
 ```
 
 **Miks todo-service võib kasutada `wget`?**
-- Java runtime pilt (eclipse-temurin) sisaldab `wget` tööriista
+- Java runtime tõmmis (eclipse-temurin) sisaldab `wget` tööriista
 - Kui `wget` puuduks, kasutaks `curl` või Java HTTP klienti
 
 **Healthcheck parameetrid:**
@@ -533,9 +532,9 @@ volumes:
 ```
 
 **`external: true` tähendab:**
-- Docker Compose EI loo uut andmehoidlat (volume)
-- Kasutab Lab 1'st juba loodud andmehoidlat (volume)
-- Kui andmehoidla (volume) ei eksisteeri, saad vea (error)
+- Docker Compose EI loo uut andmeköidet
+- Kasutab Lab 1'st juba loodud andmeköidet
+- Kui andmeköide ei eksisteeri, saad vea (error)
 
 #### `networks:` Blokk
 
@@ -546,9 +545,9 @@ networks:
 ```
 
 **`external: true` tähendab:**
-- Docker Compose EI loo uut võrku (network)
-- Kasutab Lab 1'st juba loodud võrku (network)
-- Kui võrk (network) ei eksisteeri, saad vea (error)
+- Docker Compose EI loo uut võrku
+- Kasutab Lab 1'st juba loodud võrku
+- Kui võrk ei eksisteeri, saad vea (error)
 
 #### `depends_on` + `condition`
 
@@ -584,10 +583,10 @@ docker compose config
 
 ---
 
-### Samm 6: Käivita Stack (5 min)
+### Samm 6: Käivita Stack
 
 ```bash
-# Käivita kõik teenused (services)
+# Käivita kõik teenused
 docker compose up -d
 
 # Väljund:
@@ -600,7 +599,7 @@ docker compose up -d
 
 **Märkused:**
 - `-d` = detached mode (taustal)
-- Docker Compose käivitab teenused (services) õiges järjekorras (depends_on)
+- Docker Compose käivitab teenused õiges järjekorras (depends_on)
 
 **Kontrolli staatust:**
 
@@ -617,16 +616,16 @@ docker compose ps
 
 ---
 
-### Samm 7: Vaata Loge (3 min)
+### Samm 7: Vaata Loge
 
 ```bash
-# Kõigi teenuste (services) logid
+# Kõigi teenuste logid
 docker compose logs
 
-# Konkreetse teenuse (service) logid
+# Konkreetse teenuse logid
 docker compose logs user-service
 
-# Follow mode (real-time)
+# Follow mode (reaalajas)
 docker compose logs -f user-service
 
 # Viimased 50 rida
@@ -753,7 +752,7 @@ curl http://localhost:8081/api/todos \
 
 ---
 
-### Samm 9: Kontrolli Andmete Püsivust (5 min)
+### Samm 9: Kontrolli andmete püsivust
 
 **Küsimus:** Kas andmed püsivad peale restart'i?
 
@@ -769,10 +768,10 @@ docker compose down
 #  ✔ Container postgres-todo  Removed
 ```
 
-**MÄRKUS:** Andmehoidlad (volumes) ja võrk (network) EI kustutatud (external: true)!
+**MÄRKUS:** Andmeköited ja võrk EI kustutatud (external: true)!
 
 ```bash
-# Kontrolli andmehoidlate (volumes) olemasolu
+# Kontrolli andmeköidete olemasolu
 docker volume ls | grep postgres
 # Peaks nägema: postgres-user-data ja postgres-todo-data
 
@@ -838,19 +837,19 @@ docker compose up -d --build user-service
 
 ---
 
-## ✅ Kontrolli Tulemusi
+## ✅ Kontrolli tulemusi
 
 Peale selle harjutuse läbimist peaksid omama:
 
-- [ ] **docker-compose.yml** fail 4 teenusega (service)
+- [ ] **docker-compose.yml** fail 4 teenusega
 - [ ] **Töötav stack** (vaata `docker compose ps`)
-- [ ] **Healthy status** kõigi teenuste (services) jaoks
-- [ ] **Andmed püsivad** peale restart'i (Lab 1 andmehoidlad (volumes))
+- [ ] **Healthy status** kõigi teenuste jaoks
+- [ ] **Andmed püsivad** peale restart'i (Lab 1 andmeköited)
 - [ ] Oskad käivitada: `docker compose up -d`
 - [ ] Oskad peatada: `docker compose down`
 - [ ] Oskad vaadata loge: `docker compose logs`
-- [ ] Mõistad teenuste sõltuvusi (service dependencies) (depends_on)
-- [ ] End-to-End JWT workflow toimib
+- [ ] Mõistad teenuste sõltuvusi (depends_on)
+- [ ] End-to-End JWT töövoog toimib
 
 ---
 
@@ -863,11 +862,11 @@ Peale selle harjutuse läbimist peaksid omama:
 docker compose ps
 # Kõik peaksid olema UP ja HEALTHY
 
-# 2. Kas andmehoidlad (volumes) on ühendatud?
+# 2. Kas andmeköited on ühendatud?
 docker volume ls | grep postgres
 # Peaks leidma: postgres-user-data ja postgres-todo-data
 
-# 3. Kas võrk (network) on ühendatud?
+# 3. Kas võrk on ühendatud?
 docker network ls | grep todo-network
 # Peaks leidma: todo-network
 
@@ -879,19 +878,19 @@ curl http://localhost:8081/health
 
 ---
 
-## 🎓 Õpitud Mõisted
+## 🎓 Õpitud mõisted
 
 ### Docker Compose mõisted:
 
 - **version:** Compose faili versiooni number
 - **services:** Konteinerite definitsioonid
-- **image:** Valmis pilt (image) mida kasutada
-- **environment:** Keskkonna muutujad (environment variables)
-- **ports:** Portide vastendamine (port mapping)
-- **networks:** Võrgud (networks) teenuste vahel
-- **volumes:** Andmehoidlad (volumes) andmete püsivuseks
+- **image:** Valmis tõmmis mida kasutada
+- **environment:** Keskkonnamuutujad
+- **ports:** Pordivastendus
+- **networks:** Võrgud teenuste vahel
+- **volumes:** Andmeköited andmete püsivuseks
 - **depends_on:** Teenuste sõltuvused
-- **healthcheck:** Seisukorra kontroll (health check)
+- **healthcheck:** Tervisekontroll
 - **restart:** Restart poliitika
 - **external:** Kasuta olemasolevat ressurssi
 
@@ -899,29 +898,29 @@ curl http://localhost:8081/health
 
 - `docker compose up -d` - Käivita stack taustal
 - `docker compose down` - Peata ja eemalda konteinerid
-- `docker compose ps` - Vaata teenuste (services) staatust
+- `docker compose ps` - Vaata teenuste staatust
 - `docker compose logs` - Vaata logisid
 - `docker compose exec` - Käivita käsk konteineris
 - `docker compose config` - Valideeri ja vaata konfiguratsioon
-- `docker compose restart` - Taaskäivita teenused (services)
+- `docker compose restart` - Taaskäivita teenused
 
 ### Service Discovery:
 
-Backend saab ühenduda PostgreSQL-ga kasutades **teenuse nime (service name)**:
+Backend saab ühenduda PostgreSQL-ga kasutades **teenuse nime**:
 ```yaml
 DB_HOST: postgres-user  # Mitte IP aadress!
 ```
 
-Docker Compose loob automaatselt DNS-i, kus teenuse nimi (service name) (`postgres-user`) resolvib õigesse IP-sse.
+Docker Compose loob automaatselt DNS-i, kus teenuse nimi (`postgres-user`) lahendatakse õigesse IP-sse.
 
 ---
 
-## 💡 Parimad Tavad
+## 💡 Parimad tavad
 
 1. **Kasuta external volumes'eid ja networks'e** - Kui ressursid on juba loodud
-2. **Määra health checks** - Tead, millal teenus (service) on valmis
+2. **Määra health checks** - Tead, millal teenus on valmis
 3. **Kasuta depends_on + condition** - Õige käivitusjärjekord
-4. **Määra restart: unless-stopped** - Auto-restart peale crashe
+4. **Määra restart: unless-stopped** - Auto-restart peale krahhe
 5. **Kommenteeri faili** - Teised (ja tulevane sina) tänab sind
 6. **Versioonihalda** - Commit docker-compose.yml Git'i
 
@@ -945,7 +944,7 @@ networks:
 ### Probleem 2: "volume postgres-user-data declared as external, but could not be found"
 
 ```bash
-# Loo andmehoidla (volume)
+# Loo andmeköide
 docker volume create postgres-user-data
 docker volume create postgres-todo-data
 
@@ -963,7 +962,7 @@ volumes:
 **Lahendus A: Setup Skript (Automaatne)**
 ```bash
 cd ..  # Tagasi 02-docker-compose-lab/
-./setup.sh
+lab2-setup
 # Vali valik 2 (Automaatne initsialiseermine)
 # või
 docker compose -f compose-project/docker-compose.yml -f compose-project/docker-compose.init.yml up -d
@@ -1009,9 +1008,9 @@ docker compose ps
 # Vaata DB loge
 docker compose logs postgres-user
 
-# Kontrolli DB_HOST keskkonna muutujat (environment variable)
+# Kontrolli DB_HOST keskkonnamuutujat
 docker compose exec user-service env | grep DB_HOST
-# Peaks olema: DB_HOST=postgres-user (teenuse nimi (service name))
+# Peaks olema: DB_HOST=postgres-user (teenuse nimi)
 ```
 
 ### Probleem 5: "Port already in use"
@@ -1037,11 +1036,11 @@ docker compose ps
 # user-service    Up (unhealthy)    # ← Probleem!
 ```
 
-**Põhjus:** Healthcheck kasutab `wget` käsku, aga Node.js 22-slim pildis ei ole `wget` installitud.
+**Põhjus:** Tervisekontroll kasutab `wget` käsku, aga Node.js 22-slim tõmmises ei ole `wget` installitud.
 
 **Diagnoos:**
 ```bash
-# Kontrolli healthcheck viga
+# Kontrolli tervisekontrolli viga
 docker inspect user-service --format='{{json .State.Health}}' | jq
 
 # Peaks nägema:
@@ -1053,7 +1052,7 @@ docker inspect user-service --format='{{json .State.Health}}' | jq
 Docker Compose healthcheck peab kasutama `node healthcheck.js` asemel `wget`:
 
 ```yaml
-# VALE (ei tööta Node.js slim pildis):
+# VALE (ei tööta Node.js slim tõmmises):
 user-service:
   healthcheck:
     test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
@@ -1069,9 +1068,9 @@ user-service:
 ```
 
 **Miks see juhtub?**
-- Node.js 22-slim pilt on minimalistlik (ei sisalda wget/curl)
+- Node.js 22-slim tõmmis on minimalistlik (ei sisalda wget/curl)
 - `healthcheck.js` fail on juba konteineris (Lab 1'st)
-- Docker Compose healthcheck override'ib Dockerfile HEALTHCHECK'i
+- Docker Compose healthcheck kirjutab üle Dockerfile HEALTHCHECK'i
 
 **Rakenda parandus:**
 ```bash
@@ -1088,7 +1087,7 @@ docker compose ps
 
 **Alternatiiv: Kas võiks installida wget?**
 
-Tehniliselt jah, aga see on **anti-pattern** production image'itele:
+Tehniliselt jah, aga see on **anti-pattern** production tõmmistele:
 
 ```dockerfile
 # ❌ EI SOOVITATA (AVOID)
@@ -1097,27 +1096,27 @@ RUN apt-get update && apt-get install -y wget
 # Probleem: +5-10MB, rohkem CVE'd, aeglasem build
 ```
 
-**Production image'id peavad olema minimalistlikud:**
-- Väiksem attack surface (vähem koodi = vähem bugs)
-- Vähem security vulnerabilities (iga pakett võib tuua CVE'd)
-- Kiiremad deployments (väiksem image = kiirem download)
-- Odavam storage/bandwidth
+**Production tõmmised peavad olema minimalistlikud:**
+- Väiksem rünnakupind (vähem koodi = vähem vigu)
+- Vähem turvanõrkusi (iga pakett võib tuua CVE'd)
+- Kiiremad paigaldused (väiksem tõmmis = kiirem allalaadimine)
+- Odavam salvestusruum/võrguliiklus
 
-**DevOps best practice:** Kasuta seda, mis juba on - `node`, `npm`, `healthcheck.js`
+**DevOps parim praktika:** Kasuta seda, mis juba on - `node`, `npm`, `healthcheck.js`
 
 ---
 
 ## 🔗 Järgmine Samm
 
-Suurepärane! Nüüd käivitad 4 teenust (services) ühe docker-compose.yml failiga.
+Suurepärane! Nüüd käivitad 4 teenust ühe docker-compose.yml failiga.
 
 **Mis edasi?**
 - ✅ Konverteris Lab 1 → docker-compose.yml
-- ✅ 4 teenust (services) töötavad
+- ✅ 4 teenust töötavad
 - ✅ Andmed püsivad
-- ⏭️ **Järgmine:** Lisa Frontend (5. teenus (service))
+- ⏭️ **Järgmine:** Lisa Frontend (5. teenus)
 
-**Jätka:** [Harjutus 2: Lisa Frontend Teenus](02-add-frontend.md)
+**Jätka:** [Harjutus 2: Lisa frontend teenus](02-add-frontend.md)
 
 ---
 

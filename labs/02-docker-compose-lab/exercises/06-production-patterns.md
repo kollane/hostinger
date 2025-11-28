@@ -1,17 +1,16 @@
-# Harjutus 5: Production Patterns
+# Harjutus 6: Tootmiskeskkonna mustrid (Production Patterns)
 
-**Kestus:** 45 minutit
-**Eesmärk:** Konfigureeri production-ready Docker Compose seadistused
+**Eesmärk:** Konfigureeri tootmisvalmis Docker Compose seadistused
 
 ---
 
-## 📋 Ülevaade
+## 📋 Harjutuse ülevaade
 
-Selles harjutuses õpid konfigureerima Docker Compose stack'i production keskkonna jaoks. Rakendad parimaid praktikaid: resource limits, scaling, restart policies, logging ja security.
+Selles harjutuses õpid konfigureerima Docker Compose stack'i tootmiskeskkonna jaoks. Rakendad parimaid praktikaid: ressursilimiidid, skaleerimine, taaskäivituspoliitika, logimine ja turvalisus.
 
 **Development vs Production:**
 - **Development:** Kiire iteratsioon, debug, palju logisid
-- **Production:** Stabiilsus, turvalisus, resource management, vähem logisid
+- **Production:** Stabiilsus, turvalisus, ressursside haldus, vähem logisid
 
 ---
 
@@ -19,32 +18,32 @@ Selles harjutuses õpid konfigureerima Docker Compose stack'i production keskkon
 
 Peale selle harjutuse läbimist oskad:
 
-- ✅ Konfigureerida resource limits (CPU, memory)
-- ✅ Scaleerida teenuseid (replicas)
-- ✅ Seadistada restart policies
-- ✅ Optimeerida health checks
-- ✅ Konfigureerida logging
-- ✅ Rakendada security best practices
-- ✅ Luua production-ready docker-compose.prod.yml
+- ✅ Konfigureerida ressursilimiite (CPU, mälu)
+- ✅ Skaleerida teenuseid (koopiaid)
+- ✅ Seadistada taaskäivituspoliitikaid
+- ✅ Optimeerida tervisekontrolle
+- ✅ Konfigureerida logimist
+- ✅ Rakendada turvalisuse parimaid praktikaid
+- ✅ Luua tootmisvalmis docker-compose.prod.yml
 
 ---
 
 ## ⚠️ Enne Alustamist: Kontrolli Eeldusi
 
-**Veendu, et Harjutus 4 on läbitud:**
+**Veendu, et Harjutus 5 on läbitud:**
 
 ```bash
 # 1. Kas stack töötab?
 cd compose-project
 docker compose ps
 
-# 2. Kas Liquibase teenused exitisid edukalt?
+# 2. Kas Liquibase teenused väljusid edukalt?
 docker compose ps | grep liquibase
 # Peaks nägema: Exited (0)
 ```
 
 **Kui midagi puudub:**
-- 🔗 Mine tagasi [Harjutus 4](04-database-migrations.md)
+- 🔗 Mine tagasi [Harjutus 5](05-database-migrations.md)
 
 **✅ Kui kõik ülalpool on OK, võid jätkata!**
 
@@ -52,7 +51,7 @@ docker compose ps | grep liquibase
 
 ## 📝 Sammud
 
-### Samm 1: Loo Production Compose Fail (15 min)
+### Samm 1: Loo Production Compose fail
 
 Loo eraldi fail production seadistustele:
 
@@ -72,7 +71,7 @@ Lisa järgmine sisu:
 # ==========================================================================
 
 # MÄRKUS: Docker Compose v2 (2025)
-# version: '3.8' on VALIKULINE (optional) Compose v2's!
+# version: '3.8' on VALIKULINE Compose v2's!
 # Võid selle ära jätta - Compose v2 kasutab automaatselt uusimat versiooni.
 #version: '3.8'
 
@@ -190,7 +189,7 @@ Salvesta: `Esc`, siis `:wq`, `Enter`
 
 ---
 
-### Samm 2: Mõista Production Seadistusi (10 min)
+### Samm 2: Mõista production seadistusi
 
 #### Resource Limits:
 
@@ -211,7 +210,7 @@ deploy:
 
 **Miks oluline:**
 - Üks konteiner ei saa kasutada kõiki ressursse (resource starvation)
-- Predictable performance
+- Ennustatav jõudlus
 
 #### Replicas:
 
@@ -221,18 +220,18 @@ deploy:
 ```
 
 **Tähendus:**
-- Docker Compose käivitab 2 konteinerit sama image'iga
-- Load balancing (liiklus jaotatakse)
-- High availability (kui üks crashib, teine töötab)
+- Docker Compose käivitab 2 konteinerit sama tõmmisega
+- Koormuse jaotamine (load balancing)
+- Kõrge käideldavus (high availability)
 
-**TÄHTIS:** Production'is kasutatakse tavaliselt Kubernetes'i scaling'u, mitte Docker Compose replicas'e.
+**TÄHTIS:** Production'is kasutatakse tavaliselt Kubernetes'i skaleerimist, mitte Docker Compose replicas'e.
 
 #### Restart Policy:
 
 ```yaml
 deploy:
   restart_policy:
-    condition: on-failure  # Restart ainult kui crashib
+    condition: on-failure  # Restart ainult kui krahhib
     delay: 5s             # Oota 5s enne restart'i
     max_attempts: 3       # Maksimaalselt 3 restart'i
     window: 120s          # 120s akna jooksul
@@ -256,13 +255,13 @@ logging:
 
 ---
 
-### Samm 3: Käivita Production Mode's (10 min)
+### Samm 3: Käivita production mode'is
 
 ```bash
 # Peata development stack
 docker compose down
 
-# Käivita production mode's
+# Käivita production mode'is
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 
 # Kontrolli staatust
@@ -276,9 +275,9 @@ docker compose ps
 # todo-service-2               Up
 ```
 
-**TÄHTIS:** Replicas töötavad ainult Swarm mode's või Kubernetes'es. Docker Compose ei toeta täielikult load balancing'ut ilma Swarm'ita.
+**TÄHTIS:** `replicas` töötavad ainult Swarm mode's või Kubernetes'es. Docker Compose ei toeta täielikult koormuse jaotamist ilma Swarm'ita.
 
-**Swarm mode testimine (optional):**
+**Swarm mode testimine (valikuline):**
 
 ```bash
 # Enable Swarm mode
@@ -296,10 +295,10 @@ docker service ps todo-stack_user-service
 
 ---
 
-### Samm 4: Kontrolli Resource Kasutust (5 min)
+### Samm 4: Kontrolli ressursikasutust
 
 ```bash
-# Vaata resource kasutust
+# Vaata ressursikasutust
 docker stats
 
 # Väljund näitab:
@@ -310,13 +309,13 @@ docker stats
 ```
 
 **Analüüs:**
-- Kõik konteinerid on limits'te piires
-- Memory kasutus on mõistlik
+- Kõik konteinerid on limitide piires
+- Mälukasutus on mõistlik
 - CPU kasutus on väike (idle)
 
 ---
 
-### Samm 5: Testi Health Checks (5 min)
+### Samm 5: Testi tervisekontrolle
 
 Health checks on juba docker-compose.yml's defineeritud:
 
@@ -332,7 +331,7 @@ healthcheck:
 **Testi:**
 
 ```bash
-# Vaata health status'e
+# Vaata tervise staatust
 docker compose ps
 
 # Kõik peaksid olema "healthy"
@@ -349,7 +348,7 @@ docker compose logs
 
 ---
 
-### Samm 6: Optimiseeri Logging (5 min)
+### Samm 6: Optimeeri logimine
 
 **Vaata praeguseid loge:**
 
@@ -357,59 +356,59 @@ docker compose logs
 # Vaata kui palju ruumi logid kasutavad
 docker inspect user-service | grep LogPath
 
-# Vaata log faili suurust
+# Vaata logifaili suurust
 sudo du -h /var/lib/docker/containers/*/user-service*-json.log
 ```
 
-**Production logging best practices:**
+**Tootmiskeskkonna logimise parimad tavad:**
 
-1. **Piira log faili suurust** - Vältimaks kettaruumi täitumist
-2. **Roteerideeriminelogged** - Vanad logid kustutatakse
-3. **Keskne logging** - Saada logid centralized system'i (Elasticsearch, Loki)
-4. **Log level** - Production'is INFO või WARN, mitte DEBUG
+1. **Piira logifaili suurust** - Vältimaks kettaruumi täitumist
+2. **Logide roteerimine** - Vanad logid kustutatakse
+3. **Keskne logimine** - Saada logid tsentraliseeritud süsteemi (Elasticsearch, Loki)
+4. **Logi tase** - Production'is INFO või WARN, mitte DEBUG
 
 ---
 
-### Samm 7: Security Hardening (5 min)
+### Samm 7: Turvalisuse tugevdamine (Hardening)
 
-Lisa security seadistused docker-compose.prod.yml'i:
+Lisa turvaseadistused docker-compose.prod.yml'i:
 
 ```bash
 vim docker-compose.prod.yml
 ```
 
-Lisa igale teenusele (service):
+Lisa igale teenusele:
 
 ```yaml
   user-service:
     # ... existing config
     security_opt:
-      - no-new-privileges:true  # Väldi privilege escalation
+      - no-new-privileges:true  # Väldi privileegide eskaleerumist
     read_only: false  # Kui võimalik, kasuta true
     tmpfs:
-      - /tmp  # Temporary failide jaoks
+      - /tmp  # Ajutiste failide jaoks
 ```
 
-**Security best practices:**
-- ✅ Run as non-root user (juba tehtud optimized image's)
-- ✅ Read-only filesystem (kus võimalik)
-- ✅ Drop capabilities
-- ✅ No privilege escalation
-- ✅ Scan images for vulnerabilities
+**Turvalisuse parimad praktikad:**
+- ✅ Käita mitte-juurkasutajana (juba tehtud optimeeritud tõmmises)
+- ✅ Kirjutuskaitstud failisüsteem (kus võimalik)
+- ✅ Loobu ebavajalikest võimekustest (Drop capabilities)
+- ✅ Väldi privileegide eskaleerumist
+- ✅ Skanni tõmmiseid turvaaukude suhtes
 
 ---
 
-## ✅ Kontrolli Tulemusi
+## ✅ Kontrolli tulemusi
 
 Peale selle harjutuse läbimist peaksid omama:
 
 - [ ] **docker-compose.prod.yml** production seadistustega
-- [ ] **Resource limits** defineeritud (CPU, memory)
-- [ ] **Restart policies** konfigureeritud
-- [ ] **Logging** optimeeritud (rotation, size limits)
-- [ ] **Security** hardened
-- [ ] **Stack töötab** production mode's
-- [ ] **Health checks** toimivad
+- [ ] **Ressursilimiidid** defineeritud (CPU, mälu)
+- [ ] **Taaskäivituspoliitikad** konfigureeritud
+- [ ] **Logimine** optimeeritud (rotatsioon, suuruse limiidid)
+- [ ] **Turvalisus** tugevdatud
+- [ ] **Stack töötab** production mode'is
+- [ ] **Tervisekontrollid** toimivad
 
 ---
 
@@ -421,42 +420,42 @@ Peale selle harjutuse läbimist peaksid omama:
 # 1. Kas production stack töötab?
 docker compose -f docker-compose.yml -f docker-compose.prod.yml ps
 
-# 2. Kas resource limits on rakendatud?
+# 2. Kas ressursilimiidid on rakendatud?
 docker inspect user-service | grep -A 10 "Resources"
 
-# 3. Kas logging on konfigureeritud?
+# 3. Kas logimine on konfigureeritud?
 docker inspect user-service | grep -A 5 "LogConfig"
 
-# 4. Kas health checks töötavad?
+# 4. Kas tervisekontrollid töötavad?
 docker compose ps | grep healthy
 ```
 
 ---
 
-## 🎓 Õpitud Mõisted
+## 🎓 Õpitud mõisted
 
 ### Production vs Development:
 
 | Aspekt | Development | Production |
 |--------|-------------|------------|
-| Restart Policy | `always` või `unless-stopped` | `on-failure` (limited) |
-| Resource Limits | Ei ole | Defined (CPU, memory) |
-| Logging | Verbose (DEBUG) | Minimal (INFO, WARN) |
-| Log Rotation | Ei ole | Enabled (max-size, max-file) |
-| Replicas | 1 | 2+ (high availability) |
-| Volume Mounts | Source code (hot reload) | Ei ole |
-| Security | Relaxed | Hardened |
+| Restart Policy | `always` või `unless-stopped` | `on-failure` (piiratud) |
+| Ressursilimiidid | Ei ole | Määratud (CPU, mälu) |
+| Logimine | Jutukas (DEBUG) | Minimaalne (INFO, WARN) |
+| Logide rotatsioon | Ei ole | Lubatud (max-size, max-file) |
+| Koopiad (Replicas) | 1 | 2+ (kõrge käideldavus) |
+| Andmeköite haakimine | Lähtekood (hot reload) | Ei ole |
+| Turvalisus | Lõdva | Tugevdatud |
 
 ### Docker Compose Deploy:
 
 ```yaml
 deploy:
-  replicas: 2          # Mitu instance'i
-  resources:           # Resource limits
+  replicas: 2          # Mitu instantsi
+  resources:           # Ressursilimiidid
     limits:
       cpus: '1.0'
       memory: 512M
-  restart_policy:      # Restart behavior
+  restart_policy:      # Taaskäivitus
     condition: on-failure
 ```
 
@@ -464,12 +463,12 @@ deploy:
 
 ---
 
-## 💡 Parimad Tavad
+## 💡 Parimad tavad
 
-### 1. Resource Management:
+### 1. Ressursihaldus:
 
 ```yaml
-# Määra alati limits JA reservations
+# Määra alati limiidid JA reserveeringud
 deploy:
   resources:
     limits:
@@ -480,7 +479,7 @@ deploy:
       memory: 256M
 ```
 
-### 2. Logging:
+### 2. Logimine:
 
 ```yaml
 # Roteeri logisid, piira suurust
@@ -491,7 +490,7 @@ logging:
     max-file: "3"
 ```
 
-### 3. Health Checks:
+### 3. Tervisekontrollid:
 
 ```yaml
 # Määra mõistlikud väärtused
@@ -502,20 +501,20 @@ healthcheck:
   start_period: 40s # Anna aega käivitumiseks
 ```
 
-### 4. Restart Policy:
+### 4. Taaskäivituspoliitika:
 
 ```yaml
 # Production: on-failure (limited)
 deploy:
   restart_policy:
     condition: on-failure
-    max_attempts: 3  # Väldi infinite restart loop
+    max_attempts: 3  # Väldi lõpmatut restart tsüklit
 ```
 
-### 5. Security:
+### 5. Turvalisus:
 
 ```yaml
-# Hardened security
+# Tugevdatud turvalisus
 security_opt:
   - no-new-privileges:true
 read_only: true  # Kui võimalik
@@ -523,15 +522,15 @@ read_only: true  # Kui võimalik
 
 ---
 
-## 🐛 Levinud Probleemid
+## 🐛 Levinud probleemid
 
 ### Probleem 1: "OOM Killed" (Out of Memory)
 
 ```bash
-# Konteiner crashib memory limiti tõttu
+# Konteiner krahhib mälulimiidi tõttu
 docker logs user-service | grep "OOM"
 
-# Lahendus: Suurenda memory limit'i
+# Lahendus: Suurenda mälulimiiti
 deploy:
   resources:
     limits:
@@ -544,9 +543,9 @@ deploy:
 # Konteiner on väga aeglane
 docker stats
 
-# Näed: CPU % on alati 100% (throttled)
+# Näed: CPU % on alati 100% (piiratud)
 
-# Lahendus: Suurenda CPU limit'i
+# Lahendus: Suurenda CPU limiiti
 deploy:
   resources:
     limits:
@@ -559,13 +558,13 @@ deploy:
 # Kettaruum on täis
 df -h
 
-# Vaata log faile
+# Vaata logifaile
 sudo du -sh /var/lib/docker/containers/*/
 
 # Lahendus: Puhasta vanad logid
 docker system prune -a --volumes
 
-# Ja konfigureeri rotation
+# Ja konfigureeri rotatsioon
 logging:
   options:
     max-size: "5m"  # Vähenda 10m -> 5m
@@ -580,16 +579,16 @@ logging:
 **Mis saavutasid:**
 - ✅ Konverteris Lab 1 → docker-compose.yml
 - ✅ Lisasid Frontend teenuse (5 teenust)
-- ✅ Haldad salajaseid .env failidega
-- ✅ Automatiseeris database migration'id Liquibase'iga
-- ✅ Konfigureeris production-ready seadistused
+- ✅ Haldad saladusi .env failidega
+- ✅ Automatiseerisid andmebaasi migratsioonid Liquibase'iga
+- ✅ Konfigureerisid tootmisvalmis seadistused
 
 **Järgmine Labor:**
 - 🎯 **Labor 3:** Kubernetes Põhitõed
-  - Konverteeri docker-compose.yml → Kubernetes manifests
-  - Deploy stack Kubernetes cluster'isse
-  - Kasuta Liquibase InitContainer'eid
-  - Skaleerri teenuseid Kubernetes'es
+  - Konverteeri docker-compose.yml → Kubernetes manifestideks
+  - Paigalda (deploy) stack Kubernetes klastrisse
+  - Kasuta Liquibase Init-konteinereid
+  - Skaleeri teenuseid Kubernetes'es
 
 ---
 
