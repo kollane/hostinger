@@ -10,7 +10,7 @@
 
 ---
 ## 📋 Harjutuse ülevaade
-**Harjutuse eesmärk:** Selles harjutuses konteineriseerid Java Spring Boot Todo teenuse rakenduse. Õpid looma Dockerfile'i, ehitama Docker tõmmist ja käivitama konteinereid (isegi kui see hangub andmebaasi puudumise tõttu).
+**Harjutuse eesmärk:** Selles harjutuses konteineriseerid Java Spring Boot Todo teenuse rakenduse. Õpid looma Dockerfile'i, ehitama Docker tõmmist ja käivitama konteinereid.
 
 **Harjutuse Fookus:** See harjutus keskendub Docker põhitõdede õppimisele, MITTE töötavale rakendusele (application)!
 
