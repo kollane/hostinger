@@ -75,6 +75,9 @@ Kui tehniline termin esineb antud failis **esimest korda** JA seda **ei ole main
 | **krahhima / kokku jooksma** | crash | Rakendus krahhis (crashed) vea tõttu |
 | **hanguma** | hang | Protsess hangus (on vastuseta), kuid töötab |
 | **veatuvastus** | debug | Käivita rakendus veatuvastuse (debug) režiimis |
+| **toote keskkond** | production | Rakendus on toote keskkonnas (production) |
+| **arenduskeskkond** | development | Töötan arenduskeskkonnas (development) |
+| **tagasi keerama** | rollback | Varasema versiooni juurde tagasi keerama (rollback) |
 
 ---
 
