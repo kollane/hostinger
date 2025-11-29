@@ -321,9 +321,9 @@ docker stats user-service
 
 1. **Kasuta `.dockerignore`** - Väldi tarbetute failide kopeerimist
 2. **Kasuta alpine tõmmiseid** - Väiksem suurus, kiirem
-3. **RUN npm install toote keskkonna (production)** - Ära installi arenduse sõltuvusi (dev dependencies)
-4. **COPY package.json enne koodi** - Parem kihtide vahemälu (layer cache) kasutamine
-5. **Kasuta EXPOSE** - Dokumenteeri, millist porti rakendus kasutab
+3. **`RUN npm install --production`** - Ära installi arenduse sõltuvusi (dev dependencies)
+4. **`COPY package.json` enne koodi** - Parem kihtide vahemälu (layer cache) kasutamine
+5. **Kasuta `EXPOSE`** - Dokumenteeri, millist porti rakendus kasutab
 
 **📖 Node.js konteineriseerimise parimad tavad:**Põhjalikum käsitlus `npm ci`, Alpine images, bcrypt native moodulid, ja teised Node.js spetsiifilised teemad leiad [Peatükk 06A: Java Spring Boot ja Node.js Konteineriseerimise Spetsiifika](../../../resource/06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md).
 
