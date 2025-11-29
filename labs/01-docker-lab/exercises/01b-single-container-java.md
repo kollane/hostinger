@@ -202,7 +202,7 @@ docker images todo-service:1.0
 ```
 
 **Küsimused:**
-- Kui suur on sinu tõmmis? (peaks olema ~200-250MB)
+- Kui suur on sinu tõmmis?
 - Mitu kihti (layers) on tõmmisel?
 - Millal tõmmis loodi?
 
