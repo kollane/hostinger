@@ -9,7 +9,7 @@
 Selles harjutuses õpid eraldama saladused docker-compose.yml failist ja haldama neid turvaliselt `.env` failidega. Samuti õpid kasutama `docker-compose.override.yml` mustrit erinevate keskkondade (dev, prod) jaoks.
 
 **Probleem praegu:**
-- ❌ Saladused (JWT_SECRET, DB_PASSWORD) on kõvakodeeritud docker-compose.yml'is
+- ❌ Saladused (JWT_SECRET, DB_PASSWORD) on "hardcoded" docker-compose.yml'is
 - ❌ Sama konfiguratsioon dev ja prod keskkondade jaoks
 - ❌ Raske jagada docker-compose.yml ilma saladusteta
 
@@ -170,7 +170,7 @@ Nüüd muuda docker-compose.yml, et kasutada .env faili muutujaid:
 vim docker-compose.yml
 ```
 
-**Asenda kõvakodeeritud väärtused ${VARIABLE} süntaksiga:**
+**Asenda "hardcoded" väärtused ${VARIABLE} süntaksiga:**
 
 ```yaml
 services:

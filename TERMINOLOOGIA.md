@@ -87,6 +87,10 @@ Konfiguratsioonifailide ja koodi süntaks jääb muutmata:
 - Dockerfile: `FROM`, `COPY`, `RUN`, `CMD`
 - Kubernetes YAML: `metadata`, `spec`, `kind`, `volumes`
 
+### Spetsiifilised terminid
+Teatud ingliskeelsed terminid jäävad tõlkimata, kuid neid kasutatakse jutumärkides:
+- "hardcoded"
+
 ---
 
 ## Kasutusnäited
