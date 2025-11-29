@@ -248,7 +248,7 @@ docker run -d --name user-service \
   -e JWT_SECRET=test-secret-key \
   -e NODE_ENV=production \
   user-service:1.0
-
+```
 
 ### Samm 6: Veatuvastus ja tõrkeotsing
 
