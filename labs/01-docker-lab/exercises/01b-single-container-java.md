@@ -208,7 +208,7 @@ docker images todo-service:1.0
 
 ### Samm 5: Käivita Konteiner
 
-**⚠️ OLULINE:** Järgnevad käsud käivitavad konteineri, aga rakendus hangub, sest PostgreSQL puudub. See on **OODATUD** käitumine! Fookus on õppida Docker käske, mitte saada töötav rakendus.
+**⚠️ OLULINE:** Järgnevad käsud käivitavad konteineri, aga rakendus hangub, sest PostgreSQL puudub. See on **OODATUD** käitumine! Hetkel on fookus õppida Docker käske, mitte saada töötav rakendus.
 
 #### Variant A: Interaktiivne režiim (näed kohe vigu)
 
