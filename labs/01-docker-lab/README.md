@@ -20,13 +20,13 @@ Selles laboris õpid paigaldama kolme mikroteenust (services) konteineritesse, h
 
 Peale selle labori läbimist oskad:
 
-✅ Luua Dockerfile'e erinevatele rakendustele (applications)
-✅ Ehitada (build) Docker pilte (images)
-✅ Käivitada ja hallata konteinereid
-✅ Seadistada Docker võrke (networks)
-✅ Kasutada andmehoidlaid (volumes) andmete säilitamiseks
-✅ Optimeerida pildi (image) suurust
-✅ Kasutada mitme-sammulisi (multi-stage) builde
+- ✅ Luua Dockerfile'e erinevatele rakendustele (applications)
+- ✅ Ehitada (build) Docker pilte (images)
+- ✅ Käivitada ja hallata konteinereid
+- ✅ Seadistada Docker võrke (networks)
+- ✅ Kasutada andmehoidlaid (volumes) andmete säilitamiseks
+- ✅ Optimeerida pildi (image) suurus
+- ✅ Kasutada mitme-sammulisi (multi-stage) builde
 
 ---
 

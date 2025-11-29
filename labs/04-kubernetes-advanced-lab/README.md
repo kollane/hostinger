@@ -91,13 +91,13 @@ Lab 4 lõpus on sul production-ready Kubernetes süsteem, mille saad Lab 5's aut
 
 Peale selle labori läbimist oskad:
 
-✅ Paigaldada Ingress Controller (ingress-nginx)
-✅ Konfigureerida Ingress ressursse path-based routing'uks
-✅ Seadistada Horizontal Pod Autoscaler (HPA)
-✅ Implementeerida rolling updates zero-downtime'iga
-✅ Defineerida resource requests & limits
-✅ Kasutada Helm 3 chart'e rakenduste paketeerimiseks
-✅ Valmistada süsteemi ette CI/CD automatiseerimiseks (Lab 5)
+- ✅ Paigaldada Ingress Controller (ingress-nginx)
+- ✅ Konfigureerida Ingress ressursse path-based routing'uks
+- ✅ Seadistada Horizontal Pod Autoscaler (HPA)
+- ✅ Implementeerida rolling updates zero-downtime'iga
+- ✅ Defineerida resource requests & limits
+- ✅ Kasutada Helm 3 chart'e rakenduste paketeerimiseks
+- ✅ Valmistada süsteemi ette CI/CD automatiseerimiseks (Lab 5)
 
 ---
 

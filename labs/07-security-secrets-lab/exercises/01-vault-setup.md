@@ -25,13 +25,13 @@ Selles harjutuses paigaldame **HashiCorp Vault** - industry-standard secrets man
 
 Peale selle harjutuse läbimist oskad:
 
-✅ Paigaldada Vault Helm chart'iga
-✅ Initialize ja unseal Vault
-✅ Konfigureerida Kubernetes authentication
-✅ Luua Vault policies
-✅ Kasutada Vault Agent Injector (sidecar pattern)
-✅ Inject secrets user-service'sse
-✅ Migreerida hardcoded secrets Vault'i
+- ✅ Paigaldada Vault Helm chart'iga
+- ✅ Initialize ja unseal Vault
+- ✅ Konfigureerida Kubernetes authentication
+- ✅ Luua Vault policies
+- ✅ Kasutada Vault Agent Injector (sidecar pattern)
+- ✅ Inject secrets user-service'sse
+- ✅ Migreerida hardcoded secrets Vault'i
 
 ---
 

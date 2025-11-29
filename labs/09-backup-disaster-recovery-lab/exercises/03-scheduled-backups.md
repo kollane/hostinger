@@ -38,13 +38,13 @@ Selles harjutuses loome **automated backup schedules** - production best practic
 
 Peale selle harjutuse läbimist oskad:
 
-✅ Luua Velero Schedule CRD
-✅ Konfigureerida cron expressions (daily, weekly, monthly)
-✅ Seadistada retention policies (TTL)
-✅ Monitor'ida scheduled backups (Prometheus)
-✅ Create Grafana dashboard backup metrics'tele
-✅ Seadistada AlertManager alerts backup failures'tele
-✅ Manage'ida backup storage costs
+- ✅ Luua Velero Schedule CRD
+- ✅ Konfigureerida cron expressions (daily, weekly, monthly)
+- ✅ Seadistada retention policies (TTL)
+- ✅ Monitor'ida scheduled backups (Prometheus)
+- ✅ Create Grafana dashboard backup metrics'tele
+- ✅ Seadistada AlertManager alerts backup failures'tele
+- ✅ Manage'ida backup storage costs
 
 ---
 

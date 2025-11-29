@@ -13,11 +13,11 @@ GitOps for infrastructure: Infrastructure as Code + Git + CI/CD.
 
 ## 🎯 Õpieesmärgid
 
-✅ Version control Terraform code
-✅ PR workflow for infra changes
-✅ CI/CD automation (plan on PR)
-✅ ArgoCD + Terraform integration
-✅ Automated apply on merge
+- ✅ Version control Terraform code
+- ✅ PR workflow for infra changes
+- ✅ CI/CD automation (plan on PR)
+- ✅ ArgoCD + Terraform integration
+- ✅ Automated apply on merge
 
 ---
 

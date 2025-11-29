@@ -24,15 +24,15 @@ Selles laboris **tõlgid Lab 2 Docker Compose rakenduse Kubernetes manifest'idek
 
 Peale selle labori läbimist oskad:
 
-✅ Seadistada Kubernetes cluster'i (Minikube/K3s)
-✅ Kirjutada Kubernetes YAML manifest'e
-✅ Deploy'da rakendusi Deployment'idega
-✅ Hallata teenuste suhtlust Service'idega
-✅ Kasutada ConfigMaps ja Secrets turvaliselt
-✅ Säilitada andmeid PersistentVolume'idega
-✅ Rakendada database migration'eid InitContainers'iga
-✅ Debuggida Kubernetes ressursse kubectl'iga
-✅ Mõista Kubernetes põhiarhitektuuri
+- ✅ Seadistada Kubernetes cluster'i (Minikube/K3s)
+- ✅ Kirjutada Kubernetes YAML manifest'e
+- ✅ Deploy'da rakendusi Deployment'idega
+- ✅ Hallata teenuste suhtlust Service'idega
+- ✅ Kasutada ConfigMaps ja Secrets turvaliselt
+- ✅ Säilitada andmeid PersistentVolume'idega
+- ✅ Rakendada database migration'eid InitContainers'iga
+- ✅ Debuggida Kubernetes ressursse kubectl'iga
+- ✅ Mõista Kubernetes põhiarhitektuuri
 
 ---
 

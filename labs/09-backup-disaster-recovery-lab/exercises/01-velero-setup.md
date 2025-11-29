@@ -33,14 +33,14 @@ Selles harjutuses installime **Velero** - VMware Tanzu (endine Heptio Ark) open-
 
 Peale selle harjutuse läbimist oskad:
 
-✅ Installida Velero CLI
-✅ Deploy'da MinIO in-cluster (S3-compatible storage)
-✅ Installida Velero server Helm'iga
-✅ Konfigureerida BackupStorageLocation
-✅ Luua esimest test backup
-✅ Teostada test restore
-✅ Verificeerida Velero metrics (Lab 6 integration)
-✅ Debuggida Velero issues
+- ✅ Installida Velero CLI
+- ✅ Deploy'da MinIO in-cluster (S3-compatible storage)
+- ✅ Installida Velero server Helm'iga
+- ✅ Konfigureerida BackupStorageLocation
+- ✅ Luua esimest test backup
+- ✅ Teostada test restore
+- ✅ Verificeerida Velero metrics (Lab 6 integration)
+- ✅ Debuggida Velero issues
 
 ---
 

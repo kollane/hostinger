@@ -25,13 +25,13 @@ Selles harjutuses konfigureerime **Network Policies** - Kubernetes native networ
 
 Peale selle harjutuse läbimist oskad:
 
-✅ Mõista Network Policy types (Ingress, Egress)
-✅ Luua default deny-all policy
-✅ Luua allow-specific policies
-✅ Kasutada label selectors
-✅ Testida network connectivity
-✅ Debuggida network policy issues
-✅ Implementeerida defense-in-depth
+- ✅ Mõista Network Policy types (Ingress, Egress)
+- ✅ Luua default deny-all policy
+- ✅ Luua allow-specific policies
+- ✅ Kasutada label selectors
+- ✅ Testida network connectivity
+- ✅ Debuggida network policy issues
+- ✅ Implementeerida defense-in-depth
 
 ---
 

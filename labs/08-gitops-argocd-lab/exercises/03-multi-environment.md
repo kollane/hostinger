@@ -42,13 +42,13 @@ k8s/user-service/overlays/production/
 
 Peale selle harjutuse läbimist oskad:
 
-✅ Luua Kustomize base manifests
-✅ Luua environment-specific overlays
-✅ Kasutada Kustomize patches (strategic merge, JSON)
-✅ Customiseerida replicas, resources, env vars per environment
-✅ Deploy'da multiple environments ArgoCD'ga
-✅ Mõista Kustomize vs Helm tradeoffs
-✅ Integreerida Sealed Secrets (Lab 7) per environment
+- ✅ Luua Kustomize base manifests
+- ✅ Luua environment-specific overlays
+- ✅ Kasutada Kustomize patches (strategic merge, JSON)
+- ✅ Customiseerida replicas, resources, env vars per environment
+- ✅ Deploy'da multiple environments ArgoCD'ga
+- ✅ Mõista Kustomize vs Helm tradeoffs
+- ✅ Integreerida Sealed Secrets (Lab 7) per environment
 
 ---
 

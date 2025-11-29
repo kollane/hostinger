@@ -26,11 +26,11 @@ Selles harjutuses installime **Terraform** ja loome esimesed Kubernetes resource
 
 ## 🎯 Õpieesmärgid
 
-✅ Install Terraform CLI
-✅ Configure Kubernetes provider
-✅ Create first resource (namespace)
-✅ Understand plan/apply workflow
-✅ Inspect Terraform state
+- ✅ Install Terraform CLI
+- ✅ Configure Kubernetes provider
+- ✅ Create first resource (namespace)
+- ✅ Understand plan/apply workflow
+- ✅ Inspect Terraform state
 
 ---
 

@@ -28,13 +28,13 @@ Lab 6 keskendub **production-ready monitoring ja logging** süsteemide seadistam
 
 Peale selle labori läbimist oskad:
 
-✅ Paigaldada Prometheus + Grafana stack Helm'iga
-✅ Koguda metrics'eid Kubernetes cluster'ist ja rakendustest
-✅ Luua custom Grafana dashboard'e PromQL päringutega
-✅ Seadistada alert rules ja notifications (Slack)
-✅ Implementeerida log aggregation Loki + Promtail'iga
-✅ Kasutada PromQL ja LogQL päringuid troubleshooting'uks
-✅ Monitoorida multi-environment deployment'e (dev/staging/prod)
+- ✅ Paigaldada Prometheus + Grafana stack Helm'iga
+- ✅ Koguda metrics'eid Kubernetes cluster'ist ja rakendustest
+- ✅ Luua custom Grafana dashboard'e PromQL päringutega
+- ✅ Seadistada alert rules ja notifications (Slack)
+- ✅ Implementeerida log aggregation Loki + Promtail'iga
+- ✅ Kasutada PromQL ja LogQL päringuid troubleshooting'uks
+- ✅ Monitoorida multi-environment deployment'e (dev/staging/prod)
 
 ---
 

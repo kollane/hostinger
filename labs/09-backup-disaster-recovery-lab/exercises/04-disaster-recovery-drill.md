@@ -26,13 +26,13 @@ Selles harjutuses testim **disaster recovery** stsenaariumi: simulate total prod
 
 ## 🎯 Õpieesmärgid
 
-✅ Create full cluster backup
-✅ Simulate catastrophic failure
-✅ Perform full cluster restore
-✅ Measure RTO (recovery time)
-✅ Verify all applications running
-✅ Document recovery procedures
-✅ Test restore in separate cluster (bonus)
+- ✅ Create full cluster backup
+- ✅ Simulate catastrophic failure
+- ✅ Perform full cluster restore
+- ✅ Measure RTO (recovery time)
+- ✅ Verify all applications running
+- ✅ Document recovery procedures
+- ✅ Test restore in separate cluster (bonus)
 
 ---
 

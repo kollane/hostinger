@@ -115,16 +115,16 @@ Lab 2 lõpus on sul töötamas **5 teenust (services)** Docker Compose'iga:
 
 Peale selle labori läbimist oskad:
 
-✅ Konverteerida mitme-konteineri (multi-container) seadistust Docker Compose failiks
-✅ Kirjutada docker-compose.yml faile järgides parimaid praktikaid
-✅ Implementeerida võrgu segmenteerimist (network segmentation) ja turvalisi portide konfiguratsioone
-✅ Vähendada rünnaku pinda (attack surface) 96% (5 avalikku porti → 1 avalik port)
-✅ Mõista 3-taseme arhitektuuri (DMZ → Backend → Database)
-✅ Hallata keskkonna muutujaid (environment variables) .env failidega
-✅ Kasutada docker-compose.override.yml pattern'i
-✅ Implementeerida database migration'eid Liquibase'iga
-✅ Konfigureerida production patterns (scaling, resource limits, health checks)
-✅ Debuggida multi-container rakendusi
+- ✅ Konverteerida mitme-konteineri (multi-container) seadistust Docker Compose failiks
+- ✅ Kirjutada docker-compose.yml faile järgides parimaid praktikaid
+- ✅ Implementeerida võrgu segmenteerimist (network segmentation) ja turvalisi portide konfiguratsioone
+- ✅ Vähendada rünnaku pinda (attack surface) 96% (5 avalikku porti → 1 avalik port)
+- ✅ Mõista 3-taseme arhitektuuri (DMZ → Backend → Database)
+- ✅ Hallata keskkonna muutujaid (environment variables) .env failidega
+- ✅ Kasutada docker-compose.override.yml pattern'i
+- ✅ Implementeerida database migration'eid Liquibase'iga
+- ✅ Konfigureerida production patterns (scaling, resource limits, health checks)
+- ✅ Debuggida multi-container rakendusi
 
 ---
 

@@ -30,14 +30,14 @@ Selles harjutuses konfigureerime **production-ready ArgoCD security**:
 
 Peale selle harjutuse läbimist oskad:
 
-✅ Konfigureerida ArgoCD RBAC policies
-✅ Integreerida GitHub SSO
-✅ Luua project-based access control
-✅ Installida ja konfigureerida Image Updater
-✅ Integreerida Sealed Secrets (Lab 7)
-✅ Manageerida multiple Kubernetes clusters
-✅ Implementeerida security best practices
-✅ Auditeerida ArgoCD events
+- ✅ Konfigureerida ArgoCD RBAC policies
+- ✅ Integreerida GitHub SSO
+- ✅ Luua project-based access control
+- ✅ Installida ja konfigureerida Image Updater
+- ✅ Integreerida Sealed Secrets (Lab 7)
+- ✅ Manageerida multiple Kubernetes clusters
+- ✅ Implementeerida security best practices
+- ✅ Auditeerida ArgoCD events
 
 ---
 

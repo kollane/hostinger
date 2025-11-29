@@ -20,12 +20,12 @@ Selles harjutuses seadistame **application-level metrics** kogumise. Lab 5-s dep
 
 Peale selle harjutuse läbimist oskad:
 
-✅ Luua ServiceMonitor CRD user-service jaoks
-✅ Konfigureerida metrics collection multi-environment setup'is
-✅ Kontrollida metrics endpoints
-✅ Kirjutada PromQL queries application metrics'ele
-✅ Monitoorida HTTP request rate, latency, errors
-✅ Kasutada labels metrics'e filtreerimiseks
+- ✅ Luua ServiceMonitor CRD user-service jaoks
+- ✅ Konfigureerida metrics collection multi-environment setup'is
+- ✅ Kontrollida metrics endpoints
+- ✅ Kirjutada PromQL queries application metrics'ele
+- ✅ Monitoorida HTTP request rate, latency, errors
+- ✅ Kasutada labels metrics'e filtreerimiseks
 
 ---
 
