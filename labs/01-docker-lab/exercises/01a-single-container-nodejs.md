@@ -249,41 +249,21 @@ docker run -d --name user-service \
   -e NODE_ENV=production \
   user-service:1.0
 
+
+### Samm 6: Veatuvastus ja tõrkeotsing
+
+```bash
 # Vaata kas töötab
 docker ps
+
+# Vaata konteineri staatust
+docker ps -a
 
 # Vaata logisid
 docker logs user-service
 
 # Vaata reaalajas
 docker logs -f user-service
-```
-
-**Oodatud:** Konteiner hangub, sest PostgreSQL puudub! See on ÕIGE käitumine!
-
-```bash
-# Vaata kas töötab? (HINT: Ei tööta!)
-docker ps
-
-# Vaata ka peatatud konteinereid
-docker ps -a
-# STATUS peaks olema: Exited (1)
-```
-
-**Miks konteiner puudub `docker ps` väljundis?**
-- Konteiner käivitus, aga rakendus hangus kohe
-- Docker peatas hangunud konteineri automaatselt
-- `docker ps` näitab ainult TÖÖTAVAID konteinereid
-- `docker ps -a` näitab KÕIKI konteinereid (ka peatatud)
-
-### Samm 6: Veatuvastus ja tõrkeotsing
-
-```bash
-# Vaata konteineri staatust
-docker ps -a
-
-# Vaata logisid
-docker logs user-service
 
 # Sisene konteinerisse
 docker exec -it user-service sh
@@ -300,6 +280,12 @@ docker inspect user-service
 # Vaata ressursikasutust
 docker stats user-service
 ```
+**Miks konteiner puudub `docker ps` väljundis?**
+- Konteiner käivitus, aga rakendus hangus kohe
+- Docker peatas hangunud konteineri automaatselt
+- `docker ps` näitab ainult TÖÖTAVAID konteinereid
+- `docker ps -a` näitab KÕIKI konteinereid (ka peatatud)
+
 
 **Levinud probleemid:**
 
