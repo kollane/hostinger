@@ -4,12 +4,20 @@ Selle dokumendi eesmärk on ühtlustada terminoloogiat kõigis labori harjutuste
 
 ## Põhimõte
 
-1.  Kasutame **eestikeelseid sõnu**.
-2.  Tehnilised terminid lisame **sulgudes inglise keeles** ainult **esmakordsel mainimisel** peatükis või suuremas lõigus. Edaspidi kasutame vaid eestikeelset terminit.
-3.  Kui viitame konkreetsele koodi elemendile (nt YAML võti), kasutame koodivormingut ega tõlgi seda (nt `volumes` sektsioon).
+**Reegel 1: Peatükk "Õpieesmärgid" (Learning Objectives)**
+Selles peatükis (tavaliselt faili alguses olev loetelu) peavad **kõik** tehnilised terminid olema esitatud paralleelselt:
+*   Eestikeelne termin (Ingliskeelne termin)
+*   *Näide:* "Luua **andmeköiteid (volumes)**..."
+
+**Reegel 2: Ülejäänud tekst (Body Text)**
+Teksti sisus kasutame reeglina **ainult eestikeelset terminit**.
+*   *Näide:* "...ühenda andmeköide konteineriga..."
+
+**Reegel 3: Erand ülejäänud tekstis**
+Kui tehniline termin esineb antud failis **esimest korda** JA seda **ei ole mainitud** selle konkreetse faili "Õpieesmärgid" loetelus, siis toome esimesel mainimisel välja mõlemad keeled. Edaspidi samas failis kasutame vaid eestikeelset.
 
 **Näide:**
-> "Ehita Docker **tõmmis (image)** kasutades **mitmeastmelist (multi-stage)** ehitust. Seejärel lae tõmmis üles."
+> "Ehita Docker **tõmmis (image)**..."
 
 ---
 
@@ -21,11 +29,12 @@ Selle dokumendi eesmärk on ühtlustada terminoloogiat kõigis labori harjutuste
 |--------------|----------------|-----------------|
 | **tõmmis** | image | Ehita Docker tõmmis (image) |
 | **konteiner** | container | Käivita Docker konteiner |
-| **ehita / koosta** | build | Koosta tõmmis `build` käsuga |
+| **ehita** | build | Ehita tõmmis `build` käsuga |
 | **käivita** | run | Käivita konteiner |
 | **varamu / register** | registry | Lae tõmmis Docker Hub varamusse (registry) |
 | **silt** | tag | Märgista tõmmis sildiga (tag) `v1.0` |
 | **logid** | logs | Vaata konteineri logisid |
+| **mikroteenus** | microservice | Arenda ja paigalda mikroteenust (microservice) |
 
 ### Arhitektuur ja Võrk
 
@@ -39,7 +48,7 @@ Selle dokumendi eesmärk on ühtlustada terminoloogiat kõigis labori harjutuste
 | **võrk** | network | Ühenda konteinerid samasse võrku |
 | **pordivastendus** | port mapping | Määra pordivastendus (port mapping) 80:8080 |
 | **taustarežiim** | detached mode | Käivita konteiner taustarežiimis (detached mode) |
-| **tervisekontroll** | health check | Seadista rakenduse tervisekontroll (health check) |
+| **tervisekontroll** | health check | Seadista rakenduse/konteineri tervisekontroll (health check) |
 
 ### Kubernetes ja Orkestreerimine
 
@@ -65,6 +74,7 @@ Selle dokumendi eesmärk on ühtlustada terminoloogiat kõigis labori harjutuste
 | **konteineriseerimine** | containerization | Pärandrakenduse konteineriseerimine |
 | **krahhima / kokku jooksma** | crash | Rakendus krahhis (crashed) vea tõttu |
 | **hanguma** | hang | Protsess hangus (on vastuseta), kuid töötab |
+| **veatuvastus** | debug | Käivita rakendus veatuvastuse (debug) režiimis |
 
 ---
 
@@ -96,7 +106,7 @@ Teatud ingliskeelsed terminid jäävad tõlkimata, kuid neid kasutatakse jutumä
 ## Kasutusnäited
 
 ### ✅ Õige (loomulik ja täpne)
-> "Koosta Docker **tõmmis (image)**, kasutades `node:alpine` **baastõmmist**. Iga `RUN` käsk lisab uue **kihi (layer)**, mida Docker salvestab **vahemälus**."
+> "Ehita Docker **tõmmis (image)**, kasutades `node:alpine` **baastõmmist**. Iga `RUN` käsk lisab uue **kihi (layer)**, mida Docker salvestab **vahemälus**."
 
 ### ❌ Vale (kohmakas või ebatäpne)
 > "Ehita Docker **pilt** kasutades `node:alpine` **base image**-it. Iga `RUN` käsk teeb uue **layeri**, mis läheb **cache**-i."
