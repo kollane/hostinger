@@ -30,15 +30,15 @@ Lab 8 keskendub **GitOps** - modern deployment methodology kus Git on single sou
 
 Peale selle labori läbimist oskad:
 
-✅ Paigaldada ja konfigureerida ArgoCD
-✅ Luua Git-based deployment workflow
-✅ Deploy rakendusi declarative GitOps pattern'iga
-✅ Manageda multi-environment deployments (dev/staging/prod)
-✅ Kasutada Kustomize overlays
-✅ Implementeerida progressive delivery (Canary deployments)
-✅ Automatiseerida sync policies
-✅ Integreerida ArgoCD RBAC ja SSO
-✅ Monitoorida deployments ArgoCD UI's
+- ✅ Paigaldada ja konfigureerida ArgoCD
+- ✅ Luua Git-based deployment workflow
+- ✅ Deploy rakendusi declarative GitOps pattern'iga
+- ✅ Manageda multi-environment deployments (dev/staging/prod)
+- ✅ Kasutada Kustomize overlays
+- ✅ Implementeerida progressive delivery (Canary deployments)
+- ✅ Automatiseerida sync policies
+- ✅ Integreerida ArgoCD RBAC ja SSO
+- ✅ Monitoorida deployments ArgoCD UI's
 
 ---
 
@@ -497,27 +497,27 @@ cat exercises/01-argocd-setup.md
 ## 💡 GitOps Best Practices
 
 **Repository Structure:**
-✅ Separate repos: app code vs manifests
-✅ Environment branches OR folders
-✅ Never commit secrets (use Sealed Secrets)
+- ✅ Separate repos: app code vs manifests
+- ✅ Environment branches OR folders
+- ✅ Never commit secrets (use Sealed Secrets)
 
 **Sync Policies:**
-✅ Manual sync for production (safer)
-✅ Auto-sync for dev/staging (faster)
-✅ Prune enabled (remove deleted resources)
-✅ Self-heal enabled (recreate deleted resources)
+- ✅ Manual sync for production (safer)
+- ✅ Auto-sync for dev/staging (faster)
+- ✅ Prune enabled (remove deleted resources)
+- ✅ Self-heal enabled (recreate deleted resources)
 
 **Change Management:**
-✅ Pull requests for manifest changes
-✅ Code review for infrastructure
-✅ Automated testing (kubeval, conftest)
-✅ Gradual rollout (dev → staging → prod)
+- ✅ Pull requests for manifest changes
+- ✅ Code review for infrastructure
+- ✅ Automated testing (kubeval, conftest)
+- ✅ Gradual rollout (dev → staging → prod)
 
 **Security:**
-✅ ArgoCD RBAC (who can sync what)
-✅ SSO integration
-✅ Webhook signatures (GitHub)
-✅ Private repos (SSH keys, tokens)
+- ✅ ArgoCD RBAC (who can sync what)
+- ✅ SSO integration
+- ✅ Webhook signatures (GitHub)
+- ✅ Private repos (SSH keys, tokens)
 
 ---
 

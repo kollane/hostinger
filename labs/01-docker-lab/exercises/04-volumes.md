@@ -31,13 +31,13 @@ docker rm postgres-todo postgres-user
 
 Peale selle harjutuse läbimist oskad:
 
-- ✅ Luua nimega andmeköiteid (2 köidet: User teenus + Todo teenus)
-- ✅ Paigaldada (mount) andmeköidet konteinerisse
-- ✅ Testida andmete püsivust (konteiner kustutatakse, andmed jäävad!)
+- ✅ Luua **nimega andmeköiteid (named volumes)** (2 köidet: User teenus + Todo teenus)
+- ✅ **Haakida (mount)** andmeköidet konteinerisse
+- ✅ Testida **andmete püsivust (data persistence)** (konteiner kustutatakse, andmed jäävad!)
 - ✅ Varundada ja taastada mitut andmeköidet
 - ✅ Inspekteerida andmeköiteid
 - ✅ Mõista, miks andmeköited on kriitilised tootmises
-- ✅ Testida tõrkest taastumise stsenaariumi
+- ✅ Testida **tõrkest taastumise (disaster recovery)** stsenaariumi
 
 ---
 
@@ -136,7 +136,7 @@ docker exec postgres-todo psql -U postgres -d todo_service_db -c "SELECT * FROM 
 
 **See on SUUR PROBLEEM tootmises!** Lahendame selle nüüd andmeköidetega.
 
-### Samm 2: Loo nimega andmeköited (Named Volumes)
+### Samm 2: Loo nimega andmeköited
 
 ```bash
 # Puhasta eelmine test

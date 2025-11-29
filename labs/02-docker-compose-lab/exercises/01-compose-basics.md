@@ -6,7 +6,7 @@
 
 ## 📋 Harjutuse ülevaade
 
-Selles harjutuses võtad **Lab 1 lõpuseisu** (4 töötavat konteinerit manuaalsete `docker run` käskudega) ja konverteerid need üheks docker-compose.yml failiks. Õpid Docker Compose põhimõisteid: services, networks, volumes ja depends_on.
+Selles harjutuses võtad **Lab 1 lõpuseisu** (4 töötavat konteinerit manuaalsete `docker run` käskudega) ja konverteerid need üheks docker-compose.yml failiks. Õpid Docker Compose põhimõisteid: teenused, võrgud, andmeköited ja depends_on.
 
 **Enne vs Peale:**
 - **Enne (Lab 1):** 4 käsku `docker run` iga konteineri jaoks
@@ -18,11 +18,11 @@ Selles harjutuses võtad **Lab 1 lõpuseisu** (4 töötavat konteinerit manuaals
 
 Peale selle harjutuse läbimist oskad:
 
-- ✅ Konverteerida `docker run` käske docker-compose.yml failiks
-- ✅ Defineerida teenuseid
-- ✅ Kasutada olemasolevaid tõmmiseid
-- ✅ Konfigureerida võrke ja andmeköiteid
-- ✅ Hallata teenuste sõltuvusi (`depends_on`)
+- ✅ Konverteerida `docker run` käske `docker-compose.yml` failiks
+- ✅ Defineerida **teenuseid (services)**
+- ✅ Kasutada olemasolevaid **tõmmiseid (images)**
+- ✅ Konfigureerida **võrke (networks)** ja **andmeköiteid (volumes)**
+- ✅ Hallata teenuste **sõltuvusi (dependencies)** (`depends_on`)
 - ✅ Kasutada `docker compose` põhikäske
 - ✅ Testida End-to-End JWT töövoogu
 
@@ -433,8 +433,8 @@ Docker Compose faili versiooni number. Versioon 3.8 toetab kõiki uuemaid funkts
 Defineerib 4 teenust:
 - `postgres-user` - PostgreSQL kasutajate andmebaasile
 - `postgres-todo` - PostgreSQL todo'de andmebaasile
-- `user-service` - Node.js backend
-- `todo-service` - Java Spring Boot backend
+- `user-service` - Node.js backend (User Service)
+- `todo-service` - Java Spring Boot backend (Todo Service)
 
 **Iga teenus sisaldab:**
 - `image:` - Mis tõmmist kasutada

@@ -26,13 +26,13 @@ Selles harjutuses implementeerime **automated security scanning** Trivy'ga - com
 
 Peale selle harjutuse läbimist oskad:
 
-✅ Paigaldada ja kasutada Trivy
-✅ Scanida Docker images vulnerabilities jaoks
-✅ Scanida Kubernetes manifests misconfigurations jaoks
-✅ Integreerida Trivy CI/CD pipeline'iga
-✅ Genereerida SARIF reports GitHub Security jaoks
-✅ Implementeerida vulnerability remediation workflow
-✅ Seadistada automated periodic scanning
+- ✅ Paigaldada ja kasutada Trivy
+- ✅ Scanida Docker images vulnerabilities jaoks
+- ✅ Scanida Kubernetes manifests misconfigurations jaoks
+- ✅ Integreerida Trivy CI/CD pipeline'iga
+- ✅ Genereerida SARIF reports GitHub Security jaoks
+- ✅ Implementeerida vulnerability remediation workflow
+- ✅ Seadistada automated periodic scanning
 
 ---
 

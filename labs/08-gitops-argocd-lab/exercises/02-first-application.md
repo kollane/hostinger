@@ -40,13 +40,13 @@ git push
 
 Peale selle harjutuse läbimist oskad:
 
-✅ Luua ArgoCD Application manifest
-✅ Deploy'da rakendus Git repository'st
-✅ Kasutada manual vs automatic sync strategies
-✅ Mõista Application health ja sync status
-✅ Teostada rollback Git'i kaudu
-✅ Integreerida ArgoCD Lab 5 CI/CD workflow'ga
-✅ Debuggida deployment issues ArgoCD UI'st
+- ✅ Luua ArgoCD Application manifest
+- ✅ Deploy'da rakendus Git repository'st
+- ✅ Kasutada manual vs automatic sync strategies
+- ✅ Mõista Application health ja sync status
+- ✅ Teostada rollback Git'i kaudu
+- ✅ Integreerida ArgoCD Lab 5 CI/CD workflow'ga
+- ✅ Debuggida deployment issues ArgoCD UI'st
 
 ---
 

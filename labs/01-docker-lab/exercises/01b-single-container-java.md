@@ -1,28 +1,28 @@
 # Harjutus 1: Üksiku konteineri loomine (Todo Service)
 
-**Todo Service rakenduse lühitutvustus:**
+**Todo Service'i rakenduse lühitutvustus:**
 - ✍️ Loob ja haldab todo ülesandeid (CRUD)
 - 👀 Kuvab kasutaja ülesandeid (filtreerimine, sorteerimine)
 - 📊 Näitab statistikat (tehtud/pooleli ülesanded)
-- 🔐 Valideerib JWT tokeneid User Service'ilt
+- 🔐 Valideerib JWT "token"-eid User Service'ilt
 
 **📖 Rakenduse funktsionaalsuse kohta lähemalt siit:** [Todo Service README](../../apps/backend-java-spring/README.md)
 
 ---
 ## 📋 Harjutuse ülevaade
-**Harjutuse eesmärk:** Selles harjutuses konteineriseerid Java Spring Boot Todo teenuse rakenduse. Õpid looma Dockerfile'i, ehitama Docker tõmmist ja käivitama konteinereid.
+**Harjutuse eesmärk:** Selles harjutuses konteineriseerid Java Spring Boot Todo Service'i rakenduse. Õpid looma Dockerfile'i, ehitama Docker tõmmist ja käivitama konteinereid.
 
 **Harjutuse Fookus:** See harjutus keskendub Docker põhitõdede õppimisele, MITTE töötavale rakendusele (application)!
 
 ✅ **Õpid:**
 - Dockerfile'i loomist
-- Docker tõmmise (image) ehitamist
-- Konteineri käivitamist
-- Logide vaatamist ja debuggimist
+- Docker **tõmmise (image)** ehitamist
+- **Konteineri (container)** käivitamist
+- **Logide (logs)** vaatamist ja **veatuvastust (debug)**
 - Docker käskude kasutamist
 
 ❌ **Rakendus EI TÖÖTA täielikult:**
-- Todo teenus vajab PostgreSQL andmebaasi
+- Todo Service vajab PostgreSQL andmebaasi
 - Konteiner käivitub, aga hangub kohe (see on **OODATUD**)
 - Töötava rakenduse saad **Harjutus 2**-s (mitme konteineri käivitamine)
 
@@ -50,8 +50,8 @@ ssh labuser@93.127.213.242 -p [SINU-PORT]
 │   Docker Konteiner          │
 │                             │
 │  ┌───────────────────────┐  │
-│  │  Java Rakendus           │  │
-│  │  Todo Teenus             │  │
+│  │  Java Rakendus        │  │
+│  │  Todo Service         │  │
 │  │  Port: 8081           │  │
 │  └───────────────────────┘  │
 │                             │
@@ -70,7 +70,7 @@ ssh labuser@93.127.213.242 -p [SINU-PORT]
 
 **Rakenduse juurkataloog:** `~/labs/apps/backend-java-spring`
 
-Vaata Todo teenuse koodi:
+Vaata Todo Service koodi:
 
 ```bash
 cd ~/labs/apps/backend-java-spring
@@ -166,13 +166,13 @@ gradlew.bat
 - Turvalisem (ei kopeeri .env faile)
 - Ei kopeeri lähtekoodi (ainult JAR fail)
 
-### Samm 4: Koosta Docker tõmmis (Docker image)
+### Samm 4: Ehita Docker tõmmis
 
 **Asukoht:** `~/labs/apps/backend-java-spring`
 
 Esmalt ehita JAR fail, seejärel Docker tõmmis:
 
-**⚠️ Oluline:** Nii JAR-i kui ka Docker tõmmise (image) ehitamiseks pead olema rakenduse juurkataloogis (kus asuvad `build.gradle` ja `Dockerfile`).
+**⚠️ Oluline:** Nii JAR-i kui ka Docker tõmmise ehitamiseks pead olema rakenduse juurkataloogis (kus asuvad `build.gradle` ja `Dockerfile`).
 
 ```bash
 # Ehita JAR fail
@@ -181,7 +181,7 @@ Esmalt ehita JAR fail, seejärel Docker tõmmis:
 # Kontrolli, et JAR on loodud
 ls -lh build/libs/
 
-# Koosta Docker tõmmis sildiga (tag)
+# Ehita Docker tõmmis sildiga (tag)
 docker build -t todo-service:1.0 .
 
 # Vaata ehitamise protsessi
@@ -202,13 +202,13 @@ docker images todo-service:1.0
 ```
 
 **Küsimused:**
-- Kui suur on sinu tõmmis? (peaks olema ~200-250MB)
+- Kui suur on sinu tõmmis?
 - Mitu kihti (layers) on tõmmisel?
 - Millal tõmmis loodi?
 
 ### Samm 5: Käivita Konteiner
 
-**⚠️ OLULINE:** Järgnevad käsud käivitavad konteineri, aga rakendus hangub, sest PostgreSQL puudub. See on **OODATUD** käitumine! Fookus on õppida Docker käske, mitte saada töötav rakendus.
+**⚠️ OLULINE:** Järgnevad käsud käivitavad konteineri, aga rakendus hangub, sest PostgreSQL puudub. See on **OODATUD** käitumine! Hetkel on fookus õppida Docker käske, mitte saada töötav rakendus.
 
 #### Variant A: Interaktiivne režiim (näed kohe vigu)
 
@@ -253,7 +253,7 @@ Vajuta `Ctrl+C` et peatada.
 
 #### Variant B: Taustal töötav režiim (detached mode) (õpi `docker ps` ja `docker logs`)
 
-**See variant õpetab, kuidas debuggida hangunud konteinereid:**
+**See variant õpetab, kuidas veatuvastust teostada hangunud konteineritele:**
 
 ```bash
 # Puhasta eelmine test konteiner
@@ -312,7 +312,7 @@ docker logs todo-service
 - See on OODATUD käitumine Harjutus 1's!
 - Töötava lahenduse saad [Harjutus 2: Mitme Konteineri Käivitamine](02-multi-container.md)-s
 
-### Samm 6: Debug ja Troubleshoot
+### Samm 6: Veatuvastus ja tõrkeotsing
 
 ```bash
 # Vaata konteineri staatust

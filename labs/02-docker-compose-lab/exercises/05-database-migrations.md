@@ -11,7 +11,7 @@ Selles harjutuses õpid automatiseerima andmebaasi skeemi loomist ja uuendamist 
 **Probleem praegu:**
 - ❌ Andmebaasi skeem luuakse manuaalselt (database-setup.sql)
 - ❌ Raske jälgida skeemi muudatusi
-- ❌ Tagasivõtmine (rollback) on keeruline
+- ❌ Tagasi keeramine on keeruline
 - ❌ Ei ole versioonihaldust andmebaasi skeemile
 
 **Lahendus:**
@@ -26,12 +26,12 @@ Selles harjutuses õpid automatiseerima andmebaasi skeemi loomist ja uuendamist 
 
 Peale selle harjutuse läbimist oskad:
 
-- ✅ Mõista, mis on andmebaasi migratsioon
+- ✅ Mõista, mis on **andmebaasi migratsioon (database migration)**
 - ✅ Seadistada Liquibase konteinerit
-- ✅ Kirjutada changelog faile (XML/YAML)
-- ✅ Implementeerida init-konteineri mustrit
+- ✅ Kirjutada **changelog** faile (XML/YAML)
+- ✅ Implementeerida **init-konteineri (init container)** mustrit
 - ✅ Käivitada migratsioone enne rakendust
-- ✅ Teha tagasivõtmisi (rollback)
+- ✅ Teha **tagasi keeramisi (rollback)**
 - ✅ Valmistuda Kubernetes Job/InitContainer'iteks (Lab 3)
 
 ---
@@ -64,7 +64,7 @@ ssh labuser@93.127.213.242 -p [SINU-PORT]
 - `/api/users*` → user-service:3000
 - `/api/todos*` → todo-service:8081
 
-**SSH Sessioonis (debugging):**
+**SSH sessioonis (veatuvastus):**
 - `curl http://localhost:3000/health`
 - `curl http://localhost:8081/health`
 
@@ -98,7 +98,7 @@ Version 4: Create todos table
 
 **Eelised:**
 - ✅ Iga muudatus on versioonihalduses
-- ✅ Automaatne tagasivõtmine
+- ✅ Automaatne tagasi keeramine
 - ✅ Saad käivitada mitu korda (idempotentne)
 - ✅ Andmebaas ja kood on sünkroonis
 
@@ -593,7 +593,7 @@ docker compose exec postgres-user psql -U postgres -d user_service_db -c "SELECT
 - **changeSet:** Üks muudatus andmebaasis (DDL)
 - **changelog:** Fail, mis sisaldab changesets'e
 - **master changelog:** Fail, mis include'ib kõik changesets
-- **rollback:** Tagasivõtmine
+- **rollback:** Tagasi keeramine
 - **databasechangelog:** Liquibase'i tabel migratsiooni ajaloo jaoks
 
 ### Init-konteineri muster:
@@ -626,13 +626,13 @@ docker compose exec postgres-user psql -U postgres -d user_service_db -c "SELECT
 4. **Kasuta kirjeldavaid ID-sid** - 001-create-users-table
 5. **Lisa kommentaare** - Selgita, miks muudatus tehti
 
-### Rollback testimine:
+### Tagasivõtmise testimine:
 
 ```bash
 # Vaata, mis changesets on rakendatud
 docker compose exec liquibase-user liquibase --changeLogFile=changelog-master.xml history
 
-# Rollback viimane changeset
+# Võta tagasi (rollback) viimane changeset
 docker compose exec liquibase-user liquibase --changeLogFile=changelog-master.xml rollbackCount 1
 
 # Kontrolli

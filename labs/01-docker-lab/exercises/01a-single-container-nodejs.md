@@ -1,8 +1,8 @@
 # Harjutus 1: Üksiku konteineri loomine (User Service)
 
-**User Service rakenduse lühitutvustus:**
+**User Service'i rakenduse lühitutvustus:**
 - 🔐 Registreerib uusi kasutajaid
-- 🎫 Loob JWT tokeneid (digitaalsed tõendid)
+- 🎫 Loob JWT "token"-eid (digitaalsed tõendid)
 - ✅ Kontrollib kasutajate õigusi (user/admin roll)
 - 💾 Salvestab kasutajate andmed PostgreSQL andmebaasi
   
@@ -11,19 +11,19 @@
 ---
 ## 📋 Harjutuse ülevaade
 
-**Harjutuse eesmärk:** Node.js kasutajahalduse rakenduse konteineriseerimine ja Dockerfile'i loomine
+**Harjutuse eesmärk:** Node.js kasutajahalduse rakenduse (User Service) konteineriseerimine ja Dockerfile'i loomine
 
-**Harjutuse Fookus:** See harjutus keskendub Docker põhitõdede õppimisele, MITTE töötavale rakendusele!**
+**Harjutuse Fookus:** See harjutus keskendub Docker põhitõdede õppimisele, MITTE töötavale rakendusele!
 
 
 ✅ **Õpid:**
-- Dockerfile'i loomist Node.js rakendusele (application)
-- Docker tõmmise (image) ehitamist
-- Konteineri käivitamist
-- Logide vaatamist ja debuggimist
+- Dockerfile'i loomist Node.js **rakendusele (application)**
+- Docker **tõmmise (image)** ehitamist
+- **Konteineri (container)** käivitamist
+- **Logide (logs)** vaatamist ja **veatuvastust (debug)**
 
 ❌ **Käesolevas harjutuses rakendus veel TÖÖLE EI HAKKA:**
-- User teenus (service) vajab PostgreSQL andmebaasi
+- User Service vajab PostgreSQL andmebaasi
 - Konteiner käivitub, aga hangub kohe (see on **OODATUD**)
 - Töötav rakendus valmib peale **Harjutus 2** läbimist.
 
@@ -51,8 +51,8 @@ ssh labuser@93.127.213.242 -p [SINU-PORT]
 │   Docker Konteiner          │
 │                             │
 │  ┌───────────────────────┐  │
-│  │  Node.js Rakendus            │  │
-│  │  User Teenus                 │  │
+│  │  Node.js Rakendus     │  │
+│  │  User Service         │  │
 │  │  Port: 3000           │  │
 │  └───────────────────────┘  │
 │                             │
@@ -71,7 +71,7 @@ ssh labuser@93.127.213.242 -p [SINU-PORT]
 
 **Rakenduse juurkataloog:** `~/labs/apps/backend-nodejs`
 
-Vaata "User Teenuse" (service) koodi:
+Vaata "User Service" koodi:
 
 ```bash
 cd ~/labs/apps/backend-nodejs
@@ -163,16 +163,16 @@ README.md
 - Kiirem ehitamine
 - Turvalisem (ei kopeeri .env faile)
 
-### Samm 4: Koosta Docker tõmmis (Docker image)
+### Samm 4: Ehita Docker tõmmis
 
 **Asukoht:** `~/labs/apps/backend-nodejs`
 
-Koosta oma esimene Docker tõmmis:
+Ehita oma esimene Docker tõmmis:
 
 **⚠️ Oluline:** Docker tõmmise ehitamiseks pead olema rakenduse juurkataloogis (kus asub `Dockerfile`).
 
 ```bash
-# Koosta tõmmis sildiga (tag)
+# Ehita tõmmis sildiga (tag)
 docker build -t user-service:1.0 .
 
 # Vaata ehitamise protsessi
@@ -198,6 +198,8 @@ docker images user-service:1.0
 - Millal tõmmis loodi?
 
 ### Samm 5: Käivita Konteiner
+
+⚠️ OLULINE: Järgnevad käsud käivitavad konteineri, aga rakendus hangub, sest PostgreSQL puudub. See on OODATUD käitumine! Hetkel on fookus on õppida Docker käske, mitte saada töötav rakendus.
 
 #### Variant A: Ilma andmebaasita (testimiseks)
 
@@ -248,42 +250,22 @@ docker run -d --name user-service \
   -e JWT_SECRET=test-secret-key \
   -e NODE_ENV=production \
   user-service:1.0
+```
 
+### Samm 6: Veatuvastus ja tõrkeotsing
+
+```bash
 # Vaata kas töötab
 docker ps
+
+# Vaata konteineri staatust
+docker ps -a
 
 # Vaata logisid
 docker logs user-service
 
 # Vaata reaalajas
 docker logs -f user-service
-```
-
-**Oodatud:** Konteiner hangub, sest PostgreSQL puudub! See on ÕIGE käitumine!
-
-```bash
-# Vaata kas töötab? (HINT: Ei tööta!)
-docker ps
-
-# Vaata ka peatatud konteinereid
-docker ps -a
-# STATUS peaks olema: Exited (1)
-```
-
-**Miks konteiner puudub `docker ps` väljundis?**
-- Konteiner käivitus, aga rakendus hangus kohe
-- Docker peatas hangunud konteineri automaatselt
-- `docker ps` näitab ainult TÖÖTAVAID konteinereid
-- `docker ps -a` näitab KÕIKI konteinereid (ka peatatud)
-
-### Samm 6: Debug ja Troubleshoot
-
-```bash
-# Vaata konteineri staatust
-docker ps -a
-
-# Vaata logisid
-docker logs user-service
 
 # Sisene konteinerisse
 docker exec -it user-service sh
@@ -300,6 +282,12 @@ docker inspect user-service
 # Vaata ressursikasutust
 docker stats user-service
 ```
+**Miks konteiner puudub `docker ps` väljundis?**
+- Konteiner käivitus, aga rakendus hangus kohe
+- Docker peatas hangunud konteineri automaatselt
+- `docker ps` näitab ainult TÖÖTAVAID konteinereid
+- `docker ps -a` näitab KÕIKI konteinereid (ka peatatud)
+
 
 **Levinud probleemid:**
 
@@ -335,9 +323,9 @@ docker stats user-service
 
 1. **Kasuta `.dockerignore`** - Väldi tarbetute failide kopeerimist
 2. **Kasuta alpine tõmmiseid** - Väiksem suurus, kiirem
-3. **RUN npm install --production** - Ära installi arenduse sõltuvusi (dev dependencies)
-4. **COPY package.json enne koodi** - Parem kihtide vahemälu (layer cache) kasutamine
-5. **Kasuta EXPOSE** - Dokumenteeri, millist porti rakendus kasutab
+3. **`RUN npm install --production`** - Ära installi arenduse sõltuvusi (dev dependencies)
+4. **`COPY package.json` enne koodi** - Parem kihtide vahemälu (layer cache) kasutamine
+5. **Kasuta `EXPOSE`** - Dokumenteeri, millist porti rakendus kasutab
 
 **📖 Node.js konteineriseerimise parimad tavad:**Põhjalikum käsitlus `npm ci`, Alpine images, bcrypt native moodulid, ja teised Node.js spetsiifilised teemad leiad [Peatükk 06A: Java Spring Boot ja Node.js Konteineriseerimise Spetsiifika](../../../resource/06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md).
 

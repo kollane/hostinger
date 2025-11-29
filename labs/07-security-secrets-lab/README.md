@@ -30,13 +30,13 @@ Lab 7 keskendub **production-ready security** implementeerimisele. Turvalisus ei
 
 Peale selle labori läbimist oskad:
 
-✅ Paigaldada ja kasutada HashiCorp Vault secrets management'iks
-✅ Konfigureerida Kubernetes RBAC (Roles, RoleBindings, ServiceAccounts)
-✅ Implementeerida Network Policies (pod-to-pod communication control)
-✅ Skaneerida Docker images ja Kubernetes manifests vulnerabilities jaoks
-✅ Kasutada Sealed Secrets encrypted secrets Git'is hoidmiseks
-✅ Mõista Pod Security Standards (Restricted, Baseline, Privileged)
-✅ Implementeerida security best practices CI/CD pipeline'is
+- ✅ Paigaldada ja kasutada HashiCorp Vault secrets management'iks
+- ✅ Konfigureerida Kubernetes RBAC (Roles, RoleBindings, ServiceAccounts)
+- ✅ Implementeerida Network Policies (pod-to-pod communication control)
+- ✅ Skaneerida Docker images ja Kubernetes manifests vulnerabilities jaoks
+- ✅ Kasutada Sealed Secrets encrypted secrets Git'is hoidmiseks
+- ✅ Mõista Pod Security Standards (Restricted, Baseline, Privileged)
+- ✅ Implementeerida security best practices CI/CD pipeline'is
 
 ---
 

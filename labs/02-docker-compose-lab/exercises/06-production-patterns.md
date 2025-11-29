@@ -1,6 +1,6 @@
 # Harjutus 6: Tootmiskeskkonna mustrid (Production Patterns)
 
-**Eesmärk:** Konfigureeri tootmisvalmis Docker Compose seadistused
+**Eesmärk:** Konfigureeri tootmiskõlbulik Docker Compose seadistused
 
 ---
 
@@ -8,9 +8,9 @@
 
 Selles harjutuses õpid konfigureerima Docker Compose stack'i tootmiskeskkonna jaoks. Rakendad parimaid praktikaid: ressursilimiidid, skaleerimine, taaskäivituspoliitika, logimine ja turvalisus.
 
-**Development vs Production:**
-- **Development:** Kiire iteratsioon, debug, palju logisid
-- **Production:** Stabiilsus, turvalisus, ressursside haldus, vähem logisid
+**Arenduskeskkond (Development) vs Toote keskkond (Production):**
+- **Arenduskeskkond (Development):** Kiire iteratsioon, veatuvastus (debug), palju logisid
+- **Toote keskkond (Production):** Stabiilsus, turvalisus, ressursside haldus, vähem logisid
 
 ---
 
@@ -18,13 +18,13 @@ Selles harjutuses õpid konfigureerima Docker Compose stack'i tootmiskeskkonna j
 
 Peale selle harjutuse läbimist oskad:
 
-- ✅ Konfigureerida ressursilimiite (CPU, mälu)
-- ✅ Skaleerida teenuseid (koopiaid)
-- ✅ Seadistada taaskäivituspoliitikaid
-- ✅ Optimeerida tervisekontrolle
-- ✅ Konfigureerida logimist
-- ✅ Rakendada turvalisuse parimaid praktikaid
-- ✅ Luua tootmisvalmis docker-compose.prod.yml
+- ✅ Konfigureerida **ressursilimiite (resource limits)** (CPU, mälu)
+- ✅ **Skaleerida (scale)** teenuseid (**koopiaid (replicas)**)
+- ✅ Seadistada **taaskäivituspoliitikaid (restart policies)**
+- ✅ Optimeerida **tervisekontrolle (health checks)**
+- ✅ Konfigureerida **logimist (logging)**
+- ✅ Rakendada **turvalisuse (security)** parimaid praktikaid
+- ✅ Luua **tootmiskõlbulik (production-ready)** `docker-compose.prod.yml`
 
 ---
 
@@ -191,7 +191,7 @@ Salvesta: `Esc`, siis `:wq`, `Enter`
 
 ### Samm 2: Mõista production seadistusi
 
-#### Resource Limits:
+#### Ressursilimiidid (Resource Limits):
 
 ```yaml
 deploy:
@@ -212,7 +212,7 @@ deploy:
 - Üks konteiner ei saa kasutada kõiki ressursse (resource starvation)
 - Ennustatav jõudlus
 
-#### Replicas:
+#### Koopiad (Replicas):
 
 ```yaml
 deploy:
@@ -226,7 +226,7 @@ deploy:
 
 **TÄHTIS:** Production'is kasutatakse tavaliselt Kubernetes'i skaleerimist, mitte Docker Compose replicas'e.
 
-#### Restart Policy:
+#### Taaskäivituspoliitika (Restart Policy):
 
 ```yaml
 deploy:
@@ -237,7 +237,7 @@ deploy:
     window: 120s          # 120s akna jooksul
 ```
 
-#### Logging:
+#### Logimine (Logging):
 
 ```yaml
 logging:
@@ -317,7 +317,7 @@ docker stats
 
 ### Samm 5: Testi tervisekontrolle
 
-Health checks on juba docker-compose.yml's defineeritud:
+Rakenduse tervisekontrollid (Health Checks) on juba docker-compose.yml's defineeritud:
 
 ```yaml
 healthcheck:
@@ -434,15 +434,15 @@ docker compose ps | grep healthy
 
 ## 🎓 Õpitud mõisted
 
-### Production vs Development:
+### Toote keskkond (Production) vs Arenduskeskkond (Development):
 
-| Aspekt | Development | Production |
+| Aspekt | Arenduskeskkond (Development) | Toote keskkond (Production) |
 |--------|-------------|------------|
-| Restart Policy | `always` või `unless-stopped` | `on-failure` (piiratud) |
+| Taaskäivituspoliitika | `always` või `unless-stopped` | `on-failure` (piiratud) |
 | Ressursilimiidid | Ei ole | Määratud (CPU, mälu) |
-| Logimine | Jutukas (DEBUG) | Minimaalne (INFO, WARN) |
+| Logimine | Jutukas (DEBUG/veatuvastus) | Minimaalne (INFO, WARN) |
 | Logide rotatsioon | Ei ole | Lubatud (max-size, max-file) |
-| Koopiad (Replicas) | 1 | 2+ (kõrge käideldavus) |
+| Koopiad | 1 | 2+ (kõrge käideldavus) |
 | Andmeköite haakimine | Lähtekood (hot reload) | Ei ole |
 | Turvalisus | Lõdva | Tugevdatud |
 
@@ -495,10 +495,6 @@ logging:
 ```yaml
 # Määra mõistlikud väärtused
 healthcheck:
-  interval: 30s     # Mitte liiga tihti
-  timeout: 3s       # Piisavalt aega
-  retries: 3        # Mitte liiga palju
-  start_period: 40s # Anna aega käivitumiseks
 ```
 
 ### 4. Taaskäivituspoliitika:
@@ -581,7 +577,7 @@ logging:
 - ✅ Lisasid Frontend teenuse (5 teenust)
 - ✅ Haldad saladusi .env failidega
 - ✅ Automatiseerisid andmebaasi migratsioonid Liquibase'iga
-- ✅ Konfigureerisid tootmisvalmis seadistused
+- ✅ Konfigureerisid tootmiskõlbulikud (production-ready) seadistused
 
 **Järgmine Labor:**
 - 🎯 **Labor 3:** Kubernetes Põhitõed

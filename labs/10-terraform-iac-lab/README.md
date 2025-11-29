@@ -50,14 +50,14 @@ terraform apply
 
 Peale selle lab'i läbimist oskad:
 
-✅ Installida ja konfigureerida Terraform
-✅ Kasutada Kubernetes provider
-✅ Provision'ida Kubernetes resources (Namespaces, Deployments, Services)
-✅ Manage'ida Terraform state (local, remote)
-✅ Luua Terraform modules (DRY principle)
-✅ Integrate'ida Terraform CI/CD workflow'ga (Lab 5)
-✅ GitOps for infrastructure (Terraform + ArgoCD)
-✅ Version control infrastructure changes
+- ✅ Installida ja konfigureerida Terraform
+- ✅ Kasutada Kubernetes provider
+- ✅ Provision'ida Kubernetes resources (Namespaces, Deployments, Services)
+- ✅ Manage'ida Terraform state (local, remote)
+- ✅ Luua Terraform modules (DRY principle)
+- ✅ Integrate'ida Terraform CI/CD workflow'ga (Lab 5)
+- ✅ GitOps for infrastructure (Terraform + ArgoCD)
+- ✅ Version control infrastructure changes
 
 ---
 

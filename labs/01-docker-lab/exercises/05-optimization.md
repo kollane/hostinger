@@ -41,11 +41,11 @@ docker images | grep -E 'user-service|todo-service'
 - ❌ Ehitus on aeglane (rebuild iga source muudatuse korral)
 - ❌ Ei kasuta kihtide vahemälu efektiivselt
 - ❌ Töötab root'ina (turvarisk!)
-- ❌ Pole tervisekontrolli (health check)
+- ❌ Pole tervisekontrolli
 
 **Selles harjutuses - optimeerime MÕLEMAT teenust:**
-- ✅ **Node.js (User teenus):** Mitmeastmeline ehitus (sõltuvused → runtime)
-- ✅ **Java (Todo teenus):** Mitmeastmeline ehitus (JDK build → JRE runtime)
+- ✅ **Node.js (User Service):** Mitmeastmeline ehitus (sõltuvused → runtime)
+- ✅ **Java (Todo Service):** Mitmeastmeline ehitus (JDK build → JRE runtime)
 - ✅ Kihtide vahemälu optimeerimine (sõltuvused on vahemälus)
 - ✅ Turvalisus (mitte-juurkasutajad: nodejs:1001, spring:1001)
 - ✅ Tervisekontrollid
@@ -54,11 +54,11 @@ docker images | grep -E 'user-service|todo-service'
 
 ## 🎯 Õpieesmärgid
 
-- ✅ Implementeerida mitmeastmelised ehitused (Node.js ja Java)
-- ✅ Optimeerida kihtide vahemälu (sõltuvused eraldi)
+- ✅ Implementeerida **mitmeastmelised ehitused (multi-stage builds)**
+- ✅ Optimeerida **kihtide vahemälu (layer caching)**
 - ✅ Parandada .dockerignore faile
-- ✅ Lisa tervisekontrollid mõlemasse teenusesse
-- ✅ Kasuta mitte-juurkasutajaid (nodejs:1001, spring:1001)
+- ✅ Lisada **tervisekontrollid (health checks)**
+- ✅ Kasutada **mitte-juurkasutajaid (non-root users)**
 - ✅ Võrrelda Node.js vs Java optimeerimise tulemusi
 - ✅ Testida End-to-End töövoogu optimeeritud süsteemiga
 
@@ -170,7 +170,7 @@ USER nodejs:nodejs
 
 EXPOSE 3000
 
-# Health check
+# Tervisekontroll
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s \
   CMD node healthcheck.js || exit 1
 
@@ -310,13 +310,13 @@ Tulemus: efektiivne, turvaline ja skaleeritav konteineripilt.
 **⚠️ Oluline:** Docker tõmmise ehitamiseks pead olema rakenduse juurkataloogis (kus asub `Dockerfile.optimized`).
 
 ```bash
-# === BUILD USER SERVICE (Node.js) ===
+# === BUILD User Service (Node.js) ===
 cd ~/labs/apps/backend-nodejs
 
 # Build optimeeritud tõmmis
 docker build -f Dockerfile.optimized -t user-service:1.0-optimized .
 
-# === BUILD TODO SERVICE (Java) ===
+# === BUILD Todo Service (Java) ===
 # Asukoht: ~/labs/apps/backend-java-spring
 cd ~/labs/apps/backend-java-spring
 
@@ -334,7 +334,7 @@ docker images | grep -E 'user-service|todo-service'
 # todo-service     1.0-optimized   ~180MB (uus) 📉 -22%
 ```
 
-**ℹ️ Märkus User Service suuruse kohta:**
+**ℹ️ Märkus User Service'i suuruse kohta:**
 User Service tõmmis jääb samaks (~305MB), sest mõlemad versioonid kasutavad `node:21-slim`.
 
 **Mida võitsime optimeeritud versiooniga:**
@@ -351,7 +351,7 @@ JWT_SECRET=$(openssl rand -base64 32)
 echo "JWT_SECRET=$JWT_SECRET"
 export JWT_SECRET
 
-# === KÄIVITA USER SERVICE (optimeeritud) ===
+# === KÄIVITA User Service (optimeeritud) ===
 docker run -d \
   --name user-service-opt \
   --network todo-network \
@@ -367,7 +367,7 @@ docker run -d \
   -e PORT=3000 \
   user-service:1.0-optimized
 
-# === KÄIVITA TODO SERVICE (optimeeritud) ===
+# === KÄIVITA Todo Service (optimeeritud) ===
 docker run -d \
   --name todo-service-opt \
   --network todo-network \
@@ -389,11 +389,11 @@ docker logs -f todo-service-opt
 # Vajuta Ctrl+C kui näed: "Started TodoApplication"
 
 # === TESTI TERVISEKONTROLLE ===
-echo "=== User Service Health ==="
+echo "=== User Service'i Health ==="
 curl http://localhost:3001/health
 # Oodatud: {"status":"OK","database":"connected"}
 
-echo -e "\n=== Todo Service Health ==="
+echo -e "\n=== Todo Service'i Health ==="
 curl http://localhost:8082/health
 # Oodatud: {"status":"UP"}
 
@@ -431,7 +431,7 @@ curl -X POST http://localhost:3001/api/auth/register \
 
 # Oodatud: {"token": "eyJhbGci...", "user": {...}}
 
-# 2. Login ja salvesta JWT token
+# 2. Login ja salvesta JWT "token"
 TOKEN=$(curl -s -X POST http://localhost:3001/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"optimized@example.com","password":"test123"}' \
@@ -439,7 +439,7 @@ TOKEN=$(curl -s -X POST http://localhost:3001/api/auth/login \
 
 echo "JWT Token: $TOKEN"
 
-# 3. Kasuta tokenit Todo Service'is (optimeeritud!)
+# 3. Kasuta "token"-it Todo Service'is (optimeeritud!)
 curl -X POST http://localhost:8082/api/todos \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
@@ -452,7 +452,7 @@ curl -X POST http://localhost:8082/api/todos \
 # Oodatud vastus:
 # {
 #   "id": 1,
-#   "userId": 1,  <-- ekstraktitud JWT tokenist!
+#   "userId": 1,  <-- ekstraktitud JWT "token"-ist!
 #   "title": "Optimeeritud süsteem töötab!",
 #   ...
 # }
@@ -472,8 +472,8 @@ docker stats --no-stream --format "table {{.Name}}\t{{.MemUsage}}\t{{.CPUPerc}}"
 **🎉 KUI KÕIK TOIMIS - ÕNNITLEME!**
 
 **Mida sa just saavutasid:**
-1. ✅ User Service (optimeeritud) genereeris JWT tokeni
-2. ✅ Todo Service (optimeeritud) valideeris tokenit (SAMA JWT_SECRET!)
+1. ✅ User Service (optimeeritud) genereeris JWT "token"-i
+2. ✅ Todo Service (optimeeritud) valideeris "token"-it (SAMA JWT_SECRET!)
 3. ✅ Optimeeritud süsteem töötab IDENTSENALT vanaga
 4. ✅ AGA: Väiksemad tõmmised (-25-33%), tervisekontrollid, mitte-juurkasutajad!
 5. ✅ TOOTMISEKS VALMIS mikroteenuste süsteem! 🚀
@@ -530,7 +530,7 @@ docker run --rm \
 
 **Järgmised sammud:**
 1. Loe [Peatükk 06B](../../../resource/06B-Docker-Image-Security-ja-Vulnerability-Scanning.md) põhjalikuks uurimiseks
-2. Parandanud CRITICAL ja HIGH CVE'd enne production'i
+2. Parandanud CRITICAL ja HIGH CVE'd enne toote keskkonda (production)
 3. Lisa automaatne skannimine CI/CD pipeline'i (juhised peatükis 06B)
 
 ### Samm 7: Kihtide vahemälu test
@@ -670,7 +670,7 @@ docker images | grep -E 'user-service|todo-service' | sort
 - ⚠️ User Service: sama suurus, optimisatsioon annab kiiremad rebuild'id
 - ✅ End-to-End test optimeeritud süsteemiga
 
-### 🏆 LÕPPTULEMUS: Production-Ready Docker seadistus!
+### 🏆 LÕPPTULEMUS: Tootmiskõlbulik (Production-Ready) Docker seadistus!
 
 **Mis sul nüüd on:**
 - ✅ 2 optimeeritud mikroteenust (User Service + Todo Service)
@@ -678,11 +678,11 @@ docker images | grep -E 'user-service|todo-service' | sort
 - ✅ Kohandatud võrk (korrektne DNS lahendus)
 - ✅ Tervise monitooring (terved konteinerid)
 - ✅ Turvalisus (mitte-juurkasutajad)
-- ✅ Kiired rebuild'id (kihtide vahemälu - 60-80% kiirem!)
+- ✅ Kiired "uuesti ehitamised" (rebuilds) (kihtide vahemälu - 60-80% kiirem!)
 - ✅ End-to-End testitud (JWT töövoog töötab!)
 - 📚 **Õppetund:** Töökindlus > tõmmise suurus
 
-**See on TÄIELIK production-ready mikroteenuste süsteem!** 🎉🚀
+**See on TÄIELIK tootmiskõlbulik (production-ready) mikroteenuste süsteem!** 🎉🚀
 
 ---
 

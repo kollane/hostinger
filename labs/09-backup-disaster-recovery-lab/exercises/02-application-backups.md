@@ -37,13 +37,13 @@ Selles harjutuses backup'ime **production application** koos andmebaasiga. See o
 
 Peale selle harjutuse läbimist oskad:
 
-✅ Backup'ida production application koos DB'ga
-✅ Backup'ida PersistentVolumes Restic'uga
-✅ Inspect'ida backup contents
-✅ Restore'ida application eraldi namespace'sse
-✅ Verify'da restored application töötab
-✅ Handle'da StatefulSet backups correctly
-✅ Test'ida backup consistency
+- ✅ Backup'ida production application koos DB'ga
+- ✅ Backup'ida PersistentVolumes Restic'uga
+- ✅ Inspect'ida backup contents
+- ✅ Restore'ida application eraldi namespace'sse
+- ✅ Verify'da restored application töötab
+- ✅ Handle'da StatefulSet backups correctly
+- ✅ Test'ida backup consistency
 
 ---
 

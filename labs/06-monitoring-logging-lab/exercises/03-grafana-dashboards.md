@@ -21,14 +21,14 @@ Selles harjutuses õpime kasutama **Grafana** - võimsat open-source visualizati
 
 Peale selle harjutuse läbimist oskad:
 
-✅ Ligi pääseda Grafana UI'le
-✅ Konfigureerida Prometheus data source
-✅ Luua custom dashboard'e
-✅ Kasutada erinevaid panel types (Graph, Stat, Gauge, Table)
-✅ Kirjutada PromQL queries Grafana's
-✅ Luua dashboard variables (templating)
-✅ Importida pre-built dashboards
-✅ Exportida ja jagada dashboards (JSON)
+- ✅ Ligi pääseda Grafana UI'le
+- ✅ Konfigureerida Prometheus data source
+- ✅ Luua custom dashboard'e
+- ✅ Kasutada erinevaid panel types (Graph, Stat, Gauge, Table)
+- ✅ Kirjutada PromQL queries Grafana's
+- ✅ Luua dashboard variables (templating)
+- ✅ Importida pre-built dashboards
+- ✅ Exportida ja jagada dashboards (JSON)
 
 ---
 

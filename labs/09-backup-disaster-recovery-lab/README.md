@@ -38,16 +38,16 @@ Production incidents:
 
 Peale selle lab'i läbimist oskad:
 
-✅ Installida ja konfigureerida Velero
-✅ Seadistada backup storage (S3, MinIO)
-✅ Luua application-level backups (user-service + database)
-✅ Luua PersistentVolume backups
-✅ Seadistada scheduled backups (daily, weekly)
-✅ Teostada full cluster restore
-✅ Teostada selective restore (namespace, application)
-✅ Testida disaster recovery scenario
-✅ Migreerida applications teise cluster'isse
-✅ Integreerida backups CI/CD workflow'ga
+- ✅ Installida ja konfigureerida Velero
+- ✅ Seadistada backup storage (S3, MinIO)
+- ✅ Luua application-level backups (user-service + database)
+- ✅ Luua PersistentVolume backups
+- ✅ Seadistada scheduled backups (daily, weekly)
+- ✅ Teostada full cluster restore
+- ✅ Teostada selective restore (namespace, application)
+- ✅ Testida disaster recovery scenario
+- ✅ Migreerida applications teise cluster'isse
+- ✅ Integreerida backups CI/CD workflow'ga
 
 ---
 

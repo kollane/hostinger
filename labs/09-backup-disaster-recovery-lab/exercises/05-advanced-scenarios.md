@@ -26,13 +26,13 @@ Selles harjutuses uurime **advanced Velero use cases**:
 
 ## 🎯 Õpieesmärgid
 
-✅ Migrate application to different cluster
-✅ Selective restore (specific resources)
-✅ Create backup hooks (pre/post-backup)
-✅ Backup ArgoCD Applications
-✅ Backup Sealed Secrets
-✅ Automate backups in CI/CD
-✅ Restore encrypted secrets correctly
+- ✅ Migrate application to different cluster
+- ✅ Selective restore (specific resources)
+- ✅ Create backup hooks (pre/post-backup)
+- ✅ Backup ArgoCD Applications
+- ✅ Backup Sealed Secrets
+- ✅ Automate backups in CI/CD
+- ✅ Restore encrypted secrets correctly
 
 ---
 
