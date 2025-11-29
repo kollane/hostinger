@@ -11,9 +11,9 @@
 ---
 ## 📋 Harjutuse ülevaade
 
-**Harjutuse eesmärk:** Node.js kasutajahalduse rakenduse konteineriseerimine ja Dockerfile'i loomine
+**Harjutuse eesmärk:** Node.js kasutajahalduse rakenduse (User Service) konteineriseerimine ja Dockerfile'i loomine
 
-**Harjutuse Fookus:** See harjutus keskendub Docker põhitõdede õppimisele, MITTE töötavale rakendusele!**
+**Harjutuse Fookus:** See harjutus keskendub Docker põhitõdede õppimisele, MITTE töötavale rakendusele!
 
 
 ✅ **Õpid:**
