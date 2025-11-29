@@ -199,6 +199,8 @@ docker images user-service:1.0
 
 ### Samm 5: Käivita Konteiner
 
+⚠️ OLULINE: Järgnevad käsud käivitavad konteineri, aga rakendus hangub, sest PostgreSQL puudub. See on OODATUD käitumine! Fookus on õppida Docker käske, mitte saada töötav rakendus.
+
 #### Variant A: Ilma andmebaasita (testimiseks)
 
 ```bash
