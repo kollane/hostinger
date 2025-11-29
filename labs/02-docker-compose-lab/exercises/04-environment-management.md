@@ -1,21 +1,20 @@
-# Harjutus 3: Environment Management
+# Harjutus 4: Keskkondade haldus (.env ja muutujad)
 
-**Kestus:** 45 minutit
-**Eesmärk:** Halda keskkonna muutujaid (environment variables) .env failidega turvaliselt
+**Eesmärk:** Halda keskkonnamuutujaid .env failidega turvaliselt
 
 ---
 
-## 📋 Ülevaade
+## 📋 Harjutuse ülevaade
 
-Selles harjutuses õpid eraldama salajased andmed (secrets) docker-compose.yml failist ja haldama neid turvaliselt `.env` failidega. Samuti õpid kasutama `docker-compose.override.yml` pattern'i erinevate keskkondade (dev, prod) jaoks.
+Selles harjutuses õpid eraldama saladused docker-compose.yml failist ja haldama neid turvaliselt `.env` failidega. Samuti õpid kasutama `docker-compose.override.yml` mustrit erinevate keskkondade (dev, prod) jaoks.
 
 **Probleem praegu:**
-- ❌ Salajased (JWT_SECRET, DB_PASSWORD) on hardcoded docker-compose.yml's
+- ❌ Saladused (JWT_SECRET, DB_PASSWORD) on "hardcoded" docker-compose.yml'is
 - ❌ Sama konfiguratsioon dev ja prod keskkondade jaoks
-- ❌ Raske jagada docker-compose.yml ilma salajasteta
+- ❌ Raske jagada docker-compose.yml ilma saladusteta
 
 **Lahendus:**
-- ✅ .env fail salajaste haldamiseks
+- ✅ .env fail saladuste haldamiseks
 - ✅ docker-compose.override.yml dev seadistuste jaoks
 - ✅ Versioonihaldus (.env.example, mitte .env)
 
@@ -26,11 +25,11 @@ Selles harjutuses õpid eraldama salajased andmed (secrets) docker-compose.yml f
 Peale selle harjutuse läbimist oskad:
 
 - ✅ Luua ja kasutada .env faile
-- ✅ Kasutada keskkonna muutujaid (environment variables) docker-compose.yml's
-- ✅ Implementeerida docker-compose.override.yml pattern'i
+- ✅ Kasutada keskkonnamuutujaid docker-compose.yml'is
+- ✅ Implementeerida docker-compose.override.yml mustrit
 - ✅ Eraldada dev ja prod konfiguratsioone
 - ✅ Turvaliselt versioonihaldusega (.gitignore)
-- ✅ Jagada template'eid (.env.example)
+- ✅ Jagada malle (.env.example)
 
 ---
 
@@ -70,20 +69,20 @@ ssh labuser@93.127.213.242 -p [SINU-PORT]
 
 ## ⚠️ Enne Alustamist: Kontrolli Eeldusi
 
-**Veendu, et Harjutus 2 on läbitud:**
+**Veendu, et Harjutus 3 on läbitud:**
 
 ```bash
-# 1. Kas 5 teenust (services) töötavad?
+# 1. Kas 5 teenust töötavad?
 cd compose-project
 docker compose ps
-# Peaks nägema 5 teenust (services)
+# Peaks nägema 5 teenust
 
 # 2. Kas docker-compose.yml on olemas?
 ls -la docker-compose.yml
 ```
 
 **Kui midagi puudub:**
-- 🔗 Mine tagasi [Harjutus 2](02-add-frontend.md)
+- 🔗 Mine tagasi [Harjutus 3](03-network-segmentation.md)
 
 **✅ Kui kõik ülalpool on OK, võid jätkata!**
 
@@ -91,7 +90,7 @@ ls -la docker-compose.yml
 
 ## 📝 Sammud
 
-### Samm 1: Analüüsi Praegust Probleemi (5 min)
+### Samm 1: Analüüsi praegust probleemi
 
 Vaata praegust docker-compose.yml faili:
 
@@ -105,16 +104,16 @@ JWT_SECRET: shared-secret-key-change-this-in-production-must-be-at-least-256-bit
 ```
 
 **Probleemid:**
-- ❌ Salajane on nähtav failis
-- ❌ Sama salajane dev ja prod's
-- ❌ Kui commit'id Git'i, salajane on avalik
+- ❌ Saladus on nähtav failis
+- ❌ Sama saladus dev ja prod'is
+- ❌ Kui commit'id Git'i, saladus on avalik
 - ❌ Raske muuta (pead muutma 2 kohas: user-service ja todo-service)
 
 ---
 
-### Samm 2: Loo .env Fail (10 min)
+### Samm 2: Loo .env fail
 
-Loo `.env` fail salajastele:
+Loo `.env` fail saladustele:
 
 ```bash
 vim .env
@@ -126,7 +125,7 @@ Lisa järgmine sisu:
 # ==========================================================================
 # Environment Variables - Docker Compose
 # ==========================================================================
-# TÄHTIS: See fail sisaldab salajaseid andmeid!
+# TÄHTIS: See fail sisaldab saladusi!
 # EI TOHI commit'ida Git'i! Lisa .gitignore'i!
 # ==========================================================================
 
@@ -163,7 +162,7 @@ Salvesta: `Esc`, siis `:wq`, `Enter`
 
 ---
 
-### Samm 3: Uuenda docker-compose.yml (15 min)
+### Samm 3: Uuenda docker-compose.yml
 
 Nüüd muuda docker-compose.yml, et kasutada .env faili muutujaid:
 
@@ -171,7 +170,7 @@ Nüüd muuda docker-compose.yml, et kasutada .env faili muutujaid:
 vim docker-compose.yml
 ```
 
-**Asenda hardcoded väärtused ${VARIABLE} süntaksiga:**
+**Asenda "hardcoded" väärtused ${VARIABLE} süntaksiga:**
 
 ```yaml
 services:
@@ -296,15 +295,15 @@ Salvesta: `Esc`, siis `:wq`, `Enter`
 
 ---
 
-### Samm 4: Loo .env.example Template (5 min)
+### Samm 4: Loo .env.example mall
 
-Loo template fail, mida saab commit'ida Git'i:
+Loo mallifail, mida saab commit'ida Git'i:
 
 ```bash
 vim .env.example
 ```
 
-Lisa järgmine sisu (ilma päris salajasteta):
+Lisa järgmine sisu (ilma päris saladusteta):
 
 ```bash
 # ==========================================================================
@@ -348,9 +347,9 @@ Salvesta: `Esc`, siis `:wq`, `Enter`
 
 ---
 
-### Samm 5: Loo .gitignore (5 min)
+### Samm 5: Loo .gitignore
 
-Loo .gitignore fail, et mitte commit'ida salajaseid:
+Loo .gitignore fail, et mitte commit'ida saladusi:
 
 ```bash
 vim .gitignore
@@ -411,7 +410,7 @@ curl -X POST http://localhost:3000/api/auth/register \
 
 ---
 
-### Samm 7: Loo docker-compose.override.yml Dev Jaoks (10 min)
+### Samm 7: Loo docker-compose.override.yml dev jaoks
 
 Loo override fail development seadistustele:
 
@@ -475,17 +474,17 @@ docker compose config
 
 ---
 
-## ✅ Kontrolli Tulemusi
+## ✅ Kontrolli tulemusi
 
 Peale selle harjutuse läbimist peaksid omama:
 
-- [ ] **.env** fail salajastega (EI commit'i Git'i)
-- [ ] **.env.example** template (commit'id Git'i)
+- [ ] **.env** fail saladustega (EI commit'i Git'i)
+- [ ] **.env.example** mall (commit'id Git'i)
 - [ ] **.gitignore** fail (.env on ignoreeritud)
 - [ ] **docker-compose.yml** kasutab ${VARIABLE} süntaksit
 - [ ] **docker-compose.override.yml** dev seadistustega
 - [ ] **Stack töötab** .env väärtustega
-- [ ] **End-to-End workflow** toimib
+- [ ] **End-to-End töövoog** toimib
 
 ---
 
@@ -548,12 +547,12 @@ ${VARIABLE_NAME:-default_value}
 
 ---
 
-## 💡 Parimad Tavad
+## 💡 Parimad tavad
 
 1. **Ära kunagi commit'i .env faili** - Lisa .gitignore'i
-2. **Kasuta .env.example template'i** - Teised saavad kergesti seadistada
-3. **Genereeri tugevad salajased** - JWT_SECRET peab olema random
-4. **Kasuta erinevaid salajaseid** - Dev vs Prod
+2. **Kasuta .env.example malli** - Teised saavad kergesti seadistada
+3. **Genereeri tugevad saladused** - JWT_SECRET peab olema juhuslik
+4. **Kasuta erinevaid saladusi** - Dev vs Prod
 5. **Dokumenteeri .env.example** - Lisa kommentaarid
 
 ### Tugeva JWT_SECRET Genereerimine:
@@ -627,15 +626,15 @@ ${VARIABLE:-default}  # ✅
 
 ## 🔗 Järgmine Samm
 
-Suurepärane! Nüüd haldad salajaseid turvaliselt .env failidega.
+Suurepärane! Nüüd haldad saladusi turvaliselt .env failidega.
 
 **Mis edasi?**
-- ✅ Salajased on eraldatud docker-compose.yml'ist
-- ✅ .env.example template on loodud
+- ✅ Saladused on eraldatud docker-compose.yml'ist
+- ✅ .env.example mall on loodud
 - ✅ Development override rakendub
-- ⏭️ **Järgmine:** Database Migrations (Liquibase)
+- ⏭️ **Järgmine:** Andmebaasi migratsioonid (Liquibase)
 
-**Jätka:** [Harjutus 4: Database Migrations](04-database-migrations.md)
+**Jätka:** [Harjutus 5: Andmebaasi migratsioonid](05-database-migrations.md)
 
 ---
 
@@ -648,4 +647,4 @@ Suurepärane! Nüüd haldad salajaseid turvaliselt .env failidega.
 
 ---
 
-**Õnnitleme! Oled õppinud turvaliselt salajaseid haldama! 🎉**
+**Õnnitleme! Oled õppinud turvaliselt saladusi haldama! 🎉**
