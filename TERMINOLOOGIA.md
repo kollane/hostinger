@@ -103,6 +103,7 @@ Konfiguratsioonifailide ja koodi süntaks jääb muutmata:
 ### Spetsiifilised terminid
 Teatud ingliskeelsed terminid jäävad tõlkimata, kuid neid kasutatakse jutumärkides:
 - "hardcoded"
+- "token"
 
 ---
 
