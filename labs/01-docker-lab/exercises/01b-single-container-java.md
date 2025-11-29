@@ -1,6 +1,6 @@
 # Harjutus 1: Üksiku konteineri loomine (Todo Service)
 
-**Todo Service rakenduse lühitutvustus:**
+**Todo Service'i rakenduse lühitutvustus:**
 - ✍️ Loob ja haldab todo ülesandeid (CRUD)
 - 👀 Kuvab kasutaja ülesandeid (filtreerimine, sorteerimine)
 - 📊 Näitab statistikat (tehtud/pooleli ülesanded)
@@ -10,7 +10,7 @@
 
 ---
 ## 📋 Harjutuse ülevaade
-**Harjutuse eesmärk:** Selles harjutuses konteineriseerid Java Spring Boot Todo teenuse rakenduse. Õpid looma Dockerfile'i, ehitama Docker tõmmist ja käivitama konteinereid.
+**Harjutuse eesmärk:** Selles harjutuses konteineriseerid Java Spring Boot Todo Service'i rakenduse. Õpid looma Dockerfile'i, ehitama Docker tõmmist ja käivitama konteinereid.
 
 **Harjutuse Fookus:** See harjutus keskendub Docker põhitõdede õppimisele, MITTE töötavale rakendusele (application)!
 
@@ -22,7 +22,7 @@
 - Docker käskude kasutamist
 
 ❌ **Rakendus EI TÖÖTA täielikult:**
-- Todo teenus vajab PostgreSQL andmebaasi
+- Todo Service vajab PostgreSQL andmebaasi
 - Konteiner käivitub, aga hangub kohe (see on **OODATUD**)
 - Töötava rakenduse saad **Harjutus 2**-s (mitme konteineri käivitamine)
 
@@ -50,8 +50,8 @@ ssh labuser@93.127.213.242 -p [SINU-PORT]
 │   Docker Konteiner          │
 │                             │
 │  ┌───────────────────────┐  │
-│  │  Java Rakendus           │  │
-│  │  Todo Teenus             │  │
+│  │  Java Rakendus        │  │
+│  │  Todo Service         │  │
 │  │  Port: 8081           │  │
 │  └───────────────────────┘  │
 │                             │
@@ -70,7 +70,7 @@ ssh labuser@93.127.213.242 -p [SINU-PORT]
 
 **Rakenduse juurkataloog:** `~/labs/apps/backend-java-spring`
 
-Vaata Todo teenuse koodi:
+Vaata Todo Service koodi:
 
 ```bash
 cd ~/labs/apps/backend-java-spring

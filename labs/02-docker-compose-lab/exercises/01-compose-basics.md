@@ -433,8 +433,8 @@ Docker Compose faili versiooni number. Versioon 3.8 toetab kõiki uuemaid funkts
 Defineerib 4 teenust:
 - `postgres-user` - PostgreSQL kasutajate andmebaasile
 - `postgres-todo` - PostgreSQL todo'de andmebaasile
-- `user-service` - Node.js backend
-- `todo-service` - Java Spring Boot backend
+- `user-service` - Node.js backend (User Service)
+- `todo-service` - Java Spring Boot backend (Todo Service)
 
 **Iga teenus sisaldab:**
 - `image:` - Mis tõmmist kasutada

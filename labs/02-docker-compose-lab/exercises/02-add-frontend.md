@@ -186,9 +186,9 @@ ls -la ../../apps/frontend/
 ```
 
 **Frontend funktsioonid:**
-- Login vorm (suhtleb User teenusega)
-- Register vorm (suhtleb User teenusega)
-- Todo list (suhtleb Todo teenusega)
+- Login vorm (suhtleb User Service'iga)
+- Register vorm (suhtleb User Service'iga)
+- Todo list (suhtleb Todo Service'iga)
 - JWT token'i haldamine (localStorage)
 
 **Ava ja vaata faile:**
@@ -590,8 +590,8 @@ Peale selle harjutuse läbimist peaksid omama:
   - [ ] Kustutada todo'sid
   - [ ] Välja logida
 - [ ] **Frontend suhtleb edukalt:**
-  - [ ] User teenusega (port 3000)
-  - [ ] Todo teenusega (port 8081)
+  - [ ] User Service'iga (port 3000)
+  - [ ] Todo Service'iga (port 8081)
 - [ ] **End-to-End töövoog toimib brauserist**
 
 ---

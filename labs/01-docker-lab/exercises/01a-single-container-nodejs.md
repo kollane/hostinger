@@ -1,6 +1,6 @@
 # Harjutus 1: Üksiku konteineri loomine (User Service)
 
-**User Service rakenduse lühitutvustus:**
+**User Service'i rakenduse lühitutvustus:**
 - 🔐 Registreerib uusi kasutajaid
 - 🎫 Loob JWT "token"-eid (digitaalsed tõendid)
 - ✅ Kontrollib kasutajate õigusi (user/admin roll)
@@ -23,7 +23,7 @@
 - **Logide (logs)** vaatamist ja **veatuvastust (debug)**
 
 ❌ **Käesolevas harjutuses rakendus veel TÖÖLE EI HAKKA:**
-- User teenus (service) vajab PostgreSQL andmebaasi
+- User Service vajab PostgreSQL andmebaasi
 - Konteiner käivitub, aga hangub kohe (see on **OODATUD**)
 - Töötav rakendus valmib peale **Harjutus 2** läbimist.
 
@@ -51,8 +51,8 @@ ssh labuser@93.127.213.242 -p [SINU-PORT]
 │   Docker Konteiner          │
 │                             │
 │  ┌───────────────────────┐  │
-│  │  Node.js Rakendus            │  │
-│  │  User Teenus                 │  │
+│  │  Node.js Rakendus     │  │
+│  │  User Service         │  │
 │  │  Port: 3000           │  │
 │  └───────────────────────┘  │
 │                             │
@@ -71,7 +71,7 @@ ssh labuser@93.127.213.242 -p [SINU-PORT]
 
 **Rakenduse juurkataloog:** `~/labs/apps/backend-nodejs`
 
-Vaata "User Teenuse" (service) koodi:
+Vaata "User Service" koodi:
 
 ```bash
 cd ~/labs/apps/backend-nodejs

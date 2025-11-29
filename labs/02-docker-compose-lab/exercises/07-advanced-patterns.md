@@ -312,7 +312,7 @@ docker compose watch
 
 #### Samm 9: Konfigureeri Watch režiim
 
-Ava docker-compose.yml ja lisa watch konfiguratsioon User Service'le:
+Ava docker-compose.yml ja lisa watch konfiguratsioon User Service'ile:
 
 ```bash
 vim docker-compose.yml

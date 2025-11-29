@@ -44,8 +44,8 @@ docker images | grep -E 'user-service|todo-service'
 - ❌ Pole tervisekontrolli
 
 **Selles harjutuses - optimeerime MÕLEMAT teenust:**
-- ✅ **Node.js (User teenus):** Mitmeastmeline ehitus (sõltuvused → runtime)
-- ✅ **Java (Todo teenus):** Mitmeastmeline ehitus (JDK build → JRE runtime)
+- ✅ **Node.js (User Service):** Mitmeastmeline ehitus (sõltuvused → runtime)
+- ✅ **Java (Todo Service):** Mitmeastmeline ehitus (JDK build → JRE runtime)
 - ✅ Kihtide vahemälu optimeerimine (sõltuvused on vahemälus)
 - ✅ Turvalisus (mitte-juurkasutajad: nodejs:1001, spring:1001)
 - ✅ Tervisekontrollid
@@ -310,13 +310,13 @@ Tulemus: efektiivne, turvaline ja skaleeritav konteineripilt.
 **⚠️ Oluline:** Docker tõmmise ehitamiseks pead olema rakenduse juurkataloogis (kus asub `Dockerfile.optimized`).
 
 ```bash
-# === BUILD USER SERVICE (Node.js) ===
+# === BUILD User Service (Node.js) ===
 cd ~/labs/apps/backend-nodejs
 
 # Build optimeeritud tõmmis
 docker build -f Dockerfile.optimized -t user-service:1.0-optimized .
 
-# === BUILD TODO SERVICE (Java) ===
+# === BUILD Todo Service (Java) ===
 # Asukoht: ~/labs/apps/backend-java-spring
 cd ~/labs/apps/backend-java-spring
 
@@ -334,7 +334,7 @@ docker images | grep -E 'user-service|todo-service'
 # todo-service     1.0-optimized   ~180MB (uus) 📉 -22%
 ```
 
-**ℹ️ Märkus User Service suuruse kohta:**
+**ℹ️ Märkus User Service'i suuruse kohta:**
 User Service tõmmis jääb samaks (~305MB), sest mõlemad versioonid kasutavad `node:21-slim`.
 
 **Mida võitsime optimeeritud versiooniga:**
@@ -351,7 +351,7 @@ JWT_SECRET=$(openssl rand -base64 32)
 echo "JWT_SECRET=$JWT_SECRET"
 export JWT_SECRET
 
-# === KÄIVITA USER SERVICE (optimeeritud) ===
+# === KÄIVITA User Service (optimeeritud) ===
 docker run -d \
   --name user-service-opt \
   --network todo-network \
@@ -367,7 +367,7 @@ docker run -d \
   -e PORT=3000 \
   user-service:1.0-optimized
 
-# === KÄIVITA TODO SERVICE (optimeeritud) ===
+# === KÄIVITA Todo Service (optimeeritud) ===
 docker run -d \
   --name todo-service-opt \
   --network todo-network \
@@ -389,11 +389,11 @@ docker logs -f todo-service-opt
 # Vajuta Ctrl+C kui näed: "Started TodoApplication"
 
 # === TESTI TERVISEKONTROLLE ===
-echo "=== User Service Health ==="
+echo "=== User Service'i Health ==="
 curl http://localhost:3001/health
 # Oodatud: {"status":"OK","database":"connected"}
 
-echo -e "\n=== Todo Service Health ==="
+echo -e "\n=== Todo Service'i Health ==="
 curl http://localhost:8082/health
 # Oodatud: {"status":"UP"}
 

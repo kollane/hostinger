@@ -84,7 +84,7 @@ Kui tehniline termin esineb antud failis **esimest korda** JA seda **ei ole main
 ## Mida EI tõlgita
 
 ### Käsud
-Käsud ja nende parameetrid jäävad inglise keelde:
+Tehnilisi käske, sealhulgas käske ja nende parameetreid, ei tõlgita. Need jäävad inglise keelde:
 - `docker build`, `docker run`
 - `kubectl apply`, `kubectl get`
 - lipud: `--name`, `-d`, `-p`, `-v`
@@ -104,6 +104,8 @@ Konfiguratsioonifailide ja koodi süntaks jääb muutmata:
 Teatud ingliskeelsed terminid jäävad tõlkimata, kuid neid kasutatakse jutumärkides:
 - "hardcoded"
 - "token"
+- "User Service"
+- "Todo Service"
 
 ---
 

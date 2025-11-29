@@ -19,7 +19,7 @@ Eelmises harjutuses kasutasime `--link` et ühendada konteinereid. See toimis, a
 
 **Selles harjutuses:**
 - Loome kohandatud võrgu `todo-network`
-- Käivitame KÕIK 4 konteinerit (2 PostgreSQL + User teenus + Todo teenus)
+- Käivitame KÕIK 4 konteinerit (2 PostgreSQL + User Service + Todo Service)
 - Kasutame korrektset võrgundust (mitte --link!)
 - Testime End-to-End JWT töövoogu kohandatud võrgus
 
@@ -32,7 +32,7 @@ Peale selle harjutuse läbimist oskad:
 - ✅ Luua kohandatud Docker **võrku (network)**
 - ✅ Käivitada 4 konteinerit samas võrgus
 - ✅ Kasutada **DNS hostinime (hostname)** lahendust (automaatne!)
-- ✅ Testida teenuste vahelist suhtlust (User teenus ↔ Todo teenus)
+- ✅ Testida teenuste vahelist suhtlust (User Service ↔ Todo Service)
 - ✅ Testida End-to-End JWT töövoogu
 - ✅ Inspekteerida võrgu konfiguratsiooni
 - ✅ Isoleerida teenused võrkudega
@@ -98,7 +98,7 @@ docker network inspect todo-network
 **Nüüd käivitame MÕLEMAD PostgreSQL konteinerit samas kohandatud võrgus:**
 
 ```bash
-# PostgreSQL User teenusele
+# PostgreSQL User Service'ile
 docker run -d \
   --name postgres-user \
   --network todo-network \
@@ -107,7 +107,7 @@ docker run -d \
   -e POSTGRES_DB=user_service_db \
   postgres:16-alpine
 
-# PostgreSQL Todo teenusele
+# PostgreSQL Todo Service'ile
 docker run -d \
   --name postgres-todo \
   --network todo-network \
@@ -126,7 +126,7 @@ docker ps | grep postgres
 ### Samm 4: Seadista andmebaasid
 
 ```bash
-# Loo users tabel User teenuse andmebaasis
+# Loo users tabel User Service'i andmebaasis
 docker exec -i postgres-user psql -U postgres -d user_service_db <<EOF
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
@@ -139,11 +139,11 @@ CREATE TABLE users (
 );
 EOF
 
-# Kontrolli User teenuse tabel
+# Kontrolli User Service'i tabel
 docker exec postgres-user psql -U postgres -d user_service_db -c "\dt"
 # Peaks näitama: users tabel
 
-# Loo todos tabel Todo teenuse andmebaasis
+# Loo todos tabel Todo Service'i andmebaasis
 docker exec -i postgres-todo psql -U postgres -d todo_service_db <<EOF
 CREATE TABLE todos (
     id BIGSERIAL PRIMARY KEY,
@@ -158,7 +158,7 @@ CREATE TABLE todos (
 );
 EOF
 
-# Kontrolli Todo teenuse tabel
+# Kontrolli Todo Service'i tabel
 docker exec postgres-todo psql -U postgres -d todo_service_db -c "\dt"
 # Peaks näitama: todos tabel
 ```
@@ -179,10 +179,10 @@ export JWT_SECRET
 echo "Kontroll: $JWT_SECRET"
 ```
 
-### Samm 6: Käivita User teenus
+### Samm 6: Käivita User Service
 
 ```bash
-# User teenuse konteiner samas võrgus
+# User Service'i konteiner samas võrgus
 docker run -d \
   --name user-service \
   --network todo-network \
@@ -207,10 +207,10 @@ docker logs -f user-service
 - ❌ Harjutus 2: Vajasime `--link postgres-user:postgres`
 - ✅ Harjutus 3: Lihtsalt kasuta `DB_HOST=postgres-user` (automaatne DNS!)
 
-### Samm 7: Käivita Todo teenus
+### Samm 7: Käivita Todo Service
 
 ```bash
-# Todo teenuse konteiner samas võrgus
+# Todo Service'i konteiner samas võrgus
 docker run -d \
   --name todo-service \
   --network todo-network \
@@ -248,10 +248,10 @@ docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 
 **See on kõige huvitavam osa!** Vaatame, kuidas Docker automaatselt lahendab (resolves) konteinerite nimesid.
 
-#### 8a. Testi DNS Todo teenusest
+#### 8a. Testi DNS Todo Service'ist
 
 ```bash
-# Sisene Todo teenuse konteinerisse
+# Sisene Todo Service'i konteinerisse
 docker exec -it todo-service sh
 
 # Konteineri sees - testi DNS lahendust
@@ -262,11 +262,11 @@ apk add --no-cache bind-tools curl
 nslookup postgres-todo
 # Peaks näitama: Name: postgres-todo, Address: 172.18.0.X
 
-# Test 2: Kas näeme teist teenust (User teenus)?
+# Test 2: Kas näeme teist teenust (User Service)?
 nslookup user-service
 # Peaks näitama: Name: user-service, Address: 172.18.0.Y
 
-# Test 3: Testi ühendust User teenusega
+# Test 3: Testi ühendust User Service'iga
 curl http://user-service:3000/health
 # Oodatud: {"status":"OK","database":"connected"}
 
@@ -277,10 +277,10 @@ cat /etc/resolv.conf
 exit
 ```
 
-#### 8b. Testi DNS User teenusest
+#### 8b. Testi DNS User Service'ist
 
 ```bash
-# Sisene User teenuse konteinerisse
+# Sisene User Service'i konteinerisse
 docker exec -it user-service sh
 
 # Installi võrgu tööriistad
@@ -290,11 +290,11 @@ apk add --no-cache bind-tools curl
 nslookup postgres-user
 # Peaks näitama: Name: postgres-user, Address: 172.18.0.X
 
-# Test 2: Kas näeme Todo teenust?
+# Test 2: Kas näeme Todo Service'it?
 nslookup todo-service
 # Peaks näitama: Name: todo-service, Address: 172.18.0.Z
 
-# Test 3: Testi ühendust Todo teenusega
+# Test 3: Testi ühendust Todo Service'iga
 curl http://todo-service:8081/health
 # Oodatud: {"status":"UP"}
 
@@ -302,7 +302,7 @@ exit
 ```
 
 **✨ MAAGIA #3:** Teenused näevad teineteist automaatselt!
-- ✅ User teenus ↔ Todo teenus suhtlus töötab
+- ✅ User Service ↔ Todo Service suhtlus töötab
 - ✅ Iga teenus näeb oma PostgreSQL'i
 - ✅ DNS lahendus on automaatne (konteineri nimi = hostinimi!)
 
@@ -351,11 +351,11 @@ docker network inspect todo-network | grep -E '"Name"|"IPv4Address"'
 ### Samm 10: Testi rakenduse tervisekontrolli (Health Check)
 
 ```bash
-# User teenuse tervisekontroll
+# User Service'i tervisekontroll
 curl http://localhost:3000/health
 # Oodatud: {"status":"OK","database":"connected"}
 
-# Todo teenuse tervisekontroll
+# Todo Service'i tervisekontroll
 curl http://localhost:8081/health
 # Oodatud:
 # {
@@ -378,7 +378,7 @@ curl http://localhost:8081/health
 **See on KÕIGE OLULISEM TEST!** Testib täielikku mikroteenuste suhtlust kohandatud võrgus.
 
 ```bash
-# 1. Registreeri kasutaja User teenuses
+# 1. Registreeri kasutaja User Service'is
 curl -X POST http://localhost:3000/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
@@ -406,7 +406,7 @@ TOKEN=$(curl -s -X POST http://localhost:3000/api/auth/login \
 
 echo "JWT Token: $TOKEN"
 
-# 3. Kasuta "token"-it Todo teenuses (MIKROTEENUSTE SUHTLUS!)
+# 3. Kasuta "token"-it Todo Service'is (MIKROTEENUSTE SUHTLUS!)
 curl -X POST http://localhost:8081/api/todos \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
@@ -445,9 +445,9 @@ docker exec postgres-todo psql -U postgres -d todo_service_db -c "SELECT id, use
 **🎉 KUI KÕIK TOIMIS - ÕNNITLEME!**
 
 **Mida sa just saavutasid:**
-1. ✅ User teenus genereeris JWT "token"-i
-2. ✅ Todo teenus valideeris "token"-it (SAMA JWT_SECRET!)
-3. ✅ Todo teenus ekstraktis userId "token"-ist (userId: 1)
+1. ✅ User Service genereeris JWT "token"-i
+2. ✅ Todo Service valideeris "token"-it (SAMA JWT_SECRET!)
+3. ✅ Todo Service ekstraktis userId "token"-ist (userId: 1)
 4. ✅ CRUD operatsioonid töötasid mikroteenuste vahel
 5. ✅ Kohandatud võrk võimaldas automaatset DNS lahendust
 6. ✅ Mõlemad teenused suhtlesid oma andmebaasidega

@@ -36,7 +36,7 @@ Peale selle labori läbimist oskad:
 
 ```
 ┌────────────────────────┐        ┌────────────────────────┐
-│   User Teenus                   │        │   Todo Teenus                   │
+│   User Service         │        │   Todo Service         │
 │   (Node.js 18)         │        │   (Java 17 + Spring)   │
 │   Port: 3000           │        │   Port: 8081           │
 │                        │        │                        │
@@ -56,8 +56,8 @@ Peale selle labori läbimist oskad:
 ```
 
 **Mikroteenuste arhitektuur:**
-- User Teenus: JWT autentimine, kasutajate haldus
-- Todo Teenus: Ülesannete haldus, kasutab User Teenuse JWT "token"-eid
+- User Service: JWT autentimine, kasutajate haldus
+- Todo Service: Ülesannete haldus, kasutab User Service JWT "token"-eid
 - Eraldatud andmebaasid: igal teenusel oma PostgreSQL instants
 
 ---
@@ -69,19 +69,19 @@ Peale selle labori läbimist oskad:
 ├── README.md              # See fail
 ├── setup.sh               # Automaatne seadistus (setup) ja tõmmiste ehitamine
 ├── exercises/             # Harjutused (6 harjutust)
-│   ├── 01a-single-container-nodejs.md        # User Teenus (Service) (Node.js)
-│   ├── 01b-single-container-java.md          # Todo Teenus (Service) (Java)
+│   ├── 01a-single-container-nodejs.md        # User Service (Node.js)
+│   ├── 01b-single-container-java.md          # Todo Service (Java)
 │   ├── 02-multi-container.md                 # Mitme-teenuse (multi-service) + PostgreSQL
 │   ├── 03-networking.md                      # Docker võrgud (networks)
 │   ├── 04-volumes.md                         # Andmete säilitamine
 │   └── 05-optimization.md                    # Mitmeastmelised (multi-stage) ehitused
 └── solutions/             # Lahendused
-    ├── backend-nodejs/        # User Teenuse (Service) lahendused
+    ├── backend-nodejs/        # User Service lahendused
     │   ├── Dockerfile             # Lihtne Dockerfile
     │   ├── Dockerfile.optimized   # Mitme-sammuline (multi-stage) build
     │   ├── .dockerignore          # Ehita (build) context optimeerimine
     │   └── healthcheck.js         # Seisukorra kontrolli (health check) skript
-    └── backend-java-spring/   # Todo Teenuse (Service) lahendused
+    └── backend-java-spring/   # Todo Service lahendused
         ├── Dockerfile             # Lihtne Dockerfile
         ├── Dockerfile.optimized   # Mitme-sammuline (multi-stage) build
         └── .dockerignore          # Ehita (build) context optimeerimine
@@ -335,30 +335,30 @@ Peale labori läbimist pead omama:
 
 ### Testimine:
 
-**User Teenus (Service):**
+**User Service:**
 - [ ] `POST /api/auth/register` - kasutaja registreerimine
 - [ ] `POST /api/auth/login` - JWT "token" genereerimine
 - [ ] `GET /api/users` - kasutajate nimekiri (vajab JWT)
 - [ ] `GET /health` - tagastab OK
 
-**Todo Teenus (Service):**
-- [ ] `POST /api/todos` - loo todo (vajab User Teenuse (Service) JWT)
+**Todo Service:**
+- [ ] `POST /api/todos` - loo todo (vajab User Service JWT)
 - [ ] `GET /api/todos` - loe todos
 - [ ] `PATCH /api/todos/:id/complete` - märgi tehtud
 - [ ] `DELETE /api/todos/:id` - kustuta
 - [ ] `GET /health` - tagastab OK
 
 **End-to-End JWT Workflow:**
-- [ ] User Teenus (Service) genereerib JWT "token"
-- [ ] Todo Teenus (Service) valideerib sama JWT "token"-it
+- [ ] User Service genereerib JWT "token"
+- [ ] Todo Service valideerib sama JWT "token"-it
 - [ ] Mikroteenuste (microservices) suhtlus toimib
 
 ---
 
 ## 📊 Progressi Jälgimine
 
-- [ ] Harjutus 1A: Üksik Konteiner (Single Container) (User Teenus (Service) - Node.js)
-- [ ] Harjutus 1B: Üksik Konteiner (Single Container) (Todo Teenus (Service) - Java)
+- [ ] Harjutus 1A: Üksik Konteiner (Single Container) (User Service - Node.js)
+- [ ] Harjutus 1B: Üksik Konteiner (Single Container) (Todo Service - Java)
 - [ ] Harjutus 2: Mitme-Konteineri (Multi-Container) (2 teenust (services) + 2 DB)
 - [ ] Harjutus 3: Võrgundus (Networking) (Kohandatud võrk (custom network), 4 konteinerit)
 - [ ] Harjutus 4: Andmehoidlad (Volumes) (Andmete püsivus (data persistence), 2 andmehoidlat (volumes))
