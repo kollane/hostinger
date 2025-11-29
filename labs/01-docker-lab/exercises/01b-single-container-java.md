@@ -4,7 +4,7 @@
 - ✍️ Loob ja haldab todo ülesandeid (CRUD)
 - 👀 Kuvab kasutaja ülesandeid (filtreerimine, sorteerimine)
 - 📊 Näitab statistikat (tehtud/pooleli ülesanded)
-- 🔐 Valideerib JWT tokeneid User Service'ilt
+- 🔐 Valideerib JWT "token"-eid User Service'ilt
 
 **📖 Rakenduse funktsionaalsuse kohta lähemalt siit:** [Todo Service README](../../apps/backend-java-spring/README.md)
 
@@ -16,9 +16,9 @@
 
 ✅ **Õpid:**
 - Dockerfile'i loomist
-- Docker tõmmise (image) ehitamist
-- Konteineri käivitamist
-- Logide vaatamist ja debuggimist
+- Docker **tõmmise (image)** ehitamist
+- **Konteineri (container)** käivitamist
+- **Logide (logs)** vaatamist ja **veatuvastust (debug)**
 - Docker käskude kasutamist
 
 ❌ **Rakendus EI TÖÖTA täielikult:**
@@ -166,13 +166,13 @@ gradlew.bat
 - Turvalisem (ei kopeeri .env faile)
 - Ei kopeeri lähtekoodi (ainult JAR fail)
 
-### Samm 4: Koosta Docker tõmmis (Docker image)
+### Samm 4: Ehita Docker tõmmis
 
 **Asukoht:** `~/labs/apps/backend-java-spring`
 
 Esmalt ehita JAR fail, seejärel Docker tõmmis:
 
-**⚠️ Oluline:** Nii JAR-i kui ka Docker tõmmise (image) ehitamiseks pead olema rakenduse juurkataloogis (kus asuvad `build.gradle` ja `Dockerfile`).
+**⚠️ Oluline:** Nii JAR-i kui ka Docker tõmmise ehitamiseks pead olema rakenduse juurkataloogis (kus asuvad `build.gradle` ja `Dockerfile`).
 
 ```bash
 # Ehita JAR fail
@@ -181,7 +181,7 @@ Esmalt ehita JAR fail, seejärel Docker tõmmis:
 # Kontrolli, et JAR on loodud
 ls -lh build/libs/
 
-# Koosta Docker tõmmis sildiga (tag)
+# Ehita Docker tõmmis sildiga (tag)
 docker build -t todo-service:1.0 .
 
 # Vaata ehitamise protsessi
@@ -253,7 +253,7 @@ Vajuta `Ctrl+C` et peatada.
 
 #### Variant B: Taustal töötav režiim (detached mode) (õpi `docker ps` ja `docker logs`)
 
-**See variant õpetab, kuidas debuggida hangunud konteinereid:**
+**See variant õpetab, kuidas veatuvastust teostada hangunud konteineritele:**
 
 ```bash
 # Puhasta eelmine test konteiner
@@ -312,7 +312,7 @@ docker logs todo-service
 - See on OODATUD käitumine Harjutus 1's!
 - Töötava lahenduse saad [Harjutus 2: Mitme Konteineri Käivitamine](02-multi-container.md)-s
 
-### Samm 6: Debug ja Troubleshoot
+### Samm 6: Veatuvastus ja tõrkeotsing
 
 ```bash
 # Vaata konteineri staatust

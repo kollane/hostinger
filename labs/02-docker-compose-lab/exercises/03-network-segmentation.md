@@ -27,13 +27,13 @@ Selles harjutuses õpid, kuidas muuta Harjutus 2 konfiguratsiooni turvaliseks, k
 Peale selle harjutuse läbimist oskad:
 
 - ✅ Mõista turvariske ühe võrguga arhitektuuris
-- ✅ Disainida 3-taseme võrgu arhitektuuri (DMZ → Backend → Database)
-- ✅ Luua ja konfigureerida mitut Docker võrku
+- ✅ Disainida **3-taseme võrgu arhitektuuri (3-tier network architecture)** (DMZ → Backend → Database)
+- ✅ Luua ja konfigureerida mitut Docker **võrku (network)**
 - ✅ Määrata teenuseid mitmesse võrku
-- ✅ Piirata portide ligipääsetavust (localhost-only binding)
-- ✅ Testida võrgu segmenteerimise efektiivsust
-- ✅ Mõista vähimate õiguste printsiipi
-- ✅ Vähendada rünnaku pinda 96%
+- ✅ Piirata portide ligipääsetavust (**localhost-only binding**)
+- ✅ Võrgu segmenteerimine - 3-tier arhitektuur
+- ✅ Mõista **vähimate õiguste printsiipi (principle of least privilege)**
+- ✅ Vähendada **rünnaku pinda (attack surface)** 96%
 
 ---
 
@@ -1035,20 +1035,20 @@ docker compose exec postgres-user ping -c 1 8.8.8.8
 
 #### 7.1. Võrgu segmenteerimise printsiibid
 
-**1. Defense in Depth (Kaitse sügavuses):**
+**1. Kaitse sügavuses (Defense in Depth):**
 - Mitu kaitsevahendit:
   - Kiht 1: Võrgu segmenteerimine
   - Kiht 2: Portide piirangud
   - Kiht 3: Autentimine (JWT)
   - Kiht 4: Autorisatsioon (RBAC)
 
-**2. Principle of Least Privilege (Vähimate õiguste printsiip):**
+**2. Vähimate õiguste printsiip (Principle of Least Privilege):**
 - Iga teenus näeb ainult seda, mida vaja:
   - Frontend näeb ainult backend'e (EI näe andmebaase)
   - Backend'd näevad ainult oma andmebaase
   - Andmebaasid ei näe midagi peale oma backend'i
 
-**3. Zero Trust (Nulltööduse mudel):**
+**3. Nullusalduse mudel (Zero Trust):**
 - Ükski teenus ei usalda teist vaikimisi
 - Iga ligipääs peab olema selgelt lubatud
 - Võrgu segmenteerimine jõustab seda

@@ -8,7 +8,7 @@
 
 ## 📋 Harjutuse ülevaade
 
-Eelmises harjutuses kasutasime `--link` et ühendada konteinereid. See toimis, aga Docker soovitab kasutada **kohandatud võrke (custom networks)**!
+Eelmises harjutuses kasutasime `--link` et ühendada konteinereid. See toimis, aga Docker soovitab kasutada **kohandatud võrke**!
 
 **Miks kohandatud võrgud on paremad kui --link?**
 - ✅ Automaatne DNS lahendus (konteineri nimi = hostinimi)
@@ -29,9 +29,9 @@ Eelmises harjutuses kasutasime `--link` et ühendada konteinereid. See toimis, a
 
 Peale selle harjutuse läbimist oskad:
 
-- ✅ Luua kohandatud Docker võrku
+- ✅ Luua kohandatud Docker **võrku (network)**
 - ✅ Käivitada 4 konteinerit samas võrgus
-- ✅ Kasutada DNS hostname lahendust (automaatne!)
+- ✅ Kasutada **DNS hostinime (hostname)** lahendust (automaatne!)
 - ✅ Testida teenuste vahelist suhtlust (User teenus ↔ Todo teenus)
 - ✅ Testida End-to-End JWT töövoogu
 - ✅ Inspekteerida võrgu konfiguratsiooni
@@ -69,7 +69,7 @@ docker ps -a | grep -E 'user-service|todo-service|postgres'
 # Peaks olema tühi
 ```
 
-### Samm 2: Loo kohandatud võrk (Custom Network)
+### Samm 2: Loo kohandatud võrk
 
 ```bash
 # Loo sildvõrk (bridge) todo-network
@@ -348,7 +348,7 @@ docker network inspect todo-network | grep -E '"Name"|"IPv4Address"'
 - Need IP'd on samast alamvõrgust (subnet) (172.18.0.0/16) ✅
 - Võrgu isolatsioon toimib (välismaailm ei näe PostgreSQL porte!) ✅
 
-### Samm 10: Testi tervisekontrolli (Health Check)
+### Samm 10: Testi rakenduse tervisekontrolli (Health Check)
 
 ```bash
 # User teenuse tervisekontroll
@@ -398,7 +398,7 @@ curl -X POST http://localhost:3000/api/auth/register \
 #   }
 # }
 
-# 2. Login ja salvesta JWT token
+# 2. Login ja salvesta JWT "token"
 TOKEN=$(curl -s -X POST http://localhost:3000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"network@example.com","password":"test123"}' \
@@ -406,7 +406,7 @@ TOKEN=$(curl -s -X POST http://localhost:3000/api/auth/login \
 
 echo "JWT Token: $TOKEN"
 
-# 3. Kasuta tokenit Todo teenuses (MIKROTEENUSTE SUHTLUS!)
+# 3. Kasuta "token"-it Todo teenuses (MIKROTEENUSTE SUHTLUS!)
 curl -X POST http://localhost:8081/api/todos \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
@@ -420,7 +420,7 @@ curl -X POST http://localhost:8081/api/todos \
 # Oodatud vastus:
 # {
 #   "id": 1,
-#   "userId": 1,  <-- ekstraktitud JWT tokenist!
+#   "userId": 1,  <-- ekstraktitud JWT "token"-ist!
 #   "title": "Õpi Kohandatud Võrke (Custom Networks)",
 #   "description": "Docker võrgundus on nüüd selge!",
 #   "completed": false,
@@ -445,9 +445,9 @@ docker exec postgres-todo psql -U postgres -d todo_service_db -c "SELECT id, use
 **🎉 KUI KÕIK TOIMIS - ÕNNITLEME!**
 
 **Mida sa just saavutasid:**
-1. ✅ User teenus genereeris JWT tokeni
-2. ✅ Todo teenus valideeris tokenit (SAMA JWT_SECRET!)
-3. ✅ Todo teenus ekstraktis userId tokenist (userId: 1)
+1. ✅ User teenus genereeris JWT "token"-i
+2. ✅ Todo teenus valideeris "token"-it (SAMA JWT_SECRET!)
+3. ✅ Todo teenus ekstraktis userId "token"-ist (userId: 1)
 4. ✅ CRUD operatsioonid töötasid mikroteenuste vahel
 5. ✅ Kohandatud võrk võimaldas automaatset DNS lahendust
 6. ✅ Mõlemad teenused suhtlesid oma andmebaasidega
@@ -488,6 +488,6 @@ docker exec postgres-todo psql -U postgres -d todo_service_db -c "SELECT id, use
 
 ---
 
-**Õnnitleme! Oled loonud production-ready võrgu seadistuse! 🎉**
+**Õnnitleme! Oled loonud tootmiskõlbuliku (production-ready) võrgu seadistuse! 🎉**
 
 **Järgmine:** [Harjutus 4: Docker andmeköited (Volumes)](04-volumes.md) - Õpi, kuidas säilitada andmed!

@@ -10,7 +10,7 @@ Selles harjutuses õpid eraldama saladused docker-compose.yml failist ja haldama
 
 **Probleem praegu:**
 - ❌ Saladused (JWT_SECRET, DB_PASSWORD) on "hardcoded" docker-compose.yml'is
-- ❌ Sama konfiguratsioon dev ja prod keskkondade jaoks
+- ❌ Sama konfiguratsioon arendus- (dev) ja toote- (prod) keskkondade jaoks
 - ❌ Raske jagada docker-compose.yml ilma saladusteta
 
 **Lahendus:**
@@ -24,12 +24,12 @@ Selles harjutuses õpid eraldama saladused docker-compose.yml failist ja haldama
 
 Peale selle harjutuse läbimist oskad:
 
-- ✅ Luua ja kasutada .env faile
-- ✅ Kasutada keskkonnamuutujaid docker-compose.yml'is
-- ✅ Implementeerida docker-compose.override.yml mustrit
-- ✅ Eraldada dev ja prod konfiguratsioone
-- ✅ Turvaliselt versioonihaldusega (.gitignore)
-- ✅ Jagada malle (.env.example)
+- ✅ Luua ja kasutada **.env faile**
+- ✅ Kasutada **keskkonnamuutujaid (environment variables)** `docker-compose.yml` failis
+- ✅ Implementeerida `docker-compose.override.yml` **mustrit (pattern)**
+- ✅ Eraldada arenduse (dev) ja toote keskkonna (prod) konfiguratsioone
+- ✅ Turvaliselt kasutada **versioonihaldust (version control)** (`.gitignore`)
+- ✅ Jagada **malle (templates)** (`.env.example`)
 
 ---
 
@@ -61,7 +61,7 @@ ssh labuser@93.127.213.242 -p [SINU-PORT]
 - `/api/users*` → user-service:3000
 - `/api/todos*` → todo-service:8081
 
-**SSH Sessioonis (debugging):**
+**SSH sessioonis (veatuvastus):**
 - `curl http://localhost:3000/health`
 - `curl http://localhost:8081/health`
 
@@ -398,7 +398,7 @@ docker compose ps
 **Testi API'd:**
 
 ```bash
-# Health checks
+# Rakenduse tervisekontrollid (Health Checks)
 curl http://localhost:3000/health
 curl http://localhost:8081/health
 
@@ -451,7 +451,7 @@ services:
       LOGGING_LEVEL_ROOT: DEBUG
 
   frontend:
-    # Development: enable directory listing for debugging
+    # Development: enable directory listing for debugging (veatuvastus)
     # (Remove :ro to allow writing)
     volumes:
       - ../../apps/frontend:/usr/share/nginx/html

@@ -20,12 +20,12 @@ Selles harjutuses laiendad Harjutus 1 docker-compose.yml faili, lisades **Fronte
 
 Peale selle harjutuse läbimist oskad:
 
-- ✅ Lisada Frontend teenust Docker Compose stack'i
+- ✅ Lisada Frontend teenust Docker Compose **pinusse (stack)**
 - ✅ Konfigureerida Nginx teenust
-- ✅ Haakida (mount) staatilisi faile andmeköitega
+- ✅ **Haakida (mount)** staatilisi faile **andmeköitega (volume)**
 - ✅ Hallata 5-kihilist arhitektuuri
 - ✅ Testida täielikku rakendust brauseris
-- ✅ Debuggida frontend-backend suhtlust
+- ✅ **Siluda (debug)** frontend-backend suhtlust
 
 ---
 
@@ -225,9 +225,9 @@ Lisa **frontend teenus** järgmise struktuuri järgi (peale todo-service'i, enne
     ports:
       - "8080:80"
     volumes:
-      # Mount frontend failid (read-only)
+      # Haagi frontend failid (read-only)
       - ../../apps/frontend:/usr/share/nginx/html:ro
-      # Mount Nginx konfiguratsioon (reverse proxy API päringutele)
+      # Haagi Nginx konfiguratsioon (pöördproksi API päringutele)
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
     networks:
       - todo-network
@@ -245,7 +245,7 @@ Salvesta: `Esc`, siis `:wq`, `Enter`
 
 ---
 
-### Samm 2.5: Lisa Nginx reverse proxy konfiguratsioon
+### Samm 2.5: Lisa Nginx pöördproksi (reverse proxy) konfiguratsioon
 
 **Miks see on vajalik?**
 
@@ -255,7 +255,7 @@ Frontend JavaScript teeb API päringuid relatiivse URL-iga `/api`, aga backend t
 👉 **Loe põhjalikku selgitust:** [Peatükk 08B: Nginx Reverse Proxy Docker Keskkonnas](../../../resource/08B-Nginx-Reverse-Proxy-Docker-Keskkonnas.md)
 
 **See peatükk käsitleb:**
-- ✅ Reverse proxy kontseptsioon (forward vs reverse)
+- ✅ Pöördproksi kontseptsioon (forward vs reverse)
 - ✅ Kuidas lahendada CORS probleeme
 - ✅ Turvalisuse aspektid (backend'id peidetud)
 - ✅ proxy_pass direktiiv ja header'id
@@ -520,7 +520,7 @@ Ava üks järgnevatest URL-idest vastavalt oma kasutajale (vaata "Sinu Testimise
 
 ---
 
-### Samm 6: Debug frontend-backend suhtlust
+### Samm 6: Silu frontend-backend suhtlust
 
 #### Kontrolli brauseri konsooli
 

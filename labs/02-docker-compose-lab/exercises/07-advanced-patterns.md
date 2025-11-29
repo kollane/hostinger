@@ -33,10 +33,10 @@ Selles harjutuses õpid nelja **täiendavat DevOps mustrit**, mis on kasulikud r
 
 Peale selle harjutuse läbimist oskad:
 
-- ✅ Kasutada Docker Compose profiile
-- ✅ Varundada ja taastada andmeköite andmeid
-- ✅ Debuggida võrguprobleeme
-- ✅ Kasutada silumiskonteinereid
+- ✅ Kasutada Docker Compose **profiile (profiles)**
+- ✅ Varundada ja taastada **andmeköite (volume)** andmeid
+- ✅ Teostada **veatuvastust (debug)** võrguprobleemide korral
+- ✅ Kasutada **silumiskonteinereid (debug containers)**
 - ✅ Analüüsida Docker võrke
 
 ---
@@ -82,7 +82,7 @@ docker compose up -d
 docker compose --profile debug up -d
 ```
 
-#### Samm 2: Lisa silumisteenus (Debug Service)
+#### Samm 2: Lisa silumisteenus
 
 Ava docker-compose.yml:
 
@@ -397,9 +397,9 @@ echo "// Test comment" >> server.js
 - ✅ Ei pea manuaalselt käivitama `docker compose build`
 - ✅ Kiire arenduse tagasisideahel
 
-#### Bonus: Watch režiim Production vs Development
+#### Bonus: Watch režiim Toote keskkond (Production) vs Arenduskeskkond (Development)
 
-**Development (watch režiim):**
+**Arenduskeskkond (Development) (watch režiim):**
 ```yaml
 develop:
   watch:
@@ -408,16 +408,16 @@ develop:
       target: /app/src
 ```
 
-**Production (EI OLE watch'i):**
+**Toote keskkond (Production) (EI OLE watch'i):**
 ```yaml
-# Ära kasuta watch'i production'is!
-# develop: sektsiooni ei tohiks production config'is olla
+# Ära kasuta watch'i toote keskkonnas (production)!
+# develop: sektsiooni ei tohiks toote keskkonna konfis olla
 ```
 
 **Parim praktika:**
 - ✅ Kasuta watch'i ainult arenduses
 - ✅ Kasuta `docker-compose.override.yml` watch konfi jaoks
-- ❌ ÄRA kasuta watch'i production'is (turvalisus + ressursikasutus)
+- ❌ ÄRA kasuta watch'i toote keskkonnas (production) (turvalisus + ressursikasutus)
 
 **docker-compose.override.yml näide (dev watch):**
 ```yaml
