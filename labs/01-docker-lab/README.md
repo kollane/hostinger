@@ -2,7 +2,7 @@
 
 ## 📋 Ülevaade
 
-Selles laboris õpid paigaldama kolme mikroteenust (services) konteineritesse, haldama andmeköiteid ja võrke ning optimeerima Docker tõmmiseid toote keskkonna (production) jaoks.
+Selles laboris õpid paigaldama kolme mikroteenust (services) konteineritesse, haldama andmeköiteid (docker volumes) ja võrke (docker networks) ning optimeerima Docker tõmmiseid (docker images) toote keskkonna jaoks.
 
 **📖 Kasutatavad rakendused:**
 - [User Service](../apps/backend-nodejs/README.md) - Autentimisteenus, mis haldab kasutajaid ja annab välja JWT "token"-eid
@@ -15,7 +15,7 @@ Selles laboris õpid paigaldama kolme mikroteenust (services) konteineritesse, h
 Peale selle labori läbimist oskad:
 
 - ✅ Luua **Dockerfile'e** erinevatele **rakendustele (applications)**
-- ✅ Ehitama (**build**) Docker **tõmmiseid (images)**
+- ✅ Ehitada (**build**) Docker **tõmmiseid (images)**
 - ✅ Käivitada ja hallata **konteinereid (containers)**
 - ✅ Seadistada Docker **võrke (networks)**
 - ✅ Kasutada **andmeköiteid (volumes)** andmete säilitamiseks
