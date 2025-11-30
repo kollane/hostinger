@@ -251,7 +251,7 @@ docker logs -f user-service
 **Mida `--link postgres-user:postgres` teeb?**
 - Loob DNS aliase: `postgres` → `postgres-user` konteineri IP
 - User Service saab ühenduda `postgres:5432` kaudu
-- **Aegunud (deprecated)** Link on staatiline: kui linkitud konteiner maha kukub ja uue IP-ga uuesti käima läheb, võivad lingid katki minna või käituda ebaloogiliselt. Seetõttu seda ei soovitada kasutada.
+- **Aegunud (deprecated)** Link on staatiline: kui lingitud konteiner maha kukub ja uue IP-ga uuesti käima läheb, võivad lingid katki minna või käituda ebaloogiliselt. Seetõttu seda meetodit ei soovitata kasutada.
 - Järgmine harjutus (Harjutus 3) õpetab kohandatud docker võrke, mis on eelistatud meetod.
   
 
