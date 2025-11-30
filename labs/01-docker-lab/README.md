@@ -2,7 +2,7 @@
 
 ## 📋 Ülevaade
 
-Selles laboris õpid paigaldama kolme mikroteenust (services) konteineritesse, haldama andmehoidlaid ja võrke ning optimeerima Docker tõmmiseid toote keskkonna (production) jaoks.
+Selles laboris õpid paigaldama kolme mikroteenust (services) konteineritesse, haldama andmeköiteid ja võrke ning optimeerima Docker tõmmiseid toote keskkonna (production) jaoks.
 
 **📖 Kasutatavad rakendused:**
 - [User Service](../apps/backend-nodejs/README.md) - Autentimisteenus, mis haldab kasutajaid ja annab välja JWT "token"-eid
@@ -18,7 +18,7 @@ Peale selle labori läbimist oskad:
 - ✅ Ehitama (**build**) Docker **tõmmiseid (images)**
 - ✅ Käivitada ja hallata **konteinereid (containers)**
 - ✅ Seadistada Docker **võrke (networks)**
-- ✅ Kasutada **andmehoidlaid (volumes)** andmete säilitamiseks
+- ✅ Kasutada **andmeköiteid (volumes)** andmete säilitamiseks
 - ✅ Optimeerida tõmmise suurust
 - ✅ Kasutada **mitmeastmelisi ehitusi (multi-stage builds)**
 
@@ -26,7 +26,7 @@ Peale selle labori läbimist oskad:
 
 ## 🏗️ Arhitektuur
 
-**Lab 1 katab MÕLEMAD mikroteenust (services):**
+**Lab 1 katab MÕLEMAD mikroteenust:**
 
 ```
 ┌────────────────────────┐        ┌────────────────────────┐
@@ -61,24 +61,24 @@ Peale selle labori läbimist oskad:
 ```
 01-docker-lab/
 ├── README.md              # See fail
-├── setup.sh               # Automaatne seadistus (setup) ja tõmmiste ehitamine
+├── setup.sh               # Automaatne seadistus ja tõmmiste ehitamine
 ├── exercises/             # Harjutused (6 harjutust)
 │   ├── 01a-single-container-nodejs.md        # User Service (Node.js)
 │   ├── 01b-single-container-java.md          # Todo Service (Java)
-│   ├── 02-multi-container.md                 # Mitme-teenuse (multi-service) + PostgreSQL
-│   ├── 03-networking.md                      # Docker võrgud (networks)
+│   ├── 02-multi-container.md                 # Mitme teenuse + PostgreSQL
+│   ├── 03-networking.md                      # Docker võrgud
 │   ├── 04-volumes.md                         # Andmete säilitamine
-│   └── 05-optimization.md                    # Mitmeastmelised (multi-stage) ehitused
+│   └── 05-optimization.md                    # Mitmeastmelised ehitused
 └── solutions/             # Lahendused
     ├── backend-nodejs/        # User Service lahendused
     │   ├── Dockerfile             # Lihtne Dockerfile
-    │   ├── Dockerfile.optimized   # Mitme-sammuline (multi-stage) build
-    │   ├── .dockerignore          # Ehita (build) context optimeerimine
-    │   └── healthcheck.js         # Seisukorra kontrolli (health check) skript
+    │   ├── Dockerfile.optimized   # Mitmeastmeline ehitus
+    │   ├── .dockerignore          # Ehituse konteksti optimeerimine
+    │   └── healthcheck.js         # Tervisekontrolli (health check) skript
     └── backend-java-spring/   # Todo Service lahendused
         ├── Dockerfile             # Lihtne Dockerfile
-        ├── Dockerfile.optimized   # Mitme-sammuline (multi-stage) build
-        └── .dockerignore          # Ehita (build) context optimeerimine
+        ├── Dockerfile.optimized   # Mitmeastmeline ehitus
+        └── .dockerignore          # Ehituse konteksti optimeerimine
 ```
 
 ---
@@ -92,7 +92,7 @@ Peale selle labori läbimist oskad:
 - [x] Docker paigaldatud (`docker --version`)
 - [x] Docker daemon töötab (`docker ps`)
 - [x] Vähemalt 4GB vaba kettaruumi
-- [x] Internet ühendus (**tõmmiste (images)** allalaadimiseks)
+- [x] Internet ühendus (**tõmmiste** allalaadimiseks)
 
 ### Teadmised:
 - [x] **Peatükk 12:** Docker põhimõtted ja konteineriseerimise alused
@@ -105,9 +105,9 @@ Peale selle labori läbimist oskad:
 
 ```
 Labor 1 (Docker) ← Oled siin
-  ↓ Docker pildid (images) →
+  ↓ Docker tõmmised →
 Labor 2 (Compose)
-  ↓ Mitme-konteineri (multi-container) kogemus →
+  ↓ Mitme konteineri kogemus →
 Labor 3 (K8s Basics)
   ↓ K8s manifests + deployed apps →
 Labor 4 (K8s Advanced)
@@ -121,7 +121,7 @@ Labor 6 (Monitoring)
 
 ## 📝 Harjutused
 
-1. **[Harjutus 1A](exercises/01a-single-container-nodejs.md)** (45 min) - Konteineriseeri Node.js User Service: loo Dockerfile, ehita pilt, käivita ja testi REST API.
+1. **[Harjutus 1A](exercises/01a-single-container-nodejs.md)** (45 min) - Konteineriseeri Node.js User Service: loo Dockerfile, ehita tõmmis, käivita ja testi REST API.
 
 2. **[Harjutus 1B](exercises/01b-single-container-java.md)** (45 min) - Konteineriseeri Java Spring Boot Todo Service: ehita JAR, loo Dockerfile, käivita ja testi API.
 
@@ -129,22 +129,22 @@ Labor 6 (Monitoring)
 
 4. **[Harjutus 3](exercises/03-networking.md)** (45 min) - Loo kohandatud Docker võrk, käivita kõik 4 konteinerit ühes võrgus ja testi DNS lahendust.
 
-5. **[Harjutus 4](exercises/04-volumes.md)** (45 min) - Lisa PostgreSQL andmehoidlad, testi andmete püsivust ja tee backup/restore.
+5. **[Harjutus 4](exercises/04-volumes.md)** (45 min) - Lisa PostgreSQL andmeköited, testi andmete püsivust ja tee backup/restore.
 
-5. **[Harjutus 5](exercises/05-optimization.md)** (45 min) - Optimeeri pildid mitmeastmeliste ehitustega (Node.js 200MB→50MB, Java 370MB→180MB) ja lisa health checks.
+5. **[Harjutus 5](exercises/05-optimization.md)** (45 min) - Optimeeri tõmmised mitmeastmeliste ehitustega (Node.js 200MB→50MB, Java 370MB→180MB) ja lisa health checks.
 
-💡 **Kiirvalik:** Käivita `./setup.sh` ja vali `Y` → ehitab mõlemad baaspildid automaatselt, saad alustada otse Harjutus 2'st.
+💡 **Kiirvalik:** Käivita `./setup.sh` ja vali `Y` → ehitab mõlemad baastõmmised automaatselt, saad alustada otse Harjutus 2'st.
 
 ---
 
-## ⚡ Kiirstart Seadistus (Setup)
+## ⚡ Kiirstart Seadistus
 
-### Variant A: Automaatne Seadistus (Setup) (Soovitatud)
+### Variant A: Automaatne Seadistus (Soovitatud)
 
-Käivita seadistus (setup) skript, mis kontrollib kõik eeldused ja valmistab labori ette:
+Käivita seadistusskript, mis kontrollib kõik eeldused ja valmistab labori ette:
 
 ```bash
-# Käivita seadistus (setup) skript
+# Käivita seadistusskript
 chmod +x setup.sh
 ./setup.sh
 ```
@@ -154,11 +154,11 @@ chmod +x setup.sh
 - ✅ Docker daemon'i staatust
 - ✅ Vaba kettaruumi (>5GB soovitatud)
 - ✅ Java ja Node.js olemasolu
-- ✅ Rakenduste (applications) kättesaadavust
+- ✅ Rakenduste kättesaadavust
 - ✅ Harjutuste ja lahenduste olemasolu
 
 **Script pakub:**
-- 💡 Automaatset baaspiltide (base images) ehitamist (`user-service:1.0`, `todo-service:1.0`)
+- 💡 Automaatset baastõmmiste (base images) ehitamist (`user-service:1.0`, `todo-service:1.0`)
 - 💡 Võimalust vahele jätta Harjutus 1 ja alustada otse Harjutus 2'st
 
 **Kuidas kasutada:**
@@ -166,8 +166,8 @@ chmod +x setup.sh
 ```bash
 ./setup.sh
 
-# Kui küsitakse: "Kas soovid ehitada baaspilte (base images) KOHE?"
-# Vali Y → Ehitab **tõmmised (images)** automaatselt (~2-5 min)
+# Kui küsitakse: "Kas soovid ehitada baastõmmiseid (base images) KOHE?"
+# Vali Y → Ehitab **tõmmised** automaatselt (~2-5 min)
 #       → Saad alustada otse Harjutus 2'st
 # Vali N → Alustad Harjutus 1'st (soovitatud õppimiseks)
 #       → Õpid Dockerfile'i loomist algusest
@@ -189,48 +189,48 @@ labs-reset
 
 **Script kustutab:**
 - 🗑️ KÕIK Docker konteinerid (töötavad ja peatatud)
-- 🗑️ KÕIK kohandatud Docker võrgud (networks) (välja arvatud bridge, host, none)
-- 🗑️ KÕIK Docker andmehoidlad (volumes)
+- 🗑️ KÕIK kohandatud Docker võrgud (välja arvatud bridge, host, none)
+- 🗑️ KÕIK Docker andmeköited (volumes)
 - 🗑️ Apps kaustadest harjutuste failid (Dockerfile, Dockerfile.optimized, .dockerignore, healthcheck.js)
 
-**Interaktiivne valik: Tõmmiste (Images) Kustutamine**
+**Interaktiivne valik: Tõmmiste Kustutamine**
 
 Script küsib, kas kustutada ka Docker **tõmmised (images)**:
 
 ```
-Kas soovid kustutada ka Docker pilte (images)?
-  [N] Ei, säilita Lab 1 baaspildid (user-service:1.0, todo-service:1.0)
-      → Kustutab ülejäänud pildid, aga säilitab Lab 1 baaspildid
-      → Saad alustada otse Harjutus 2'st ilma uuesti ehitamata (build)
+Kas soovid kustutada ka Docker tõmmised (images)?
+  [N] Ei, säilita Lab 1 baastõmmised (user-service:1.0, todo-service:1.0)
+      → Kustutab ülejäänud tõmmised, aga säilitab Lab 1 baastõmmised
+      → Saad alustada otse Harjutus 2'st ilma uuesti ehitamata
       → Kiire restart Harjutuste 2-6 jaoks
-  [Y] Jah, kustuta KÕIK pildid (images) (täielik reset)
-      → Pead alustama Harjutus 1'st ja ehitama (build) pilte (images) uuesti
+  [Y] Jah, kustuta KÕIK tõmmised (täielik reset)
+      → Pead alustama Harjutus 1'st ja ehitama tõmmised uuesti
       → Täielik "puhas leht" algusest
 ```
 
 **Kasutusstsenaariume:**
 
 ```bash
-# Stsenaarium 1: Kiire restart (säilita Lab 1 baaspildid)
+# Stsenaarium 1: Kiire restart (säilita Lab 1 baastõmmised)
 labs-reset
 # Vali: N
-# → Kõik konteinerid/võrgud (networks)/andmehoidlad (volumes) kustutatakse
-# → Lab 1 **baastõmmised (images)** (user-service:1.0, todo-service:1.0) säilitatakse
+# → Kõik konteinerid/võrgud/andmeköited kustutatakse
+# → Lab 1 **baastõmmised** (user-service:1.0, todo-service:1.0) säilitatakse
 # → Alusta uuesti Harjutus 2'st või 3'st
 
 # Stsenaarium 2: Täielik reset (kustuta kõik)
 labs-reset
 # Vali: Y
-# → Kõik kustutatakse (sh **tõmmised (images)**)
+# → Kõik kustutatakse (sh **tõmmised**)
 # → Alusta päris algusest (Harjutus 1)
 
-# Stsenaarium 3: Automaatne reset (sh pildid (images))
+# Stsenaarium 3: Automaatne reset (sh tõmmised)
 echo "y" | labs-reset  # Kustutab KÕIK
 ```
 
 ---
 
-### Variant B: Manuaalne Seadistus (Setup)
+### Variant B: Manuaalne Seadistus
 
 Kui eelistad samm-sammult:
 
@@ -272,7 +272,7 @@ free -h
 # Mine labori kataloogi
 cd ~/labs/01-docker-lab
 
-# Kontrolli rakenduste (applications) kättesaadavust
+# Kontrolli rakenduste kättesaadavust
 ls ../apps/backend-java-spring
 ls ../apps/backend-nodejs  # Lab 2 jaoks
 ls ../apps/frontend  # Lab 2 jaoks
@@ -318,14 +318,14 @@ Peale labori läbimist pead omama:
 - [ ] PostgreSQL User DB (port 5432)
 - [ ] PostgreSQL Todo DB (port 5433)
 
-### Andmehoidlad (Volumes):
+### Andmeköited (Volumes):
 
 - [ ] `postgres-user-data` (kasutajate andmebaas)
 - [ ] `postgres-todo-data` (ülesannete andmebaas)
 
-### Võrk (Network):
+###Võrk (Network):
 
-- [ ] `todo-network` (kohandatud silla (bridge) võrk (network))
+- [ ] `todo-network` (kohandatud silla (bridge) võrk)
 
 ### Testimine:
 
@@ -345,18 +345,18 @@ Peale labori läbimist pead omama:
 **End-to-End JWT Workflow:**
 - [ ] User Service genereerib JWT "token"
 - [ ] Todo Service valideerib sama JWT "token"-it
-- [ ] Mikroteenuste (microservices) suhtlus toimib
+- [ ] Mikroteenuste suhtlus toimib
 
 ---
 
 ## 📊 Progressi Jälgimine
 
-- [ ] Harjutus 1A: Üksik Konteiner (Single Container) (User Service - Node.js)
-- [ ] Harjutus 1B: Üksik Konteiner (Single Container) (Todo Service - Java)
-- [ ] Harjutus 2: Mitme-Konteineri (Multi-Container) (2 teenust (services) + 2 DB)
-- [ ] Harjutus 3: Võrgundus (Networking) (Kohandatud võrk (custom network), 4 konteinerit)
-- [ ] Harjutus 4: Andmehoidlad (Volumes) (Andmete püsivus (data persistence), 2 andmehoidlat (volumes))
-- [ ] Harjutus 5: Optimeerimine (Optimization) (Mitme-sammulised (multi-stage) buildid, 2 teenust (services))
+- [ ] Harjutus 1A: Üksik Konteiner (User Service - Node.js)
+- [ ] Harjutus 1B: Üksik Konteiner (Todo Service - Java)
+- [ ] Harjutus 2: Mitme Konteineri (2 teenust + 2 DB)
+- [ ] Harjutus 3: Võrgundus (Kohandatud võrk, 4 konteinerit)
+- [ ] Harjutus 4: Andmeköited (Andmete püsivus, 2 andmeköidet)
+- [ ] Harjutus 5: Optimeerimine (Mitmeastmelised ehitused, 2 teenust)
 
 ---
 
@@ -377,7 +377,7 @@ sudo lsof -i :3000
 docker run -p 3001:3000 ...
 ```
 
-### Tõmmise (image) ehitus (build) ebaõnnestub?
+### Tõmmise ehitus ebaõnnestub?
 ```bash
 # Kontrolli Dockerfile syntax
 docker build --no-cache -t test .
@@ -410,11 +410,11 @@ Peale selle labori edukat läbimist, jätka:
 ## 🎓 Kokkuvõte
 
 Peale selle labori läbimist oled:
-- ✅ Konteineriseerinud 2 mikroteenust (microservices) (Node.js ja Java)
+- ✅ Konteineriseerinud 2 mikroteenust (Node.js ja Java)
 - ✅ Loonud 4 Docker tõmmist (2 lihtsat + 2 optimeeritud)
 - ✅ Hallanud mitme konteineriga süsteemi (4 konteinerit)
-- ✅ Kasutanud Docker võrke ja andmehoidlaid
-- ✅ Testinud End-to-End mikroteenuste (microservices) suhtlust
+- ✅ Kasutanud Docker võrke ja andmeköiteid
+- ✅ Testinud End-to-End mikroteenuste suhtlust
 - ✅ Optimeerinud tõmmise suurust (kuni 75% väiksemad!)
 
 **Edu laboriga! 🚀**
@@ -424,11 +424,11 @@ Peale selle labori läbimist oled:
 ## 📌 Lisainfo
 
 **Abiskriptid:**
-- `./setup.sh` - Automaatne seadistus (setup) ja tõmmiste ehitamine
+- `./setup.sh` - Automaatne seadistus ja tõmmiste ehitamine
 - `labs-reset` - Laborite täielik reset (kustutab KÕIK Docker ressursid)
 
 **Harjutused:**
-- 6 harjutust: 2x Üksik Konteiner (Single Container), Mitme-Konteineri (Multi-Container), Võrgundus (Networking), Andmehoidlad (Volumes), Optimeerimine (Optimization)
+- 6 harjutust: 2x Üksik Konteiner, Mitme Konteineri, Võrgundus, Andmeköited, Optimeerimine
 - Kokku: ~4.5 tundi
 
 **Staatus:** ✅ 100% valmis
