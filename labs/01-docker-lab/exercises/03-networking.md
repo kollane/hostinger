@@ -181,6 +181,18 @@ echo "Kontroll: $JWT_SECRET"
 
 ### Samm 6: Käivita User Service
 
+**ℹ️ Portide turvalisus:**
+
+Kasutame lihtsustatud portide vastendust (`-p 3000:3000`).
+- ✅ **Host'i tulemüür kaitseb:** VPS-is on UFW tulemüür, mis blokeerib pordid internetist
+- ✅ **PostgreSQL EI kasuta `-p`:** Ainult `todo-network` võrgus (võrgu isolatsioon - PARIM PRAKTIKA!)
+- 📚 **Tootmises oleks õige:** `-p 127.0.0.1:3000:3000` rakenduste jaoks
+- 🎯 **Lab 7 käsitleb:** Võrguturvalisust põhjalikumalt
+
+**Hetkel keskendume Docker võrkudele!**
+
+---
+
 ```bash
 # User Service'i konteiner samas võrgus
 docker run -d \

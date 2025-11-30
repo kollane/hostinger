@@ -43,6 +43,18 @@ Peale selle harjutuse läbimist oskad:
 
 ## 📝 Sammud
 
+**ℹ️ Portide turvalisus:**
+
+Selles harjutuses PostgreSQL **EI kasuta** `-p` (ainult `todo-network` võrgus).
+- ✅ **See on PARIM PRAKTIKA:** Andmebaasid peaksid olema isoleeritud sisevõrgus
+- ✅ **Host'i tulemüür kaitseb:** UFW blokeerib kõik pordid (lisaturvalisus)
+- 📚 **Kui vaja testida:** `docker exec -it postgres-user psql -U postgres -d user_service_db`
+- 🎯 **Lab 7 käsitleb:** Võrguturvalisust põhjalikumalt
+
+**Hetkel keskendume andmete püsivusele!**
+
+---
+
 ### Samm 1: Demonstreeri probleemi
 
 **Esmalt näitame, mis juhtub ILMA andmeköideteta - MÕLEMAS andmebaasis:**

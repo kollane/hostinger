@@ -345,6 +345,21 @@ User Service tõmmis jääb samaks (~305MB), sest mõlemad versioonid kasutavad 
 
 ### Samm 4: Testi MÕLEMAD optimeeritud tõmmised
 
+**ℹ️ Portide turvalisus:**
+
+Kasutame lihtsustatud portide vastendust (koos erinevate portidega, sest vanad on kasutusel).
+- ✅ **Host'i tulemüür kaitseb:** VPS-is on UFW tulemüür, mis blokeerib pordid internetist
+- 📚 **Tootmises oleks õige:** `-p 127.0.0.1:3001:3000` jne
+- 🎯 **Lab 7 käsitleb:** Võrguturvalisust põhjalikumalt
+
+**Portide valik:**
+- User Service: `3001:3000` (port 3001 host'is, sest 3000 on juba kasutusel vanast)
+- Todo Service: `8082:8081` (port 8082 host'is, sest 8081 on juba kasutusel vanast)
+
+**Hetkel keskendume optimeerimisele!**
+
+---
+
 ```bash
 # Genereeri JWT_SECRET (kui pole veel)
 JWT_SECRET=$(openssl rand -base64 32)

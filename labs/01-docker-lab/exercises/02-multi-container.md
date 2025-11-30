@@ -71,6 +71,17 @@ User (browser/cURL)
 
 ## 📝 Sammud
 
+**ℹ️ Portide turvalisus:**
+
+Selles harjutuses kasutame lihtsustatud portide vastendust (`-p 3000:3000`).
+- ✅ **Host'i tulemüür kaitseb:** VPS-is on UFW tulemüür, mis blokeerib pordid internetist
+- 📚 **Tootmises oleks õige:** PostgreSQL ILMA `-p` (ainult sisevõrgus), rakendused `-p 127.0.0.1:...:...`
+- 🎯 **Lab 2 ja Lab 7 käsitlevad:** Võrguturvalisust põhjalikumalt
+
+**Hetkel keskendume mitme konteineri seadistusele!**
+
+---
+
 ### Samm 1: Käivita PostgreSQL konteinerid
 
 ```bash
