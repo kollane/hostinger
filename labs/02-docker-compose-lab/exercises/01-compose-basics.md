@@ -134,51 +134,25 @@ docker compose up -d
 
 ## ⚠️ TURVAHOIATUS: Avalikud Pordid!
 
-**🚨 OLULINE: Selles harjutuses on KÕIK 4 porti avalikud (0.0.0.0):**
+**🚨 OLULINE:** Selles harjutuses on KÕIK 4 teenuse porti avalikud (0.0.0.0). **See on kriitiline turvarisk toote keskkonnas!**
 
 | Port | Teenus | Oht |
 |------|--------|-----|
-| 3000 | User Service API | ⚠️ Backend peaks olema kaitstud |
-| 8081 | Todo Service API | ⚠️ Backend peaks olema kaitstud |
+| 3000 | "User Service" API | ⚠️ "backend" peaks olema kaitstud |
+| 8081 | "Todo Service" API | ⚠️ "backend" peaks olema kaitstud |
 | 5432 | PostgreSQL (users) | 🚨 **KRIITILINE TURVARISK!** |
 | 5433 | PostgreSQL (todos) | 🚨 **KRIITILINE TURVARISK!** |
 
-### Mis võib juhtuda?
+**Hostmasina tulemüür (nt UFW) katab selle ohu hetkel, piirates väljastpoolt ligipääsu. Kuid Docker Compose konfiguratsioonis on pordid endiselt avalikud.**
 
-**Internetis botid skaneerivad pidevalt PostgreSQL porte (5432/5433):**
+### 🛡️ Lahendus (Harjutus 3)
 
-- 🤖 Automaatsed skännerid otsivad avatud PostgreSQL porte (Shodan, Censys, jne)
-- 🔓 Brute force rünnakud paroolidele - `postgres/postgres` on liiga nõrk ja esimene, mida proovitakse!
-- 💉 SQL injection katsed läbi PostgreSQL protokolli
-- 📊 Andmebaasi enumeratsioon - tabelite, veergude, kasutajate avastamine
-- 💣 Pahatahtlikud päringud - `DROP TABLE`, `DELETE FROM users`, `UPDATE` kõigi andmete muutmine
-- 📉 DDoS rünnakud - tuhanded ühenduskatsed, mis jooksutavad teenuse maha
-- 💾 Andmete eksfiltratsioon - kogu andmebaasi laadimine välja
+👉 **Harjutus 3 (Võrgu Segmenteerimine) õpetab, kuidas seda turvaliselt seadistada:**
 
-**Backend API'd (3000/8081) on samuti ohtlikud:**
-
-- 🔐 Autentimise möödumine - JWT secret võib lekkida
-- 📡 API enumeration - kõigi endpointide avastamine
-- 🚀 Rate limiting puudumine - spam päringud
-
-**Production keskkonnas see on VASTUVÕETAMATU!**
-
-### 🛡️ Lahendus
-
-👉 **Exercise 3 (Võrgu Segmenteerimine) õpetab:**
-
-- ✅ Võrgu segmenteerimine (network segmentation) - 3-tier arhitektuur
-- ✅ Portide 127.0.0.1 binding (localhost-only) - ainult SSH sessioonis kättesaadav
-- ✅ DMZ → Backend → Database (defense in depth)
-- ✅ Ainult frontend port 8080 jääb avalikuks
-
-**Praegu õpid Docker Compose põhitõde. Exercise 3's õpid seda TURVALISELT kasutama!**
-
-**💡 Miks me siis seda teeme?**
-
-- 📚 Pedagoogiline: Näed kõigepealt, kuidas Docker Compose töötab
-- 🔍 Mõistad probleemi: Alles siis saad aru, miks võrgu segmenteerimine on oluline
-- 🎓 Õppimisjärjekord: Basics → Security (see on õige viis õppida)
+- ✅ Võrgu segmenteerimine - 3-kihiline arhitektuur
+- ✅ Portide 127.0.0.1 binding (localhost-only)
+- ✅ Vähenda rünnaku pinda
+- ✅ Ainult "frontend" port 8080 jääb avalikuks
 
 ---
 
