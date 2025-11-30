@@ -240,23 +240,7 @@ cat 01-compose-basics.md
 - **setup.sh on mugavuse huvides** - kasuta, kui vajad kiiret starti või testimisandmeid
 - **Soovitame esimest korda teha käsitsi**, et õppida Docker põhitõdesid
 
----
 
-## 📚 Progressiivne Õppetee
-
-```
-Labor 1 (Docker)
-  ↓ 4 optimeeritud konteinerit →
-Labor 2 (Compose) ← Oled siin
-  ↓ docker-compose.yml + 5 teenust →
-Labor 3 (K8s Basics)
-  ↓ K8s manifests →
-Labor 4 (K8s Advanced)
-  ↓ Ingress + Helm →
-Labor 5 (CI/CD)
-  ↓ Automated deployments →
-Labor 6 (Monitoring)
-```
 
 ---
 
