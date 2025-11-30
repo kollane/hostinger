@@ -134,51 +134,25 @@ docker compose up -d
 
 ## ⚠️ TURVAHOIATUS: Avalikud Pordid!
 
-**🚨 OLULINE: Selles harjutuses on KÕIK 4 porti avalikud (0.0.0.0):**
+**🚨 OLULINE:** Selles harjutuses on KÕIK 4 teenuse porti avalikud (0.0.0.0). **See on kriitiline turvarisk toote keskkonnas!**
 
 | Port | Teenus | Oht |
 |------|--------|-----|
-| 3000 | User Service API | ⚠️ Backend peaks olema kaitstud |
-| 8081 | Todo Service API | ⚠️ Backend peaks olema kaitstud |
+| 3000 | "User Service" API | ⚠️ "backend" peaks olema kaitstud |
+| 8081 | "Todo Service" API | ⚠️ "backend" peaks olema kaitstud |
 | 5432 | PostgreSQL (users) | 🚨 **KRIITILINE TURVARISK!** |
 | 5433 | PostgreSQL (todos) | 🚨 **KRIITILINE TURVARISK!** |
 
-### Mis võib juhtuda?
+Käesolev labor on õppe-eesmärkidel loodud testimiskeskkond. Tootmiskeskkonnas on selline portide avalikustamine vastuvõetamatu. Hostmasina tulemüür (nt UFW) katab selle ohu hetkel, piirates väljastpoolt ligipääsu. Kuid Docker Compose konfiguratsioonis on pordid endiselt avalikud.
 
-**Internetis botid skaneerivad pidevalt PostgreSQL porte (5432/5433):**
+### 🛡️ Lahendus (Harjutus 3)
 
-- 🤖 Automaatsed skännerid otsivad avatud PostgreSQL porte (Shodan, Censys, jne)
-- 🔓 Brute force rünnakud paroolidele - `postgres/postgres` on liiga nõrk ja esimene, mida proovitakse!
-- 💉 SQL injection katsed läbi PostgreSQL protokolli
-- 📊 Andmebaasi enumeratsioon - tabelite, veergude, kasutajate avastamine
-- 💣 Pahatahtlikud päringud - `DROP TABLE`, `DELETE FROM users`, `UPDATE` kõigi andmete muutmine
-- 📉 DDoS rünnakud - tuhanded ühenduskatsed, mis jooksutavad teenuse maha
-- 💾 Andmete eksfiltratsioon - kogu andmebaasi laadimine välja
+👉 **Harjutus 3 (Võrgu Segmenteerimine) õpetab, kuidas seda turvaliselt seadistada:**
 
-**Backend API'd (3000/8081) on samuti ohtlikud:**
-
-- 🔐 Autentimise möödumine - JWT secret võib lekkida
-- 📡 API enumeration - kõigi endpointide avastamine
-- 🚀 Rate limiting puudumine - spam päringud
-
-**Production keskkonnas see on VASTUVÕETAMATU!**
-
-### 🛡️ Lahendus
-
-👉 **Exercise 3 (Võrgu Segmenteerimine) õpetab:**
-
-- ✅ Võrgu segmenteerimine (network segmentation) - 3-tier arhitektuur
-- ✅ Portide 127.0.0.1 binding (localhost-only) - ainult SSH sessioonis kättesaadav
-- ✅ DMZ → Backend → Database (defense in depth)
-- ✅ Ainult frontend port 8080 jääb avalikuks
-
-**Praegu õpid Docker Compose põhitõde. Exercise 3's õpid seda TURVALISELT kasutama!**
-
-**💡 Miks me siis seda teeme?**
-
-- 📚 Pedagoogiline: Näed kõigepealt, kuidas Docker Compose töötab
-- 🔍 Mõistad probleemi: Alles siis saad aru, miks võrgu segmenteerimine on oluline
-- 🎓 Õppimisjärjekord: Basics → Security (see on õige viis õppida)
+- ✅ Võrgu segmenteerimine - 3-kihiline arhitektuur
+- ✅ Portide 127.0.0.1 binding (localhost-only)
+- ✅ Vähenda rünnaku pinda
+- ✅ Ainult "frontend" port 8080 jääb avalikuks
 
 ---
 
@@ -187,15 +161,15 @@ docker compose up -d
 **Veendu, et Labor 1 ressursid on olemas:**
 
 ```bash
-# 1. Kontrolli tõmmiseid (docker images)
+# 1. Kontrolli tõmmiseid
 docker images | grep -E "user-service.*optimized|todo-service.*optimized"
 # Oodatud: user-service:1.0-optimized ja todo-service:1.0-optimized
 
-# 2. Kontrolli andmeköiteid (docker volumes)
+# 2. Kontrolli andmeköiteid
 docker volume ls | grep -E "postgres-user-data|postgres-todo-data"
 # Oodatud: postgres-user-data ja postgres-todo-data
 
-# 3. Kontrolli võrku (docker network)
+# 3. Kontrolli võrku
 docker network ls | grep todo-network
 # Oodatud: todo-network
 
@@ -215,15 +189,7 @@ cd ..  # Tagasi 02-docker-compose-lab/ kausta
 
 **Variant B: Käsitsi (Pedagoogiline)**
 
-- 🔗 **Tõmmised (docker images) puuduvad?** Mine tagasi Lab 1: `cd ../../01-docker-lab` ja ehita image'd
-- 🔗 **Võrk (docker network) puudub?** Loo võrk: `docker network create todo-network`
-- 🔗 **Andmeköited (docker volumes) puuduvad?** Loo volumes:
-  ```bash
-  docker volume create postgres-user-data
-  docker volume create postgres-todo-data
-  ```
-
-- 🔗 **DB skeem puudub?** Skeemide loomine õpetatakse selles harjutuses (Samm 8) või kasuta setup.sh
+- 🔗 **Läbi Labor 1**
 
 **✅ Kui kõik ülalpool on OK, võid jätkata!**
 
@@ -242,7 +208,7 @@ docker ps
 # Peata kõik Lab 1 konteinerid
 docker stop user-service todo-service postgres-user postgres-todo todo-service-opt user-service-opt
 
-# Eemalda konteinerid (andmeköited (docker volumes) ja võrk (docker network) jäävad alles!)
+# Eemalda konteinerid (andmeköited ja võrk jäävad alles!)
 docker rm user-service todo-service postgres-user postgres-todo todo-service-opt user-service-opt
 
 # Kontrolli, et konteinerid on eemaldatud
@@ -252,9 +218,9 @@ docker ps -a | grep -E "user-service|todo-service|postgres"
 
 **TÄHTIS:** Me EI kustuta:
 
-- ❌ Tõmmiseid (docker images) - kasutame neid uuesti
-- ❌ Andmeköiteid (docker volumes) - andmed peavad püsima
-- ❌ Võrku (docker network) - kasutame seda uuesti
+- ❌ Tõmmiseid - kasutame neid uuesti
+- ❌ Andmeköiteid - andmed peavad püsima
+- ❌ Võrku - kasutame seda uuesti
 
 ---
 
@@ -411,13 +377,13 @@ services:
       start_period: 60s
 
 # ==========================================================================
-# Volumes - Kasutame Lab 1'st loodud andmeköiteid
+# Volumes - Kasutame Lab 1'st loodud andmehoidlaid
 # ==========================================================================
 volumes:
   postgres-user-data:
-    external: true  # Kasutame Lab 1'st loodud andmeköidet
+    external: true  # Kasutame Lab 1'st loodud volume'i
   postgres-todo-data:
-    external: true  # Kasutame Lab 1'st loodud andmeköidet
+    external: true  # Kasutame Lab 1'st loodud volume'i
 
 # ==========================================================================
 # Networks - Kasutame Lab 1'st loodud võrku
@@ -855,7 +821,7 @@ docker compose config --quiet
 # Restart user-service
 docker compose restart user-service
 
-# Rebuild ja restart (kui muutsid pilti (image))
+# Rebuild ja restart (kui muutsid tõmmist)
 docker compose up -d --build user-service
 ```
 
