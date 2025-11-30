@@ -19,7 +19,7 @@ docker rm postgres-todo postgres-user
 # Kõik andmed (users JA todos) on KADUNUD!
 ```
 
-**Lahendus: Docker andmeköited (Volumes)!**
+**Lahendus: Docker andmeköited (Docker volumes)!**
 - Andmeköited säilitavad andmed väljaspool konteinerit
 - Konteiner võib kustuda, aga andmed jäävad alles
 - Võid kasutada sama andmeköidet uue konteineriga
@@ -31,7 +31,7 @@ docker rm postgres-todo postgres-user
 
 Peale selle harjutuse läbimist oskad:
 
-- ✅ Luua **nimega andmeköiteid (named volumes)** (2 köidet: User teenus + Todo teenus)
+- ✅ Luua **nimega andmeköiteid (named docker volumes)** (2 köidet: User teenus + Todo teenus)
 - ✅ **Haakida (mount)** andmeköidet konteinerisse
 - ✅ Testida **andmete püsivust (data persistence)** (konteiner kustutatakse, andmed jäävad!)
 - ✅ Varundada ja taastada mitut andmeköidet

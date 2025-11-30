@@ -7,7 +7,7 @@ Selle dokumendi eesmärk on ühtlustada terminoloogiat kõigis labori harjutuste
 **Reegel 1: Peatükk "Õpieesmärgid" (Learning Objectives)**
 Selles peatükis (tavaliselt faili alguses olev loetelu) peavad **kõik** tehnilised terminid olema esitatud paralleelselt:
 *   Eestikeelne termin (Ingliskeelne termin)
-*   *Näide:* "Luua **andmeköiteid (volumes)**..."
+*   *Näide:* "Luua **andmeköiteid (docker volumes)**..."
 
 **Reegel 2: Ülejäänud tekst (Body Text)**
 Teksti sisus kasutame reeglina **ainult eestikeelset terminit**.
@@ -17,7 +17,7 @@ Teksti sisus kasutame reeglina **ainult eestikeelset terminit**.
 Kui tehniline termin esineb antud failis **esimest korda** JA seda **ei ole mainitud** selle konkreetse faili "Õpieesmärgid" loetelus, siis toome esimesel mainimisel välja mõlemad keeled. Edaspidi samas failis kasutame vaid eestikeelset.
 
 **Näide:**
-> "Ehita Docker **tõmmis (image)**..."
+> "Ehita Docker **tõmmis (docker image)**..."
 
 ---
 
@@ -27,7 +27,7 @@ Kui tehniline termin esineb antud failis **esimest korda** JA seda **ei ole main
 
 | Eesti keeles | Inglise keeles | Näide kasutuses |
 |--------------|----------------|-----------------|
-| **tõmmis** | image | Ehita Docker tõmmis (image) |
+| **tõmmis** | image | Ehita Docker tõmmis (docker image) |
 | **konteiner** | container | Käivita Docker konteiner |
 | **ehita** | build | Ehita tõmmis `build` käsuga |
 | **käivita** | run | Käivita konteiner |
@@ -44,8 +44,8 @@ Kui tehniline termin esineb antud failis **esimest korda** JA seda **ei ole main
 | **kiht** | layer | Tõmmis koosneb mitmest kihist (layers) |
 | **mitmeastmeline** | multi-stage | Mitmeastmeline (multi-stage) Dockerfile |
 | **vahemälu** | cache | Kasuta ehitamisel vahemälu (cache) |
-| **köide / andmeköide** | volume | Andmete säilitamiseks kasuta köidet (volume) |
-| **võrk** | network | Ühenda konteinerid samasse võrku |
+| **köide / andmeköide** | volume | Andmete säilitamiseks kasuta köidet (docker volume) |
+| **võrk** | network | Ühenda konteinerid samasse võrku (docker network) |
 | **pordivastendus** | port mapping | Määra pordivastendus (port mapping) 80:8080 |
 | **taustarežiim** | detached mode | Käivita konteiner taustarežiimis (detached mode) |
 | **tervisekontroll** | health check | Seadista rakenduse/konteineri tervisekontroll (health check) |
@@ -112,7 +112,7 @@ Teatud ingliskeelsed terminid jäävad tõlkimata, kuid neid kasutatakse jutumä
 ## Kasutusnäited
 
 ### ✅ Õige (loomulik ja täpne)
-> "Ehita Docker **tõmmis (image)**, kasutades `node:alpine` **baastõmmist**. Iga `RUN` käsk lisab uue **kihi (layer)**, mida Docker salvestab **vahemälus**."
+> "Ehita Docker **tõmmis (docker image)**, kasutades `node:alpine` **baastõmmist**. Iga `RUN` käsk lisab uue **kihi (layer)**, mida Docker salvestab **vahemälus**."
 
 ### ❌ Vale (kohmakas või ebatäpne)
 > "Ehita Docker **pilt** kasutades `node:alpine` **base image**-it. Iga `RUN` käsk teeb uue **layeri**, mis läheb **cache**-i."

@@ -18,8 +18,8 @@
 
 ✅ **Õpid:**
 - Dockerfile'i loomist Node.js **rakendusele (application)**
-- Docker **tõmmise (image)** ehitamist
-- **Konteineri (container)** käivitamist
+- Docker **tõmmise (docker image)** ehitamist
+- **Konteineri** käivitamist
 - **Logide (logs)** vaatamist ja **veatuvastust (debug)**
 
 ❌ **Käesolevas harjutuses rakendus veel TÖÖLE EI HAKKA:**
@@ -313,7 +313,7 @@ docker stats user-service
    # Kontrolli, kas konteiner töötab
    docker ps
 
-   # Vaata võrku (network)
+   # Vaata võrku (docker network)
    docker inspect user-service | grep IPAddress
    ```
 

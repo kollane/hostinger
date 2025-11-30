@@ -34,7 +34,7 @@ Selles harjutuses õpid nelja **täiendavat DevOps mustrit**, mis on kasulikud r
 Peale selle harjutuse läbimist oskad:
 
 - ✅ Kasutada Docker Compose **profiile (profiles)**
-- ✅ Varundada ja taastada **andmeköite (volume)** andmeid
+- ✅ Varundada ja taastada **andmeköite (docker volume)** andmeid
 - ✅ Teostada **veatuvastust (debug)** võrguprobleemide korral
 - ✅ Kasutada **silumiskonteinereid (debug containers)**
 - ✅ Analüüsida Docker võrke
@@ -149,7 +149,7 @@ exit
 
 ### Osa 2: Andmeköite varundamine ja taastamine (Volume Backup & Restore)
 
-#### Samm 4: Varunda PostgreSQL andmeköide
+#### Samm 4: Varunda PostgreSQL andmeköide (docker volume)
 
 **Stsenaarium:** Soovid varundada postgres-user-data andmeköidet.
 
@@ -221,7 +221,7 @@ curl -X POST http://localhost:3000/api/auth/login \
 #### Samm 6: Inspekteeri võrku
 
 ```bash
-# 1. Vaata võrgu detaile
+# 1. Vaata võrgu (docker network) detaile
 docker network inspect todo-network
 
 # Analüüsi väljundit:
@@ -495,7 +495,7 @@ docker compose --profile debug up -d
 docker compose --profile dev --profile debug up -d  # Mitu profiili
 ```
 
-### Andmeköite varundamise muster:
+### Andmeköite (docker volume) varundamise muster:
 
 ```bash
 # Backup

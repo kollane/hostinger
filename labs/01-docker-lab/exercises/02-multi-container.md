@@ -25,10 +25,10 @@
 
 Peale selle harjutuse läbimist oskad:
 
-- ✅ Käivitada mitut **konteinerit (containers)** koos
+- ✅ Käivitada mitut **konteinerit** koos
 - ✅ Mõista **mikroteenuste (microservices)** arhitektuuri
 - ✅ Õppida JWT-põhist autentimist **teenuste (services)** vahel
-- ✅ Kasutada konteinerite **võrgundust (networking)**
+- ✅ Kasutada Docker **võrke (docker networks)**
 - ✅ Teostada **veatuvastust (debug)** mitme konteineri süsteemis
 
 ---
@@ -251,7 +251,7 @@ docker logs -f user-service
 **Mida `--link postgres-user:postgres` teeb?**
 - Loob DNS aliase: `postgres` → `postgres-user` konteineri IP
 - User Service saab ühenduda `postgres:5432` kaudu
-- **Aegunud (deprecated)** (Harjutus 3 õpetab kohandatud võrke!)
+- **Aegunud (deprecated)** (Harjutus 3 õpetab kohandatud võrke (docker networks)!)
 
 **Kontrolli, et konteiner töötab:**
 
@@ -762,7 +762,7 @@ Harjutus 3 õpetab **korralikku võrgundust** Docker võrkude (networks) kasutad
 
 Järgmises harjutuses õpid **korralikku võrgundust** Docker võrkude kasutades!
 
-**Miks kohandatud võrgud (custom networks) on paremad kui --link?**
+**Miks kohandatud võrgud on paremad kui --link?**
 - ✅ Pole aegunud (deprecated)
 - ✅ Parem DNS-i lahendus
 - ✅ Võrgu isolatsioon

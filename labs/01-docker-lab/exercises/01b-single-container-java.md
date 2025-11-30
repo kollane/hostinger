@@ -16,8 +16,8 @@
 
 ✅ **Õpid:**
 - Dockerfile'i loomist
-- Docker **tõmmise (image)** ehitamist
-- **Konteineri (container)** käivitamist
+- Docker **tõmmise (docker image)** ehitamist
+- **Konteineri** käivitamist
 - **Logide (logs)** vaatamist ja **veatuvastust (debug)**
 - Docker käskude kasutamist
 
@@ -361,7 +361,7 @@ docker stats todo-service
    # Kontrolli, kas konteiner töötab
    docker ps
 
-   # Vaata võrku (network)
+   # Vaata võrku (docker network)
    docker inspect todo-service | grep IPAddress
    ```
 

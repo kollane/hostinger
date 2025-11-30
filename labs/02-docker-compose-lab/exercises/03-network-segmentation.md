@@ -28,7 +28,7 @@ Peale selle harjutuse läbimist oskad:
 
 - ✅ Mõista turvariske ühe võrguga arhitektuuris
 - ✅ Disainida **3-taseme võrgu arhitektuuri (3-tier network architecture)** (DMZ → Backend → Database)
-- ✅ Luua ja konfigureerida mitut Docker **võrku (network)**
+- ✅ Luua ja konfigureerida mitut Docker **võrku (docker network)**
 - ✅ Määrata teenuseid mitmesse võrku
 - ✅ Piirata portide ligipääsetavust (**localhost-only binding**)
 - ✅ Võrgu segmenteerimine - 3-tier arhitektuur

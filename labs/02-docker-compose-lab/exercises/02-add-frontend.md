@@ -22,7 +22,7 @@ Peale selle harjutuse läbimist oskad:
 
 - ✅ Lisada Frontend teenust Docker Compose **pinusse (stack)**
 - ✅ Konfigureerida Nginx teenust
-- ✅ **Haakida (mount)** staatilisi faile **andmeköitega (volume)**
+- ✅ **Haakida (mount)** staatilisi faile **andmeköitega (docker volume)**
 - ✅ Hallata 5-kihilist arhitektuuri
 - ✅ Testida täielikku rakendust brauseris
 - ✅ **Siluda (debug)** frontend-backend suhtlust
@@ -152,7 +152,7 @@ ssh labuser@93.127.213.242 -p [SINU-PORT]
 # 1. Kas docker-compose.yml on olemas?
 ls -la compose-project/docker-compose.yml
 
-# 2. Kas stack töötab?
+# 2. Kontrolli andmeköiteid (docker volumes)
 cd compose-project
 docker compose ps
 # Peaks nägema 4 teenust (services): postgres-user, postgres-todo, user-service, todo-service
@@ -410,7 +410,7 @@ Sinu brauserist tuleb päring vastavalt sinu kasutajale:
 **Analüüsi olulisemad osad docker-compose.yml'ist:**
 
 #### `image: nginx:alpine`
-- Kerge Nginx tõmmis (~10MB)
+- Kerge Nginx tõmmis (docker image) (~10MB)
 
 #### `volumes:`
 ```yaml

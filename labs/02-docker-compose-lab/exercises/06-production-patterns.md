@@ -220,7 +220,7 @@ deploy:
 ```
 
 **Tähendus:**
-- Docker Compose käivitab 2 konteinerit sama tõmmisega
+- Docker Compose käivitab 2 konteinerit sama tõmmisega (docker image)
 - Koormuse jaotamine (load balancing)
 - Kõrge käideldavus (high availability)
 

@@ -8,9 +8,9 @@
 
 ## 📋 Harjutuse ülevaade
 
-Eelmises harjutuses kasutasime `--link` et ühendada konteinereid. See toimis, aga Docker soovitab kasutada **kohandatud võrke**!
+Eelmises harjutuses kasutasime `--link` et ühendada konteinereid. See toimis, aga Docker soovitab kasutada **kohandatud võrke (docker networks)**!
 
-**Miks kohandatud võrgud on paremad kui --link?**
+**Miks kohandatud võrgud (docker networks) on paremad kui --link?**
 - ✅ Automaatne DNS lahendus (konteineri nimi = hostinimi)
 - ✅ Võrgu isolatsioon (erinevad projektid erinevates võrkudes)
 - ✅ Turvalisem (--link on aegunud)
@@ -29,7 +29,7 @@ Eelmises harjutuses kasutasime `--link` et ühendada konteinereid. See toimis, a
 
 Peale selle harjutuse läbimist oskad:
 
-- ✅ Luua kohandatud Docker **võrku (network)**
+- ✅ Luua kohandatud Docker **võrku (docker network)**
 - ✅ Käivitada 4 konteinerit samas võrgus
 - ✅ Kasutada **DNS hostinime (hostname)** lahendust (automaatne!)
 - ✅ Testida teenuste vahelist suhtlust (User Service ↔ Todo Service)
@@ -72,7 +72,7 @@ docker ps -a | grep -E 'user-service|todo-service|postgres'
 ### Samm 2: Loo kohandatud võrk
 
 ```bash
-# Loo sildvõrk (bridge) todo-network
+# Loo sildvõrk (bridge network) todo-network
 docker network create todo-network
 
 # Vaata kõiki võrke
@@ -460,7 +460,7 @@ docker exec postgres-todo psql -U postgres -d todo_service_db -c "SELECT id, use
 
 ## 💡 Parimad Praktikad (Best Practices)
 
-**Kohandatud võrgud (Custom Networks):**
+**Kohandatud võrgud:**
 1. **Kasuta alati kohandatud võrke** - Mitte vaikimisi silda (default bridge)
 2. **Anna võrgule mõistlik nimi** - `todo-network`, mitte `network1`
 3. **Üks võrk projekti/stack'i kohta** - Isolatsioon!
@@ -490,4 +490,4 @@ docker exec postgres-todo psql -U postgres -d todo_service_db -c "SELECT id, use
 
 **Õnnitleme! Oled loonud tootmiskõlbuliku (production-ready) võrgu seadistuse! 🎉**
 
-**Järgmine:** [Harjutus 4: Docker andmeköited (Volumes)](04-volumes.md) - Õpi, kuidas säilitada andmed!
+**Järgmine:** [Harjutus 4: Docker andmeköited](04-volumes.md) - Õpi, kuidas säilitada andmed!

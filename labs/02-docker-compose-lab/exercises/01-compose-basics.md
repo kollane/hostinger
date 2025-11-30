@@ -20,8 +20,8 @@ Peale selle harjutuse läbimist oskad:
 
 - ✅ Konverteerida `docker run` käske `docker-compose.yml` failiks
 - ✅ Defineerida **teenuseid (services)**
-- ✅ Kasutada olemasolevaid **tõmmiseid (images)**
-- ✅ Konfigureerida **võrke (networks)** ja **andmeköiteid (volumes)**
+- ✅ Kasutada olemasolevaid **tõmmiseid (docker images)**
+- ✅ Konfigureerida **võrke (docker networks)** ja **andmeköiteid (docker volumes)**
 - ✅ Hallata teenuste **sõltuvusi (dependencies)** (`depends_on`)
 - ✅ Kasutada `docker compose` põhikäske
 - ✅ Testida End-to-End JWT töövoogu
@@ -179,15 +179,15 @@ docker compose up -d
 **Veendu, et Labor 1 ressursid on olemas:**
 
 ```bash
-# 1. Kontrolli pilte (images)
+# 1. Kontrolli tõmmiseid (docker images)
 docker images | grep -E "user-service.*optimized|todo-service.*optimized"
 # Oodatud: user-service:1.0-optimized ja todo-service:1.0-optimized
 
-# 2. Kontrolli andmehoidlaid (volumes)
+# 2. Kontrolli andmeköiteid (docker volumes)
 docker volume ls | grep -E "postgres-user-data|postgres-todo-data"
 # Oodatud: postgres-user-data ja postgres-todo-data
 
-# 3. Kontrolli võrku (network)
+# 3. Kontrolli võrku (docker network)
 docker network ls | grep todo-network
 # Oodatud: todo-network
 
@@ -206,9 +206,9 @@ cd ..  # Tagasi 02-docker-compose-lab/ kausta
 ```
 
 **Variant B: Käsitsi (Pedagoogiline)**
-- 🔗 **Images puuduvad?** Mine tagasi Lab 1: `cd ../../01-docker-lab` ja ehita image'd
-- 🔗 **Võrk puudub?** Loo võrk: `docker network create todo-network`
-- 🔗 **Volumes puuduvad?** Loo volumes:
+- 🔗 **Tõmmised (docker images) puuduvad?** Mine tagasi Lab 1: `cd ../../01-docker-lab` ja ehita image'd
+- 🔗 **Võrk (docker network) puudub?** Loo võrk: `docker network create todo-network`
+- 🔗 **Andmeköited (docker volumes) puuduvad?** Loo volumes:
   ```bash
   docker volume create postgres-user-data
   docker volume create postgres-todo-data
@@ -232,7 +232,7 @@ docker ps
 # Peata kõik Lab 1 konteinerid
 docker stop user-service todo-service postgres-user postgres-todo todo-service-opt user-service-opt
 
-# Eemalda konteinerid (andmehoidlad (volumes) ja võrk (network) jäävad alles!)
+# Eemalda konteinerid (andmeköited (docker volumes) ja võrk (docker network) jäävad alles!)
 docker rm user-service todo-service postgres-user postgres-todo todo-service-opt user-service-opt
 
 # Kontrolli, et konteinerid on eemaldatud
@@ -241,9 +241,9 @@ docker ps -a | grep -E "user-service|todo-service|postgres"
 ```
 
 **TÄHTIS:** Me EI kustuta:
-- ❌ Pilte (images) - kasutame neid uuesti
-- ❌ Andmehoidlaid (volumes) - andmed peavad püsima
-- ❌ Võrku (network) - kasutame seda uuesti
+- ❌ Tõmmiseid (docker images) - kasutame neid uuesti
+- ❌ Andmeköiteid (docker volumes) - andmed peavad püsima
+- ❌ Võrku (docker network) - kasutame seda uuesti
 
 ---
 
@@ -400,13 +400,13 @@ services:
       start_period: 60s
 
 # ==========================================================================
-# Volumes - Kasutame Lab 1'st loodud andmehoidlaid
+# Volumes - Kasutame Lab 1'st loodud andmeköiteid
 # ==========================================================================
 volumes:
   postgres-user-data:
-    external: true  # Kasutame Lab 1'st loodud volume'i
+    external: true  # Kasutame Lab 1'st loodud andmeköidet
   postgres-todo-data:
-    external: true  # Kasutame Lab 1'st loodud volume'i
+    external: true  # Kasutame Lab 1'st loodud andmeköidet
 
 # ==========================================================================
 # Networks - Kasutame Lab 1'st loodud võrku
@@ -931,7 +931,7 @@ Docker Compose loob automaatselt DNS-i, kus teenuse nimi (`postgres-user`) lahen
 ### Probleem 1: "network todo-network declared as external, but could not be found"
 
 ```bash
-# Loo võrk (network)
+# Loo võrk
 docker network create todo-network
 
 # VÕI muuda docker-compose.yml:

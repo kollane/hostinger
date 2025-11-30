@@ -37,7 +37,7 @@ docker images | grep -E 'user-service|todo-service'
 **Mäletad Harjutus 1-st?** Lõime lihtsa Dockerfile'i, mis toimis. Aga nüüd õpime, kuidas teha seda **paremaks**!
 
 **Praegune Dockerfile (Harjutus 1) probleemid - MÕLEMAS teenuses:**
-- ❌ Liiga suur tõmmis (~200-230MB)
+- ❌ Liiga suur tõmmis (docker image) (~200-230MB)
 - ❌ Ehitus on aeglane (rebuild iga source muudatuse korral)
 - ❌ Ei kasuta kihtide vahemälu efektiivselt
 - ❌ Töötab root'ina (turvarisk!)
@@ -303,7 +303,7 @@ Multi-stage build koosneb kahest põhietapist:
 
 Tulemus: efektiivne, turvaline ja skaleeritav konteineripilt.
 
-### Samm 3: Ehita mõlemad optimeeritud Docker tõmmised (Images)
+### Samm 3: Ehita mõlemad optimeeritud Docker tõmmised
 
 **Rakenduse juurkataloog (User Service):** `~/labs/apps/backend-nodejs`
 
