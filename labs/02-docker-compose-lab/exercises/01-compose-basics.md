@@ -187,15 +187,15 @@ docker compose up -d
 **Veendu, et Labor 1 ressursid on olemas:**
 
 ```bash
-# 1. Kontrolli tõmmiseid (docker images)
+# 1. Kontrolli tõmmiseid
 docker images | grep -E "user-service.*optimized|todo-service.*optimized"
 # Oodatud: user-service:1.0-optimized ja todo-service:1.0-optimized
 
-# 2. Kontrolli andmeköiteid (docker volumes)
+# 2. Kontrolli andmeköiteid
 docker volume ls | grep -E "postgres-user-data|postgres-todo-data"
 # Oodatud: postgres-user-data ja postgres-todo-data
 
-# 3. Kontrolli võrku (docker network)
+# 3. Kontrolli võrku
 docker network ls | grep todo-network
 # Oodatud: todo-network
 
@@ -242,7 +242,7 @@ docker ps
 # Peata kõik Lab 1 konteinerid
 docker stop user-service todo-service postgres-user postgres-todo todo-service-opt user-service-opt
 
-# Eemalda konteinerid (andmeköited (docker volumes) ja võrk (docker network) jäävad alles!)
+# Eemalda konteinerid (andmeköited ja võrk jäävad alles!)
 docker rm user-service todo-service postgres-user postgres-todo todo-service-opt user-service-opt
 
 # Kontrolli, et konteinerid on eemaldatud
@@ -252,9 +252,9 @@ docker ps -a | grep -E "user-service|todo-service|postgres"
 
 **TÄHTIS:** Me EI kustuta:
 
-- ❌ Tõmmiseid (docker images) - kasutame neid uuesti
-- ❌ Andmeköiteid (docker volumes) - andmed peavad püsima
-- ❌ Võrku (docker network) - kasutame seda uuesti
+- ❌ Tõmmiseid - kasutame neid uuesti
+- ❌ Andmeköiteid - andmed peavad püsima
+- ❌ Võrku - kasutame seda uuesti
 
 ---
 
@@ -855,7 +855,7 @@ docker compose config --quiet
 # Restart user-service
 docker compose restart user-service
 
-# Rebuild ja restart (kui muutsid pilti (image))
+# Rebuild ja restart (kui muutsid tõmmist)
 docker compose up -d --build user-service
 ```
 

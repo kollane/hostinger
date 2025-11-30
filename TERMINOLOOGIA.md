@@ -78,6 +78,8 @@ Kui tehniline termin esineb antud failis **esimest korda** JA seda **ei ole main
 | **toote keskkond** | production | Rakendus on toote keskkonnas (production) |
 | **arenduskeskkond** | development | Töötan arenduskeskkonnas (development) |
 | **tagasi keerama** | rollback | Varasema versiooni juurde tagasi keerama (rollback) |
+| **ehita uuesti** | rebuild | Ehita tõmmis uuesti (rebuild) |
+| **taaskäivitus** | restart | Taaskäivita teenus/konteiner |
 
 ---
 
