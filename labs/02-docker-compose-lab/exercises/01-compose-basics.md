@@ -189,15 +189,7 @@ cd ..  # Tagasi 02-docker-compose-lab/ kausta
 
 **Variant B: Käsitsi (Pedagoogiline)**
 
-- 🔗 **Tõmmised (docker images) puuduvad?** Mine tagasi Lab 1: `cd ../../01-docker-lab` ja ehita image'd
-- 🔗 **Võrk (docker network) puudub?** Loo võrk: `docker network create todo-network`
-- 🔗 **Andmeköited (docker volumes) puuduvad?** Loo volumes:
-  ```bash
-  docker volume create postgres-user-data
-  docker volume create postgres-todo-data
-  ```
-
-- 🔗 **DB skeem puudub?** Skeemide loomine õpetatakse selles harjutuses (Samm 8) või kasuta setup.sh
+- 🔗 **Läbi Labor 1**
 
 **✅ Kui kõik ülalpool on OK, võid jätkata!**
 
