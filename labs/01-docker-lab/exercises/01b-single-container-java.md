@@ -155,7 +155,6 @@ build/
 .gitignore
 README.md
 *.md
-src/
 gradlew
 gradlew.bat
 ```
