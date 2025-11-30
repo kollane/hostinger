@@ -26,7 +26,7 @@ docker images | grep -E 'user-service|todo-service'
 **Kui midagi puudub:**
 - 🔗 Võrk `todo-network` → [Harjutus 3, Samm 2](03-networking.md)
 - 🔗 PostgreSQL seadistus (andmeköited + tabelid) → [Harjutus 4, Sammud 2-4](04-volumes.md)
-- 🔗 Baastõmmised → [Harjutus 1A](01a-single-container-nodejs.md) ja [Harjutus 1B](01b-single-container-java.md) või käivita `./setup.sh`
+- 🔗 Baastõmmised → [Harjutus 1A](01a-single-container-nodejs.md) ja [Harjutus 1B](01b-single-container-java.md) või käivita `lab1-setup`
 
 **✅ Kui kõik ülalpool on OK, võid jätkata!**
 

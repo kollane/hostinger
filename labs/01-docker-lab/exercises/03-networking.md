@@ -2,7 +2,7 @@
 
 **Eeldused:**
 - ✅ [Harjutus 2: Mitme konteineri seadistus](02-multi-container.md) läbitud
-- 💡 **Märkus:** Kui baastõmmised (`user-service:1.0`, `todo-service:1.0`) puuduvad, käivita `./setup.sh` ja vali `Y`
+- 💡 **Märkus:** Kui baastõmmised (`user-service:1.0`, `todo-service:1.0`) puuduvad, käivita `lab1-setup` ja vali `Y`
 
 ---
 
