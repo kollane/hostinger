@@ -60,7 +60,7 @@ ssh labuser@93.127.213.242 -p [SINU-PORT]
 ### Samm 1: Puhasta keskkond
 
 ```bash
-# Stopp ja eemalda vanad konteinerid Harjutus 2-st
+# Stopp ja eemalda vanad konteinerid eelmistest harjutustest
 docker stop user-service todo-service postgres-user postgres-todo todo-service-test user-service-test 2>/dev/null || true
 docker rm user-service todo-service postgres-user postgres-todo todo-service-test user-service-test 2>/dev/null || true
 
