@@ -1279,10 +1279,10 @@ docker compose up -d
 → **[Lab 2.5: Network Analysis & Testing](../../02.5-network-analysis-lab/README.md)** 🔷 *Valikuline*
 
 **Lab 2.5's õpid:**
-- Docker network inspection professionaalsete tööriistadega (`jq`, `tcpdump`)
+- Docker võrgu inspekteerimine (network inspection) professionaalsete tööriistadega (`jq`, `tcpdump`)
 - Süstemaatiline ühenduvuse testimine (connectivity testing)
 - Liikluse analüüs ja monitooring (`ss`, `netstat`, packet capture)
-- DNS lahenduse ja service discovery testimine
+- DNS lahenduse ja teenuse avastamise (service discovery) testimine
 - Automatiseeritud testimisskriptid (bash, pass/fail raportid)
 - Turvaaudit (`nmap`, port scanning, Docker Scout)
 - Koormustestimine ja jõudluse analüüs

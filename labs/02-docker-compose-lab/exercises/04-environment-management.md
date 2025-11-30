@@ -523,7 +523,7 @@ VARIABLE_NAME=value
 # Docker Compose kasutamine:
 ${VARIABLE_NAME}
 
-# Default väärtus:
+# Vaikeväärtus (Default value):
 ${VARIABLE_NAME:-default_value}
 ```
 
@@ -618,7 +618,7 @@ $VARIABLE  # ❌
 # Õige süntaks:
 ${VARIABLE}  # ✅
 
-# Default väärtusega:
+# Vaikeväärtusega:
 ${VARIABLE:-default}  # ✅
 ```
 

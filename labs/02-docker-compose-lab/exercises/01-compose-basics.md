@@ -498,7 +498,7 @@ HEALTHCHECK CMD wget --spider http://localhost:3000/health
 - Suurem image (+5-10MB wget + dependencies)
 - Aeglasem build (apt-get update/install)
 - Rohkem security vulnerabilities (lisapakettide CVE'd)
-- Multi-stage build keerulisem (wget mõlemas stage'is)
+- Mitmeastmeline ehitus (multi-stage build) keerulisem (wget mõlemas stage'is)
 
 ✅ **Õige lähenemine (BEST PRACTICE):**
 ```dockerfile
