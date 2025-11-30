@@ -143,7 +143,7 @@ docker compose up -d
 | 5432 | PostgreSQL (users) | 🚨 **KRIITILINE TURVARISK!** |
 | 5433 | PostgreSQL (todos) | 🚨 **KRIITILINE TURVARISK!** |
 
-**Hostmasina tulemüür (nt UFW) katab selle ohu hetkel, piirates väljastpoolt ligipääsu. Kuid Docker Compose konfiguratsioonis on pordid endiselt avalikud.**
+Käesolev labor on õppe-eesmärkidel loodud testimiskeskkond. Tootmiskeskkonnas on selline portide avalikustamine vastuvõetamatu. Hostmasina tulemüür (nt UFW) katab selle ohu hetkel, piirates väljastpoolt ligipääsu. Kuid Docker Compose konfiguratsioonis on pordid endiselt avalikud.
 
 ### 🛡️ Lahendus (Harjutus 3)
 
