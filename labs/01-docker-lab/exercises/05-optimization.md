@@ -106,8 +106,8 @@ docker history todo-service:1.0
 ```
 
 **Küsimused:**
-- Kui suur on User Service tõmmis? (~180MB)
-- Kui suur on Todo Service tõmmis? (~230MB)
+- Kui suur on User Service tõmmis? 
+- Kui suur on Todo Service tõmmis? 
 - Mitu kihti (layer'it) on igal? (5-6 kihti)
 - Kui kiire on rebuild, kui muudad lähtekoodi? (Aeglane - kõik ehitatakse uuesti!)
 
