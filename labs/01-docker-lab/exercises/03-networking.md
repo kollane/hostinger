@@ -61,8 +61,8 @@ ssh labuser@93.127.213.242 -p [SINU-PORT]
 
 ```bash
 # Stopp ja eemalda vanad konteinerid Harjutus 2-st
-docker stop user-service todo-service postgres-user postgres-todo 2>/dev/null || true
-docker rm user-service todo-service postgres-user postgres-todo 2>/dev/null || true
+docker stop user-service todo-service postgres-user postgres-todo todo-service-test user-service-test 2>/dev/null || true
+docker rm user-service todo-service postgres-user postgres-todo todo-service-test user-service-test 2>/dev/null || true
 
 # Kontrolli, et kõik on puhastatud
 docker ps -a | grep -E 'user-service|todo-service|postgres'
