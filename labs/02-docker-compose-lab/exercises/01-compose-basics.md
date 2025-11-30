@@ -291,7 +291,7 @@ Vajuta `i` (insert mode) ja lisa järgmine sisu:
 # Docker Compose - Lab 1 Lõpuseisu Konversioon
 # ==========================================================================
 # Käivitab 4 teenust:
-# - 2x PostgreSQL (users ja todos)
+# - 2x PostgreSQL andmebaasi (eraldi andmeköidetega)
 # - User Service (Node.js)
 # - Todo Service (Java Spring Boot)
 # ==========================================================================
@@ -414,8 +414,7 @@ services:
 # Volumes - Kasutame Lab 1'st loodud andmeköiteid
 # ==========================================================================
 volumes:
-  postgres-user-data:
-    external: true  # Kasutame Lab 1'st loodud andmeköidet
+    external: true  # Kasutame Lab 1-s loodud andmeköidet
   postgres-todo-data:
     external: true  # Kasutame Lab 1'st loodud andmeköidet
 
@@ -424,7 +423,7 @@ volumes:
 # ==========================================================================
 networks:
   todo-network:
-    external: true  # Kasutame Lab 1'st loodud network'i
+    external: true  # Kasutame Lab 1-s loodud võrku
 ```
 
 Salvesta: `Esc`, siis `:wq`, `Enter`

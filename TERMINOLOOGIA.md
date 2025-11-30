@@ -108,6 +108,8 @@ Teatud ingliskeelsed terminid jäävad tõlkimata, kuid neid kasutatakse jutumä
 - "token"
 - "User Service"
 - "Todo Service"
+- "frontend"
+- "backend"
 
 ---
 
