@@ -209,6 +209,17 @@ docker images todo-service:1.0
 
 **⚠️ OLULINE:** Järgnevad käsud käivitavad konteineri, aga rakendus hangub, sest PostgreSQL puudub. See on **OODATUD** käitumine! Hetkel on fookus õppida Docker käske, mitte saada töötav rakendus.
 
+**ℹ️ Portide turvalisus:**
+
+Selles harjutuses kasutame lihtsustatud portide vastendust (`-p 8081:8081`).
+- ✅ **Host'i tulemüür kaitseb:** VPS-is on UFW tulemüür, mis blokeerib pordi 8081 internetist
+- 📚 **Tootmises oleks õige:** `-p 127.0.0.1:8081:8081` (avab pordi ainult localhost'il)
+- 🎯 **Lab 2 käsitleb:** Võrguturvalisust ja reverse proxy seadistust
+
+**Hetkel keskendume Docker põhitõdedele!**
+
+---
+
 #### Variant A: Interaktiivne režiim (näed kohe vigu)
 
 **See variant on PARIM õppimiseks** - näed kohe, mida juhtub:
