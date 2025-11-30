@@ -1,18 +1,12 @@
 # Labor 1: Docker Põhitõed
 
-**Kestus:** 4 tundi
-**Eeldused:** Peatükk 12 (Docker põhimõtted) läbitud
-**Eesmärk:** Õppida Docker tõmmiste (images) ja konteinerite haldamist hands-on
+## 📋 Ülevaade
+
+Selles laboris õpid paigaldama kolme mikroteenust (services) konteineritesse, haldama andmehoidlaid ja võrke ning optimeerima Docker tõmmiseid toote keskkonna (production) jaoks.
 
 **📖 Kasutatavad rakendused:**
 - [User Service](../apps/backend-nodejs/README.md) - Autentimisteenus, mis haldab kasutajaid ja annab välja JWT "token"-eid
 - [Todo Service](../apps/backend-java-spring/README.md) - Todo ülesannete rakendus (to-do list), kus kasutajad saavad hallata oma ülesandeid
-
----
-
-## 📋 Ülevaade
-
-Selles laboris õpid paigaldama kolme mikroteenust (services) konteineritesse, haldama andmehoidlaid ja võrke ning optimeerima Docker tõmmiseid toote keskkonna (production) jaoks.
 
 ---
 
