@@ -9,6 +9,7 @@
 Selles harjutuses võtad **Lab 1 lõpuseisu** (4 töötavat konteinerit manuaalsete `docker run` käskudega) ja konverteerid need üheks docker-compose.yml failiks. Õpid Docker Compose põhimõisteid: teenused, võrgud, andmeköited ja depends_on.
 
 **Enne vs Peale:**
+
 - **Enne (Lab 1):** 4 käsku `docker run` iga konteineri jaoks
 - **Peale (Lab 2):** Üks käsk `docker compose up` kogu süsteemi jaoks
 
@@ -44,6 +45,7 @@ ssh labuser@93.127.213.242 -p [SINU-PORT]
 ### Testimine
 
 **SSH Sessioonis (VPS sees):**
+
 - Kõik `curl http://localhost:...` käsud käivita siin
 - Näide: `curl http://localhost:3000/health`
 
@@ -107,6 +109,7 @@ docker run -d --name todo-service \
 ```
 
 **Probleemid:**
+
 - ❌ Pikad käsud
 - ❌ Raske meeles pidada
 - ❌ Kui midagi muutub, pead käsitsi muutma
@@ -121,6 +124,7 @@ docker compose up -d
 ```
 
 **Eelised:**
+
 - ✅ Kogu konfiguratsioon ühes failis
 - ✅ Versioonihaldus (Git)
 - ✅ Lihtne jagada (commit & push)
@@ -142,6 +146,7 @@ docker compose up -d
 ### Mis võib juhtuda?
 
 **Internetis botid skaneerivad pidevalt PostgreSQL porte (5432/5433):**
+
 - 🤖 Automaatsed skännerid otsivad avatud PostgreSQL porte (Shodan, Censys, jne)
 - 🔓 Brute force rünnakud paroolidele - `postgres/postgres` on liiga nõrk ja esimene, mida proovitakse!
 - 💉 SQL injection katsed läbi PostgreSQL protokolli
@@ -151,6 +156,7 @@ docker compose up -d
 - 💾 Andmete eksfiltratsioon - kogu andmebaasi laadimine välja
 
 **Backend API'd (3000/8081) on samuti ohtlikud:**
+
 - 🔐 Autentimise möödumine - JWT secret võib lekkida
 - 📡 API enumeration - kõigi endpointide avastamine
 - 🚀 Rate limiting puudumine - spam päringud
@@ -160,6 +166,7 @@ docker compose up -d
 ### 🛡️ Lahendus
 
 👉 **Exercise 3 (Võrgu Segmenteerimine) õpetab:**
+
 - ✅ Võrgu segmenteerimine (network segmentation) - 3-tier arhitektuur
 - ✅ Portide 127.0.0.1 binding (localhost-only) - ainult SSH sessioonis kättesaadav
 - ✅ DMZ → Backend → Database (defense in depth)
@@ -168,6 +175,7 @@ docker compose up -d
 **Praegu õpid Docker Compose põhitõde. Exercise 3's õpid seda TURVALISELT kasutama!**
 
 **💡 Miks me siis seda teeme?**
+
 - 📚 Pedagoogiline: Näed kõigepealt, kuidas Docker Compose töötab
 - 🔍 Mõistad probleemi: Alles siis saad aru, miks võrgu segmenteerimine on oluline
 - 🎓 Õppimisjärjekord: Basics → Security (see on õige viis õppida)
@@ -206,6 +214,7 @@ cd ..  # Tagasi 02-docker-compose-lab/ kausta
 ```
 
 **Variant B: Käsitsi (Pedagoogiline)**
+
 - 🔗 **Tõmmised (docker images) puuduvad?** Mine tagasi Lab 1: `cd ../../01-docker-lab` ja ehita image'd
 - 🔗 **Võrk (docker network) puudub?** Loo võrk: `docker network create todo-network`
 - 🔗 **Andmeköited (docker volumes) puuduvad?** Loo volumes:
@@ -213,6 +222,7 @@ cd ..  # Tagasi 02-docker-compose-lab/ kausta
   docker volume create postgres-user-data
   docker volume create postgres-todo-data
   ```
+
 - 🔗 **DB skeem puudub?** Skeemide loomine õpetatakse selles harjutuses (Samm 8) või kasuta setup.sh
 
 **✅ Kui kõik ülalpool on OK, võid jätkata!**
@@ -241,6 +251,7 @@ docker ps -a | grep -E "user-service|todo-service|postgres"
 ```
 
 **TÄHTIS:** Me EI kustuta:
+
 - ❌ Tõmmiseid (docker images) - kasutame neid uuesti
 - ❌ Andmeköiteid (docker volumes) - andmed peavad püsima
 - ❌ Võrku (docker network) - kasutame seda uuesti
@@ -431,12 +442,14 @@ Docker Compose faili versiooni number. Versioon 3.8 toetab kõiki uuemaid funkts
 #### `services:` Blokk
 
 Defineerib 4 teenust:
+
 - `postgres-user` - PostgreSQL kasutajate andmebaasile
 - `postgres-todo` - PostgreSQL todo'de andmebaasile
 - `user-service` - Node.js backend (User Service)
 - `todo-service` - Java Spring Boot backend (Todo Service)
 
 **Iga teenus sisaldab:**
+
 - `image:` - Mis tõmmist kasutada
 - `container_name:` - Konteineri nimi
 - `environment:` - Keskkonnamuutujad
@@ -460,6 +473,7 @@ healthcheck:
 ```
 
 **Miks `node healthcheck.js`, mitte `wget` või `curl`?**
+
 - Node.js 22-slim tõmmis **EI sisalda** `wget` ega `curl` tööriistu
 - `healthcheck.js` fail on juba konteineris olemas (Lab 1'st)
 - Node on garanteeritult olemas (kuna see on Node.js konteiner)
@@ -472,10 +486,12 @@ healthcheck:
 ```
 
 **Miks todo-service võib kasutada `wget`?**
+
 - Java runtime tõmmis (eclipse-temurin) sisaldab `wget` tööriista
 - Kui `wget` puuduks, kasutaks `curl` või Java HTTP klienti
 
 **Healthcheck parameetrid:**
+
 - `interval: 30s` - Kontrolli iga 30 sekundi tagant
 - `timeout: 3s` - Ühendus timeout (katse ebaõnnestub peale 3s)
 - `retries: 3` - Mitme ebaõnnestumise järel märgitakse unhealthy
@@ -495,6 +511,7 @@ HEALTHCHECK CMD wget --spider http://localhost:3000/health
 ```
 
 **Miks see on halb?**
+
 - Suurem image (+5-10MB wget + dependencies)
 - Aeglasem build (apt-get update/install)
 - Rohkem security vulnerabilities (lisapakettide CVE'd)
@@ -508,6 +525,7 @@ HEALTHCHECK CMD node healthcheck.js
 ```
 
 **Miks see on parem?**
+
 - Minimal image size (slim jääb slim'iks)
 - Vähem dependencies = vähem vulnerabilities
 - Kiirem build ja deploy
@@ -517,6 +535,7 @@ HEALTHCHECK CMD node healthcheck.js
 > "Don't install tools just for healthchecks. Use what's already in the container."
 
 **Millal siiski installida wget?**
+
 - Kui rakendusel endal on vaja wget'i (debugging, scripting)
 - Kui healthcheck PEAB olema wget (legacy süsteemid)
 - Development image'ites (mitte production!)
@@ -532,6 +551,7 @@ volumes:
 ```
 
 **`external: true` tähendab:**
+
 - Docker Compose EI loo uut andmeköidet
 - Kasutab Lab 1'st juba loodud andmeköidet
 - Kui andmeköide ei eksisteeri, saad vea (error)
@@ -545,6 +565,7 @@ networks:
 ```
 
 **`external: true` tähendab:**
+
 - Docker Compose EI loo uut võrku
 - Kasutab Lab 1'st juba loodud võrku
 - Kui võrk ei eksisteeri, saad vea (error)
@@ -558,6 +579,7 @@ depends_on:
 ```
 
 **Tähendus:**
+
 - User Service käivitub alles siis, kui postgres-user on `healthy`
 - Docker Compose kontrollib `healthcheck` staatust
 - Kui healthcheck ebaõnnestub, ei käivitu user-service
@@ -577,6 +599,7 @@ docker compose config
 ```
 
 **Levinud vead (errors):**
+
 - Valed taandused (indentation) - YAML on tundlik!
 - Puuduvad koolonid (`:`)
 - Vale kasutamine `true` vs `"true"`
@@ -598,6 +621,7 @@ docker compose up -d
 ```
 
 **Märkused:**
+
 - `-d` = detached mode (taustal)
 - Docker Compose käivitab teenused õiges järjekorras (depends_on)
 
@@ -1068,6 +1092,7 @@ user-service:
 ```
 
 **Miks see juhtub?**
+
 - Node.js 22-slim tõmmis on minimalistlik (ei sisalda wget/curl)
 - `healthcheck.js` fail on juba konteineris (Lab 1'st)
 - Docker Compose healthcheck kirjutab üle Dockerfile HEALTHCHECK'i
@@ -1097,6 +1122,7 @@ RUN apt-get update && apt-get install -y wget
 ```
 
 **Production tõmmised peavad olema minimalistlikud:**
+
 - Väiksem rünnakupind (vähem koodi = vähem vigu)
 - Vähem turvanõrkusi (iga pakett võib tuua CVE'd)
 - Kiiremad paigaldused (väiksem tõmmis = kiirem allalaadimine)
@@ -1111,6 +1137,7 @@ RUN apt-get update && apt-get install -y wget
 Suurepärane! Nüüd käivitad 4 teenust ühe docker-compose.yml failiga.
 
 **Mis edasi?**
+
 - ✅ Konverteris Lab 1 → docker-compose.yml
 - ✅ 4 teenust töötavad
 - ✅ Andmed püsivad

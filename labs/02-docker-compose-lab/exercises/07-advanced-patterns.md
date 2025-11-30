@@ -11,6 +11,7 @@ See harjutus on **valikuline** ja **sõltumatu** Harjutustest 3-5.
 **Eeldused:** Harjutus 1 või 2 läbitud (töötav docker-compose.yml)
 
 **Õpid:**
+
 - Docker Compose profiilid (erinevad teenuste komplektid)
 - Andmeköite varundamine ja taastamine (tõrkest taastumine)
 - Võrgu tõrkeotsing
@@ -56,6 +57,7 @@ docker compose ps
 ```
 
 **Kui midagi puudub:**
+
 - 🔗 Mine tagasi [Harjutus 1](01-compose-basics.md)
 
 **✅ Kui kõik ülalpool on OK, võid jätkata!**
@@ -69,6 +71,7 @@ docker compose ps
 #### Samm 1: Mõista profiilide kontseptsiooni
 
 **Probleem:**
+
 - Tihti tahad development'is käivitada silumistööriistu
 - Production'is ei vaja silumistööriistu
 - Praegu pead käsitsi kommenteerima teenuseid
@@ -174,6 +177,7 @@ docker compose start user-service
 ```
 
 **Mida juhtus:**
+
 - `-v postgres-user-data:/data` - Haakis andmeköite /data'sse
 - `-v $(pwd):/backup` - Haakis praeguse kausta /backup'i
 - `tar czf` - Lõi kokkusurutud arhiivi
@@ -279,6 +283,7 @@ exit
 ```
 
 **Analüüs:**
+
 - Kui `ping` töötab, võrk on ühendatud
 - Kui `curl` töötab, teenus on valmis
 - Kui `nc -zv` töötab, port on avatud
@@ -294,6 +299,7 @@ Docker Compose Watch (lisatud Compose v2.22+) võimaldab automaatset uuesti ehit
 #### Samm 8: Mõista Watch režiimi
 
 **Probleem arenduses:**
+
 - Muudad lähtekoodi
 - Pead manuaalselt tõmmise uuesti ehitama: `docker compose build`
 - Pead teenuse taaskäivitama: `docker compose up -d`
@@ -305,6 +311,7 @@ docker compose watch
 ```
 
 **Automaatselt:**
+
 - Jälgib (watch) lähtekoodi muudatusi
 - Ehitab tõmmise uuesti automaatselt
 - Taaskäivitab teenuse automaatselt
@@ -393,6 +400,7 @@ echo "// Test comment" >> server.js
 ```
 
 **Tulemus:**
+
 - ✅ Lähtekoodi muudatus → automaatne rebuild
 - ✅ Ei pea manuaalselt käivitama `docker compose build`
 - ✅ Kiire arenduse tagasisideahel
@@ -415,6 +423,7 @@ develop:
 ```
 
 **Parim praktika:**
+
 - ✅ Kasuta watch'i ainult arenduses
 - ✅ Kasuta `docker-compose.override.yml` watch konfi jaoks
 - ❌ ÄRA kasuta watch'i toote keskkonnas (production) (turvalisus + ressursikasutus)
@@ -435,6 +444,7 @@ services:
 ```
 
 **Mida õppisid:**
+
 - ✅ Compose Watch režiim (auto-rebuild)
 - ✅ Watch toimingud: rebuild, sync, sync+restart
 - ✅ Kiire arenduse tagasisideahel
@@ -619,12 +629,14 @@ networks:
 Õnnitleme! Oled läbinud kõik Labor 2 harjutused!
 
 **Mis saavutasid:**
+
 - ✅ Docker Compose põhitõed (5 harjutust)
 - ✅ Edasijõudnute mustrid (6. harjutus - VALIKULINE)
 - ✅ Tootmisvalmis seadistused
 - ✅ Tõrkeotsingu oskused
 
 **Järgmine Labor:**
+
 - 🎯 **Labor 3:** Kubernetes Põhitõed
 
 ---

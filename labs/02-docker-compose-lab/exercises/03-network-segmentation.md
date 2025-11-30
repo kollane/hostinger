@@ -9,12 +9,14 @@
 Selles harjutuses õpid, kuidas muuta Harjutus 2 konfiguratsiooni turvaliseks, kasutades võrgu segmenteerimist ja portide piiranguid. Õpid mõistma, miks avalikud andmebaasi ja backend pordid on turvarisk ning kuidas neid kaitsta.
 
 **Mis on probleem?**
+
 - Praegu on **KÕIK 5 teenust** avalikult kättesaadavad internetist
 - Andmebaasid (PostgreSQL) on otse internetist ligipääsetavad
 - Backend API'd on otse internetist ligipääsetavad
 - Üks võrk - kui üks teenus on kompromiteeritud, on kõik ohus
 
 **Mis on lahendus?**
+
 - **3-taseme arhitektuur:** Frontend (DMZ) → Backend → Database
 - **Ainult frontend avalik:** Port 8080 on ainus avalik port
 - **Võrgu segmenteerimine:** Eraldi võrgud igale tasemele
@@ -79,6 +81,7 @@ docker compose -f docker-compose.yml -f docker-compose.init.yml up -d
 ```
 
 **Harjutus 2 pole läbitud?**
+
 - 🔗 Mine tagasi [Harjutus 2](02-add-frontend.md)
 
 **✅ Kui kõik ülalpool on OK (eriti DB skeemid!), võid jätkata!**
@@ -412,6 +415,7 @@ nc -zv localhost 5433
 #### 1.4. Mõista turvariske
 
 **Mis võib juhtuda, kui andmebaasid on avalikud?**
+
 - ❌ Brute force rünnakud PostgreSQL paroolidele
 - ❌ SQL injection rünnakud
 - ❌ Andmete eksfiltratsioon
@@ -419,6 +423,7 @@ nc -zv localhost 5433
 - ❌ Vastavusnõuete rikkumised (GDPR, PCI-DSS)
 
 **Mis võib juhtuda, kui backend API'd on avalikud?**
+
 - ❌ Frontend turvakontrollide mööda minemine
 - ❌ API enumeratsiooni rünnakud
 - ❌ Rate limiting puudumine
@@ -691,6 +696,7 @@ Enne kui jätkame sammudega 4 ja 5, on oluline mõista **kahte erinevat lähenem
 👉 **Loe enne jätkamist:** [Peatükk 08A: Docker Compose Production vs Development Seadistused](../../../resource/08A-Docker-Compose-Production-Development-Seadistused.md)
 
 **See peatükk käsitleb:**
+
 - ✅ Kolm port binding strateegiat (0.0.0.0, 127.0.0.1, pole porte)
 - ✅ Millal kasutada production vs development lähenemist
 - ✅ Turvalisuse parimad tavad (defense in depth, compliance, GDPR)
@@ -727,6 +733,7 @@ Leia `user-service:` sektsioon ja **kustuta täielikult** `ports:` sektsioon:
 ```
 
 **Miks see on turvaline?**
+
 - Frontend pääseb ligi user-service'ile Docker DNS kaudu: `http://user-service:3000`
 - Väline maailm EI pääse ligi (port ei ole 0.0.0.0'ga seotud)
 
@@ -904,6 +911,7 @@ curl http://localhost:3000/health
 ```
 
 **Kuidas see töötab?**
+
 - `127.0.0.1:3000:3000` seob porti **ainult localhost'ile**
 - SSH sessioonis saad debug'ida: `curl localhost:3000`
 - Väline maailm EI pääse ligi: `curl 93.127.213.242:3000` → Connection refused
@@ -1036,6 +1044,7 @@ docker compose exec postgres-user ping -c 1 8.8.8.8
 #### 7.1. Võrgu segmenteerimise printsiibid
 
 **1. Kaitse sügavuses (Defense in Depth):**
+
 - Mitu kaitsevahendit:
   - Kiht 1: Võrgu segmenteerimine
   - Kiht 2: Portide piirangud
@@ -1043,12 +1052,14 @@ docker compose exec postgres-user ping -c 1 8.8.8.8
   - Kiht 4: Autorisatsioon (RBAC)
 
 **2. Vähimate õiguste printsiip (Principle of Least Privilege):**
+
 - Iga teenus näeb ainult seda, mida vaja:
   - Frontend näeb ainult backend'e (EI näe andmebaase)
   - Backend'd näevad ainult oma andmebaase
   - Andmebaasid ei näe midagi peale oma backend'i
 
 **3. Nullusalduse mudel (Zero Trust):**
+
 - Ükski teenus ei usalda teist vaikimisi
 - Iga ligipääs peab olema selgelt lubatud
 - Võrgu segmenteerimine jõustab seda
@@ -1247,6 +1258,7 @@ docker compose up -d
 🎉 **Õnnitleme! Oled loonud turvalise Docker Compose arhitektuuri!**
 
 **Mis saavutasid:**
+
 - ✅ Võrgu segmenteerimine implementeeritud
 - ✅ Rünnaku pind vähendatud 96%
 - ✅ Vähimate õiguste printsiip rakendatud
@@ -1264,6 +1276,7 @@ docker compose up -d
 → **[Lab 3: Kubernetes Basics](../../03-kubernetes-basics-lab/README.md)**
 
 **Lab 3's õpid:**
+
 - Kubernetes Network Policies (võrgu segmenteerimine K8s'is)
 - Service types: ClusterIP (internal) vs NodePort (external)
 - Ingress Controllers (nagu Nginx reverse proxy)
@@ -1279,6 +1292,7 @@ docker compose up -d
 → **[Lab 2.5: Network Analysis & Testing](../../02.5-network-analysis-lab/README.md)** 🔷 *Valikuline*
 
 **Lab 2.5's õpid:**
+
 - Docker võrgu inspekteerimine (network inspection) professionaalsete tööriistadega (`jq`, `tcpdump`)
 - Süstemaatiline ühenduvuse testimine (connectivity testing)
 - Liikluse analüüs ja monitooring (`ss`, `netstat`, packet capture)
@@ -1294,12 +1308,14 @@ docker compose up -d
 **Kasutab:** Lab 2 olemasolevat docker-compose stack'i (ei loo uut keskkonda)
 
 **Sobib sulle, kui:**
+
 - Plaanid töötada DevOps/SRE rollis (network debugging oluline)
 - Huvi pakub professionaalne võrgu analüüs ja diagnostika
 - Soovid õppida automatiseeritud testimist
 - Oled huvitatud turvaauditist
 
 **Jäta vahele, kui:**
+
 - Soovid kiiresti Kubernetes'e jõuda
 - Docker põhitõed on piisavad
 - Aeg on piiratud

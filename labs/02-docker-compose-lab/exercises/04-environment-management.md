@@ -9,11 +9,13 @@
 Selles harjutuses õpid eraldama saladused docker-compose.yml failist ja haldama neid turvaliselt `.env` failidega. Samuti õpid kasutama `docker-compose.override.yml` mustrit erinevate keskkondade (dev, prod) jaoks.
 
 **Probleem praegu:**
+
 - ❌ Saladused (JWT_SECRET, DB_PASSWORD) on "hardcoded" docker-compose.yml'is
 - ❌ Sama konfiguratsioon arendus- (dev) ja toote- (prod) keskkondade jaoks
 - ❌ Raske jagada docker-compose.yml ilma saladusteta
 
 **Lahendus:**
+
 - ✅ .env fail saladuste haldamiseks
 - ✅ docker-compose.override.yml dev seadistuste jaoks
 - ✅ Versioonihaldus (.env.example, mitte .env)
@@ -57,11 +59,13 @@ ssh labuser@93.127.213.242 -p [SINU-PORT]
 | student3 | http://93.127.213.242:8280 |
 
 💡 **API'd on kättesaadavad läbi frontend reverse proxy:**
+
 - `/api/auth/*` → user-service:3000
 - `/api/users*` → user-service:3000
 - `/api/todos*` → todo-service:8081
 
 **SSH sessioonis (veatuvastus):**
+
 - `curl http://localhost:3000/health`
 - `curl http://localhost:8081/health`
 
@@ -82,6 +86,7 @@ ls -la docker-compose.yml
 ```
 
 **Kui midagi puudub:**
+
 - 🔗 Mine tagasi [Harjutus 3](03-network-segmentation.md)
 
 **✅ Kui kõik ülalpool on OK, võid jätkata!**
@@ -104,6 +109,7 @@ JWT_SECRET: shared-secret-key-change-this-in-production-must-be-at-least-256-bit
 ```
 
 **Probleemid:**
+
 - ❌ Saladus on nähtav failis
 - ❌ Sama saladus dev ja prod'is
 - ❌ Kui commit'id Git'i, saladus on avalik
@@ -537,11 +543,13 @@ ${VARIABLE_NAME:-default_value}
 ### Versioonihaldus Best Practices:
 
 ✅ **Commit:**
+
 - docker-compose.yml
 - .env.example (template)
 - .gitignore
 
 ❌ **EI commit:**
+
 - .env (sisaldab salajaseid)
 - docker-compose.override.yml (optional - sõltub workflow'st)
 
@@ -629,6 +637,7 @@ ${VARIABLE:-default}  # ✅
 Suurepärane! Nüüd haldad saladusi turvaliselt .env failidega.
 
 **Mis edasi?**
+
 - ✅ Saladused on eraldatud docker-compose.yml'ist
 - ✅ .env.example mall on loodud
 - ✅ Development override rakendub

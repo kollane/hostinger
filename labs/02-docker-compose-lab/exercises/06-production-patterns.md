@@ -9,6 +9,7 @@
 Selles harjutuses õpid konfigureerima Docker Compose stack'i tootmiskeskkonna jaoks. Rakendad parimaid praktikaid: ressursilimiidid, skaleerimine, taaskäivituspoliitika, logimine ja turvalisus.
 
 **Arenduskeskkond (Development) vs Toote keskkond (Production):**
+
 - **Arenduskeskkond (Development):** Kiire iteratsioon, veatuvastus (debug), palju logisid
 - **Toote keskkond (Production):** Stabiilsus, turvalisus, ressursside haldus, vähem logisid
 
@@ -43,6 +44,7 @@ docker compose ps | grep liquibase
 ```
 
 **Kui midagi puudub:**
+
 - 🔗 Mine tagasi [Harjutus 5](05-database-migrations.md)
 
 **✅ Kui kõik ülalpool on OK, võid jätkata!**
@@ -205,10 +207,12 @@ deploy:
 ```
 
 **Tähendus:**
+
 - **limits:** Konteiner ei saa kasutada rohkem kui see
 - **reservations:** Docker garanteerib vähemalt nii palju
 
 **Miks oluline:**
+
 - Üks konteiner ei saa kasutada kõiki ressursse (resource starvation)
 - Ennustatav jõudlus
 
@@ -220,6 +224,7 @@ deploy:
 ```
 
 **Tähendus:**
+
 - Docker Compose käivitab 2 konteinerit sama tõmmisega (docker image)
 - Koormuse jaotamine (load balancing)
 - Kõrge käideldavus (high availability)
@@ -248,6 +253,7 @@ logging:
 ```
 
 **Tähendab:**
+
 - Logid salvestatakse JSON vormingus
 - Iga logifail max 10MB
 - Kui 10MB täis, roteeritakse (uus fail)
@@ -309,6 +315,7 @@ docker stats
 ```
 
 **Analüüs:**
+
 - Kõik konteinerid on limitide piires
 - Mälukasutus on mõistlik
 - CPU kasutus on väike (idle)
@@ -390,6 +397,7 @@ Lisa igale teenusele:
 ```
 
 **Turvalisuse parimad praktikad:**
+
 - ✅ Käita mitte-juurkasutajana (juba tehtud optimeeritud tõmmises)
 - ✅ Kirjutuskaitstud failisüsteem (kus võimalik)
 - ✅ Loobu ebavajalikest võimekustest (Drop capabilities)
@@ -573,6 +581,7 @@ logging:
 Õnnitleme! Oled läbinud kõik 5 harjutust!
 
 **Mis saavutasid:**
+
 - ✅ Konverteris Lab 1 → docker-compose.yml
 - ✅ Lisasid Frontend teenuse (5 teenust)
 - ✅ Haldad saladusi .env failidega
@@ -580,6 +589,7 @@ logging:
 - ✅ Konfigureerisid tootmiskõlbulikud (production-ready) seadistused
 
 **Järgmine Labor:**
+
 - 🎯 **Labor 3:** Kubernetes Põhitõed
   - Konverteeri docker-compose.yml → Kubernetes manifestideks
   - Paigalda (deploy) stack Kubernetes klastrisse

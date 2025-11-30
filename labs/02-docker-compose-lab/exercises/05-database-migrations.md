@@ -9,12 +9,14 @@
 Selles harjutuses õpid automatiseerima andmebaasi skeemi loomist ja uuendamist Liquibase'iga. See on **oluline DevOps oskus** ja valmistab ette **Kubernetes Init-konteineri mustrit**, mida õpid Lab 3-s.
 
 **Probleem praegu:**
+
 - ❌ Andmebaasi skeem luuakse manuaalselt (database-setup.sql)
 - ❌ Raske jälgida skeemi muudatusi
 - ❌ Tagasi keeramine on keeruline
 - ❌ Ei ole versioonihaldust andmebaasi skeemile
 
 **Lahendus:**
+
 - ✅ Liquibase migratsioonid (versioonihaldus)
 - ✅ Automaatne skeemi loomine
 - ✅ Init-konteineri muster (käivitub enne rakendust)
@@ -60,11 +62,13 @@ ssh labuser@93.127.213.242 -p [SINU-PORT]
 | student3 | http://93.127.213.242:8280 |
 
 💡 **API'd on kättesaadavad läbi frontend reverse proxy:**
+
 - `/api/auth/*` → user-service:3000
 - `/api/users*` → user-service:3000
 - `/api/todos*` → todo-service:8081
 
 **SSH sessioonis (veatuvastus):**
+
 - `curl http://localhost:3000/health`
 - `curl http://localhost:8081/health`
 
@@ -81,6 +85,7 @@ INSERT INTO users VALUES (...);
 ```
 
 **Probleemid:**
+
 - Kui tabel on juba olemas, saad vea
 - Pole ajalugu, mis muutus ja millal
 - Raske teha tagasivõtmist
@@ -97,6 +102,7 @@ Version 4: Create todos table
 ```
 
 **Eelised:**
+
 - ✅ Iga muudatus on versioonihalduses
 - ✅ Automaatne tagasi keeramine
 - ✅ Saad käivitada mitu korda (idempotentne)
@@ -146,6 +152,7 @@ ls -la .env
 ```
 
 **Kui midagi puudub:**
+
 - 🔗 Mine tagasi [Harjutus 4](04-environment-management.md)
 
 **✅ Kui kõik ülalpool on OK, võid jätkata!**
@@ -605,6 +612,7 @@ docker compose exec postgres-user psql -U postgres -d user_service_db -c "SELECT
 ```
 
 **Kubernetes'es Lab 3:**
+
 - Liquibase = InitContainer
 - Backend = Main Container
 
@@ -687,6 +695,7 @@ depends_on:
 Suurepärane! Nüüd automatiseerid andmebaasi skeemi Liquibase'iga.
 
 **Mis edasi?**
+
 - ✅ Andmebaasi migratsioonid töötavad
 - ✅ Init-konteineri muster implementeeritud
 - ✅ Valmis Kubernetes InitContainer'iteks (Lab 3)
