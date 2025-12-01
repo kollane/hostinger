@@ -33,8 +33,6 @@ API2_PORT_START=8081
 K8S_API_PORT_START=6443
 K8S_HTTP_PORT_START=30080
 K8S_HTTPS_PORT_START=30443
-INSTALL_GIT_REPO="n"
-GIT_REPO_URL=""
 INSTALL_FAIL2BAN="y"
 SWAP_SIZE_GB=4
 ADMIN_USER=$(logname 2>/dev/null || echo $SUDO_USER)
@@ -267,19 +265,6 @@ interactive_config() {
     warning "Laptop mode: Using localhost (127.0.0.1) for all port forwarding"
   fi
 
-  # Git repository
-  echo ""
-  read -p "Install Git repository with labs? (y/n) [default: n]: " git_input
-  INSTALL_GIT_REPO=${git_input:-n}
-
-  if [[ "$INSTALL_GIT_REPO" =~ ^[Yy]$ ]]; then
-    read -p "Git repository URL: " GIT_REPO_URL
-    if [ -z "$GIT_REPO_URL" ]; then
-      warning "No URL provided, skipping Git installation"
-      INSTALL_GIT_REPO="n"
-    fi
-  fi
-
   # fail2ban
   if [ "$DEPLOYMENT_TYPE" = "vps" ]; then
     echo ""
@@ -310,10 +295,6 @@ interactive_config() {
     echo "K8s API port start:  $K8S_API_PORT_START"
     echo "Ingress HTTP start:  $K8S_HTTP_PORT_START"
     echo "Ingress HTTPS start: $K8S_HTTPS_PORT_START"
-  fi
-  echo "Git repository:      ${INSTALL_GIT_REPO}"
-  if [[ "$INSTALL_GIT_REPO" =~ ^[Yy]$ ]]; then
-    echo "Git URL:             $GIT_REPO_URL"
   fi
   echo "fail2ban:            $INSTALL_FAIL2BAN"
   echo "Swap size:           ${SWAP_SIZE_GB}GB"
@@ -586,9 +567,15 @@ create_template() {
     return
   fi
 
+  # Determine profile based on lab mode
+  local profile_name="devops-lab"
+  if [ "$LAB_MODE" = "kubernetes" ]; then
+    profile_name="devops-lab-k8s"
+  fi
+
   # Launch base container
   log "  Launching base container..."
-  lxc launch ubuntu:24.04 devops-template -p default -p devops-lab >> "$LOG_FILE" 2>&1
+  lxc launch ubuntu:24.04 devops-template -p default -p "$profile_name" >> "$LOG_FILE" 2>&1
   sleep 20
 
   # Update and install packages
@@ -813,70 +800,290 @@ create_students() {
   success "All student containers created"
 }
 
-# Install Git repository
-install_git_repo() {
-  if [[ ! "$INSTALL_GIT_REPO" =~ ^[Yy]$ ]]; then
-    info "Skipping Git repository installation"
-    return
+# Create sync scripts for labs synchronization
+create_sync_scripts() {
+  log "Creating labs sync scripts..."
+
+  local scripts_dir="/home/$ADMIN_USER/scripts"
+  mkdir -p "$scripts_dir"
+
+  # Detect labs source directory
+  local labs_source="/home/$ADMIN_USER/projects/hostinger/labs"
+  if [ ! -d "$labs_source" ]; then
+    # Fallback to script directory
+    labs_source="$(dirname "$(readlink -f "$0")")/../labs"
   fi
 
-  log "Installing Git repository..."
-
-  local git_dir="/home/$ADMIN_USER/projects/hostinger"
-
-  # Clone as admin user
-  su - "$ADMIN_USER" -c "
-    mkdir -p ~/projects
-    cd ~/projects
-    if [ ! -d hostinger ]; then
-      git clone $GIT_REPO_URL hostinger
-    else
-      cd hostinger && git pull
-    fi
-  " >> "$LOG_FILE" 2>&1
-
-  if [ -d "$git_dir/labs" ]; then
-    success "Git repository cloned"
-
-    # Create sync scripts
-    log "Creating sync scripts..."
-    mkdir -p "/home/$ADMIN_USER/scripts"
-
-    # sync-labs.sh
-    cat > "/home/$ADMIN_USER/scripts/sync-labs.sh" <<'SYNCSCRIPT'
+  # 1. sync-labs.sh - Sync single container
+  cat > "$scripts_dir/sync-labs.sh" <<'SYNCSCRIPT'
 #!/bin/bash
+#
+# Labs Sync Script
+# Syncs labs folder from host to a single LXD container
+#
+# Usage:
+#   ./sync-labs.sh <container-name>
+#   ./sync-labs.sh devops-student1
+#
+
 set -e
-CONTAINER="$1"
-SOURCE_DIR="/home/USERNAME/projects/hostinger/labs"
-if [ -z "$CONTAINER" ]; then
+
+# Configuration - adjust this path if needed
+LABS_SOURCE="${LABS_SOURCE:-$HOME/projects/hostinger/labs}"
+
+# Colors
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+NC='\033[0m'
+
+if [ -z "$1" ]; then
+  echo -e "${RED}Error: Container name required${NC}"
   echo "Usage: $0 <container-name>"
+  echo "Example: $0 devops-student1"
   exit 1
 fi
-echo "📦 Syncing labs to $CONTAINER..."
-lxc exec $CONTAINER -- bash -c "tar czf /tmp/labs-backup-$(date +%Y%m%d-%H%M%S).tar.gz -C /home/labuser labs 2>/dev/null || true"
-lxc file push -r "$SOURCE_DIR/" "$CONTAINER/home/labuser/"
-lxc exec $CONTAINER -- chown -R labuser:labuser /home/labuser/labs
-lxc exec $CONTAINER -- find /home/labuser/labs -type f -name '*.sh' -exec chmod 755 {} \;
-echo "✅ $CONTAINER updated!"
+
+CONTAINER="$1"
+
+# Check if labs source exists
+if [ ! -d "$LABS_SOURCE" ]; then
+  echo -e "${RED}Error: Labs directory not found: $LABS_SOURCE${NC}"
+  echo "Set LABS_SOURCE environment variable or check the path"
+  exit 1
+fi
+
+echo -e "${BLUE}📦 Syncing labs to $CONTAINER...${NC}"
+
+# Check if container exists and is running
+if ! lxc list --format csv -c n,s | grep -q "^${CONTAINER},RUNNING"; then
+  echo -e "${YELLOW}Warning: $CONTAINER is not running${NC}"
+  exit 1
+fi
+
+# Create backup of existing labs
+echo "Creating backup..."
+lxc exec "$CONTAINER" -- bash -c "
+  if [ -d /home/labuser/labs ]; then
+    tar czf /tmp/labs-backup-\$(date +%Y%m%d-%H%M%S).tar.gz -C /home/labuser labs 2>/dev/null || true
+  fi
+"
+
+# Sync labs folder
+echo "Copying files..."
+lxc file push -r "$LABS_SOURCE/" "$CONTAINER/home/labuser/"
+
+# Fix permissions
+echo "Setting ownership..."
+lxc exec "$CONTAINER" -- chown -R labuser:labuser /home/labuser/labs
+lxc exec "$CONTAINER" -- find /home/labuser/labs -name '*.sh' -exec chmod +x {} \;
+
+echo -e "${GREEN}✅ $CONTAINER updated!${NC}"
+echo "   Backup: /tmp/labs-backup-*.tar.gz (inside container)"
 SYNCSCRIPT
 
-    sed -i "s/USERNAME/$ADMIN_USER/g" "/home/$ADMIN_USER/scripts/sync-labs.sh"
-    chmod +x "/home/$ADMIN_USER/scripts/sync-labs.sh"
+  # 2. sync-all-students.sh - Sync all containers
+  cat > "$scripts_dir/sync-all-students.sh" <<'SYNCALLSCRIPT'
+#!/bin/bash
+#
+# Sync Labs to All Student Containers
+#
+# Usage:
+#   ./sync-all-students.sh
+#
 
-    # Sync to all containers
-    log "Syncing labs to containers..."
-    for i in $(seq 1 $NUM_STUDENTS); do
-      if [ "$LAB_MODE" = "docker" ]; then
-        bash "/home/$ADMIN_USER/scripts/sync-labs.sh" "devops-student$i" >> "$LOG_FILE" 2>&1
-      else
-        bash "/home/$ADMIN_USER/scripts/sync-labs.sh" "devops-k8s-student$i" >> "$LOG_FILE" 2>&1
-      fi
-    done
+set -e
 
-    success "Labs synced to all containers"
+SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
+
+# Colors
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+echo "==================================="
+echo "Syncing labs to all students"
+echo "==================================="
+echo ""
+
+# Find all devops containers (both docker and k8s modes)
+containers=$(lxc list --format csv -c n | grep -E "^devops-(student|k8s-student)" || true)
+
+if [ -z "$containers" ]; then
+  echo "No devops containers found"
+  exit 0
+fi
+
+failed=0
+for container in $containers; do
+  echo ">>> $container <<<"
+  if "$SCRIPT_DIR/sync-labs.sh" "$container"; then
+    echo ""
   else
-    warning "Labs directory not found in repository"
+    failed=$((failed + 1))
+    echo ""
   fi
+done
+
+echo ""
+if [ $failed -eq 0 ]; then
+  echo -e "${GREEN}✅ All students updated!${NC}"
+else
+  echo -e "${BLUE}Completed with $failed skipped containers${NC}"
+fi
+SYNCALLSCRIPT
+
+  # 3. check-versions.sh - Check labs versions
+  cat > "$scripts_dir/check-versions.sh" <<'CHECKVERSIONSCRIPT'
+#!/bin/bash
+#
+# Check Labs Versions
+# Shows last modified date of labs in each container
+#
+# Usage:
+#   ./check-versions.sh
+#
+
+# Configuration
+LABS_SOURCE="${LABS_SOURCE:-$HOME/projects/hostinger/labs}"
+
+# Colors
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+echo "Lab Versions (last modified):"
+echo "=============================="
+
+# Find all devops containers
+containers=$(lxc list --format csv -c n,s | grep -E "^devops-(student|k8s-student)" | grep "RUNNING" | cut -d',' -f1 || true)
+
+if [ -z "$containers" ]; then
+  echo "No running devops containers found"
+  exit 0
+fi
+
+for container in $containers; do
+  # Get last modified date from container
+  container_date=$(lxc exec "$container" -- stat -c %Y /home/labuser/labs 2>/dev/null | xargs -I{} date -d @{} +%Y-%m-%d 2>/dev/null || echo "N/A")
+  echo "$container: $container_date"
+done
+
+echo ""
+echo "Host version:"
+if [ -d "$LABS_SOURCE" ]; then
+  host_date=$(stat -c %Y "$LABS_SOURCE" | xargs -I{} date -d @{} +%Y-%m-%d)
+  echo -e "${GREEN}$host_date${NC}"
+else
+  echo -e "${YELLOW}Labs source not found: $LABS_SOURCE${NC}"
+fi
+
+echo ""
+echo "Tip: Run sync-all-students.sh to update containers"
+CHECKVERSIONSCRIPT
+
+  # 4. update-template.sh - Update template image
+  cat > "$scripts_dir/update-template.sh" <<'UPDATETEMPLATESCRIPT'
+#!/bin/bash
+#
+# Update Template Image
+# Updates the devops-lab-base template with latest labs
+#
+# Usage:
+#   ./update-template.sh
+#
+
+set -e
+
+# Configuration
+LABS_SOURCE="${LABS_SOURCE:-$HOME/projects/hostinger/labs}"
+TEMPLATE_NAME="devops-lab-base"
+TEMP_CONTAINER="temp-template-update"
+
+# Colors
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+NC='\033[0m'
+
+# Check if labs source exists
+if [ ! -d "$LABS_SOURCE" ]; then
+  echo -e "${RED}Error: Labs directory not found: $LABS_SOURCE${NC}"
+  exit 1
+fi
+
+echo -e "${BLUE}Updating template: $TEMPLATE_NAME${NC}"
+echo ""
+
+# Check if template exists
+if ! lxc image list | grep -q "$TEMPLATE_NAME"; then
+  echo -e "${RED}Error: Template image not found: $TEMPLATE_NAME${NC}"
+  exit 1
+fi
+
+# Determine profile to use
+PROFILE="devops-lab"
+if lxc profile list | grep -q devops-lab-k8s; then
+  echo "Kubernetes profile detected, using devops-lab-k8s"
+  PROFILE="devops-lab-k8s"
+fi
+
+# 1. Create temporary container
+echo "1. Creating temporary container..."
+lxc launch "$TEMPLATE_NAME" "$TEMP_CONTAINER" -p default -p "$PROFILE"
+sleep 10
+
+# 2. Update labs
+echo "2. Syncing labs..."
+lxc exec "$TEMP_CONTAINER" -- rm -rf /home/labuser/labs
+lxc file push -r "$LABS_SOURCE/" "$TEMP_CONTAINER/home/labuser/"
+lxc exec "$TEMP_CONTAINER" -- chown -R labuser:labuser /home/labuser/labs
+lxc exec "$TEMP_CONTAINER" -- find /home/labuser/labs -name '*.sh' -exec chmod +x {} \;
+
+# 3. Clean up
+echo "3. Cleaning up..."
+lxc exec "$TEMP_CONTAINER" -- bash -c "apt-get clean && rm -rf /tmp/* /var/tmp/*"
+
+# 4. Stop container
+echo "4. Stopping container..."
+lxc stop "$TEMP_CONTAINER"
+
+# 5. Backup old template
+BACKUP_FILE="/tmp/${TEMPLATE_NAME}-backup-$(date +%Y%m%d).tar.gz"
+echo "5. Backing up old template to $BACKUP_FILE..."
+lxc image export "$TEMPLATE_NAME" "${BACKUP_FILE%.tar.gz}" || true
+
+# 6. Delete old template
+echo "6. Deleting old template..."
+lxc image delete "$TEMPLATE_NAME" || true
+
+# 7. Publish new template
+echo "7. Publishing new template..."
+lxc publish "$TEMP_CONTAINER" --alias "$TEMPLATE_NAME" \
+  description="DevOps Lab Template: Ubuntu 24.04 + Docker (Updated $(date +%Y-%m-%d))"
+
+# 8. Delete temporary container
+echo "8. Cleaning up temporary container..."
+lxc delete "$TEMP_CONTAINER"
+
+echo ""
+echo -e "${GREEN}✅ Template updated successfully!${NC}"
+echo "   Backup: $BACKUP_FILE"
+echo ""
+echo "New containers will use the updated template."
+UPDATETEMPLATESCRIPT
+
+  # Make all scripts executable
+  chmod +x "$scripts_dir"/*.sh
+  chown -R "$ADMIN_USER:$ADMIN_USER" "$scripts_dir"
+
+  success "Sync scripts created in $scripts_dir/"
+  info "  - sync-labs.sh         (sync single container)"
+  info "  - sync-all-students.sh (sync all containers)"
+  info "  - check-versions.sh    (check labs versions)"
+  info "  - update-template.sh   (update template image)"
 }
 
 # Generate final report
@@ -1025,7 +1232,7 @@ main() {
   create_lab_profile
   create_template
   create_students
-  install_git_repo
+  create_sync_scripts
 
   generate_report
 }

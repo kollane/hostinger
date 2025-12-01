@@ -511,6 +511,32 @@ Anywhere on lxdbr0         ALLOW       Anywhere
 
 **Laptop Märkus:** UFW on valikuline, kuid soovitatav turvalisuse jaoks.
 
+**⚠️ UFW + LXD HOIATUS:**
+
+Kui pärast UFW lubamist LXD konteinerid **ei saa internetti** (ping annab 100% packet loss), proovi:
+
+```bash
+# 1. Keela UFW ajutiselt testimiseks
+sudo ufw disable
+
+# 2. Testi uuesti
+lxc launch ubuntu:24.04 ufw-test
+sleep 10
+lxc exec ufw-test -- ping -c 3 8.8.8.8
+lxc delete --force ufw-test
+
+# 3. Kui nüüd töötab, on UFW blokeerimas LXD liiklust
+# Lisa reeglid uuesti ja reload:
+sudo ufw allow in on lxdbr0
+sudo ufw route allow in on lxdbr0
+sudo ufw route allow out on lxdbr0
+sudo ufw default allow routed
+sudo ufw enable
+sudo ufw reload
+
+# 4. Kui ikka ei tööta, vaata Troubleshooting sektsiooni 12.2
+```
+
 ### 5.2 Fail2ban SSH Kaitse (VPS Soovitatav)
 
 ```bash
@@ -955,6 +981,20 @@ alias check-resources="echo '=== RAM ===' && free -h && echo && echo '=== DISK =
 alias labs-reset="~/labs/labs-reset.sh"
 alias lab1-setup="cd ~/labs/01-docker-lab && ./setup.sh"
 
+# Docker AppArmor Workaround for LXD
+# LXD konteinerites on AppArmor piiratud, see wrapper lisab vajaliku flag'i
+docker() {
+  case "\$1" in
+    run|exec|create)
+      /usr/bin/docker "\$1" --security-opt apparmor=unconfined "\${@:2}"
+      ;;
+    *)
+      /usr/bin/docker "\$@"
+      ;;
+  esac
+}
+export -f docker
+
 EOF
 
 # Logi labuser'ist välja (tagasi root'i)
@@ -1379,7 +1419,8 @@ cat > ~/scripts/sync-labs.sh << 'EOFSCRIPT'
 set -e
 
 CONTAINER="$1"
-SOURCE_DIR="/home/janek/projects/hostinger/labs"
+# Kasuta keskkonna muutujat või vaikimisi $HOME/projects/hostinger/labs
+SOURCE_DIR="${LABS_SOURCE:-$HOME/projects/hostinger/labs}"
 
 if [ -z "$CONTAINER" ]; then
   echo "Usage: $0 <container-name>"
@@ -1434,9 +1475,17 @@ echo "Syncing labs to all students"
 echo "==================================="
 echo
 
-for CONTAINER in devops-student1 devops-student2 devops-student3; do
+# Leia kõik devops konteinerid (nii Docker kui K8s)
+CONTAINERS=$(lxc list --format csv -c n | grep -E "^devops-(student|k8s-student)" || true)
+
+if [ -z "$CONTAINERS" ]; then
+  echo "No devops containers found"
+  exit 0
+fi
+
+for CONTAINER in $CONTAINERS; do
   echo ">>> $CONTAINER <<<"
-  "$SCRIPT_DIR/sync-labs.sh" "$CONTAINER"
+  "$SCRIPT_DIR/sync-labs.sh" "$CONTAINER" || true
   echo
 done
 
@@ -1453,17 +1502,30 @@ cat > ~/scripts/check-versions.sh << 'EOFSCRIPT'
 #!/bin/bash
 # Check when labs were last updated in each container
 
+LABS_SOURCE="${LABS_SOURCE:-$HOME/projects/hostinger/labs}"
+
 echo "Lab Versions (last modified):"
 echo "=============================="
 
-for CONTAINER in devops-student1 devops-student2 devops-student3; do
-  LAST_MODIFIED=$(lxc exec $CONTAINER -- stat -c %y /home/labuser/labs 2>/dev/null | cut -d' ' -f1)
-  echo "$CONTAINER: $LAST_MODIFIED"
-done
+# Leia kõik töötavad devops konteinerid
+CONTAINERS=$(lxc list --format csv -c n,s | grep -E "^devops-(student|k8s-student)" | grep "RUNNING" | cut -d',' -f1 || true)
+
+if [ -z "$CONTAINERS" ]; then
+  echo "No running devops containers found"
+else
+  for CONTAINER in $CONTAINERS; do
+    LAST_MODIFIED=$(lxc exec $CONTAINER -- stat -c %Y /home/labuser/labs 2>/dev/null | xargs -I{} date -d @{} +%Y-%m-%d 2>/dev/null || echo "N/A")
+    echo "$CONTAINER: $LAST_MODIFIED"
+  done
+fi
 
 echo
 echo "Host version:"
-stat -c %y /home/janek/projects/hostinger/labs | cut -d' ' -f1
+if [ -d "$LABS_SOURCE" ]; then
+  stat -c %Y "$LABS_SOURCE" | xargs -I{} date -d @{} +%Y-%m-%d
+else
+  echo "Labs source not found: $LABS_SOURCE"
+fi
 EOFSCRIPT
 
 chmod +x ~/scripts/check-versions.sh
@@ -1828,6 +1890,65 @@ sudo apt-get clean
 sudo apt-get autoremove -y
 ```
 
+### 12.8 Docker AppArmor Permission Denied
+
+**Sümptom:**
+```bash
+docker run --rm alpine echo test
+# docker: Error response from daemon: failed to create task for container:
+# failed to start shim: ...
+# open /sys/kernel/security/apparmor/profiles: permission denied
+```
+
+**Põhjus:** LXD konteinerites on AppArmor piiratud ja Docker ei saa lugeda AppArmor profiile.
+
+**Lahendus 1 - Kasuta wrapper funktsiooni (soovitatud):**
+
+Template'i .bashrc failis peaks olema Docker wrapper funktsioon, mis automaatselt lisab `--security-opt apparmor=unconfined`. Kui see puudub:
+
+```bash
+# Logi konteinerisse
+lxc exec devops-student1 -- su - labuser
+
+# Lisa .bashrc-sse
+cat >> ~/.bashrc << 'EOF'
+
+# Docker AppArmor Workaround for LXD
+docker() {
+  case "$1" in
+    run|exec|create)
+      /usr/bin/docker "$1" --security-opt apparmor=unconfined "${@:2}"
+      ;;
+    *)
+      /usr/bin/docker "$@"
+      ;;
+  esac
+}
+export -f docker
+EOF
+
+# Lae uuesti
+source ~/.bashrc
+
+# Testi
+docker run --rm alpine echo "OK"
+# Peaks väljastama: OK
+```
+
+**Lahendus 2 - Käsitsi flag iga kord:**
+
+```bash
+docker run --security-opt apparmor=unconfined --rm alpine echo "OK"
+```
+
+**Märkus:** Kui kasutad `docker-compose`, peab services definitsioonis olema:
+```yaml
+services:
+  myservice:
+    security_opt:
+      - apparmor:unconfined
+```
+
 ---
 
 ## Järgmised Sammud
@@ -1852,7 +1973,7 @@ Pärast edukast paigaldust:
 ---
 
 **Autor:** DevOps Lab Admin
-**Versioon:** 1.0
-**Viimane uuendus:** 2025-01-28
+**Versioon:** 1.1
+**Viimane uuendus:** 2025-12-01
 **Litsentss:** MIT
 **Tagasiside:** https://github.com/yourusername/devops-labs/issues
