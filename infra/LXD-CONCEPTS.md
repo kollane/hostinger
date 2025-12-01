@@ -1,4 +1,12 @@
-# LXD Template ja Konteineri Olemus
+# LXD ja Võrgu Põhimõisted
+
+Selles dokumendis on lihtsalt lahti seletatud:
+1. [LXD Template ja Konteiner](#lxd-template-ja-konteiner)
+2. [Proxy sisevõrgus](#proxy-sisevõrgus)
+
+---
+
+# LXD Template ja Konteiner
 
 ## Lihtne analoogia
 
@@ -131,7 +139,136 @@ lxc exec student1 -- bash         # Logi sisse
 
 ---
 
-## Seotud juhendid
+# Proxy Sisevõrgus
+
+## Mis on proxy?
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        ETTEVÕTTE SISEVÕRK                       │
+│                                                                 │
+│   ┌──────────┐    ┌──────────┐    ┌──────────┐                 │
+│   │  Lab 3   │    │  Lab 4   │    │  Lab 5   │                 │
+│   │ 10.0.1.3 │    │ 10.0.1.4 │    │ 10.0.1.5 │                 │
+│   └────┬─────┘    └────┬─────┘    └────┬─────┘                 │
+│        │               │               │                        │
+│        └───────────────┼───────────────┘                        │
+│                        │                                        │
+│                        ▼                                        │
+│                ┌──────────────┐                                 │
+│                │    PROXY     │                                 │
+│                │ cache1.sss   │                                 │
+│                │    :3128     │                                 │
+│                └──────┬───────┘                                 │
+│                       │                                         │
+└───────────────────────┼─────────────────────────────────────────┘
+                        │
+                   ┌────┴────┐
+                   │ TULEMÜÜR │
+                   └────┬────┘
+                        │
+                        ▼
+                 ┌─────────────┐
+                 │  INTERNET   │
+                 │ google.com  │
+                 │ docker.io   │
+                 │ github.com  │
+                 └─────────────┘
+```
+
+---
+
+## Miks proxy?
+
+| Põhjus | Selgitus |
+|--------|----------|
+| **Turvalisus** | Sisevõrgu masinad EI SAA otse internetti. Ainult proxy saab. |
+| **Kontroll** | IT saab logida ja filtreerida, kuhu ühendutakse |
+| **Vahemälu (cache)** | Sama fail laaditakse internetist 1x, järgmised saavad proxy'st |
+| **Lihtne haldus** | Tulemüüris 1 auk (proxy) vs 100 masina jaoks 100 auku |
+
+---
+
+## Kuidas töötab?
+
+**Ilma proxy'ta (ei tööta sisevõrgus):**
+```
+Lab 3 ──X──► google.com
+         ↑
+      BLOKEERITUD
+      (tulemüür)
+```
+
+**Proxy'ga:**
+```
+Lab 3 ───► Proxy ───► google.com
+      (1)        (2)
+
+1. Lab 3 ütleb proxy'le: "Too mulle google.com"
+2. Proxy läheb internetti ja toob vastuse
+3. Proxy annab vastuse Lab 3-le
+```
+
+---
+
+## Praktiline näide
+
+```bash
+# ILMA proxy seadistuseta - ei tööta
+curl https://google.com
+# curl: (7) Failed to connect
+
+# PROXY seadistusega - töötab
+export https_proxy=http://cache1.sss:3128
+curl https://google.com
+# OK - proxy käis ära ja tõi vastuse
+```
+
+---
+
+## Mida proxy seadistamine teeb?
+
+```bash
+# Ütleb süsteemile: "Kui tahad internetti, küsi proxy käest"
+export http_proxy=http://cache1.sss:3128
+export https_proxy=http://cache1.sss:3128
+```
+
+| Muutuja | Mida mõjutab |
+|---------|--------------|
+| `http_proxy` | HTTP päringud (port 80) |
+| `https_proxy` | HTTPS päringud (port 443) |
+| `no_proxy` | Kohalikud aadressid, mis EI lähe läbi proxy |
+
+---
+
+## no_proxy - erand
+
+```bash
+no_proxy=localhost,127.0.0.1,10.0.0.0/8
+```
+
+See ütleb: "Ära kasuta proxy't nende jaoks" - sest need on sisevõrgus ja ei vaja internetti.
+
+```
+Lab 3 ───► Lab 4 (10.0.1.4)     = OTSE (no_proxy)
+Lab 3 ───► google.com           = LÄBI PROXY
+```
+
+---
+
+## Kokkuvõte
+
+```
+PROXY = Värav sisevõrgust internetti
+
+Sisevõrk ←──► Proxy ←──► Internet
+              (ainus väljapääs)
+```
+
+---
+
+# Seotud juhendid
 
 - [INSTALLATION.md](INSTALLATION.md) - Docker laborite template (Lab 1-2)
 - [K8S-INSTALLATION.md](K8S-INSTALLATION.md) - Kubernetes laborite template (Lab 3-10)
