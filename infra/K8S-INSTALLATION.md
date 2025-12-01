@@ -221,22 +221,7 @@ config:
     lxc.cap.drop=
     lxc.cgroup.devices.allow=a
     lxc.mount.auto=proc:rw sys:rw cgroup:rw
-  cloud-init.user-data: |
-    #cloud-config
-    write_files:
-      - path: /etc/apt/apt.conf.d/proxy.conf
-        content: |
-          Acquire::http::Proxy "http://cache1.sss:3128";
-          Acquire::https::Proxy "http://cache1.sss:3128";
-      - path: /etc/environment
-        append: true
-        content: |
-          http_proxy="http://cache1.sss:3128"
-          https_proxy="http://cache1.sss:3128"
-          HTTP_PROXY="http://cache1.sss:3128"
-          HTTPS_PROXY="http://cache1.sss:3128"
-          no_proxy="localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16,.svc,.cluster.local"
-description: DevOps Lab K8s Profile - 5GB RAM, 2 CPU, Kubernetes + Proxy
+description: DevOps Lab K8s Profile - 5GB RAM, 2 CPU, Kubernetes support
 devices:
   root:
     path: /
@@ -314,27 +299,20 @@ lxc exec k8s-template -- bash
 
 **Nüüd oled KONTEINERIS.**
 
-### 5.2 Proxy Kontrollimine (Konteineris)
+### 5.2 Proxy Seadistamine (Konteineris)
+
+**⚠️ OLULINE:** Seadista proxy ENNE apt-get käske!
 
 ```bash
-# Kontrolli, et cloud-init seadistas proxy
-cat /etc/apt/apt.conf.d/proxy.conf
-cat /etc/environment
-
-# Testi
-apt-get update
-# Peaks töötama!
-```
-
-**Kui proxy EI tööta**, lisa käsitsi:
-
-```bash
+# 1. APT proxy
 cat > /etc/apt/apt.conf.d/proxy.conf << 'EOF'
 Acquire::http::Proxy "http://cache1.sss:3128";
 Acquire::https::Proxy "http://cache1.sss:3128";
 EOF
 
-cat >> /etc/environment << 'EOF'
+# 2. Keskkonna muutujad (kirjuta kogu fail üle)
+cat > /etc/environment << 'EOF'
+PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 http_proxy="http://cache1.sss:3128"
 https_proxy="http://cache1.sss:3128"
 HTTP_PROXY="http://cache1.sss:3128"
@@ -342,9 +320,19 @@ HTTPS_PROXY="http://cache1.sss:3128"
 no_proxy="localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16,.svc,.cluster.local"
 EOF
 
+# 3. Lae muutujad KOHE aktiivseks
 source /etc/environment
+
+# 4. Kontrolli
+echo "http_proxy=$http_proxy"
+echo "https_proxy=$https_proxy"
+
+# 5. Testi
 apt-get update
+# Kui töötab, jätka järgmise sammuga
 ```
+
+**Kui apt-get annab vea**, kontrolli proxy URL-i õigsust.
 
 ### 5.3 Süsteemi Uuendamine (Konteineris)
 
