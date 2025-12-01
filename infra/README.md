@@ -17,6 +17,8 @@ See kataloog sisaldab kogu dokumentatsiooni VPS-põhise LXD DevOps laborikeskkon
 |------|-----------|-----------|
 | **ARHITEKTUUR.md** | Süsteemi arhitektuur, diagrammid, komponendid | Admin, DevOps |
 | **ADMIN-GUIDE.md** | Administraatori juhend (konteinerite haldamine) | Admin |
+| **INSTALLATION.md** | Käsitsi paigaldusjuhend (uus server) | Admin |
+| **LAPTOP-GUIDE.md** | Laptopi kasutajajuhend (localhost) | Õpilane (iseseisev) |
 | **TECHNICAL-SPECS.md** | Tehnilised detailid, konfiguratsioonid | Admin, DevOps |
 | **README.md** | See fail (ülevaade) | Kõik |
 | **[../labs/README.md](../labs/README.md)** | Õpilase juhend (SSH, labid, käsud) | Õpilased |
