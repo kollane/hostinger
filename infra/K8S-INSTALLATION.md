@@ -327,10 +327,36 @@ source /etc/environment
 echo "http_proxy=$http_proxy"
 echo "https_proxy=$https_proxy"
 
-# 5. Testi
+# 5. Tee seaded püsivaks (login shell jaoks)
+cat > /etc/profile.d/proxy.sh << 'EOF'
+export http_proxy="http://cache1.sss:3128"
+export https_proxy="http://cache1.sss:3128"
+export HTTP_PROXY="http://cache1.sss:3128"
+export HTTPS_PROXY="http://cache1.sss:3128"
+export no_proxy="localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16,.svc,.cluster.local"
+EOF
+chmod +x /etc/profile.d/proxy.sh
+
+# 6. Testi
 apt-get update
 # Kui töötab, jätka järgmise sammuga
 ```
+
+**⚠️ Oluline:** Kui logid välja ja uuesti sisse, kasuta login shell'i:
+
+```bash
+# Host'ist konteinerisse - kasuta ALATI login shell'i
+lxc exec k8s-template -- bash -l
+
+# VÕI root kasutajana
+lxc exec k8s-template -- su -
+```
+
+| Käsk | Loeb proxy seadeid |
+|------|--------------------|
+| `bash` | ❌ Ei loe |
+| `bash -l` | ✅ Loeb |
+| `su -` | ✅ Loeb |
 
 **Kui apt-get annab vea**, kontrolli proxy URL-i õigsust.
 
