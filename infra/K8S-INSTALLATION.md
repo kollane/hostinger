@@ -1,8 +1,15 @@
-# LXD Kubernetes Laborikeskkonna Paigaldusjuhend (Proxy)
+# LXD Laborikeskkonna Paigaldusjuhend (Proxy)
 
 ## Ülevaade
 
-See juhend on **Kubernetes laborite (Lab 3-10)** jaoks ettevõtte sisevõrgus, kus ligipääs internetile käib läbi proxy serveri.
+See juhend on **proxy keskkonna** jaoks ettevõtte sisevõrgus, kus ligipääs internetile käib läbi proxy serveri.
+
+**Toetab kahte template tüüpi:**
+
+| Template | Laborid | RAM | Sektsioonid |
+|----------|---------|-----|-------------|
+| **`devops-lab-base`** | Lab 1-2 (Docker) | 2.5GB | 4A, 5A |
+| **`k8s-lab-base`** | Lab 3-10 (Kubernetes) | 5GB | 4, 5 |
 
 **⚠️ EELDUS:** Enne seda juhendit pead olema tuttav põhijuhendiga `INSTALLATION.md`. See juhend eeldab, et:
 - LXD on juba paigaldatud ja töötab (vt `INSTALLATION.md` sektsioonid 3-4)
@@ -10,26 +17,29 @@ See juhend on **Kubernetes laborite (Lab 3-10)** jaoks ettevõtte sisevõrgus, k
 
 **Mille poolest see juhend erineb põhijuhendist:**
 
-| Aspekt | INSTALLATION.md | K8S-INSTALLATION.md (see juhend) |
-|--------|-----------------|----------------------------------|
-| **Laborid** | Lab 1-2 (Docker) | Lab 3-10 (Kubernetes) |
-| **Template** | `devops-lab-base` | `k8s-lab-base` |
-| **RAM konteineri kohta** | 2.5GB | 5GB |
-| **Lisatööriistad** | Docker, Java, Node.js | + kubeadm, kubectl, kubelet, Helm, Terraform |
+| Aspekt | INSTALLATION.md | See juhend (Proxy) |
+|--------|-----------------|---------------------|
 | **Võrk** | Tavaline internet | Proxy (cache1.sss:3128) |
+| **Docker template** | ✅ `devops-lab-base` | ✅ `devops-lab-base` (sektsioon 5A) |
+| **K8s template** | ❌ Puudub | ✅ `k8s-lab-base` (sektsioon 5) |
 
 **Paigaldatavad tööriistad:**
-- ✅ Docker + containerd 1.7.28
-- ✅ Kubernetes 1.31 (kubeadm, kubelet, kubectl)
-- ✅ Helm 3 (Lab 4+)
-- ✅ Java 21 + Node.js 20 (rakenduste ehitamiseks)
-- ✅ Kustomize (Lab 8)
-- ✅ Trivy (Lab 7)
-- ✅ Terraform (Lab 10)
+
+| Tööriist | Docker template | K8s template |
+|----------|-----------------|--------------|
+| Docker + containerd 1.7.28 | ✅ | ✅ |
+| Java 21 + Node.js 20 | ✅ | ✅ |
+| Kubernetes 1.31 | ❌ | ✅ |
+| Helm 3, Terraform, Trivy, Kustomize | ❌ | ✅ |
 
 **Süsteeminõuded:**
+
+| Template | Õpilasi | RAM vajadus |
+|----------|---------|-------------|
+| Docker (Lab 1-2) | 3 | 3 × 2.5GB + host = ~10GB |
+| Kubernetes (Lab 3-10) | 3 | 3 × 5GB + host = ~18GB |
+
 - Ubuntu 24.04 LTS
-- Vähemalt 24GB RAM (3 õpilast × 5GB + host)
 - Proxy: `http://cache1.sss:3128`
 - Sisemine staatiline IP
 
@@ -281,6 +291,52 @@ lxc profile delete devops-lab-k8s
 
 ---
 
+## 4A. Docker Profiili Loomine (Lab 1-2)
+
+**Kui plaanid ainult Lab 1-2 (Docker) teha, loo lihtsam profiil:**
+
+### 4A.1 Loo devops-lab Profiil
+
+```bash
+lxc profile create devops-lab
+lxc profile edit devops-lab
+```
+
+**Lisa see YAML:**
+
+```yaml
+config:
+  limits.cpu: "1"
+  limits.memory: 2560MiB
+  limits.memory.enforce: soft
+  security.nesting: "true"
+  security.privileged: "false"
+  security.syscalls.intercept.mknod: "true"
+  security.syscalls.intercept.setxattr: "true"
+description: DevOps Lab Profile - 2.5GB RAM, 1 CPU, Docker support
+devices:
+  root:
+    path: /
+    pool: default
+    type: disk
+name: devops-lab
+```
+
+**Salvesta:** `:wq` (vim) või `Ctrl+O, Enter, Ctrl+X` (nano)
+
+### 4A.2 Profiilide Võrdlus
+
+| Profiil | RAM | CPU | Kasutus |
+|---------|-----|-----|---------|
+| `devops-lab` | 2.5GB | 1 | Lab 1-2 (Docker) |
+| `devops-lab-k8s` | 5GB | 2 | Lab 3-10 (Kubernetes) |
+
+**Vali profiil vastavalt oma eesmärgile:**
+- **Ainult Lab 1-2?** → Kasuta `devops-lab` (sektsioon 5A)
+- **Lab 3-10 (või kõik)?** → Kasuta `devops-lab-k8s` (sektsioon 5)
+
+---
+
 ## 5. Kubernetes Template Loomine
 
 ### 5.1 Base Konteineri Käivitamine
@@ -501,6 +557,44 @@ systemctl restart docker
 # Kontrolli
 systemctl show --property=Environment docker
 ```
+
+---
+
+### 5A. Docker-Only Template (Lab 1-2) - VALIK
+
+**⚠️ Kui lood ainult Docker template't (Lab 1-2), siis:**
+
+1. **JÄTA VAHELE sektsioonid 5.7 - 5.8** (Kubernetes tööriistad)
+2. **JÄTKA sektsioonist 5.9** (labuser Kasutaja Loomine)
+
+**Mida Docker template sisaldab:**
+- ✅ Ubuntu 24.04 + Proxy seadistus
+- ✅ Docker + containerd 1.7.28
+- ✅ Java 21 + Node.js 20
+- ✅ Diagnostika tööriistad
+- ❌ Kubernetes (kubeadm, kubectl, kubelet)
+- ❌ Helm, Terraform, Trivy, Kustomize
+
+**Template loomine Docker jaoks:**
+
+```bash
+# 1. Kasuta devops-lab profiili (2.5GB) sektsiooni 4A järgi
+lxc launch ubuntu:24.04 docker-template -p default -p devops-lab
+
+# 2. Järgi sektsioone 5.2 - 5.6 (proxy, süsteem, Java, Node.js, Docker)
+# 3. JÄTA VAHELE 5.7 - 5.8
+# 4. Jätka sektsioonist 5.9 (labuser)
+```
+
+**Publitseerimine (sektsioon 6):**
+
+```bash
+lxc stop docker-template
+lxc publish docker-template --alias devops-lab-base \
+  description="DevOps Lab Template: Ubuntu 24.04 + Docker + Java 21 + Node.js 20 + Proxy"
+```
+
+---
 
 ### 5.7 Kubernetes Tööriistade Paigaldamine (Konteineris)
 
