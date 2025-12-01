@@ -342,21 +342,22 @@ apt-get update
 # Kui töötab, jätka järgmise sammuga
 ```
 
-**⚠️ Oluline:** Kui logid välja ja uuesti sisse, kasuta login shell'i:
+**⚠️ Oluline - kui hiljem konteinerisse tagasi tuled:**
+
+Kui väljud konteinerist (`exit`) ja tahad hiljem tagasi tulla, käivita **HOST'ist** (mitte konteinerist!):
 
 ```bash
-# Host'ist konteinerisse - kasuta ALATI login shell'i
+# HOST'ist konteinerisse - kasuta ALATI login shell'i
 lxc exec k8s-template -- bash -l
-
-# VÕI root kasutajana
-lxc exec k8s-template -- su -
 ```
 
-| Käsk | Loeb proxy seadeid |
-|------|--------------------|
-| `bash` | ❌ Ei loe |
-| `bash -l` | ✅ Loeb |
-| `su -` | ✅ Loeb |
+| HOST'i käsk | Loeb proxy seadeid |
+|-------------|--------------------|
+| `lxc exec ... -- bash` | ❌ Ei loe |
+| `lxc exec ... -- bash -l` | ✅ Loeb |
+| `lxc exec ... -- su -` | ✅ Loeb |
+
+**Praegu jätka tööd** - oled juba konteineris ja proxy töötab.
 
 **Kui apt-get annab vea**, kontrolli proxy URL-i õigsust.
 
