@@ -139,7 +139,7 @@ Peale selle labori läbimist oskad:
 ```
 02-docker-compose-lab/
 ├── README.md                  # See fail
-├── setup.sh                   # Automaatne seadistus
+├── setup.sh                   # Automaatne seadistus (kasuta aliast: lab2-setup)
 ├── exercises/                 # Harjutused (7 harjutust)
 │   ├── 01-compose-basics.md           # Lab 1 → docker-compose.yml (4 teenust)
 │   ├── 02-add-frontend.md             # Lisa Frontend (5. teenus)
@@ -201,7 +201,7 @@ lab2-setup
 
 # Variant 2: Käivita labori kataloogist
 cd 02-docker-compose-lab
-./setup.sh
+./setup.sh  # Või lihtsalt: lab2-setup
 ```
 
 **Seadistusskript teeb:**
@@ -241,7 +241,7 @@ cat 01-compose-basics.md
 **⚠️ PEDAGOOGILINE MÄRKUS:**
 
 - **Harjutused õpetavad käsitsi** (docker exec, SQL, võrgud, volumes) - see on õppimise osa!
-- **setup.sh on mugavuse huvides** - kasuta, kui vajad kiiret starti või testimisandmeid
+- **lab2-setup on mugavuse huvides** - kasuta, kui vajad kiiret starti või testimisandmeid
 - **Soovitame esimest korda teha käsitsi**, et õppida Docker põhitõdesid
 
 

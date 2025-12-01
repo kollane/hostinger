@@ -175,15 +175,14 @@ docker network ls | grep todo-network
 
 # 4. VALIKULINE: Kontrolli andmebaasi skeeme (tabelid)
 # See harjutus eeldab, et andmebaasid on tühjad või sisaldavad õigeid tabeleid
-# Kui soovid testimisandmeid, kasuta setup.sh skripti (valik 2)
+# Kui soovid testimisandmeid, kasuta lab2-setup käsku (valik 2)
 ```
 
 **Kui midagi puudub:**
 
 **Variant A: Setup Skript (Kiire)**
 ```bash
-cd ..  # Tagasi 02-docker-compose-lab/ kausta
-./setup.sh
+lab2-setup
 # Skript loob puuduvad ressursid ja võimaldab valida DB init'i
 ```
 
