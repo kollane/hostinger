@@ -196,6 +196,10 @@ Lab 2'l on kaks alustamise viisi:
 ### Variant A: Setup Skript (Soovitatav algajatele ja kiireks testimiseks)
 
 ```bash
+# Variant 1: Käivita igalt poolt (alias)
+lab2-setup
+
+# Variant 2: Käivita labori kataloogist
 cd 02-docker-compose-lab
 ./setup.sh
 ```
