@@ -54,11 +54,11 @@ EOF
 
 ```bash
 sudo tee -a /etc/environment << 'EOF'
-http_proxy=http://cache1.sss:3128
-https_proxy=http://cache1.sss:3128
-HTTP_PROXY=http://cache1.sss:3128
-HTTPS_PROXY=http://cache1.sss:3128
-no_proxy=localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16
+http_proxy="http://cache1.sss:3128"
+https_proxy="http://cache1.sss:3128"
+HTTP_PROXY="http://cache1.sss:3128"
+HTTPS_PROXY="http://cache1.sss:3128"
+no_proxy="localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16"
 EOF
 
 # Lae keskkond uuesti
@@ -231,11 +231,11 @@ config:
       - path: /etc/environment
         append: true
         content: |
-          http_proxy=http://cache1.sss:3128
-          https_proxy=http://cache1.sss:3128
-          HTTP_PROXY=http://cache1.sss:3128
-          HTTPS_PROXY=http://cache1.sss:3128
-          no_proxy=localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16,.svc,.cluster.local
+          http_proxy="http://cache1.sss:3128"
+          https_proxy="http://cache1.sss:3128"
+          HTTP_PROXY="http://cache1.sss:3128"
+          HTTPS_PROXY="http://cache1.sss:3128"
+          no_proxy="localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16,.svc,.cluster.local"
 description: DevOps Lab K8s Profile - 5GB RAM, 2 CPU, Kubernetes + Proxy
 devices:
   root:
@@ -335,11 +335,11 @@ Acquire::https::Proxy "http://cache1.sss:3128";
 EOF
 
 cat >> /etc/environment << 'EOF'
-http_proxy=http://cache1.sss:3128
-https_proxy=http://cache1.sss:3128
-HTTP_PROXY=http://cache1.sss:3128
-HTTPS_PROXY=http://cache1.sss:3128
-no_proxy=localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16,.svc,.cluster.local
+http_proxy="http://cache1.sss:3128"
+https_proxy="http://cache1.sss:3128"
+HTTP_PROXY="http://cache1.sss:3128"
+HTTPS_PROXY="http://cache1.sss:3128"
+no_proxy="localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16,.svc,.cluster.local"
 EOF
 
 source /etc/environment
