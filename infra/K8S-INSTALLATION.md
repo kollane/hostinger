@@ -584,6 +584,10 @@ export HTTP_PROXY=http://cache1.sss:3128
 export HTTPS_PROXY=http://cache1.sss:3128
 export no_proxy=localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16,.svc,.cluster.local
 
+# Default Editor
+export EDITOR=vim
+export VISUAL=vim
+
 # Java Environment (todo-service jaoks)
 export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
 export PATH=$JAVA_HOME/bin:$PATH
