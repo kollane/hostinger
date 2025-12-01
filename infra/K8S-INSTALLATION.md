@@ -4,7 +4,30 @@
 
 See juhend on **Kubernetes laborite (Lab 3-10)** jaoks ettevõtte sisevõrgus, kus ligipääs internetile käib läbi proxy serveri.
 
-**Eeldused:**
+**⚠️ EELDUS:** Enne seda juhendit pead olema tuttav põhijuhendiga `INSTALLATION.md`. See juhend eeldab, et:
+- LXD on juba paigaldatud ja töötab (vt `INSTALLATION.md` sektsioonid 3-4)
+- Põhilised LXD kontseptsioonid on selged
+
+**Mille poolest see juhend erineb põhijuhendist:**
+
+| Aspekt | INSTALLATION.md | K8S-INSTALLATION.md (see juhend) |
+|--------|-----------------|----------------------------------|
+| **Laborid** | Lab 1-2 (Docker) | Lab 3-10 (Kubernetes) |
+| **Template** | `devops-lab-base` | `k8s-lab-base` |
+| **RAM konteineri kohta** | 2.5GB | 5GB |
+| **Lisatööriistad** | Docker, Java, Node.js | + kubeadm, kubectl, kubelet, Helm, Terraform |
+| **Võrk** | Tavaline internet | Proxy (cache1.sss:3128) |
+
+**Paigaldatavad tööriistad:**
+- ✅ Docker + containerd 1.7.28
+- ✅ Kubernetes 1.31 (kubeadm, kubelet, kubectl)
+- ✅ Helm 3 (Lab 4+)
+- ✅ Java 21 + Node.js 20 (rakenduste ehitamiseks)
+- ✅ Kustomize (Lab 8)
+- ✅ Trivy (Lab 7)
+- ✅ Terraform (Lab 10)
+
+**Süsteeminõuded:**
 - Ubuntu 24.04 LTS
 - Vähemalt 24GB RAM (3 õpilast × 5GB + host)
 - Proxy: `http://cache1.sss:3128`
@@ -296,6 +319,62 @@ apt-get install -y \
   apt-transport-https
 ```
 
+### 5.3a Java 21 Paigaldamine (Konteineris)
+
+**Java on vajalik todo-service rakenduse ehitamiseks!**
+
+```bash
+# Installi OpenJDK 21
+apt-get install -y openjdk-21-jdk
+
+# Kontrolli
+java -version
+javac -version
+# Peaks näitama: openjdk version "21.0.x"
+```
+
+### 5.3b Node.js 20 Paigaldamine (Konteineris)
+
+**Node.js on vajalik user-service rakenduse ehitamiseks!**
+
+```bash
+# Lisa NodeSource repository (Node.js 20 LTS)
+curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+
+# Installi Node.js
+apt-get install -y nodejs
+
+# Kontrolli
+node --version
+npm --version
+# Peaks näitama: Node v20.x.x, NPM 10.x.x
+```
+
+### 5.3c Diagnostika Tööriistad (Konteineris)
+
+**Need tööriistad on kasulikud võrgu ja süsteemi silumiseks!**
+
+```bash
+# Võrgu diagnostika tööriistad
+apt-get install -y \
+  jq \
+  nmap \
+  tcpdump \
+  netcat-openbsd \
+  dnsutils \
+  net-tools \
+  iproute2
+
+# Arenduse tööriistad
+apt-get install -y \
+  build-essential \
+  python3 \
+  python3-pip
+
+# Kontrolli
+which jq nmap tcpdump nc dig netstat ip
+```
+
 ### 5.4 Docker Paigaldamine (Konteineris)
 
 ```bash
@@ -383,6 +462,66 @@ kubectl version --client
 kubelet --version
 ```
 
+### 5.7a Helm 3 Paigaldamine (Konteineris)
+
+**Helm on vajalik alates Lab 4! Kasutakse Kubernetes rakenduste paigaldamiseks.**
+
+```bash
+# Installi Helm 3
+curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+
+# Kontrolli
+helm version
+# Peaks näitama: version.BuildInfo{Version:"v3.x.x"...}
+
+# Lisa populaarsed Helm repo'd
+helm repo add stable https://charts.helm.sh/stable
+helm repo add bitnami https://charts.bitnami.com/bitnami
+helm repo update
+```
+
+### 5.7b Kustomize Paigaldamine (Konteineris)
+
+**Kustomize on vajalik Lab 8 (GitOps) jaoks!**
+
+```bash
+# Installi Kustomize
+curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+mv kustomize /usr/local/bin/
+
+# Kontrolli
+kustomize version
+```
+
+### 5.7c Trivy Paigaldamine (Konteineris)
+
+**Trivy on vajalik Lab 7 (Security) jaoks - turvaaukude skaneerimine!**
+
+```bash
+# Installi Trivy
+curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+
+# Kontrolli
+trivy version
+```
+
+### 5.7d Terraform Paigaldamine (Konteineris)
+
+**Terraform on vajalik Lab 10 (Infrastructure as Code) jaoks!**
+
+```bash
+# Lisa HashiCorp repo
+curl -fsSL https://apt.releases.hashicorp.com/gpg | gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/hashicorp.list
+
+# Installi Terraform
+apt-get update
+apt-get install -y terraform
+
+# Kontrolli
+terraform version
+```
+
 ### 5.8 Kernel Moodulite Seadistamine (Konteineris)
 
 ```bash
@@ -445,21 +584,57 @@ export HTTP_PROXY=http://cache1.sss:3128
 export HTTPS_PROXY=http://cache1.sss:3128
 export no_proxy=localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16,.svc,.cluster.local
 
+# Java Environment (todo-service jaoks)
+export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
+export PATH=$JAVA_HOME/bin:$PATH
+
 # Kubernetes
 export KUBECONFIG=~/.kube/config
 alias k='kubectl'
 alias kgp='kubectl get pods'
 alias kgs='kubectl get svc'
 alias kgn='kubectl get nodes'
+alias kga='kubectl get all'
+alias kgaa='kubectl get all -A'
+alias kd='kubectl describe'
+alias kl='kubectl logs'
+alias klf='kubectl logs -f'
+alias kex='kubectl exec -it'
+alias kdel='kubectl delete'
+alias kaf='kubectl apply -f'
+
+# Helm
+alias h='helm'
+alias hls='helm list -A'
+alias hi='helm install'
+alias hu='helm upgrade'
+alias hd='helm delete'
+
+# Terraform
+alias tf='terraform'
+alias tfi='terraform init'
+alias tfp='terraform plan'
+alias tfa='terraform apply'
+alias tfd='terraform destroy'
+
+# Docker Aliases
+alias docker-stop-all="docker stop \$(docker ps -aq) 2>/dev/null || echo 'No containers running'"
+alias docker-clean="docker system prune -af --volumes"
+
+# Lab Aliases
+alias labs-reset="~/labs/labs-reset.sh"
+
+# Resource Check
+alias check-resources="echo '=== RAM ===' && free -h && echo && echo '=== DISK ===' && df -h / && echo && echo '=== K8s Nodes ===' && kubectl get nodes 2>/dev/null || echo 'K8s not initialized' && echo && echo '=== K8s Pods ===' && kubectl get pods -A 2>/dev/null || true"
 
 # Docker AppArmor Workaround for LXD
 docker() {
-  case "$1" in
+  case "\$1" in
     run|exec|create)
-      /usr/bin/docker "$1" --security-opt apparmor=unconfined "${@:2}"
+      /usr/bin/docker "\$1" --security-opt apparmor=unconfined "\${@:2}"
       ;;
     *)
-      /usr/bin/docker "$@"
+      /usr/bin/docker "\$@"
       ;;
   esac
 }
@@ -492,7 +667,7 @@ lxc stop k8s-template
 
 # Publitseeri image'ina
 lxc publish k8s-template --alias k8s-lab-base \
-  description="K8s Lab Template: Ubuntu 24.04 + Docker + K8s 1.31 + Proxy"
+  description="K8s Lab Template: Ubuntu 24.04 + Docker + K8s 1.31 + Helm + Terraform + Proxy"
 
 # Kontrolli
 lxc image list
@@ -503,6 +678,123 @@ lxc delete k8s-template
 # Backup (valikuline)
 mkdir -p ~/lxd-backups
 lxc image export k8s-lab-base ~/lxd-backups/k8s-lab-base-$(date +%Y%m%d)
+```
+
+---
+
+## 6a. Labs Failide Sünkroniseerimine
+
+**⚠️ OLULINE:** Ilma labs failideta ei saa õpilased laboreid läbida! See samm tuleb teha PEALE õpilaskonteinerite loomist.
+
+### 6a.1 Git Repositooriumi Kloneerimine (Host)
+
+```bash
+# Navigeeri home kausta
+cd ~
+
+# Loo projects kataloog
+mkdir -p projects
+cd projects
+
+# Klooni repositoorium (asenda URL oma repo URL'iga)
+git clone https://github.com/yourusername/devops-labs.git hostinger
+
+# VÕI kui juba kloonitud:
+# cd hostinger && git pull
+
+# Kontrolli
+ls -la hostinger/labs/
+# Peaks näitama: 01-docker-lab, 02-docker-compose-lab, ..., apps/, README.md
+```
+
+### 6a.2 Sync Skripti Loomine (Host)
+
+**Kasuta INSTALLATION.md sektsioonis 9 kirjeldatud sync-skripte, või loo kiire versioon:**
+
+```bash
+cat > ~/scripts/sync-k8s-labs.sh << 'EOFSCRIPT'
+#!/bin/bash
+# Sync labs to all K8s student containers
+
+set -e
+
+SOURCE_DIR="${LABS_SOURCE:-$HOME/projects/hostinger/labs}"
+
+if [ ! -d "$SOURCE_DIR" ]; then
+  echo "Error: Labs source not found: $SOURCE_DIR"
+  exit 1
+fi
+
+echo "==================================="
+echo "Syncing labs to K8s students"
+echo "==================================="
+
+# Leia kõik K8s konteinerid
+CONTAINERS=$(lxc list --format csv -c n | grep -E "^devops-k8s-student" || true)
+
+if [ -z "$CONTAINERS" ]; then
+  echo "No K8s student containers found"
+  exit 0
+fi
+
+for CONTAINER in $CONTAINERS; do
+  echo ">>> $CONTAINER <<<"
+
+  # Backup existing labs
+  lxc exec $CONTAINER -- bash -c "tar czf /tmp/labs-backup-\$(date +%Y%m%d-%H%M%S).tar.gz -C /home/labuser labs 2>/dev/null || true"
+
+  # Push labs directory
+  echo "Copying files..."
+  lxc file push -r "$SOURCE_DIR/" "$CONTAINER/home/labuser/"
+
+  # Fix ownership
+  lxc exec $CONTAINER -- chown -R labuser:labuser /home/labuser/labs
+
+  # Fix executable permissions
+  lxc exec $CONTAINER -- find /home/labuser/labs -type f -name '*.sh' -exec chmod 755 {} \;
+
+  echo "✅ $CONTAINER updated!"
+  echo
+done
+
+echo "✅ All K8s students updated!"
+EOFSCRIPT
+
+chmod +x ~/scripts/sync-k8s-labs.sh
+```
+
+### 6a.3 Labs Sünkroniseerimine
+
+```bash
+# Loo scripts kataloog kui puudub
+mkdir -p ~/scripts
+
+# Käivita sync (peale õpilaskonteinerite loomist!)
+~/scripts/sync-k8s-labs.sh
+```
+
+### 6a.4 Kontrolli
+
+```bash
+# Kontrolli, et labs on kohal
+lxc exec devops-k8s-student1 -- ls -la /home/labuser/labs/
+
+# Peaks näitama:
+# 01-docker-lab
+# 02-docker-compose-lab
+# 02.5-network-analysis-lab
+# 03-kubernetes-basics-lab
+# 04-kubernetes-advanced-lab
+# 05-cicd-lab
+# 06-monitoring-logging-lab
+# 07-security-secrets-lab
+# 08-gitops-argocd-lab
+# 09-backup-disaster-recovery-lab
+# 10-terraform-iac-lab
+# apps
+# CLAUDE.md
+# labs-reset.sh
+# README.md
 ```
 
 ---
@@ -800,7 +1092,113 @@ chmod 600 ~/k8s-student-passwords.txt
 
 ---
 
+## Lisa A: Laborite Nõuete Kontrollnimekiri
+
+**Kasuta seda tabelit kontrollimiseks, et kõik vajalik on paigaldatud:**
+
+| Labor | Vajalik Tööriist | Template'is? | Kontrollikäsk |
+|-------|------------------|--------------|---------------|
+| Lab 3 | kubectl, kubeadm, kubelet | ✅ | `kubectl version --client` |
+| Lab 3 | Docker | ✅ | `docker --version` |
+| Lab 4 | Helm 3 | ✅ | `helm version` |
+| Lab 5 | GitHub Actions | N/A (väline) | - |
+| Lab 6 | Prometheus, Grafana, Loki | Helm'iga | `helm repo list` |
+| Lab 7 | Trivy | ✅ | `trivy version` |
+| Lab 7 | Vault | Helm'iga | Lab käigus paigaldatakse |
+| Lab 8 | ArgoCD | Helm'iga | Lab käigus paigaldatakse |
+| Lab 8 | Kustomize | ✅ | `kustomize version` |
+| Lab 9 | Velero | Helm'iga | Lab käigus paigaldatakse |
+| Lab 10 | Terraform | ✅ | `terraform version` |
+
+**Arendustööriistad (rakenduste ehitamiseks):**
+
+| Tööriist | Vajalik | Template'is? | Kontrollikäsk |
+|----------|---------|--------------|---------------|
+| Java 21 | todo-service | ✅ | `java -version` |
+| Node.js 20 | user-service | ✅ | `node --version` |
+| npm | user-service | ✅ | `npm --version` |
+
+**Märkused:**
+- ✅ = Paigaldatud template'i loomise käigus
+- Helm'iga = Paigaldatakse labori käigus kasutades Helm'i
+- N/A = Väline teenus, ei vaja paigaldust konteineris
+
+### Kiire Kontrolli Skript
+
+```bash
+# Käivita konteineris kõigi tööriistade kontrollimiseks
+lxc exec devops-k8s-student1 -- bash -c '
+echo "=== Süsteemi Tööriistad ==="
+echo -n "Docker: " && docker --version
+echo -n "containerd: " && containerd --version
+
+echo ""
+echo "=== Kubernetes Tööriistad ==="
+echo -n "kubectl: " && kubectl version --client --short 2>/dev/null || kubectl version --client
+echo -n "kubeadm: " && kubeadm version -o short
+echo -n "kubelet: " && kubelet --version
+
+echo ""
+echo "=== DevOps Tööriistad ==="
+echo -n "Helm: " && helm version --short
+echo -n "Kustomize: " && kustomize version
+echo -n "Trivy: " && trivy version 2>/dev/null | head -1
+echo -n "Terraform: " && terraform version | head -1
+
+echo ""
+echo "=== Arendus Tööriistad ==="
+echo -n "Java: " && java -version 2>&1 | head -1
+echo -n "Node.js: " && node --version
+echo -n "npm: " && npm --version
+
+echo ""
+echo "=== Labs Failid ==="
+ls -la /home/labuser/labs/ 2>/dev/null | head -5 || echo "Labs puudub!"
+'
+```
+
+---
+
+## Lisa B: Laborite Sõltuvusahel
+
+```
+Lab 1-2 (Docker) ─────────────────────────────────────────────────┐
+    │                                                              │
+    ▼                                                              │
+Lab 3: K8s Basics ◄─── kubectl, kubeadm, Docker images            │
+    │                                                              │
+    ▼                                                              │
+Lab 4: K8s Advanced ◄─── Helm 3, Ingress, HPA                     │
+    │                                                              │
+    ▼                                                              │
+Lab 5: CI/CD ◄─── GitHub Actions (väline), Docker Hub             │
+    │                                                              │
+    ▼                                                              │
+Lab 6: Monitoring ◄─── Prometheus, Grafana, Loki (Helm)           │
+    │                                                              │
+    ▼                                                              │
+Lab 7: Security ◄─── Trivy, Vault (Helm), RBAC                    │
+    │                                                              │
+    ▼                                                              │
+Lab 8: GitOps ◄─── ArgoCD (Helm), Kustomize                       │
+    │                                                              │
+    ▼                                                              │
+Lab 9: Backup & DR ◄─── Velero (Helm), S3/MinIO                   │
+    │                                                              │
+    ▼                                                              │
+Lab 10: Terraform ◄─── Terraform, Kubernetes provider             │
+                                                                   │
+◄────────────── Kõik laborid vajavad eelmisi! ─────────────────────┘
+```
+
+**Õppetee:**
+1. **Lab 1-2:** Docker põhitõed (kasuta `INSTALLATION.md` ja `devops-lab-base` template'i)
+2. **Lab 3-10:** Kubernetes ja DevOps (kasuta seda juhendit ja `k8s-lab-base` template'i)
+
+---
+
 **Autor:** DevOps Lab Admin
-**Versioon:** 1.0
+**Versioon:** 2.0
 **Viimane uuendus:** 2025-12-01
 **Proxy:** cache1.sss:3128
+**Toetatud laborid:** Lab 3-10 (Kubernetes)
