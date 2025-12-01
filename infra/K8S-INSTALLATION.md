@@ -37,18 +37,65 @@ See juhend on **Kubernetes laborite (Lab 3-10)** jaoks ettevõtte sisevõrgus, k
 
 ## 1. Host Süsteemi Ettevalmistus
 
-### 1.1 Proxy Kontrollimine
+### 1.1 Proxy Seadistamine
+
+**⚠️ OLULINE:** Proxy keskkonna jaoks pead seadistama 3 kohta!
+
+#### 1.1.1 APT Proxy (paketihaldur)
 
 ```bash
-# Kontrolli, et host'i proxy töötab
-cat /etc/apt/apt.conf.d/proxy.conf
-# Peaks näitama:
-# Acquire::http::Proxy "http://cache1.sss:3128";
-# Acquire::https::Proxy "http://cache1.sss:3128";
-
-# Testi
-sudo apt-get update
+sudo tee /etc/apt/apt.conf.d/proxy.conf << 'EOF'
+Acquire::http::Proxy "http://cache1.sss:3128";
+Acquire::https::Proxy "http://cache1.sss:3128";
+EOF
 ```
+
+#### 1.1.2 Keskkonna Muutujad (kõigile kasutajatele)
+
+```bash
+sudo tee -a /etc/environment << 'EOF'
+http_proxy=http://cache1.sss:3128
+https_proxy=http://cache1.sss:3128
+HTTP_PROXY=http://cache1.sss:3128
+HTTPS_PROXY=http://cache1.sss:3128
+no_proxy=localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16
+EOF
+
+# Lae keskkond uuesti
+source /etc/environment
+```
+
+#### 1.1.3 Snap Proxy (LXD image'ite allalaadimiseks)
+
+```bash
+sudo snap set system proxy.http="http://cache1.sss:3128"
+sudo snap set system proxy.https="http://cache1.sss:3128"
+```
+
+#### 1.1.4 Proxy Kontrollimine
+
+```bash
+# APT
+cat /etc/apt/apt.conf.d/proxy.conf
+
+# Keskkond
+echo $http_proxy
+
+# Snap
+snap get system proxy
+
+# Testi ühendust
+sudo apt-get update
+curl -I https://google.com
+```
+
+**Oodatav tulemus:** `apt-get update` töötab ja `curl` tagastab HTTP 200/301.
+
+| Komponent | Fail/Käsk | Mida mõjutab |
+|-----------|-----------|--------------|
+| APT | `/etc/apt/apt.conf.d/proxy.conf` | `apt-get`, `apt` |
+| Keskkond | `/etc/environment` | `curl`, `wget`, `git`, jne |
+| Snap | `snap set system proxy.*` | `snap install`, LXD image download |
 
 ### 1.2 Süsteemi Uuendamine
 
