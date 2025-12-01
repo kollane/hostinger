@@ -1101,6 +1101,66 @@ systemctl daemon-reload
 systemctl restart containerd
 ```
 
+### 10.5 Docker AppArmor Permission Denied (LXD)
+
+**Sümptom:** Docker annab vea konteineri käivitamisel:
+
+```
+docker: Error response from daemon: failed to create task for container:
+failed to create shim task: OCI runtime create failed:
+runc create failed: unable to start container process:
+error during container init: error mounting ... permission denied
+```
+
+**Põhjus:** LXD konteinerid ei saa kasutada AppArmor profiile, kuna AppArmor töötab ainult host tasemel.
+
+**Lahendus 1: Kasuta --security-opt lippu**
+
+```bash
+# Üksik käsk
+docker run --security-opt apparmor=unconfined nginx
+
+# docker exec jaoks
+docker exec --security-opt apparmor=unconfined -it mycontainer bash
+```
+
+**Lahendus 2: Lisa wrapper funktsioon .bashrc faili**
+
+See on juba template'i labuser .bashrc konfiguratsioon (sektsioon 5.11), aga kui see puudub:
+
+```bash
+cat >> ~/.bashrc << 'EOF'
+
+# Docker AppArmor Workaround for LXD
+docker() {
+  case "$1" in
+    run|exec|create)
+      /usr/bin/docker "$1" --security-opt apparmor=unconfined "${@:2}"
+      ;;
+    *)
+      /usr/bin/docker "$@"
+      ;;
+  esac
+}
+export -f docker
+
+EOF
+
+# Lae bashrc uuesti
+exec bash
+```
+
+**Kontrollimine:**
+
+```bash
+# Testi, et Docker töötab
+docker run --rm hello-world
+
+# Peaks näitama "Hello from Docker!" ilma AppArmor veata
+```
+
+**⚠️ Märkus:** See workaround kehtib ainult LXD konteinerite sees. Tavamasinas (mitte LXD) pole seda vaja.
+
 ---
 
 ## 11. Paroolide Kokkuvõte
