@@ -21,19 +21,19 @@ See juhend on mõeldud administraatorile, kes haldab LXD-põhist DevOps Kubernet
 ## Kiirviited
 
 - [Süsteemi ülevaade](#süsteemi-ülevaade)
-- [Proxy konfiguratsiooni haldamine](#1-proxy-konfiguratsiooni-haldamine)
-- [Kernel moodulite haldamine (HOST)](#2-kernel-moodulite-haldamine-host)
-- [Konteinerite haldamine](#3-konteinerite-haldamine)
+- [Kubernetes laborite seadistamine](#3-kubernetes-laborite-seadistamine-lab-3-10) ⭐ **Alusta siit!**
 - [Labs failide sünkroniseerimine](#4-labs-failide-sünkroniseerimine)
-- [SSH ja turvalisus](#5-ssh-ja-turvalisus-sisevõrk)
-- [Kubernetes spetsiifilised käsud](#6-kubernetes-spetsiifilised-käsud)
-- [Ressursside monitooring](#7-ressursside-monitooring)
-- [Backup ja taastamine](#8-backup-ja-taastamine)
-- [Template uuendamine](#9-template-uuendamine-k8s)
-- [Uue õpilase lisamine](#10-uue-õpilase-lisamine-k8s-kuni-6-kohta)
-- [Probleemide lahendamine](#11-probleemide-lahendamine-k8s-proxy)
-- [Kasulikud käsud](#12-kasulikud-käsud-k8s)
-- [Quick reference](#13-quick-reference-k8s)
+- [Konteinerite haldamine](#5-konteinerite-haldamine)
+- [Proxy konfiguratsiooni haldamine](#6-proxy-konfiguratsiooni-haldamine)
+- [Kernel moodulite haldamine (HOST)](#7-kernel-moodulite-haldamine-host)
+- [SSH ja turvalisus](#8-ssh-ja-turvalisus-sisevõrk)
+- [Kubernetes spetsiifilised käsud](#9-kubernetes-spetsiifilised-käsud)
+- [Ressursside monitooring](#10-ressursside-monitooring)
+- [Backup ja taastamine](#11-backup-ja-taastamine)
+- [Template uuendamine](#12-template-uuendamine-k8s)
+- [Probleemide lahendamine](#13-probleemide-lahendamine-k8s-proxy)
+- [Kasulikud käsud](#14-kasulikud-käsud-k8s)
+- [Quick reference](#15-quick-reference-k8s)
 
 ---
 
@@ -70,553 +70,8 @@ See juhend on mõeldud administraatorile, kes haldab LXD-põhist DevOps Kubernet
 
 ---
 
-## 1. Proxy Konfiguratsiooni Haldamine
 
-### 1.1 Host Proxy Seadistamine
-
-Sama nagu Docker juhendis. Vaata ADMIN-GUIDE-DOCKER-PROXY.md sektsioon 1.1.
-
-**Lühidalt:**
-
-```bash
-# APT proxy
-sudo tee /etc/apt/apt.conf.d/proxy.conf << 'EOF'
-Acquire::http::Proxy "http://cache1.sss:3128";
-Acquire::https::Proxy "http://cache1.sss:3128";
-EOF
-
-# Environment
-sudo tee -a /etc/environment << 'EOF'
-http_proxy="http://cache1.sss:3128"
-https_proxy="http://cache1.sss:3128"
-no_proxy="localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16"
-EOF
-
-# Snap proxy
-sudo snap set system proxy.http="http://cache1.sss:3128"
-sudo snap set system proxy.https="http://cache1.sss:3128"
-```
-
-### 1.2 Konteineri Proxy Seadistamine
-
-**⚠️ KRIITILINE ERINEVUS:** K8s template PEAB sisaldama `.svc,.cluster.local` no_proxy seadistuses!
-
-**Põhjus:** Kubernetes pod'id suhtlevad teenustega nagu `postgres-service.default.svc`. Ilma `.svc` no_proxy's läheb päring proxy kaudu → ERROR!
-
-**APT Proxy:**
-
-```bash
-lxc exec devops-k8s-student1 -- bash -c 'cat > /etc/apt/apt.conf.d/proxy.conf << "EOF"
-Acquire::http::Proxy "http://cache1.sss:3128";
-Acquire::https::Proxy "http://cache1.sss:3128";
-EOF'
-```
-
-**Environment Variables (sisaldab .svc,.cluster.local):**
-
-```bash
-# /etc/environment
-lxc exec devops-k8s-student1 -- bash -c 'cat >> /etc/environment << "EOF"
-http_proxy="http://cache1.sss:3128"
-https_proxy="http://cache1.sss:3128"
-no_proxy="localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16,.svc,.cluster.local"
-HTTP_PROXY="http://cache1.sss:3128"
-HTTPS_PROXY="http://cache1.sss:3128"
-NO_PROXY="localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16,.svc,.cluster.local"
-EOF'
-
-# /etc/profile.d/proxy.sh
-lxc exec devops-k8s-student1 -- bash -c 'cat > /etc/profile.d/proxy.sh << "EOF"
-export http_proxy="http://cache1.sss:3128"
-export https_proxy="http://cache1.sss:3128"
-export no_proxy="localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16,.svc,.cluster.local"
-export HTTP_PROXY="http://cache1.sss:3128"
-export HTTPS_PROXY="http://cache1.sss:3128"
-export NO_PROXY="localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16,.svc,.cluster.local"
-EOF'
-```
-
-**Docker Daemon Proxy:**
-
-```bash
-lxc exec devops-k8s-student1 -- bash -c '
-mkdir -p /etc/systemd/system/docker.service.d
-cat > /etc/systemd/system/docker.service.d/proxy.conf << "EOF"
-[Service]
-Environment="HTTP_PROXY=http://cache1.sss:3128"
-Environment="HTTPS_PROXY=http://cache1.sss:3128"
-Environment="NO_PROXY=localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16,.svc,.cluster.local"
-EOF
-
-systemctl daemon-reload
-systemctl restart docker
-'
-```
-
-**containerd Proxy (sisaldab .svc,.cluster.local):**
-
-```bash
-lxc exec devops-k8s-student1 -- bash -c '
-mkdir -p /etc/systemd/system/containerd.service.d
-cat > /etc/systemd/system/containerd.service.d/proxy.conf << "EOF"
-[Service]
-Environment="HTTP_PROXY=http://cache1.sss:3128"
-Environment="HTTPS_PROXY=http://cache1.sss:3128"
-Environment="NO_PROXY=localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16,.svc,.cluster.local"
-EOF
-
-systemctl daemon-reload
-systemctl restart containerd
-systemctl restart docker
-'
-```
-
-### 1.3 Proxy Testimine
-
-Sama nagu Docker juhendis + Kubernetes spetsiifiline:
-
-```bash
-# Host
-env | grep -i proxy
-curl -I https://google.com
-apt-get update
-
-# Konteiner
-lxc exec devops-k8s-student1 -- bash -l -c 'env | grep -i proxy'
-lxc exec devops-k8s-student1 -- curl -I https://google.com
-lxc exec devops-k8s-student1 -- apt-get update
-lxc exec devops-k8s-student1 -- docker pull alpine:3.16
-
-# Testi K8s pod-to-service ühendust (pärast K8s init)
-lxc exec devops-k8s-student1 -- su - labuser -c 'kubectl get svc'
-```
-
----
-
-## 2. Kernel Moodulite Haldamine (HOST)
-
-### 2.1 Ülevaade
-
-**⚠️ KRIITILINE:** Kernel mooduleid EI SAA laadida konteinerist! LXD konteinerid jagavad HOST'i kerneli.
-
-**Vajalikud moodulid K8s jaoks:**
-- `overlay` - OverlayFS support (Docker & Kubernetes)
-- `br_netfilter` - Bridge netfilter support (Kubernetes networking)
-
-### 2.2 Kernel Moodulite Laadimise (HOST'is)
-
-```bash
-# HOST masinas (mitte konteineris!)
-sudo modprobe overlay
-sudo modprobe br_netfilter
-
-# Tee moodulid püsivaks (reboot'i järel)
-sudo tee /etc/modules-load.d/k8s.conf << 'EOF'
-overlay
-br_netfilter
-EOF
-
-# Kontrolli
-lsmod | grep overlay
-lsmod | grep br_netfilter
-# Peaksid nägema mõlemat moodulit
-```
-
-### 2.3 Sysctl Seadistused (HOST'is)
-
-```bash
-# HOST masinas
-sudo tee /etc/sysctl.d/k8s.conf << 'EOF'
-net.bridge.bridge-nf-call-iptables  = 1
-net.bridge.bridge-nf-call-ip6tables = 1
-net.ipv4.ip_forward                 = 1
-EOF
-
-# Rakenda
-sudo sysctl --system
-
-# Kontrolli
-sysctl net.bridge.bridge-nf-call-iptables
-sysctl net.ipv4.ip_forward
-# Peaks olema: = 1
-```
-
-### 2.4 Verifitseerimine Konteineris
-
-```bash
-# Logi konteinerisse
-lxc exec devops-k8s-student1 -- bash
-
-# Kontrolli, et moodulid on nähtavad (jagatud HOST'iga)
-lsmod | grep overlay
-lsmod | grep br_netfilter
-# Peaksid nägema sama väljundit nagu HOST'is
-
-exit
-```
-
-**⚠️ OLULINE:**
-- Kui moodulid puuduvad HOST'is, Flannel CNI ei käivitu → K8s cluster ei tööta
-- Kui sysctl seadistused puuduvad, pod networking ei tööta korralikult
-
----
-
-## 3. Konteinerite Haldamine
-
-Sama nagu Docker juhendis, aga konteineri nimed on erinevad:
-
-```bash
-# Vaata kõiki K8s konteinereid
-lxc list | grep k8s
-
-# Detailne info
-lxc info devops-k8s-student1
-
-# Logi konteinerisse
-lxc exec devops-k8s-student1 -- bash -l
-
-# Logi konteinerisse (labuser)
-lxc exec devops-k8s-student1 -- su - labuser
-
-# Restart
-lxc restart devops-k8s-student1
-```
-
-**Profile:** devops-lab-k8s (5GB RAM, 2 CPU cores)
-
----
-
-## 4. Labs Failide Sünkroniseerimine
-
-Sama nagu Docker juhendis, aga konteineri nimed on `devops-k8s-student*`.
-
-### 4.1 Sync Skriptid (K8s versioon)
-
-#### sync-k8s-labs.sh
-
-```bash
-cat > ~/scripts/sync-k8s-labs.sh << 'EOFSCRIPT'
-#!/bin/bash
-# Sync labs to all K8s student containers
-
-set -e
-
-SOURCE_DIR="${LABS_SOURCE:-$HOME/projects/labs}"
-
-if [ ! -d "$SOURCE_DIR" ]; then
-  echo "Error: Labs source not found: $SOURCE_DIR"
-  exit 1
-fi
-
-echo "====================================="
-echo "Syncing labs to K8s students"
-echo "====================================="
-
-# Find all K8s student containers
-CONTAINERS=$(lxc list --format csv -c n | grep -E "^devops-k8s-student" || true)
-
-if [ -z "$CONTAINERS" ]; then
-  echo "No K8s student containers found"
-  exit 0
-fi
-
-for CONTAINER in $CONTAINERS; do
-  echo ">>> $CONTAINER <<<"
-
-  # Backup existing labs
-  lxc exec $CONTAINER -- bash -c "tar czf /tmp/labs-backup-\$(date +%Y%m%d-%H%M%S).tar.gz -C /home/labuser labs 2>/dev/null || true"
-
-  # Push labs directory
-  echo "Copying files..."
-  lxc file push -r "$SOURCE_DIR/" "$CONTAINER/home/labuser/"
-
-  # Fix ownership
-  lxc exec $CONTAINER -- chown -R labuser:labuser /home/labuser/labs
-
-  # Fix executable permissions
-  lxc exec $CONTAINER -- find /home/labuser/labs -type f -name '*.sh' -exec chmod 755 {} \;
-
-  echo "✅ $CONTAINER updated!"
-  echo
-done
-
-echo "✅ All K8s students updated!"
-EOFSCRIPT
-
-chmod +x ~/scripts/sync-k8s-labs.sh
-```
-
-**Kasutamine:**
-
-```bash
-# Sync kõik K8s students
-~/scripts/sync-k8s-labs.sh
-
-# VÕI konkreetselt üks
-~/scripts/sync-labs.sh devops-k8s-student1
-```
-
----
-
-## 5. SSH ja Turvalisus (Sisevõrk)
-
-Sama nagu Docker juhendis. SSH pordid: 2211-2216 (K8s students).
-
-**Port Mapping:**
-
-| Student | SSH Port |
-|---------|----------|
-| student1 | 2211 |
-| student2 | 2212 |
-| student3 | 2213 |
-| student4 | 2214 |
-| student5 | 2215 |
-| student6 | 2216 |
-
-```bash
-# Näide: Student1
-lxc config device add devops-k8s-student1 ssh-proxy proxy \
-  listen=tcp:0.0.0.0:2211 connect=tcp:127.0.0.1:22 nat=true
-```
-
----
-
-## 6. Kubernetes Spetsiifilised Käsud
-
-### 6.1 Kubernetes Cluster Initialization (Iga Õpilane)
-
-**⚠️ OLULINE:** See samm tehakse IGA konteineri sees eraldi! Iga õpilane saab oma isikliku single-node K8s clusteri.
-
-```bash
-# 1. Logi konteinerisse
-lxc exec devops-k8s-student1 -- su - labuser
-
-# 2. Initsialiseeři klaster (single-node)
-sudo kubeadm init \
-  --pod-network-cidr=10.244.0.0/16 \
-  --ignore-preflight-errors=NumCPU,Mem
-
-# 3. Seadista kubectl
-mkdir -p $HOME/.kube
-sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
-sudo chown $(id -u):$(id -g) $HOME/.kube/config
-
-# 4. Kontrolli
-kubectl get nodes
-# STATUS peaks olema NotReady (võrk puudub)
-
-# 5. Installi Flannel CNI
-kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml
-
-# 6. Oota, kuni valmis (1-2 min)
-kubectl get nodes -w
-# Oota kuni STATUS = Ready, siis Ctrl+C
-
-# 7. Luba Pods Master Node'il (single-node klaster)
-kubectl taint nodes --all node-role.kubernetes.io/control-plane-
-
-# 8. Testi klastrit
-kubectl run nginx-test --image=nginx --port=80
-kubectl get pods -w
-# Oota STATUS = Running
-
-kubectl delete pod nginx-test
-
-# 9. Logi välja
-exit
-```
-
-**Võimalikud probleemid:**
-- Kui Flannel pod'id ei käivitu → Kontrolli kernel mooduleid HOST'is (vt sektsioon 2)
-- Kui image pull ebaõnnestub → Kontrolli containerd proxy't (vt sektsioon 1.2)
-
-### 6.2 Kubernetes Port Forwarding
-
-```bash
-# K8s API (iga õpilane oma port)
-lxc config device add devops-k8s-student1 k8s-api-proxy proxy \
-  listen=tcp:0.0.0.0:6443 connect=tcp:127.0.0.1:6443 nat=true
-
-lxc config device add devops-k8s-student2 k8s-api-proxy proxy \
-  listen=tcp:0.0.0.0:6444 connect=tcp:127.0.0.1:6443 nat=true
-
-lxc config device add devops-k8s-student3 k8s-api-proxy proxy \
-  listen=tcp:0.0.0.0:6445 connect=tcp:127.0.0.1:6443 nat=true
-
-# Ingress HTTP/HTTPS (student1 näide)
-lxc config device add devops-k8s-student1 ingress-http-proxy proxy \
-  listen=tcp:0.0.0.0:30080 connect=tcp:127.0.0.1:30080 nat=true
-
-lxc config device add devops-k8s-student1 ingress-https-proxy proxy \
-  listen=tcp:0.0.0.0:30443 connect=tcp:127.0.0.1:30443 nat=true
-```
-
-### 6.3 Port Mapping Tabel (kuni 6 õpilast)
-
-| Service | Internal | Student 1 | Student 2 | Student 3 | Student 4 | Student 5 | Student 6 |
-|---------|----------|-----------|-----------|-----------|-----------|-----------|-----------|
-| SSH | 22 | 2211 | 2212 | 2213 | 2214 | 2215 | 2216 |
-| K8s API | 6443 | 6443 | 6444 | 6445 | 6446 | 6447 | 6448 |
-| Ingress HTTP | 30080 | 30080 | 30180 | 30280 | 30380 | 30480 | 30580 |
-| Ingress HTTPS | 30443 | 30443 | 30543 | 30643 | 30743 | 30843 | 30943 |
-
-### 6.4 Kubernetes Monitooring
-
-```bash
-# Klastri staatus
-lxc exec devops-k8s-student1 -- su - labuser -c 'kubectl cluster-info'
-
-# Node'id
-lxc exec devops-k8s-student1 -- su - labuser -c 'kubectl get nodes'
-
-# Kõik pod'id
-lxc exec devops-k8s-student1 -- su - labuser -c 'kubectl get pods -A'
-
-# K8s resource kasutus (kui metrics-server on paigaldatud)
-lxc exec devops-k8s-student1 -- su - labuser -c 'kubectl top nodes'
-lxc exec devops-k8s-student1 -- su - labuser -c 'kubectl top pods -A'
-```
-
----
-
-## 7. Ressursside Monitooring
-
-Sama nagu Docker juhendis, aga limiidid on erinevad:
-
-**Limiidid per student:**
-- RAM: 5GB
-- CPU: 2 cores
-
-**Tavaline kasutus:**
-- Idle K8s cluster: ~1.5-2GB (Flannel, CoreDNS, kube-proxy, kube-apiserver, etcd)
-- K8s cluster + rakendused: ~2-3GB
-
-```bash
-# Vaata RAM kasutust
-lxc list -c ns4M
-
-# Detailne info
-lxc info devops-k8s-student1 | grep -A 3 "Memory usage"
-```
-
----
-
-## 8. Backup ja Taastamine
-
-Sama nagu Docker juhendis + K8s spetsiifiline:
-
-### 8.1 Kubernetes Cluster Backup
-
-**etcd Backup:**
-
-```bash
-# Backup etcd (kui vaja)
-lxc exec devops-k8s-student1 -- su - labuser -c '
-ETCDCTL_API=3 etcdctl snapshot save /tmp/etcd-backup-$(date +%Y%m%d).db \
-  --endpoints=https://127.0.0.1:2379 \
-  --cacert=/etc/kubernetes/pki/etcd/ca.crt \
-  --cert=/etc/kubernetes/pki/etcd/server.crt \
-  --key=/etc/kubernetes/pki/etcd/server.key
-'
-```
-
-**kubeconfig Backup:**
-
-```bash
-# Backup kubeconfig
-lxc file pull devops-k8s-student1/home/labuser/.kube/config /backup/student1-kubeconfig-$(date +%Y%m%d).yaml
-```
-
-**LXD Snapshot (soovitatud):**
-
-```bash
-# Loo snapshot (hõlmab tervet konteinerit, sh K8s cluster state)
-lxc snapshot devops-k8s-student1 before-lab5
-
-# Taasta
-lxc restore devops-k8s-student1 before-lab5
-```
-
----
-
-## 9. Template Uuendamine (K8s)
-
-### 9.1 Template Uuendamise Protsess
-
-```bash
-# 1. Loo ajutine konteiner
-lxc launch k8s-lab-base temp-k8s-update -p default -p devops-lab-k8s
-
-# 2. Logi sisse
-lxc exec temp-k8s-update -- bash
-
-# 3-6. [Sama nagu Docker template: proxy seadistus, apt update/upgrade, containerd downgrade]
-# Vaata ADMIN-GUIDE-DOCKER-PROXY.md sektsioon 7.2, sammud 3-6
-
-# 7. Uuenda K8s tööriistu (kui vaja)
-apt-get update
-apt-get upgrade -y kubelet kubeadm kubectl
-# VÕI konkreetne versioon
-apt-mark unhold kubelet kubeadm kubectl
-apt-get install -y kubelet=1.31.x-00 kubeadm=1.31.x-00 kubectl=1.31.x-00
-apt-mark hold kubelet kubeadm kubectl
-
-# 8. Verifitseeri K8s versioonid
-kubeadm version
-kubectl version --client
-kubelet --version
-
-# 9. Kontrolli Helm, Terraform, Trivy, Kustomize
-helm version
-terraform version
-trivy version
-kustomize version
-
-# 10. Kontrolli no_proxy seadistust (PEAB sisaldama .svc,.cluster.local)
-cat /etc/environment | grep no_proxy
-cat /etc/profile.d/proxy.sh | grep no_proxy
-cat ~/.bashrc | grep no_proxy
-# Peab olema: no_proxy="localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16,.svc,.cluster.local"
-
-# Kui puudub, lisa:
-sed -i 's/no_proxy="\(.*\)"/no_proxy="\1,.svc,.cluster.local"/' /etc/environment
-sed -i 's/no_proxy="\(.*\)"/no_proxy="\1,.svc,.cluster.local"/' /etc/profile.d/proxy.sh
-
-# 11-16. [Sama nagu Docker template: sudo config, puhastamine, publish]
-# Vaata ADMIN-GUIDE-DOCKER-PROXY.md sektsioon 7.2, sammud 8-10
-
-# Puhasta
-apt-get clean
-rm -rf /tmp/* /var/tmp/*
-history -c
-exit
-
-# Peata konteiner
-lxc stop temp-k8s-update
-
-# Backup vana template
-lxc image export k8s-lab-base /tmp/k8s-lab-base-backup-$(date +%Y%m%d)
-
-# Kustuta vana alias
-lxc image delete k8s-lab-base
-
-# Publitseeri K8s template'ina
-lxc publish temp-k8s-update --alias k8s-lab-base \
-  description="K8s Lab Template: Ubuntu 24.04 + Docker + K8s 1.31 + Helm + Terraform + Proxy (Updated $(date +%Y-%m-%d))"
-
-# Kustuta ajutine konteiner
-lxc delete temp-k8s-update
-
-# Testi uut template'i
-lxc launch k8s-lab-base test-new-k8s-template -p default -p devops-lab-k8s
-lxc exec test-new-k8s-template -- docker --version
-lxc exec test-new-k8s-template -- kubeadm version
-lxc delete --force test-new-k8s-template
-```
-
----
-
-## 10. Kubernetes Laborite Seadistamine (Lab 3-10)
+## 3. Kubernetes Laborite Seadistamine (Lab 3-10)
 
 **⚠️ EELDUS:** [HOST-SETUP-PROXY.md](HOST-SETUP-PROXY.md) on täidetud (host valmis, proxy töötab, LXD paigaldatud, **KERNEL MOODULID LAADITUD**!)
 
@@ -628,17 +83,17 @@ lxc delete --force test-new-k8s-template
 - ➕ Täiendavate õpilaste lisamine (student4-6)
 
 **Workflow:**
-1. Loo LXD profiil (10.0) → 2. Loo K8s template (10.1) → 3. Loo student1-3 MANUAALSELT + K8s init (10.2-10.3) → 4. Valikuline: automatiseeri (10.4) → 5. Lisa student4-6 (10.5)
+1. Loo LXD profiil (3.0) → 2. Loo K8s template (3.1) → 3. Loo student1-3 MANUAALSELT + K8s init (3.2-3.3) → 4. Valikuline: automatiseeri (3.4) → 5. Lisa student4-6 (3.5)
 
 ---
 
-### 10.0 LXD Profiili Loomine (devops-lab-k8s)
+### 3.0 LXD Profiili Loomine (devops-lab-k8s)
 
 **⚠️ KOHUSTUSLIK ESMALT:** Enne template'i loomist pead looma LXD profiili!
 
 **⚠️ KRIITILINE EELDUS:** HOST-SETUP-PROXY.md sektsioon 5 peab olema täidetud (kernel moodulid laaditud HOST'is)!
 
-#### 10.0.1 Loo devops-lab-k8s Profiil
+#### 3.0.1 Loo devops-lab-k8s Profiil
 
 ```bash
 lxc profile create devops-lab-k8s
@@ -677,14 +132,14 @@ name: devops-lab-k8s
 
 **Salvesta:** `:wq` (vim) või `Ctrl+O, Enter, Ctrl+X` (nano)
 
-#### 10.0.2 Kontrolli Profiili
+#### 3.0.2 Kontrolli Profiili
 
 ```bash
 lxc profile show devops-lab-k8s
 lxc profile list
 ```
 
-#### 10.0.3 Profiili Selgitus
+#### 3.0.3 Profiili Selgitus
 
 | Setting | Väärtus | Selgitus |
 |---------|---------|----------|
@@ -703,13 +158,13 @@ lxc profile list
 
 ---
 
-### 10.1 Kubernetes Template Loomine (k8s-lab-base)
+### 3.1 Kubernetes Template Loomine (k8s-lab-base)
 
-**⚠️ MANUAALNE PROTSESS:** See on samm-sammult juhend K8s template'i loomiseks. Peale seda saad luua õpilaskonteinereid template'ist (sektsioonid 10.2-10.3).
+**⚠️ MANUAALNE PROTSESS:** See on samm-sammult juhend K8s template'i loomiseks. Peale seda saad luua õpilaskonteinereid template'ist (sektsioonid 3.2-3.3).
 
 **⚠️ HOIATUS:** See protsess võtab aega ~30-45 minutit (K8s tööriistade paigaldamine, konfigureerimine).
 
-#### 10.1.1 Base Konteineri Käivitamine
+#### 3.1.1 Base Konteineri Käivitamine
 
 ```bash
 # Käivita Ubuntu 24.04 devops-lab-k8s profiiliga
@@ -725,7 +180,7 @@ lxc exec k8s-template -- bash
 
 **Nüüd oled KONTEINERIS.**
 
-#### 10.1.2 Proxy Seadistamine (Konteineris)
+#### 3.1.2 Proxy Seadistamine (Konteineris)
 
 **⚠️ OLULINE:** Seadista proxy ENNE apt-get käske!
 
@@ -786,32 +241,32 @@ no_proxy="localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16"
 - `.cluster.local` - Täielik K8s cluster DNS suffix
 - Ilma nendeta läheksid pod-to-service ühendused proxy kaudu → ERROR!
 
-#### 10.1.3-10.1.6 Süsteemi Uuendamine ja Tööriistad
+#### 3.1.3-3.1.6 Süsteemi Uuendamine ja Tööriistad
 
-[Täpselt sama nagu ADMIN-GUIDE-DOCKER-PROXY.md sektsioonid 8.1.3-8.1.6]
+[Täpselt sama nagu ADMIN-GUIDE-DOCKER-PROXY.md sektsioonid 3.1.3-3.1.6]
 
 ```bash
-# 10.1.3: apt-get update && upgrade
-# 10.1.4: Java 21
-# 10.1.5: Node.js 20
-# 10.1.6: Diagnostika tööriistad (jq, nmap, tcpdump, netcat-openbsd, dnsutils, net-tools)
+# 3.1.3: apt-get update && upgrade
+# 3.1.4: Java 21
+# 3.1.5: Node.js 20
+# 3.1.6: Diagnostika tööriistad (jq, nmap, tcpdump, netcat-openbsd, dnsutils, net-tools)
 
 # [Täielikud käsud: vt K8S-INSTALLATION.md sektsioonid 5.3, 5.3a, 5.3b, 5.3c]
 ```
 
-#### 10.1.7-10.1.9 Docker Paigaldamine
+#### 3.1.7-3.1.9 Docker Paigaldamine
 
-[Täpselt sama nagu ADMIN-GUIDE-DOCKER-PROXY.md sektsioonid 8.1.7-8.1.9]
+[Täpselt sama nagu ADMIN-GUIDE-DOCKER-PROXY.md sektsioonid 3.1.7-3.1.9]
 
 ```bash
-# 10.1.7: Docker paigaldamine
-# 10.1.8: containerd downgrade 1.7.28 (KRIITILINE!)
-# 10.1.9: Docker proxy seadistamine
+# 3.1.7: Docker paigaldamine
+# 3.1.8: containerd downgrade 1.7.28 (KRIITILINE!)
+# 3.1.9: Docker proxy seadistamine
 
 # [Täielikud käsud: vt K8S-INSTALLATION.md sektsioonid 5.4, 5.5, 5.6]
 ```
 
-#### 10.1.10 Kubernetes Tööriistade Paigaldamine (Konteineris)
+#### 3.1.10 Kubernetes Tööriistade Paigaldamine (Konteineris)
 
 **Kubernetes 1.31:**
 
@@ -883,9 +338,9 @@ apt-get install -y terraform
 terraform version
 ```
 
-#### 10.1.11 labuser Kasutaja Loomine (Konteineris)
+#### 3.1.11 labuser Kasutaja Loomine (Konteineris)
 
-[Sama nagu Docker template - vt ADMIN-GUIDE-DOCKER-PROXY.md sektsioon 8.1.10]
+[Sama nagu Docker template - vt ADMIN-GUIDE-DOCKER-PROXY.md sektsioon 3.1.10]
 
 ```bash
 useradd -m -s /bin/bash -u 1001 labuser
@@ -896,9 +351,9 @@ id labuser
 # uid=1001(labuser) gid=1001(labuser)
 ```
 
-#### 10.1.12 SSH Server (Konteineris)
+#### 3.1.12 SSH Server (Konteineris)
 
-[Sama nagu Docker template - vt ADMIN-GUIDE-DOCKER-PROXY.md sektsioon 8.1.11]
+[Sama nagu Docker template - vt ADMIN-GUIDE-DOCKER-PROXY.md sektsioon 3.1.11]
 
 ```bash
 apt-get install -y openssh-server
@@ -912,7 +367,7 @@ EOF
 systemctl enable ssh
 ```
 
-#### 10.1.13 labuser Bash Konfiguratsioon (Konteineris)
+#### 3.1.13 labuser Bash Konfiguratsioon (Konteineris)
 
 **K8s template (SISALDAB Kubernetes, Helm, Terraform aliased!):**
 
@@ -993,7 +448,7 @@ EOF
 exit
 ```
 
-#### 10.1.14 Labs Kausta Ettevalmistus (Konteineris)
+#### 3.1.14 Labs Kausta Ettevalmistus (Konteineris)
 
 ```bash
 # Loo labs kataloog (sünkroniseeritakse hiljem)
@@ -1001,7 +456,7 @@ mkdir -p /home/labuser/labs
 chown -R labuser:labuser /home/labuser/labs
 ```
 
-#### 10.1.15 Puhastamine (Konteineris)
+#### 3.1.15 Puhastamine (Konteineris)
 
 ```bash
 apt-get clean
@@ -1013,7 +468,7 @@ exit
 
 **Nüüd oled tagasi HOST'is.**
 
-#### 10.1.16 Template Publitseerimine (HOST)
+#### 3.1.16 Template Publitseerimine (HOST)
 
 ```bash
 # Peata konteiner
@@ -1038,15 +493,15 @@ lxc image export k8s-lab-base ~/lxd-backups/k8s-lab-base-$(date +%Y%m%d)
 
 ---
 
-### 10.2 Student1 Loomine (Täielik MANUAALNE K8s Protsess)
+### 3.2 Student1 Loomine (Täielik MANUAALNE K8s Protsess)
 
 **⚠️ OLULINE:** Järgi seda sektsiooni täpselt, samm-sammult. See on BAAS student2-3 jaoks!
 
-**Eeldus:** k8s-lab-base template on loodud (sektsioon 10.1).
+**Eeldus:** k8s-lab-base template on loodud (sektsioon 3.1).
 
 **⏱️ Ajakulu:** ~15-20 minutit (sh K8s init ~5-10 min).
 
-#### 10.2.1 Konteineri Käivitamine
+#### 3.2.1 Konteineri Käivitamine
 
 ```bash
 # Loo konteiner template'ist
@@ -1057,13 +512,13 @@ sleep 30
 lxc list devops-k8s-student1
 ```
 
-#### 10.2.2 Parooli Seadistamine
+#### 3.2.2 Parooli Seadistamine
 
 ```bash
 lxc exec devops-k8s-student1 -- bash -c 'echo "labuser:student1" | chpasswd'
 ```
 
-#### 10.2.3 Port Forwarding (SSH + K8s + Ingress)
+#### 3.2.3 Port Forwarding (SSH + K8s + Ingress)
 
 ```bash
 # SSH
@@ -1083,7 +538,7 @@ lxc config device add devops-k8s-student1 ingress-https-proxy proxy \
   listen=tcp:0.0.0.0:30443 connect=tcp:127.0.0.1:30443 nat=true
 ```
 
-#### 10.2.4 Kubernetes Klastri Initialiseerimine (Konteineris)
+#### 3.2.4 Kubernetes Klastri Initialiseerimine (Konteineris)
 
 **⚠️ KRIITILINE:** Iga õpilaskonteiner peab oma K8s clusteri initima!
 
@@ -1106,7 +561,7 @@ kubectl get nodes
 # STATUS peaks olema NotReady (võrk puudub veel)
 ```
 
-#### 10.2.5 Pod Network (Flannel CNI)
+#### 3.2.5 Pod Network (Flannel CNI)
 
 ```bash
 # Installi Flannel CNI
@@ -1117,7 +572,7 @@ kubectl get nodes -w
 # Oota kuni STATUS = Ready, siis Ctrl+C
 ```
 
-#### 10.2.6 Luba Pods Master Node'il
+#### 3.2.6 Luba Pods Master Node'il
 
 ```bash
 # Single-node klaster - luba scheduling master'il
@@ -1129,7 +584,7 @@ kubectl get nodes
 # ...     Ready    control-plane   ...   v1.31.x
 ```
 
-#### 10.2.7 Testi Klastrit
+#### 3.2.7 Testi Klastrit
 
 ```bash
 # Loo test pod
@@ -1150,14 +605,14 @@ kubectl delete pod nginx-test
 exit
 ```
 
-#### 10.2.8 Labs Failide Sünkroniseerimine (HOST'ist)
+#### 3.2.8 Labs Failide Sünkroniseerimine (HOST'ist)
 
 ```bash
 # Sync labs (kasuta sektsioonis 4 loodud skripti)
 ~/scripts/sync-k8s-labs.sh devops-k8s-student1
 ```
 
-#### 10.2.9 Kontrollimine
+#### 3.2.9 Kontrollimine
 
 ```bash
 # SSH test (HOST'ist)
@@ -1184,11 +639,11 @@ netstat -tuln | grep -E ':(2211|6443|30080|30443)'
 
 ---
 
-### 10.3 Student2 ja Student3 Loomine (Lühike + K8s Init)
+### 3.3 Student2 ja Student3 Loomine (Lühike + K8s Init)
 
 **Märkus:** Analoogselt student1-le, aga erinevad pordid. **IGA ÕPILANE PEAB OMA K8s CLUSTERI INITMA!**
 
-#### 10.3.1 Student2
+#### 3.3.1 Student2
 
 ```bash
 # Loo konteiner
@@ -1234,7 +689,7 @@ ssh labuser@<HOST-IP> -p 2212
 # Parool: student2
 ```
 
-#### 10.3.2 Student3
+#### 3.3.2 Student3
 
 ```bash
 # Loo konteiner
@@ -1284,9 +739,9 @@ ssh labuser@<HOST-IP> -p 2213
 
 ---
 
-### 10.4 Automatiseeritud Setup Skript (VALIKULINE - pärast manuaalset testimist!)
+### 3.4 Automatiseeritud Setup Skript (VALIKULINE - pärast manuaalset testimist!)
 
-**⚠️ OLULINE:** See on VALIKULINE! Admin peab esmalt manuaalselt läbi tegema 10.2 ja 10.3 ning kinnitama, et K8s cluster toimib. Alles siis võib lisada automatiseeritud skripti.
+**⚠️ OLULINE:** See on VALIKULINE! Admin peab esmalt manuaalselt läbi tegema 3.2 ja 3.3 ning kinnitama, et K8s cluster toimib. Alles siis võib lisada automatiseeritud skripti.
 
 **⏱️ HOIATUS:** K8s init võtab aega (~5-10 min per student). Skript võib kesta ~30-40 minutit!
 
@@ -1422,11 +877,11 @@ done
 
 ---
 
-### 10.5 Uue Õpilase Lisamine (Student4-6)
+### 3.5 Uue Õpilase Lisamine (Student4-6)
 
 **Märkus:** Süsteem toetab kuni 6 õpilast. Alltoodud näited student4, student5, student6 jaoks.
 
-#### 10.5.1 Student4 Lisamine
+#### 3.5.1 Student4 Lisamine
 
 ```bash
 # 1. Käivita konteiner
@@ -1474,7 +929,7 @@ ssh labuser@<HOST-IP> -p 2214
 lxc exec devops-k8s-student4 -- su - labuser -c 'kubectl get nodes'
 ```
 
-#### 10.5.2 Student5 ja Student6 Lisamine
+#### 3.5.2 Student5 ja Student6 Lisamine
 
 Analoogselt student4-le, kasuta järgmisi porte:
 - **Student5:** SSH 2215, K8s API 6447, Ingress HTTP 30480, Ingress HTTPS 30843
@@ -1482,13 +937,569 @@ Analoogselt student4-le, kasuta järgmisi porte:
 
 ---
 
-## 11. Probleemide Lahendamine (K8s + Proxy)
 
-### 11.1 Proxy Probleemid
+## 4. Labs Failide Sünkroniseerimine
+
+Sama nagu Docker juhendis, aga konteineri nimed on `devops-k8s-student*`.
+
+### 4.1 Sync Skriptid (K8s versioon)
+
+#### sync-k8s-labs.sh
+
+```bash
+cat > ~/scripts/sync-k8s-labs.sh << 'EOFSCRIPT'
+#!/bin/bash
+# Sync labs to all K8s student containers
+
+set -e
+
+SOURCE_DIR="${LABS_SOURCE:-$HOME/projects/labs}"
+
+if [ ! -d "$SOURCE_DIR" ]; then
+  echo "Error: Labs source not found: $SOURCE_DIR"
+  exit 1
+fi
+
+echo "====================================="
+echo "Syncing labs to K8s students"
+echo "====================================="
+
+# Find all K8s student containers
+CONTAINERS=$(lxc list --format csv -c n | grep -E "^devops-k8s-student" || true)
+
+if [ -z "$CONTAINERS" ]; then
+  echo "No K8s student containers found"
+  exit 0
+fi
+
+for CONTAINER in $CONTAINERS; do
+  echo ">>> $CONTAINER <<<"
+
+  # Backup existing labs
+  lxc exec $CONTAINER -- bash -c "tar czf /tmp/labs-backup-\$(date +%Y%m%d-%H%M%S).tar.gz -C /home/labuser labs 2>/dev/null || true"
+
+  # Push labs directory
+  echo "Copying files..."
+  lxc file push -r "$SOURCE_DIR/" "$CONTAINER/home/labuser/"
+
+  # Fix ownership
+  lxc exec $CONTAINER -- chown -R labuser:labuser /home/labuser/labs
+
+  # Fix executable permissions
+  lxc exec $CONTAINER -- find /home/labuser/labs -type f -name '*.sh' -exec chmod 755 {} \;
+
+  echo "✅ $CONTAINER updated!"
+  echo
+done
+
+echo "✅ All K8s students updated!"
+EOFSCRIPT
+
+chmod +x ~/scripts/sync-k8s-labs.sh
+```
+
+**Kasutamine:**
+
+```bash
+# Sync kõik K8s students
+~/scripts/sync-k8s-labs.sh
+
+# VÕI konkreetselt üks
+~/scripts/sync-labs.sh devops-k8s-student1
+```
+
+---
+
+
+## 5. Konteinerite Haldamine
+
+Sama nagu Docker juhendis, aga konteineri nimed on erinevad:
+
+```bash
+# Vaata kõiki K8s konteinereid
+lxc list | grep k8s
+
+# Detailne info
+lxc info devops-k8s-student1
+
+# Logi konteinerisse
+lxc exec devops-k8s-student1 -- bash -l
+
+# Logi konteinerisse (labuser)
+lxc exec devops-k8s-student1 -- su - labuser
+
+# Restart
+lxc restart devops-k8s-student1
+```
+
+**Profile:** devops-lab-k8s (5GB RAM, 2 CPU cores)
+
+---
+
+
+## 6. Proxy Konfiguratsiooni Haldamine
+
+### 6.1 Host Proxy Seadistamine
+
+Sama nagu Docker juhendis. Vaata ADMIN-GUIDE-DOCKER-PROXY.md sektsioon 6.1.
+
+**Lühidalt:**
+
+```bash
+# APT proxy
+sudo tee /etc/apt/apt.conf.d/proxy.conf << 'EOF'
+Acquire::http::Proxy "http://cache1.sss:3128";
+Acquire::https::Proxy "http://cache1.sss:3128";
+EOF
+
+# Environment
+sudo tee -a /etc/environment << 'EOF'
+http_proxy="http://cache1.sss:3128"
+https_proxy="http://cache1.sss:3128"
+no_proxy="localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16"
+EOF
+
+# Snap proxy
+sudo snap set system proxy.http="http://cache1.sss:3128"
+sudo snap set system proxy.https="http://cache1.sss:3128"
+```
+
+### 6.2 Konteineri Proxy Seadistamine
+
+**⚠️ KRIITILINE ERINEVUS:** K8s template PEAB sisaldama `.svc,.cluster.local` no_proxy seadistuses!
+
+**Põhjus:** Kubernetes pod'id suhtlevad teenustega nagu `postgres-service.default.svc`. Ilma `.svc` no_proxy's läheb päring proxy kaudu → ERROR!
+
+**APT Proxy:**
+
+```bash
+lxc exec devops-k8s-student1 -- bash -c 'cat > /etc/apt/apt.conf.d/proxy.conf << "EOF"
+Acquire::http::Proxy "http://cache1.sss:3128";
+Acquire::https::Proxy "http://cache1.sss:3128";
+EOF'
+```
+
+**Environment Variables (sisaldab .svc,.cluster.local):**
+
+```bash
+# /etc/environment
+lxc exec devops-k8s-student1 -- bash -c 'cat >> /etc/environment << "EOF"
+http_proxy="http://cache1.sss:3128"
+https_proxy="http://cache1.sss:3128"
+no_proxy="localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16,.svc,.cluster.local"
+HTTP_PROXY="http://cache1.sss:3128"
+HTTPS_PROXY="http://cache1.sss:3128"
+NO_PROXY="localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16,.svc,.cluster.local"
+EOF'
+
+# /etc/profile.d/proxy.sh
+lxc exec devops-k8s-student1 -- bash -c 'cat > /etc/profile.d/proxy.sh << "EOF"
+export http_proxy="http://cache1.sss:3128"
+export https_proxy="http://cache1.sss:3128"
+export no_proxy="localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16,.svc,.cluster.local"
+export HTTP_PROXY="http://cache1.sss:3128"
+export HTTPS_PROXY="http://cache1.sss:3128"
+export NO_PROXY="localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16,.svc,.cluster.local"
+EOF'
+```
+
+**Docker Daemon Proxy:**
+
+```bash
+lxc exec devops-k8s-student1 -- bash -c '
+mkdir -p /etc/systemd/system/docker.service.d
+cat > /etc/systemd/system/docker.service.d/proxy.conf << "EOF"
+[Service]
+Environment="HTTP_PROXY=http://cache1.sss:3128"
+Environment="HTTPS_PROXY=http://cache1.sss:3128"
+Environment="NO_PROXY=localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16,.svc,.cluster.local"
+EOF
+
+systemctl daemon-reload
+systemctl restart docker
+'
+```
+
+**containerd Proxy (sisaldab .svc,.cluster.local):**
+
+```bash
+lxc exec devops-k8s-student1 -- bash -c '
+mkdir -p /etc/systemd/system/containerd.service.d
+cat > /etc/systemd/system/containerd.service.d/proxy.conf << "EOF"
+[Service]
+Environment="HTTP_PROXY=http://cache1.sss:3128"
+Environment="HTTPS_PROXY=http://cache1.sss:3128"
+Environment="NO_PROXY=localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16,.svc,.cluster.local"
+EOF
+
+systemctl daemon-reload
+systemctl restart containerd
+systemctl restart docker
+'
+```
+
+### 6.3 Proxy Testimine
+
+Sama nagu Docker juhendis + Kubernetes spetsiifiline:
+
+```bash
+# Host
+env | grep -i proxy
+curl -I https://google.com
+apt-get update
+
+# Konteiner
+lxc exec devops-k8s-student1 -- bash -l -c 'env | grep -i proxy'
+lxc exec devops-k8s-student1 -- curl -I https://google.com
+lxc exec devops-k8s-student1 -- apt-get update
+lxc exec devops-k8s-student1 -- docker pull alpine:3.16
+
+# Testi K8s pod-to-service ühendust (pärast K8s init)
+lxc exec devops-k8s-student1 -- su - labuser -c 'kubectl get svc'
+```
+
+---
+
+
+## 7. Kernel Moodulite Haldamine (HOST)
+
+### 7.1 Ülevaade
+
+**⚠️ KRIITILINE:** Kernel mooduleid EI SAA laadida konteinerist! LXD konteinerid jagavad HOST'i kerneli.
+
+**Vajalikud moodulid K8s jaoks:**
+- `overlay` - OverlayFS support (Docker & Kubernetes)
+- `br_netfilter` - Bridge netfilter support (Kubernetes networking)
+
+### 7.2 Kernel Moodulite Laadimise (HOST'is)
+
+```bash
+# HOST masinas (mitte konteineris!)
+sudo modprobe overlay
+sudo modprobe br_netfilter
+
+# Tee moodulid püsivaks (reboot'i järel)
+sudo tee /etc/modules-load.d/k8s.conf << 'EOF'
+overlay
+br_netfilter
+EOF
+
+# Kontrolli
+lsmod | grep overlay
+lsmod | grep br_netfilter
+# Peaksid nägema mõlemat moodulit
+```
+
+### 7.3 Sysctl Seadistused (HOST'is)
+
+```bash
+# HOST masinas
+sudo tee /etc/sysctl.d/k8s.conf << 'EOF'
+net.bridge.bridge-nf-call-iptables  = 1
+net.bridge.bridge-nf-call-ip6tables = 1
+net.ipv4.ip_forward                 = 1
+EOF
+
+# Rakenda
+sudo sysctl --system
+
+# Kontrolli
+sysctl net.bridge.bridge-nf-call-iptables
+sysctl net.ipv4.ip_forward
+# Peaks olema: = 1
+```
+
+### 7.4 Verifitseerimine Konteineris
+
+```bash
+# Logi konteinerisse
+lxc exec devops-k8s-student1 -- bash
+
+# Kontrolli, et moodulid on nähtavad (jagatud HOST'iga)
+lsmod | grep overlay
+lsmod | grep br_netfilter
+# Peaksid nägema sama väljundit nagu HOST'is
+
+exit
+```
+
+**⚠️ OLULINE:**
+- Kui moodulid puuduvad HOST'is, Flannel CNI ei käivitu → K8s cluster ei tööta
+- Kui sysctl seadistused puuduvad, pod networking ei tööta korralikult
+
+---
+
+
+## 8. SSH ja Turvalisus (Sisevõrk)
+
+Sama nagu Docker juhendis. SSH pordid: 2211-2216 (K8s students).
+
+**Port Mapping:**
+
+| Student | SSH Port |
+|---------|----------|
+| student1 | 2211 |
+| student2 | 2212 |
+| student3 | 2213 |
+| student4 | 2214 |
+| student5 | 2215 |
+| student6 | 2216 |
+
+```bash
+# Näide: Student1
+lxc config device add devops-k8s-student1 ssh-proxy proxy \
+  listen=tcp:0.0.0.0:2211 connect=tcp:127.0.0.1:22 nat=true
+```
+
+---
+
+
+## 9. Kubernetes Spetsiifilised Käsud
+
+### 9.1 Kubernetes Cluster Initialization (Iga Õpilane)
+
+**⚠️ OLULINE:** See samm tehakse IGA konteineri sees eraldi! Iga õpilane saab oma isikliku single-node K8s clusteri.
+
+```bash
+# 1. Logi konteinerisse
+lxc exec devops-k8s-student1 -- su - labuser
+
+# 2. Initsialiseeři klaster (single-node)
+sudo kubeadm init \
+  --pod-network-cidr=10.244.0.0/16 \
+  --ignore-preflight-errors=NumCPU,Mem
+
+# 3. Seadista kubectl
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+# 4. Kontrolli
+kubectl get nodes
+# STATUS peaks olema NotReady (võrk puudub)
+
+# 5. Installi Flannel CNI
+kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml
+
+# 6. Oota, kuni valmis (1-2 min)
+kubectl get nodes -w
+# Oota kuni STATUS = Ready, siis Ctrl+C
+
+# 7. Luba Pods Master Node'il (single-node klaster)
+kubectl taint nodes --all node-role.kubernetes.io/control-plane-
+
+# 8. Testi klastrit
+kubectl run nginx-test --image=nginx --port=80
+kubectl get pods -w
+# Oota STATUS = Running
+
+kubectl delete pod nginx-test
+
+# 9. Logi välja
+exit
+```
+
+**Võimalikud probleemid:**
+- Kui Flannel pod'id ei käivitu → Kontrolli kernel mooduleid HOST'is (vt sektsioon 7)
+- Kui image pull ebaõnnestub → Kontrolli containerd proxy't (vt sektsioon 6.2)
+
+### 9.2 Kubernetes Port Forwarding
+
+```bash
+# K8s API (iga õpilane oma port)
+lxc config device add devops-k8s-student1 k8s-api-proxy proxy \
+  listen=tcp:0.0.0.0:6443 connect=tcp:127.0.0.1:6443 nat=true
+
+lxc config device add devops-k8s-student2 k8s-api-proxy proxy \
+  listen=tcp:0.0.0.0:6444 connect=tcp:127.0.0.1:6443 nat=true
+
+lxc config device add devops-k8s-student3 k8s-api-proxy proxy \
+  listen=tcp:0.0.0.0:6445 connect=tcp:127.0.0.1:6443 nat=true
+
+# Ingress HTTP/HTTPS (student1 näide)
+lxc config device add devops-k8s-student1 ingress-http-proxy proxy \
+  listen=tcp:0.0.0.0:30080 connect=tcp:127.0.0.1:30080 nat=true
+
+lxc config device add devops-k8s-student1 ingress-https-proxy proxy \
+  listen=tcp:0.0.0.0:30443 connect=tcp:127.0.0.1:30443 nat=true
+```
+
+### 9.3 Port Mapping Tabel (kuni 6 õpilast)
+
+| Service | Internal | Student 1 | Student 2 | Student 3 | Student 4 | Student 5 | Student 6 |
+|---------|----------|-----------|-----------|-----------|-----------|-----------|-----------|
+| SSH | 22 | 2211 | 2212 | 2213 | 2214 | 2215 | 2216 |
+| K8s API | 6443 | 6443 | 6444 | 6445 | 6446 | 6447 | 6448 |
+| Ingress HTTP | 30080 | 30080 | 30180 | 30280 | 30380 | 30480 | 30580 |
+| Ingress HTTPS | 30443 | 30443 | 30543 | 30643 | 30743 | 30843 | 30943 |
+
+### 9.4 Kubernetes Monitooring
+
+```bash
+# Klastri staatus
+lxc exec devops-k8s-student1 -- su - labuser -c 'kubectl cluster-info'
+
+# Node'id
+lxc exec devops-k8s-student1 -- su - labuser -c 'kubectl get nodes'
+
+# Kõik pod'id
+lxc exec devops-k8s-student1 -- su - labuser -c 'kubectl get pods -A'
+
+# K8s resource kasutus (kui metrics-server on paigaldatud)
+lxc exec devops-k8s-student1 -- su - labuser -c 'kubectl top nodes'
+lxc exec devops-k8s-student1 -- su - labuser -c 'kubectl top pods -A'
+```
+
+---
+
+
+## 10. Ressursside Monitooring
+
+Sama nagu Docker juhendis, aga limiidid on erinevad:
+
+**Limiidid per student:**
+- RAM: 5GB
+- CPU: 2 cores
+
+**Tavaline kasutus:**
+- Idle K8s cluster: ~1.5-2GB (Flannel, CoreDNS, kube-proxy, kube-apiserver, etcd)
+- K8s cluster + rakendused: ~2-3GB
+
+```bash
+# Vaata RAM kasutust
+lxc list -c ns4M
+
+# Detailne info
+lxc info devops-k8s-student1 | grep -A 3 "Memory usage"
+```
+
+---
+
+
+## 11. Backup ja Taastamine
+
+Sama nagu Docker juhendis + K8s spetsiifiline:
+
+### 11.1 Kubernetes Cluster Backup
+
+**etcd Backup:**
+
+```bash
+# Backup etcd (kui vaja)
+lxc exec devops-k8s-student1 -- su - labuser -c '
+ETCDCTL_API=3 etcdctl snapshot save /tmp/etcd-backup-$(date +%Y%m%d).db \
+  --endpoints=https://127.0.0.1:2379 \
+  --cacert=/etc/kubernetes/pki/etcd/ca.crt \
+  --cert=/etc/kubernetes/pki/etcd/server.crt \
+  --key=/etc/kubernetes/pki/etcd/server.key
+'
+```
+
+**kubeconfig Backup:**
+
+```bash
+# Backup kubeconfig
+lxc file pull devops-k8s-student1/home/labuser/.kube/config /backup/student1-kubeconfig-$(date +%Y%m%d).yaml
+```
+
+**LXD Snapshot (soovitatud):**
+
+```bash
+# Loo snapshot (hõlmab tervet konteinerit, sh K8s cluster state)
+lxc snapshot devops-k8s-student1 before-lab5
+
+# Taasta
+lxc restore devops-k8s-student1 before-lab5
+```
+
+---
+
+
+## 12. Template Uuendamine (K8s)
+
+### 12.1 Template Uuendamise Protsess
+
+```bash
+# 1. Loo ajutine konteiner
+lxc launch k8s-lab-base temp-k8s-update -p default -p devops-lab-k8s
+
+# 2. Logi sisse
+lxc exec temp-k8s-update -- bash
+
+# 3-6. [Sama nagu Docker template: proxy seadistus, apt update/upgrade, containerd downgrade]
+# Vaata ADMIN-GUIDE-DOCKER-PROXY.md sektsioon 10.2, sammud 3-6
+
+# 7. Uuenda K8s tööriistu (kui vaja)
+apt-get update
+apt-get upgrade -y kubelet kubeadm kubectl
+# VÕI konkreetne versioon
+apt-mark unhold kubelet kubeadm kubectl
+apt-get install -y kubelet=1.31.x-00 kubeadm=1.31.x-00 kubectl=1.31.x-00
+apt-mark hold kubelet kubeadm kubectl
+
+# 8. Verifitseeri K8s versioonid
+kubeadm version
+kubectl version --client
+kubelet --version
+
+# 9. Kontrolli Helm, Terraform, Trivy, Kustomize
+helm version
+terraform version
+trivy version
+kustomize version
+
+# 10. Kontrolli no_proxy seadistust (PEAB sisaldama .svc,.cluster.local)
+cat /etc/environment | grep no_proxy
+cat /etc/profile.d/proxy.sh | grep no_proxy
+cat ~/.bashrc | grep no_proxy
+# Peab olema: no_proxy="localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16,.svc,.cluster.local"
+
+# Kui puudub, lisa:
+sed -i 's/no_proxy="\(.*\)"/no_proxy="\1,.svc,.cluster.local"/' /etc/environment
+sed -i 's/no_proxy="\(.*\)"/no_proxy="\1,.svc,.cluster.local"/' /etc/profile.d/proxy.sh
+
+# 11-16. [Sama nagu Docker template: sudo config, puhastamine, publish]
+# Vaata ADMIN-GUIDE-DOCKER-PROXY.md sektsioon 10.2, sammud 8-10
+
+# Puhasta
+apt-get clean
+rm -rf /tmp/* /var/tmp/*
+history -c
+exit
+
+# Peata konteiner
+lxc stop temp-k8s-update
+
+# Backup vana template
+lxc image export k8s-lab-base /tmp/k8s-lab-base-backup-$(date +%Y%m%d)
+
+# Kustuta vana alias
+lxc image delete k8s-lab-base
+
+# Publitseeri K8s template'ina
+lxc publish temp-k8s-update --alias k8s-lab-base \
+  description="K8s Lab Template: Ubuntu 24.04 + Docker + K8s 1.31 + Helm + Terraform + Proxy (Updated $(date +%Y-%m-%d))"
+
+# Kustuta ajutine konteiner
+lxc delete temp-k8s-update
+
+# Testi uut template'i
+lxc launch k8s-lab-base test-new-k8s-template -p default -p devops-lab-k8s
+lxc exec test-new-k8s-template -- docker --version
+lxc exec test-new-k8s-template -- kubeadm version
+lxc delete --force test-new-k8s-template
+```
+
+---
+
+
+## 13. Probleemide Lahendamine (K8s + Proxy)
+
+### 13.1 Proxy Probleemid
 
 Sama nagu Docker juhendis: 9.1-9.5 (Proxy ei tööta konteineris, Docker pull, containerd pull, proxy login shellis, containerd versioon)
 
-### 11.2 kubeadm init Ebaõnnestub
+### 13.2 kubeadm init Ebaõnnestub
 
 **Sümptom:**
 ```
@@ -1505,7 +1516,7 @@ sudo kubeadm init \
   --ignore-preflight-errors=NumCPU,Mem
 ```
 
-### 11.3 Pods Jäävad Pending/ImagePullBackOff (Proxy)
+### 13.3 Pods Jäävad Pending/ImagePullBackOff (Proxy)
 
 **Sümptom:**
 ```
@@ -1538,7 +1549,7 @@ kubectl delete pod nginx-test-xxx
 kubectl run nginx-test --image=nginx --port=80
 ```
 
-### 11.4 Kubernetes Services Unreachable (no_proxy Vale)
+### 13.4 Kubernetes Services Unreachable (no_proxy Vale)
 
 **Sümptom:**
 ```
@@ -1570,7 +1581,7 @@ kubectl delete pod myapp-pod
 kubectl apply -f myapp-deployment.yaml
 ```
 
-### 11.5 Flannel Pod'id Ei Käivitu
+### 13.5 Flannel Pod'id Ei Käivitu
 
 **Sümptom:**
 ```
@@ -1592,7 +1603,7 @@ exit
 lsmod | grep overlay
 lsmod | grep br_netfilter
 
-# Kui puudub, laadi moodulid (vt sektsioon 2.2)
+# Kui puudub, laadi moodulid (vt sektsioon 7.2)
 sudo modprobe overlay
 sudo modprobe br_netfilter
 
@@ -1606,7 +1617,7 @@ kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/
 '
 ```
 
-### 11.6 kubectl Ei Tööta (kubeconfig Puudu)
+### 13.6 kubectl Ei Tööta (kubeconfig Puudu)
 
 **Sümptom:**
 ```
@@ -1629,7 +1640,8 @@ lxc exec devops-k8s-student1 -- su - labuser -c 'kubectl get nodes'
 
 ---
 
-## 12. Kasulikud Käsud (K8s)
+
+## 14. Kasulikud Käsud (K8s)
 
 ### Proxy Debug
 
@@ -1694,7 +1706,8 @@ lxc exec devops-k8s-student1 -- lsmod | grep overlay
 
 ---
 
-## 13. Quick Reference (K8s)
+
+## 15. Quick Reference (K8s)
 
 | Tegevus | Käsk |
 |---------|------|
