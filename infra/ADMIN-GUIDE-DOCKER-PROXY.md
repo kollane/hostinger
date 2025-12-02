@@ -20,17 +20,17 @@ See juhend on mõeldud administraatorile, kes haldab LXD-põhist DevOps Docker l
 ## Kiirviited
 
 - [Süsteemi ülevaade](#süsteemi-ülevaade)
-- [Proxy konfiguratsiooni haldamine](#1-proxy-konfiguratsiooni-haldamine)
-- [Konteinerite haldamine](#2-konteinerite-haldamine)
-- [Labs failide sünkroniseerimine](#3-labs-failide-sünkroniseerimine)
-- [SSH ja turvalisus](#4-ssh-ja-turvalisus-sisevõrk)
-- [Ressursside monitooring](#5-ressursside-monitooring)
-- [Backup ja taastamine](#6-backup-ja-taastamine)
-- [Template uuendamine](#7-template-uuendamine)
-- [Uue õpilase lisamine](#8-uue-õpilase-lisamine-kuni-6-kohta)
-- [Probleemide lahendamine](#9-probleemide-lahendamine-proxy-keskkond)
-- [Kasulikud käsud](#10-kasulikud-käsud)
-- [Quick reference](#11-quick-reference)
+- [Docker laborite seadistamine](#3-docker-laborite-seadistamine-lab-1-2) ⭐ **Alusta siit!**
+- [Labs failide sünkroniseerimine](#4-labs-failide-sünkroniseerimine)
+- [Konteinerite haldamine](#5-konteinerite-haldamine)
+- [Proxy konfiguratsiooni haldamine](#6-proxy-konfiguratsiooni-haldamine)
+- [SSH ja turvalisus](#7-ssh-ja-turvalisus-sisevõrk)
+- [Ressursside monitooring](#8-ressursside-monitooring)
+- [Backup ja taastamine](#9-backup-ja-taastamine)
+- [Template uuendamine](#10-template-uuendamine)
+- [Probleemide lahendamine](#11-probleemide-lahendamine-proxy-keskkond)
+- [Kasulikud käsud](#12-kasulikud-käsud)
+- [Quick reference](#13-quick-reference)
 
 ---
 
@@ -67,291 +67,716 @@ See juhend on mõeldud administraatorile, kes haldab LXD-põhist DevOps Docker l
 
 ---
 
-## 1. Proxy Konfiguratsiooni Haldamine
+## 3. Docker Laborite Seadistamine (Lab 1-2)
 
-### 1.1 Host Proxy Seadistamine
+**⚠️ EELDUS:** [HOST-SETUP-PROXY.md](HOST-SETUP-PROXY.md) on täidetud (host valmis, proxy töötab, LXD on paigaldatud)!
 
-**APT Proxy:**
+**Mida see sektsioon hõlmab:**
+- ✅ devops-lab profiili loomine (2.5GB RAM, 1 CPU)
+- ✅ Docker template'i loomine (devops-lab-base)
+- ✅ Esimeste 3 õpilaskonteineri loomine MANUAALSELT (student1-3)
+- 🔧 Automatiseeritud setup skript (VALIKULINE - alles pärast manuaalset kinnitust!)
+- ➕ Täiendavate õpilaste lisamine (student4-6)
+
+**Workflow:**
+1. Loo LXD profiil (3.0) → 2. Loo Docker template (3.1) → 3. Loo student1-3 MANUAALSELT (3.2-3.3) → 4. Valikuline: automatiseeri (3.4) → 5. Lisa student4-6 (3.5)
+
+---
+
+### 3.0 LXD Profiili Loomine (devops-lab)
+
+**⚠️ KOHUSTUSLIK ESMALT:** Enne template'i loomist pead looma LXD profiili!
+
+#### 3.0.1 Loo devops-lab Profiil
 
 ```bash
-# Kontrolli praegust seadistust
-cat /etc/apt/apt.conf.d/proxy.conf
+lxc profile create devops-lab
+lxc profile edit devops-lab
+```
 
-# Lisa või uuenda
-sudo tee /etc/apt/apt.conf.d/proxy.conf << 'EOF'
+**Lisa see YAML:**
+
+```yaml
+config:
+  limits.cpu: "1"
+  limits.memory: 2560MiB
+  limits.memory.enforce: soft
+  security.nesting: "true"
+  security.privileged: "false"
+  security.syscalls.intercept.mknod: "true"
+  security.syscalls.intercept.setxattr: "true"
+description: DevOps Lab Profile - 2.5GB RAM, 1 CPU, Docker support
+devices:
+  root:
+    path: /
+    pool: default
+    type: disk
+name: devops-lab
+```
+
+**Salvesta:** `:wq` (vim) või `Ctrl+O, Enter, Ctrl+X` (nano)
+
+#### 3.0.2 Kontrolli Profiili
+
+```bash
+lxc profile show devops-lab
+lxc profile list
+```
+
+#### 3.0.3 Profiili Selgitus
+
+| Setting | Väärtus | Selgitus |
+|---------|---------|----------|
+| limits.cpu | "1" | 1 CPU core per student (piisav Docker jaoks) |
+| limits.memory | 2560MiB | 2.5GB RAM per student |
+| limits.memory.enforce | soft | Lubab ajutiselt rohkem, kui vaja |
+| security.nesting | "true" | Docker-in-Docker support (KRIITILINE!) |
+| security.privileged | "false" | Turvalisuse pärast |
+| security.syscalls.intercept | mknod, setxattr | LXD ühilduvus Docker'iga |
+
+**Miks devops-lab, mitte devops-lab-k8s?**
+- Docker vajab vähem ressursse kui Kubernetes
+- 2.5GB RAM piisav vs K8s 5GB
+- 1 CPU core piisav vs K8s 2 cores
+- EI sisalda K8s spetsiifilisi seadistusi (kernel modules, kmsg device, raw.lxc)
+
+---
+
+### 3.1 Docker Template Loomine (devops-lab-base)
+
+**⚠️ MANUAALNE PROTSESS:** See on samm-sammult juhend template'i loomiseks. Peale seda saad luua õpilaskonteinereid template'ist (sektsioonid 3.2-3.3).
+
+#### 3.1.1 Base Konteineri Käivitamine
+
+```bash
+# Käivita Ubuntu 24.04 devops-lab profiiliga
+lxc launch ubuntu:24.04 docker-template -p default -p devops-lab
+
+# Oota IP-d (15-20 sekundit)
+sleep 20
+lxc list docker-template
+
+# Logi sisse
+lxc exec docker-template -- bash
+```
+
+**Nüüd oled KONTEINERIS.**
+
+#### 3.1.2 Proxy Seadistamine (Konteineris)
+
+**⚠️ OLULINE:** Seadista proxy ENNE apt-get käske!
+
+```bash
+# 1. APT proxy
+cat > /etc/apt/apt.conf.d/proxy.conf << 'EOF'
 Acquire::http::Proxy "http://cache1.sss:3128";
 Acquire::https::Proxy "http://cache1.sss:3128";
 EOF
 
-# Testi
-sudo apt-get update
-```
-
-**Environment Variables:**
-
-```bash
-# /etc/environment
-sudo tee -a /etc/environment << 'EOF'
+# 2. Keskkonna muutujad (kirjuta kogu fail üle)
+cat > /etc/environment << 'EOF'
+PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 http_proxy="http://cache1.sss:3128"
 https_proxy="http://cache1.sss:3128"
-no_proxy="localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16"
 HTTP_PROXY="http://cache1.sss:3128"
 HTTPS_PROXY="http://cache1.sss:3128"
-NO_PROXY="localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16"
+no_proxy="localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16"
 EOF
 
-# Rakenda
+# 3. Lae muutujad KOHE aktiivseks
 source /etc/environment
-```
 
-**Snap Proxy (LXD image download'ide jaoks):**
+# 4. Kontrolli
+echo "http_proxy=$http_proxy"
+echo "https_proxy=$https_proxy"
 
-```bash
-sudo snap set system proxy.http="http://cache1.sss:3128"
-sudo snap set system proxy.https="http://cache1.sss:3128"
-```
-
-**Proxy Kontrollimine:**
-
-```bash
-# Kontrolli environment
-env | grep -i proxy
-
-# Testi HTTP ühendust
-curl -I https://google.com
-
-# Testi APT
-sudo apt-get update
-```
-
-### 1.2 Konteineri Proxy Seadistamine
-
-**APT Proxy konteineris:**
-
-```bash
-lxc exec devops-student1 -- bash -c 'cat > /etc/apt/apt.conf.d/proxy.conf << "EOF"
-Acquire::http::Proxy "http://cache1.sss:3128";
-Acquire::https::Proxy "http://cache1.sss:3128";
-EOF'
-
-# Testi
-lxc exec devops-student1 -- apt-get update
-```
-
-**Environment Variables konteineris:**
-
-```bash
-# /etc/environment
-lxc exec devops-student1 -- bash -c 'cat >> /etc/environment << "EOF"
-http_proxy="http://cache1.sss:3128"
-https_proxy="http://cache1.sss:3128"
-no_proxy="localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16"
-HTTP_PROXY="http://cache1.sss:3128"
-HTTPS_PROXY="http://cache1.sss:3128"
-NO_PROXY="localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16"
-EOF'
-
-# /etc/profile.d/proxy.sh (login shell'i jaoks)
-lxc exec devops-student1 -- bash -c 'cat > /etc/profile.d/proxy.sh << "EOF"
+# 5. Tee seaded püsivaks (login shell jaoks)
+cat > /etc/profile.d/proxy.sh << 'EOF'
 export http_proxy="http://cache1.sss:3128"
 export https_proxy="http://cache1.sss:3128"
-export no_proxy="localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16"
 export HTTP_PROXY="http://cache1.sss:3128"
 export HTTPS_PROXY="http://cache1.sss:3128"
-export NO_PROXY="localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16"
-EOF'
-```
-
-**Docker Daemon Proxy:**
-
-```bash
-lxc exec devops-student1 -- bash -c '
-mkdir -p /etc/systemd/system/docker.service.d
-cat > /etc/systemd/system/docker.service.d/proxy.conf << "EOF"
-[Service]
-Environment="HTTP_PROXY=http://cache1.sss:3128"
-Environment="HTTPS_PROXY=http://cache1.sss:3128"
-Environment="NO_PROXY=localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16"
+export no_proxy="localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16"
 EOF
+chmod +x /etc/profile.d/proxy.sh
 
-systemctl daemon-reload
-systemctl restart docker
-'
-```
-
-**containerd Proxy (KRIITILINE!):**
-
-```bash
-lxc exec devops-student1 -- bash -c '
-mkdir -p /etc/systemd/system/containerd.service.d
-cat > /etc/systemd/system/containerd.service.d/proxy.conf << "EOF"
-[Service]
-Environment="HTTP_PROXY=http://cache1.sss:3128"
-Environment="HTTPS_PROXY=http://cache1.sss:3128"
-Environment="NO_PROXY=localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16"
-EOF
-
-systemctl daemon-reload
-systemctl restart containerd
-systemctl restart docker
-'
-```
-
-**⚠️ OLULINE:**
-- Docker template ei vaja `.svc,.cluster.local` no_proxy seadistuses (see on vajalik ainult Kubernetes klastrites)
-- containerd proxy on KRIITILINE Docker image pull'ide jaoks
-
-### 1.3 Proxy Testimine
-
-**Host tasemel:**
-
-```bash
-# Environment
-env | grep -i proxy
-
-# HTTP ühendus
-curl -I https://google.com
-
-# APT
+# 6. Testi
 apt-get update
+# Kui töötab, jätka järgmise sammuga
 ```
 
-**Konteineri tasemel:**
+**📝 Märkus - Docker template no_proxy:**
+
+Docker template EI vaja `.svc,.cluster.local` no_proxy seadistuses. See on vajalik ainult Kubernetes klastrites (Lab 3-10).
 
 ```bash
-# Environment (kasuta login shell'i!)
-lxc exec devops-student1 -- bash -l -c 'env | grep -i proxy'
+# ✅ Docker template (Lab 1-2):
+no_proxy="localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16"
 
-# HTTP ühendus
-lxc exec devops-student1 -- curl -I https://google.com
-
-# APT
-lxc exec devops-student1 -- apt-get update
-
-# Docker pull (peamine test!)
-lxc exec devops-student1 -- docker pull alpine:3.16
+# ❌ EI OLE VAJA:
+no_proxy="localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16,.svc,.cluster.local"
 ```
 
-**⚠️ NB:** Kui `lxc exec devops-student1 -- bash` ei lae proxy muutujaid, kasuta `bash -l` (login shell) või `su -`.
-
-### 1.4 Proxy Credentials (kui vajalik)
-
-Kui proxy server vajab autentimist:
+#### 3.1.3 Süsteemi Uuendamine (Konteineris)
 
 ```bash
-# Kodeeri username:password Base64-s
-echo -n "username:password" | base64
+apt-get update
+apt-get upgrade -y
 
-# Lisa proxy URL'ile
-http_proxy="http://username:password@cache1.sss:3128"
-
-# VÕI kasutades Base64 encoded string'i (turvalisem)
-http_proxy="http://$(echo -n 'username:password' | base64)@cache1.sss:3128"
+apt-get install -y \
+  curl \
+  wget \
+  git \
+  vim \
+  nano \
+  htop \
+  ca-certificates \
+  gnupg \
+  lsb-release \
+  software-properties-common \
+  apt-transport-https
 ```
 
-Salvesta credentials turvaliselt:
+#### 3.1.4 Java 21 Paigaldamine (Konteineris)
+
+**Java on vajalik todo-service rakenduse ehitamiseks!**
 
 ```bash
-# Loo fail (ainult root näeb)
-sudo tee /root/proxy-credentials.txt << 'EOF'
-username:password
+# Installi OpenJDK 21
+apt-get install -y openjdk-21-jdk
+
+# Kontrolli
+java -version
+javac -version
+# Peaks näitama: openjdk version "21.0.x"
+```
+
+#### 3.1.5 Node.js 20 Paigaldamine (Konteineris)
+
+**Node.js on vajalik user-service rakenduse ehitamiseks!**
+
+```bash
+# Lisa NodeSource repository (Node.js 20 LTS)
+curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+
+# Installi Node.js
+apt-get install -y nodejs
+
+# Kontrolli
+node --version
+npm --version
+# Peaks näitama: Node v20.x.x, NPM 10.x.x
+```
+
+#### 3.1.6 Diagnostika Tööriistad (Konteineris)
+
+**Need tööriistad on kasulikud võrgu ja süsteemi silumiseks!**
+
+```bash
+# Võrgu diagnostika tööriistad
+apt-get install -y \
+  jq \
+  nmap \
+  tcpdump \
+  netcat-openbsd \
+  dnsutils \
+  net-tools \
+  iproute2
+
+# Arenduse tööriistad
+apt-get install -y \
+  build-essential \
+  python3 \
+  python3-pip
+
+# Kontrolli
+which jq nmap tcpdump nc dig netstat ip
+```
+
+#### 3.1.7 Docker Paigaldamine (Konteineris)
+
+```bash
+# Docker GPG key
+install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+chmod a+r /etc/apt/keyrings/docker.asc
+
+# Docker repo
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+  tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+# Installi Docker
+apt-get update
+apt-get install -y \
+  docker-ce \
+  docker-ce-cli \
+  containerd.io \
+  docker-buildx-plugin \
+  docker-compose-plugin
+
+# Kontrolli
+docker --version
+```
+
+#### 3.1.8 KRIITILINE: containerd Downgrade (Konteineris)
+
+**⚠️ OLULINE:** containerd 1.7.29+ on bugine LXD keskkonnas!
+
+```bash
+# Downgrade containerd (LXD ühilduvus)
+apt-get install -y --allow-downgrades containerd.io=1.7.28-1~ubuntu.24.04~noble
+apt-mark hold containerd.io
+
+# Kontrolli
+containerd --version
+# Peab olema: 1.7.28
+
+# Taaskäivita Docker
+systemctl restart docker
+
+# Testi
+docker run --rm hello-world
+```
+
+#### 3.1.9 Docker Proxy Seadistamine (Konteineris)
+
+```bash
+# Docker daemon proxy
+mkdir -p /etc/systemd/system/docker.service.d
+cat > /etc/systemd/system/docker.service.d/proxy.conf << 'EOF'
+[Service]
+Environment="HTTP_PROXY=http://cache1.sss:3128"
+Environment="HTTPS_PROXY=http://cache1.sss:3128"
+Environment="NO_PROXY=localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16"
 EOF
 
-sudo chmod 600 /root/proxy-credentials.txt
+# Reload ja restart
+systemctl daemon-reload
+systemctl restart docker
+
+# Kontrolli
+systemctl show --property=Environment docker
 ```
 
----
+#### 3.1.10 labuser Kasutaja Loomine (Konteineris)
 
-## 2. Konteinerite Haldamine
-
-### Põhikäsud
+**⚠️ Märkus:** Ubuntu konteinerites on UID 1000 tavaliselt `ubuntu` kasutaja käes. Kasutame UID 1001.
 
 ```bash
-# Vaata kõiki konteinereid
-lxc list
+# Kontrolli, kas UID 1000 on vaba (valikuline)
+getent passwd 1000
+# Kui tagastab 'ubuntu', siis UID 1000 on hõivatud
 
-# Detailne info konteinerist
-lxc info devops-student1
+# Loo labuser kasutaja UID 1001-ga
+useradd -m -s /bin/bash -u 1001 labuser
+usermod -aG docker labuser
+echo "labuser:temppassword" | chpasswd
 
-# Logi konteinerisse (root)
-lxc exec devops-student1 -- bash
-
-# Logi konteinerisse (labuser)
-lxc exec devops-student1 -- su - labuser
-
-# Logi konteinerisse (labuser, login shell - proxy muutujad laaditakse)
-lxc exec devops-student1 -- bash -l -c 'su - labuser'
+# Kontrolli
+id labuser
+# Peaks näitama: uid=1001(labuser) gid=1001(labuser)
 ```
 
-### Konteineri Elutsükkel
+#### 3.1.11 SSH Server Paigaldamine (Konteineris)
 
 ```bash
-# Käivita konteiner
-lxc start devops-student1
+apt-get install -y openssh-server
 
+cat > /etc/ssh/sshd_config.d/99-lab.conf << 'EOF'
+PermitRootLogin no
+PasswordAuthentication yes
+PubkeyAuthentication yes
+EOF
+
+systemctl enable ssh
+```
+
+#### 3.1.12 labuser Bash Konfiguratsioon (Konteineris)
+
+**Docker template (EI sisalda Kubernetes aliased!):**
+
+```bash
+su - labuser
+
+cat >> ~/.bashrc << 'EOF'
+
+# Proxy
+export http_proxy=http://cache1.sss:3128
+export https_proxy=http://cache1.sss:3128
+export HTTP_PROXY=http://cache1.sss:3128
+export HTTPS_PROXY=http://cache1.sss:3128
+export no_proxy="localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16"
+
+# Default Editor
+export EDITOR=vim
+export VISUAL=vim
+
+# Java Environment (todo-service jaoks)
+export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
+export PATH=$JAVA_HOME/bin:$PATH
+
+# Docker Aliases
+alias docker-stop-all="docker stop \$(docker ps -aq) 2>/dev/null || echo 'No containers running'"
+alias docker-clean="docker system prune -af --volumes"
+
+# Lab Aliases
+alias labs-reset="~/labs/labs-reset.sh"
+
+# Resource Check
+alias check-resources="echo '=== RAM ===' && free -h && echo && echo '=== DISK ===' && df -h / && echo && echo '=== Docker ===' && docker ps"
+
+# Docker AppArmor Workaround for LXD
+docker() {
+  case "\$1" in
+    run|exec|create)
+      /usr/bin/docker "\$1" --security-opt apparmor=unconfined "\${@:2}"
+      ;;
+    *)
+      /usr/bin/docker "\$@"
+      ;;
+  esac
+}
+export -f docker
+
+EOF
+
+exit
+```
+
+#### 3.1.13 Labs Kausta Ettevalmistus (Konteineris)
+
+```bash
+# Loo labs kataloog (sünkroniseeritakse hiljem)
+mkdir -p /home/labuser/labs
+chown -R labuser:labuser /home/labuser/labs
+```
+
+#### 3.1.14 Puhastamine (Konteineris)
+
+```bash
+apt-get clean
+apt-get autoremove -y
+rm -rf /tmp/* /var/tmp/*
+history -c
+exit
+```
+
+**Nüüd oled tagasi HOST'is.**
+
+#### 3.1.15 Template Publitseerimine (HOST)
+
+```bash
 # Peata konteiner
-lxc stop devops-student1
+lxc stop docker-template
 
-# Taaskäivita konteiner
-lxc restart devops-student1
+# Publitseeri image'ina
+lxc publish docker-template --alias devops-lab-base \
+  description="DevOps Lab Template: Ubuntu 24.04 + Docker + Java 21 + Node.js 20 + Proxy ($(date +%Y-%m-%d))"
 
-# Kustuta konteiner
-lxc delete devops-student1
+# Kontrolli
+lxc image list
 
-# Kustuta töötav konteiner (force)
-lxc delete --force devops-student1
+# Kustuta template konteiner
+lxc delete docker-template
+
+# Backup (valikuline, soovitatud)
+mkdir -p ~/lxd-backups
+lxc image export devops-lab-base ~/lxd-backups/devops-lab-base-$(date +%Y%m%d)
 ```
 
-### Failide Kopeerimine
+**✅ Template on valmis!** Järgmises sammus loome esimesed õpilaskonteinerid.
+
+---
+
+### 3.2 Student1 Loomine (Täielik MANUAALNE Protsess)
+
+**⚠️ OLULINE:** Järgi seda sektsiooni täpselt, samm-sammult. See on BAAS student2-3 jaoks!
+
+**Eeldus:** devops-lab-base template on loodud (sektsioon 3.1).
+
+#### 3.2.1 Konteineri Käivitamine
 
 ```bash
-# Host → Container
-lxc file push /path/to/file devops-student1/home/labuser/
+# Loo konteiner template'ist
+lxc launch devops-lab-base devops-student1 -p default -p devops-lab
 
-# Container → Host
-lxc file pull devops-student1/home/labuser/file.txt /tmp/
-
-# Rekursiivne kopeerimine
-lxc file push -r /path/to/dir/ devops-student1/home/labuser/
+# Oota IP (15-20 sek)
+sleep 15
+lxc list devops-student1
 ```
 
-### Käskude Käivitamine Konteineris
+#### 3.2.2 Parooli Seadistamine
 
 ```bash
-# Üksik käsk
-lxc exec devops-student1 -- docker ps
-
-# Mitme käsu jada
-lxc exec devops-student1 -- bash -c 'cd /home/labuser && ls -la'
-
-# Käsk kindla kasutajana
-lxc exec devops-student1 -- su - labuser -c 'docker ps'
+lxc exec devops-student1 -- bash -c 'echo "labuser:student1" | chpasswd'
 ```
 
-### Proxy Seadistuse Kontrollimine
+#### 3.2.3 Port Forwarding (SSH + Web)
 
 ```bash
-# Kontrolli APT proxy't
-lxc exec devops-student1 -- cat /etc/apt/apt.conf.d/proxy.conf
+# SSH
+lxc config device add devops-student1 ssh-proxy proxy \
+  listen=tcp:0.0.0.0:2201 connect=tcp:127.0.0.1:22 nat=true
 
-# Kontrolli environment proxy't
-lxc exec devops-student1 -- bash -l -c 'env | grep -i proxy'
+# Frontend (React app)
+lxc config device add devops-student1 web-proxy proxy \
+  listen=tcp:0.0.0.0:8080 connect=tcp:127.0.0.1:8080 nat=true
 
-# Kontrolli Docker daemon proxy't
-lxc exec devops-student1 -- systemctl show --property=Environment docker
+# User API (Node.js)
+lxc config device add devops-student1 user-api-proxy proxy \
+  listen=tcp:0.0.0.0:3000 connect=tcp:127.0.0.1:3000 nat=true
 
-# Kontrolli containerd proxy't
-lxc exec devops-student1 -- systemctl show --property=Environment containerd
+# Todo API (Java Spring Boot)
+lxc config device add devops-student1 todo-api-proxy proxy \
+  listen=tcp:0.0.0.0:8081 connect=tcp:127.0.0.1:8081 nat=true
+```
 
-# Kontrolli containerd versiooni (peaks olema 1.7.28)
-lxc exec devops-student1 -- containerd --version
+#### 3.2.4 Labs Failide Sünkroniseerimine
+
+```bash
+# Sync labs (kasuta sektsioonis 4 loodud skripti)
+~/scripts/sync-labs.sh devops-student1
+```
+
+#### 3.2.5 Kontrollimine
+
+```bash
+# SSH test (HOST'ist)
+ssh labuser@<HOST-IP> -p 2201
+# Parool: student1
+
+# Docker test konteineris
+lxc exec devops-student1 -- su - labuser -c 'docker run --rm hello-world'
+
+# Labs kataloog
+lxc exec devops-student1 -- ls -la /home/labuser/labs/
+# Peaks näitama: 01-docker-lab, 02-docker-compose-lab, apps, ...
+
+# Proxy kontroll
+lxc exec devops-student1 -- su - labuser -c 'env | grep -i proxy'
+
+# Port forwarding test
+netstat -tuln | grep -E ':(2201|8080|3000|8081)'
+```
+
+**✅ Student1 on valmis ja töötab!**
+
+---
+
+### 3.3 Student2 ja Student3 Loomine (Lühike)
+
+**Märkus:** Analoogselt student1-le, aga erinevad pordid.
+
+#### 3.3.1 Student2
+
+```bash
+# Loo konteiner
+lxc launch devops-lab-base devops-student2 -p default -p devops-lab
+
+# Parool
+lxc exec devops-student2 -- bash -c 'echo "labuser:student2" | chpasswd'
+
+# Port forwarding (pordid: SSH 2202, Web 8180, UserAPI 3100, TodoAPI 8181)
+lxc config device add devops-student2 ssh-proxy proxy \
+  listen=tcp:0.0.0.0:2202 connect=tcp:127.0.0.1:22 nat=true
+
+lxc config device add devops-student2 web-proxy proxy \
+  listen=tcp:0.0.0.0:8180 connect=tcp:127.0.0.1:8080 nat=true
+
+lxc config device add devops-student2 user-api-proxy proxy \
+  listen=tcp:0.0.0.0:3100 connect=tcp:127.0.0.1:3000 nat=true
+
+lxc config device add devops-student2 todo-api-proxy proxy \
+  listen=tcp:0.0.0.0:8181 connect=tcp:127.0.0.1:8081 nat=true
+
+# Sync labs
+~/scripts/sync-labs.sh devops-student2
+
+# Test
+ssh labuser@<HOST-IP> -p 2202
+# Parool: student2
+```
+
+#### 3.3.2 Student3
+
+```bash
+# Loo konteiner
+lxc launch devops-lab-base devops-student3 -p default -p devops-lab
+
+# Parool
+lxc exec devops-student3 -- bash -c 'echo "labuser:student3" | chpasswd'
+
+# Port forwarding (pordid: SSH 2203, Web 8280, UserAPI 3200, TodoAPI 8281)
+lxc config device add devops-student3 ssh-proxy proxy \
+  listen=tcp:0.0.0.0:2203 connect=tcp:127.0.0.1:22 nat=true
+
+lxc config device add devops-student3 web-proxy proxy \
+  listen=tcp:0.0.0.0:8280 connect=tcp:127.0.0.1:8080 nat=true
+
+lxc config device add devops-student3 user-api-proxy proxy \
+  listen=tcp:0.0.0.0:3200 connect=tcp:127.0.0.1:3000 nat=true
+
+lxc config device add devops-student3 todo-api-proxy proxy \
+  listen=tcp:0.0.0.0:8281 connect=tcp:127.0.0.1:8081 nat=true
+
+# Sync labs
+~/scripts/sync-labs.sh devops-student3
+
+# Test
+ssh labuser@<HOST-IP> -p 2203
+# Parool: student3
+```
+
+**✅ Student1-3 on valmis!**
+
+---
+
+### 3.4 Automatiseeritud Setup Skript (VALIKULINE - pärast manuaalset testimist!)
+
+**⚠️ OLULINE:** See on VALIKULINE! Admin peab esmalt manuaalselt läbi tegema 3.2 ja 3.3 ning kinnitama, et süsteem toimib. Alles siis võib lisada automatiseeritud skripti.
+
+**Miks manuaalne esmalt?**
+- Saad õppida, kuidas süsteem töötab
+- Saad tuvastada probleeme enne automatiseerimist
+- Automatiseeritud skript võib varjata vigu
+
+**Kui manuaalne protsess töötab:**
+
+```bash
+cat > ~/scripts/setup-docker-students.sh << 'EOFSCRIPT'
+#!/bin/bash
+# Setup Docker students 1-3 automatically
+
+set -e
+
+echo "====================================="
+echo "Setting up Docker students 1-3"
+echo "====================================="
+
+# Port mappings
+declare -A SSH_PORTS=([1]=2201 [2]=2202 [3]=2203)
+declare -A WEB_PORTS=([1]=8080 [2]=8180 [3]=8280)
+declare -A USER_PORTS=([1]=3000 [2]=3100 [3]=3200)
+declare -A TODO_PORTS=([1]=8081 [2]=8181 [3]=8281)
+
+for i in 1 2 3; do
+  NAME="devops-student$i"
+  PASSWORD="student$i"
+
+  echo ">>> Creating $NAME <<<"
+
+  # Launch container
+  lxc launch devops-lab-base $NAME -p default -p devops-lab
+
+  # Wait for container
+  sleep 15
+
+  # Set password
+  lxc exec $NAME -- bash -c "echo 'labuser:$PASSWORD' | chpasswd"
+
+  # Port forwarding
+  lxc config device add $NAME ssh-proxy proxy \
+    listen=tcp:0.0.0.0:${SSH_PORTS[$i]} connect=tcp:127.0.0.1:22 nat=true
+
+  lxc config device add $NAME web-proxy proxy \
+    listen=tcp:0.0.0.0:${WEB_PORTS[$i]} connect=tcp:127.0.0.1:8080 nat=true
+
+  lxc config device add $NAME user-api-proxy proxy \
+    listen=tcp:0.0.0.0:${USER_PORTS[$i]} connect=tcp:127.0.0.1:3000 nat=true
+
+  lxc config device add $NAME todo-api-proxy proxy \
+    listen=tcp:0.0.0.0:${TODO_PORTS[$i]} connect=tcp:127.0.0.1:8081 nat=true
+
+  echo "✅ $NAME created!"
+done
+
+echo ""
+echo "Syncing labs to all students..."
+~/scripts/sync-all-students.sh
+
+echo ""
+echo "✅ All Docker students ready!"
+lxc list | grep devops-student
+EOFSCRIPT
+
+chmod +x ~/scripts/setup-docker-students.sh
+```
+
+**Kasutamine:**
+```bash
+~/scripts/setup-docker-students.sh
+```
+
+**Kontrollimine pärast automatiseeritud setup'i:**
+```bash
+# Vaata kõiki
+lxc list | grep devops-student
+
+# Testi SSH
+ssh labuser@<HOST-IP> -p 2201
+ssh labuser@<HOST-IP> -p 2202
+ssh labuser@<HOST-IP> -p 2203
+
+# Testi Docker
+for c in devops-student{1..3}; do
+  echo "=== $c ==="
+  lxc exec $c -- su - labuser -c 'docker run --rm hello-world'
+done
 ```
 
 ---
 
-## 3. Labs Failide Sünkroniseerimine
+### 3.5 Uue Õpilase Lisamine (Student4-6)
 
-### 3.1 Ülevaade
+**Märkus:** Süsteem toetab kuni 6 õpilast. Alltoodud näited student4, student5, student6 jaoks.
+
+#### 3.5.1 Student4 Lisamine
+
+```bash
+# 1. Käivita konteiner
+lxc launch devops-lab-base devops-student4 -p default -p devops-lab
+
+# 2. Oota IP
+sleep 15
+lxc list devops-student4
+
+# 3. Sea parool
+lxc exec devops-student4 -- bash -c 'echo "labuser:student4" | chpasswd'
+
+# 4. Port forwarding (vt port mapping tabel sektsioon 7.5)
+lxc config device add devops-student4 ssh-proxy proxy \
+  listen=tcp:0.0.0.0:2204 connect=tcp:127.0.0.1:22 nat=true
+
+lxc config device add devops-student4 web-proxy proxy \
+  listen=tcp:0.0.0.0:8380 connect=tcp:127.0.0.1:8080 nat=true
+
+lxc config device add devops-student4 user-api-proxy proxy \
+  listen=tcp:0.0.0.0:3300 connect=tcp:127.0.0.1:3000 nat=true
+
+lxc config device add devops-student4 todo-api-proxy proxy \
+  listen=tcp:0.0.0.0:8381 connect=tcp:127.0.0.1:8081 nat=true
+
+# 5. Sync labs
+~/scripts/sync-labs.sh devops-student4
+
+# 6. Testi SSH
+ssh labuser@<HOST-IP> -p 2204
+# Password: student4
+```
+
+#### 3.5.2 Student5 ja Student6 Lisamine
+
+Analoogselt student4-le, kasuta järgmisi porte (vt tabel sektsioon 7.5):
+- **Student5:** SSH 2205, Frontend 8480, User API 3400, Todo API 8481
+- **Student6:** SSH 2206, Frontend 8580, User API 3500, Todo API 8581
+
+---
+
+## 4. Labs Failide Sünkroniseerimine
+
+### 4.1 Ülevaade
 
 Labs failid asuvad host masinas `~/projects/labs/` kataloogis ja need tuleb sünkroniseerida konteineritesse.
 
@@ -363,7 +788,7 @@ Labs failid asuvad host masinas `~/projects/labs/` kataloogis ja need tuleb sün
 
 **Skriptide asukoht:** `~/scripts/`
 
-### 3.2 Git Repositooriumi Seadistamine
+### 4.2 Git Repositooriumi Seadistamine
 
 ```bash
 # Loo projects kataloog
@@ -385,7 +810,7 @@ git config --global http.proxy http://cache1.sss:3128
 git config --global https.proxy http://cache1.sss:3128
 ```
 
-### 3.3 Sync Skriptide Loomine
+### 4.3 Sync Skriptide Loomine
 
 #### sync-labs.sh (üks konteiner)
 
@@ -517,7 +942,7 @@ ls -l ~/scripts/
 # Kõik .sh failid peavad olema executable (rwxr-xr-x)
 ```
 
-### 3.4 Labs Sünkroniseerimine (igapäevane töövoog)
+### 4.4 Labs Sünkroniseerimine (igapäevane töövoog)
 
 **1. Uuenda labs host'il:**
 
@@ -549,7 +974,7 @@ git pull
 ~/scripts/check-versions.sh
 ```
 
-### 3.5 Backup'ide Taastamine
+### 4.5 Backup'ide Taastamine
 
 **Vaata backup'e:**
 
@@ -573,9 +998,291 @@ lxc exec devops-student1 -- chown -R labuser:labuser /home/labuser/labs
 
 ---
 
-## 4. SSH ja Turvalisus (Sisevõrk)
+## 5. Konteinerite Haldamine
 
-### 4.1 Ülevaade
+### Põhikäsud
+
+```bash
+# Vaata kõiki konteinereid
+lxc list
+
+# Detailne info konteinerist
+lxc info devops-student1
+
+# Logi konteinerisse (root)
+lxc exec devops-student1 -- bash
+
+# Logi konteinerisse (labuser)
+lxc exec devops-student1 -- su - labuser
+
+# Logi konteinerisse (labuser, login shell - proxy muutujad laaditakse)
+lxc exec devops-student1 -- bash -l -c 'su - labuser'
+```
+
+### Konteineri Elutsükkel
+
+```bash
+# Käivita konteiner
+lxc start devops-student1
+
+# Peata konteiner
+lxc stop devops-student1
+
+# Taaskäivita konteiner
+lxc restart devops-student1
+
+# Kustuta konteiner
+lxc delete devops-student1
+
+# Kustuta töötav konteiner (force)
+lxc delete --force devops-student1
+```
+
+### Failide Kopeerimine
+
+```bash
+# Host → Container
+lxc file push /path/to/file devops-student1/home/labuser/
+
+# Container → Host
+lxc file pull devops-student1/home/labuser/file.txt /tmp/
+
+# Rekursiivne kopeerimine
+lxc file push -r /path/to/dir/ devops-student1/home/labuser/
+```
+
+### Käskude Käivitamine Konteineris
+
+```bash
+# Üksik käsk
+lxc exec devops-student1 -- docker ps
+
+# Mitme käsu jada
+lxc exec devops-student1 -- bash -c 'cd /home/labuser && ls -la'
+
+# Käsk kindla kasutajana
+lxc exec devops-student1 -- su - labuser -c 'docker ps'
+```
+
+### Proxy Seadistuse Kontrollimine
+
+```bash
+# Kontrolli APT proxy't
+lxc exec devops-student1 -- cat /etc/apt/apt.conf.d/proxy.conf
+
+# Kontrolli environment proxy't
+lxc exec devops-student1 -- bash -l -c 'env | grep -i proxy'
+
+# Kontrolli Docker daemon proxy't
+lxc exec devops-student1 -- systemctl show --property=Environment docker
+
+# Kontrolli containerd proxy't
+lxc exec devops-student1 -- systemctl show --property=Environment containerd
+
+# Kontrolli containerd versiooni (peaks olema 1.7.28)
+lxc exec devops-student1 -- containerd --version
+```
+
+---
+
+## 6. Proxy Konfiguratsiooni Haldamine
+
+### 6.1 Host Proxy Seadistamine
+
+**APT Proxy:**
+
+```bash
+# Kontrolli praegust seadistust
+cat /etc/apt/apt.conf.d/proxy.conf
+
+# Lisa või uuenda
+sudo tee /etc/apt/apt.conf.d/proxy.conf << 'EOF'
+Acquire::http::Proxy "http://cache1.sss:3128";
+Acquire::https::Proxy "http://cache1.sss:3128";
+EOF
+
+# Testi
+sudo apt-get update
+```
+
+**Environment Variables:**
+
+```bash
+# /etc/environment
+sudo tee -a /etc/environment << 'EOF'
+http_proxy="http://cache1.sss:3128"
+https_proxy="http://cache1.sss:3128"
+no_proxy="localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16"
+HTTP_PROXY="http://cache1.sss:3128"
+HTTPS_PROXY="http://cache1.sss:3128"
+NO_PROXY="localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16"
+EOF
+
+# Rakenda
+source /etc/environment
+```
+
+**Snap Proxy (LXD image download'ide jaoks):**
+
+```bash
+sudo snap set system proxy.http="http://cache1.sss:3128"
+sudo snap set system proxy.https="http://cache1.sss:3128"
+```
+
+**Proxy Kontrollimine:**
+
+```bash
+# Kontrolli environment
+env | grep -i proxy
+
+# Testi HTTP ühendust
+curl -I https://google.com
+
+# Testi APT
+sudo apt-get update
+```
+
+### 6.2 Konteineri Proxy Seadistamine
+
+**APT Proxy konteineris:**
+
+```bash
+lxc exec devops-student1 -- bash -c 'cat > /etc/apt/apt.conf.d/proxy.conf << "EOF"
+Acquire::http::Proxy "http://cache1.sss:3128";
+Acquire::https::Proxy "http://cache1.sss:3128";
+EOF'
+
+# Testi
+lxc exec devops-student1 -- apt-get update
+```
+
+**Environment Variables konteineris:**
+
+```bash
+# /etc/environment
+lxc exec devops-student1 -- bash -c 'cat >> /etc/environment << "EOF"
+http_proxy="http://cache1.sss:3128"
+https_proxy="http://cache1.sss:3128"
+no_proxy="localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16"
+HTTP_PROXY="http://cache1.sss:3128"
+HTTPS_PROXY="http://cache1.sss:3128"
+NO_PROXY="localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16"
+EOF'
+
+# /etc/profile.d/proxy.sh (login shell'i jaoks)
+lxc exec devops-student1 -- bash -c 'cat > /etc/profile.d/proxy.sh << "EOF"
+export http_proxy="http://cache1.sss:3128"
+export https_proxy="http://cache1.sss:3128"
+export no_proxy="localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16"
+export HTTP_PROXY="http://cache1.sss:3128"
+export HTTPS_PROXY="http://cache1.sss:3128"
+export NO_PROXY="localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16"
+EOF'
+```
+
+**Docker Daemon Proxy:**
+
+```bash
+lxc exec devops-student1 -- bash -c '
+mkdir -p /etc/systemd/system/docker.service.d
+cat > /etc/systemd/system/docker.service.d/proxy.conf << "EOF"
+[Service]
+Environment="HTTP_PROXY=http://cache1.sss:3128"
+Environment="HTTPS_PROXY=http://cache1.sss:3128"
+Environment="NO_PROXY=localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16"
+EOF
+
+systemctl daemon-reload
+systemctl restart docker
+'
+```
+
+**containerd Proxy (KRIITILINE!):**
+
+```bash
+lxc exec devops-student1 -- bash -c '
+mkdir -p /etc/systemd/system/containerd.service.d
+cat > /etc/systemd/system/containerd.service.d/proxy.conf << "EOF"
+[Service]
+Environment="HTTP_PROXY=http://cache1.sss:3128"
+Environment="HTTPS_PROXY=http://cache1.sss:3128"
+Environment="NO_PROXY=localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16"
+EOF
+
+systemctl daemon-reload
+systemctl restart containerd
+systemctl restart docker
+'
+```
+
+**⚠️ OLULINE:**
+- Docker template ei vaja `.svc,.cluster.local` no_proxy seadistuses (see on vajalik ainult Kubernetes klastrites)
+- containerd proxy on KRIITILINE Docker image pull'ide jaoks
+
+### 6.3 Proxy Testimine
+
+**Host tasemel:**
+
+```bash
+# Environment
+env | grep -i proxy
+
+# HTTP ühendus
+curl -I https://google.com
+
+# APT
+apt-get update
+```
+
+**Konteineri tasemel:**
+
+```bash
+# Environment (kasuta login shell'i!)
+lxc exec devops-student1 -- bash -l -c 'env | grep -i proxy'
+
+# HTTP ühendus
+lxc exec devops-student1 -- curl -I https://google.com
+
+# APT
+lxc exec devops-student1 -- apt-get update
+
+# Docker pull (peamine test!)
+lxc exec devops-student1 -- docker pull alpine:3.16
+```
+
+**⚠️ NB:** Kui `lxc exec devops-student1 -- bash` ei lae proxy muutujaid, kasuta `bash -l` (login shell) või `su -`.
+
+### 6.4 Proxy Credentials (kui vajalik)
+
+Kui proxy server vajab autentimist:
+
+```bash
+# Kodeeri username:password Base64-s
+echo -n "username:password" | base64
+
+# Lisa proxy URL'ile
+http_proxy="http://username:password@cache1.sss:3128"
+
+# VÕI kasutades Base64 encoded string'i (turvalisem)
+http_proxy="http://$(echo -n 'username:password' | base64)@cache1.sss:3128"
+```
+
+Salvesta credentials turvaliselt:
+
+```bash
+# Loo fail (ainult root näeb)
+sudo tee /root/proxy-credentials.txt << 'EOF'
+username:password
+EOF
+
+sudo chmod 600 /root/proxy-credentials.txt
+```
+
+---
+
+## 7. SSH ja Turvalisus (Sisevõrk)
+
+### 7.1 Ülevaade
 
 **⚠️ OLULINE:** See on ettevõtte sisevõrgu keskkond, turvalisus on lihtsustatud.
 
@@ -584,15 +1291,15 @@ lxc exec devops-student1 -- chown -R labuser:labuser /home/labuser/labs
 - Sisevõrgust brute-force rünnakud on ebatõenäolised
 - Laborikeskkond õppeotstarbel, mitte tootmiskeskkond
 
-### 4.2 Mida EI kasutata (sisevõrgus)
+### 7.2 Mida EI kasutata (sisevõrgus)
 
 - ❌ **UFW Firewall:** Ettevõtte tulemüür kaitseb, UFW võib segada LXD võrku
 - ❌ **fail2ban:** Brute-force sisevõrgust ebatõenäoline
 - ❌ **SSH hardening:** Laborikeskkond, lihtsad paroolid on OK
 
-**Viide:** Täpsem selgitus K8S-INSTALLATION.md sektsioon 3.
+**Viide:** Täpsem selgitus HOST-SETUP-PROXY.md sektsioon 6.
 
-### 4.3 SSH Seadistus (minimaalne)
+### 7.3 SSH Seadistus (minimaalne)
 
 **Kontrolli SSH teenust:**
 
@@ -616,7 +1323,7 @@ lxc config device add devops-student3 ssh-proxy proxy \
   listen=tcp:0.0.0.0:2203 connect=tcp:127.0.0.1:22 nat=true
 ```
 
-### 4.4 Paroolide Haldamine
+### 7.4 Paroolide Haldamine
 
 ```bash
 # Loo paroolide fail (kuni 6 õpilast)
@@ -646,7 +1353,7 @@ lxc exec devops-student1 -- bash -c "echo 'labuser:$NEW_PASS' | chpasswd"
 echo "devops-student1 new password: $NEW_PASS" >> ~/student-passwords.txt
 ```
 
-### 4.5 Port Mapping (SSH + Web)
+### 7.5 Port Mapping (SSH + Web)
 
 | Student | SSH Port | Frontend | User API | Todo API |
 |---------|----------|----------|----------|----------|
@@ -657,7 +1364,7 @@ echo "devops-student1 new password: $NEW_PASS" >> ~/student-passwords.txt
 | student5 | 2205 | 8480 | 3400 | 8481 |
 | student6 | 2206 | 8580 | 3500 | 8581 |
 
-### 4.6 SSH Sisselogimine
+### 7.6 SSH Sisselogimine
 
 ```bash
 # Üldine formaat
@@ -672,7 +1379,7 @@ ssh labuser@192.168.1.100 -p 2203
 # Parool: student3
 ```
 
-### 4.7 Kui Vaja Avalikku Keskkonda
+### 7.7 Kui Vaja Avalikku Keskkonda
 
 Kui server oleks avalikus võrgus (internet), tuleks rakendada täielik turvalisus:
 
@@ -680,11 +1387,11 @@ Kui server oleks avalikus võrgus (internet), tuleks rakendada täielik turvalis
 - **fail2ban** SSH kaitse
 - **SSH hardening** (MaxAuthTries, LoginGraceTime, tugevad paroolid)
 
-Vaata põhijuhendit INSTALLATION.md sektsioonid 5.1-5.3.
+**Märkus:** Avaliku keskkonna turvalisuse juhendid on eraldi dokumentides (pole proxy keskkonna jaoks vajalik).
 
 ---
 
-## 5. Ressursside Monitooring
+## 8. Ressursside Monitooring
 
 ### RAM Kasutus
 
@@ -771,7 +1478,7 @@ lxc restart devops-student1
 
 ---
 
-## 6. Backup ja Taastamine
+## 9. Backup ja Taastamine
 
 ### Snapshot'id
 
@@ -858,9 +1565,9 @@ chmod +x ~/scripts/backup-all-students.sh
 
 ---
 
-## 7. Template Uuendamine
+## 10. Template Uuendamine
 
-### 7.1 Millal Uuendada?
+### 10.1 Millal Uuendada?
 
 - Docker versioon uuendatud
 - Labs uuendatud
@@ -868,7 +1575,7 @@ chmod +x ~/scripts/backup-all-students.sh
 - Diagnostika tööriistad lisatud/uuendatud (jq, nmap, tcpdump, netcat-openbsd, dnsutils, net-tools)
 - Sudo konfiguratsioon muutub
 
-### 7.2 Template Uuendamise Protsess
+### 10.2 Template Uuendamise Protsess
 
 ```bash
 # 1. Loo ajutine konteiner
@@ -953,716 +1660,9 @@ lxc delete --force test-new-template
 
 ---
 
-## 8. Docker Laborite Seadistamine (Lab 1-2)
+## 11. Probleemide Lahendamine (Proxy Keskkond)
 
-**⚠️ EELDUS:** [HOST-SETUP-PROXY.md](HOST-SETUP-PROXY.md) on täidetud (host valmis, proxy töötab, LXD on paigaldatud)!
-
-**Mida see sektsioon hõlmab:**
-- ✅ devops-lab profiili loomine (2.5GB RAM, 1 CPU)
-- ✅ Docker template'i loomine (devops-lab-base)
-- ✅ Esimeste 3 õpilaskonteineri loomine MANUAALSELT (student1-3)
-- 🔧 Automatiseeritud setup skript (VALIKULINE - alles pärast manuaalset kinnitust!)
-- ➕ Täiendavate õpilaste lisamine (student4-6)
-
-**Workflow:**
-1. Loo LXD profiil (8.0) → 2. Loo Docker template (8.1) → 3. Loo student1-3 MANUAALSELT (8.2-8.3) → 4. Valikuline: automatiseeri (8.4) → 5. Lisa student4-6 (8.5)
-
----
-
-### 8.0 LXD Profiili Loomine (devops-lab)
-
-**⚠️ KOHUSTUSLIK ESMALT:** Enne template'i loomist pead looma LXD profiili!
-
-#### 8.0.1 Loo devops-lab Profiil
-
-```bash
-lxc profile create devops-lab
-lxc profile edit devops-lab
-```
-
-**Lisa see YAML:**
-
-```yaml
-config:
-  limits.cpu: "1"
-  limits.memory: 2560MiB
-  limits.memory.enforce: soft
-  security.nesting: "true"
-  security.privileged: "false"
-  security.syscalls.intercept.mknod: "true"
-  security.syscalls.intercept.setxattr: "true"
-description: DevOps Lab Profile - 2.5GB RAM, 1 CPU, Docker support
-devices:
-  root:
-    path: /
-    pool: default
-    type: disk
-name: devops-lab
-```
-
-**Salvesta:** `:wq` (vim) või `Ctrl+O, Enter, Ctrl+X` (nano)
-
-#### 8.0.2 Kontrolli Profiili
-
-```bash
-lxc profile show devops-lab
-lxc profile list
-```
-
-#### 8.0.3 Profiili Selgitus
-
-| Setting | Väärtus | Selgitus |
-|---------|---------|----------|
-| limits.cpu | "1" | 1 CPU core per student (piisav Docker jaoks) |
-| limits.memory | 2560MiB | 2.5GB RAM per student |
-| limits.memory.enforce | soft | Lubab ajutiselt rohkem, kui vaja |
-| security.nesting | "true" | Docker-in-Docker support (KRIITILINE!) |
-| security.privileged | "false" | Turvalisuse pärast |
-| security.syscalls.intercept | mknod, setxattr | LXD ühilduvus Docker'iga |
-
-**Miks devops-lab, mitte devops-lab-k8s?**
-- Docker vajab vähem ressursse kui Kubernetes
-- 2.5GB RAM piisav vs K8s 5GB
-- 1 CPU core piisav vs K8s 2 cores
-- EI sisalda K8s spetsiifilisi seadistusi (kernel modules, kmsg device, raw.lxc)
-
----
-
-### 8.1 Docker Template Loomine (devops-lab-base)
-
-**⚠️ MANUAALNE PROTSESS:** See on samm-sammult juhend template'i loomiseks. Peale seda saad luua õpilaskonteinereid template'ist (sektsioonid 8.2-8.3).
-
-#### 8.1.1 Base Konteineri Käivitamine
-
-```bash
-# Käivita Ubuntu 24.04 devops-lab profiiliga
-lxc launch ubuntu:24.04 docker-template -p default -p devops-lab
-
-# Oota IP-d (15-20 sekundit)
-sleep 20
-lxc list docker-template
-
-# Logi sisse
-lxc exec docker-template -- bash
-```
-
-**Nüüd oled KONTEINERIS.**
-
-#### 8.1.2 Proxy Seadistamine (Konteineris)
-
-**⚠️ OLULINE:** Seadista proxy ENNE apt-get käske!
-
-```bash
-# 1. APT proxy
-cat > /etc/apt/apt.conf.d/proxy.conf << 'EOF'
-Acquire::http::Proxy "http://cache1.sss:3128";
-Acquire::https::Proxy "http://cache1.sss:3128";
-EOF
-
-# 2. Keskkonna muutujad (kirjuta kogu fail üle)
-cat > /etc/environment << 'EOF'
-PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-http_proxy="http://cache1.sss:3128"
-https_proxy="http://cache1.sss:3128"
-HTTP_PROXY="http://cache1.sss:3128"
-HTTPS_PROXY="http://cache1.sss:3128"
-no_proxy="localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16"
-EOF
-
-# 3. Lae muutujad KOHE aktiivseks
-source /etc/environment
-
-# 4. Kontrolli
-echo "http_proxy=$http_proxy"
-echo "https_proxy=$https_proxy"
-
-# 5. Tee seaded püsivaks (login shell jaoks)
-cat > /etc/profile.d/proxy.sh << 'EOF'
-export http_proxy="http://cache1.sss:3128"
-export https_proxy="http://cache1.sss:3128"
-export HTTP_PROXY="http://cache1.sss:3128"
-export HTTPS_PROXY="http://cache1.sss:3128"
-export no_proxy="localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16"
-EOF
-chmod +x /etc/profile.d/proxy.sh
-
-# 6. Testi
-apt-get update
-# Kui töötab, jätka järgmise sammuga
-```
-
-**📝 Märkus - Docker template no_proxy:**
-
-Docker template EI vaja `.svc,.cluster.local` no_proxy seadistuses. See on vajalik ainult Kubernetes klastrites (Lab 3-10).
-
-```bash
-# ✅ Docker template (Lab 1-2):
-no_proxy="localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16"
-
-# ❌ EI OLE VAJA:
-no_proxy="localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16,.svc,.cluster.local"
-```
-
-#### 8.1.3 Süsteemi Uuendamine (Konteineris)
-
-```bash
-apt-get update
-apt-get upgrade -y
-
-apt-get install -y \
-  curl \
-  wget \
-  git \
-  vim \
-  nano \
-  htop \
-  ca-certificates \
-  gnupg \
-  lsb-release \
-  software-properties-common \
-  apt-transport-https
-```
-
-#### 8.1.4 Java 21 Paigaldamine (Konteineris)
-
-**Java on vajalik todo-service rakenduse ehitamiseks!**
-
-```bash
-# Installi OpenJDK 21
-apt-get install -y openjdk-21-jdk
-
-# Kontrolli
-java -version
-javac -version
-# Peaks näitama: openjdk version "21.0.x"
-```
-
-#### 8.1.5 Node.js 20 Paigaldamine (Konteineris)
-
-**Node.js on vajalik user-service rakenduse ehitamiseks!**
-
-```bash
-# Lisa NodeSource repository (Node.js 20 LTS)
-curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-
-# Installi Node.js
-apt-get install -y nodejs
-
-# Kontrolli
-node --version
-npm --version
-# Peaks näitama: Node v20.x.x, NPM 10.x.x
-```
-
-#### 8.1.6 Diagnostika Tööriistad (Konteineris)
-
-**Need tööriistad on kasulikud võrgu ja süsteemi silumiseks!**
-
-```bash
-# Võrgu diagnostika tööriistad
-apt-get install -y \
-  jq \
-  nmap \
-  tcpdump \
-  netcat-openbsd \
-  dnsutils \
-  net-tools \
-  iproute2
-
-# Arenduse tööriistad
-apt-get install -y \
-  build-essential \
-  python3 \
-  python3-pip
-
-# Kontrolli
-which jq nmap tcpdump nc dig netstat ip
-```
-
-#### 8.1.7 Docker Paigaldamine (Konteineris)
-
-```bash
-# Docker GPG key
-install -m 0755 -d /etc/apt/keyrings
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
-chmod a+r /etc/apt/keyrings/docker.asc
-
-# Docker repo
-echo \
-  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
-  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
-  tee /etc/apt/sources.list.d/docker.list > /dev/null
-
-# Installi Docker
-apt-get update
-apt-get install -y \
-  docker-ce \
-  docker-ce-cli \
-  containerd.io \
-  docker-buildx-plugin \
-  docker-compose-plugin
-
-# Kontrolli
-docker --version
-```
-
-#### 8.1.8 KRIITILINE: containerd Downgrade (Konteineris)
-
-**⚠️ OLULINE:** containerd 1.7.29+ on bugine LXD keskkonnas!
-
-```bash
-# Downgrade containerd (LXD ühilduvus)
-apt-get install -y --allow-downgrades containerd.io=1.7.28-1~ubuntu.24.04~noble
-apt-mark hold containerd.io
-
-# Kontrolli
-containerd --version
-# Peab olema: 1.7.28
-
-# Taaskäivita Docker
-systemctl restart docker
-
-# Testi
-docker run --rm hello-world
-```
-
-#### 8.1.9 Docker Proxy Seadistamine (Konteineris)
-
-```bash
-# Docker daemon proxy
-mkdir -p /etc/systemd/system/docker.service.d
-cat > /etc/systemd/system/docker.service.d/proxy.conf << 'EOF'
-[Service]
-Environment="HTTP_PROXY=http://cache1.sss:3128"
-Environment="HTTPS_PROXY=http://cache1.sss:3128"
-Environment="NO_PROXY=localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16"
-EOF
-
-# Reload ja restart
-systemctl daemon-reload
-systemctl restart docker
-
-# Kontrolli
-systemctl show --property=Environment docker
-```
-
-#### 8.1.10 labuser Kasutaja Loomine (Konteineris)
-
-**⚠️ Märkus:** Ubuntu konteinerites on UID 1000 tavaliselt `ubuntu` kasutaja käes. Kasutame UID 1001.
-
-```bash
-# Kontrolli, kas UID 1000 on vaba (valikuline)
-getent passwd 1000
-# Kui tagastab 'ubuntu', siis UID 1000 on hõivatud
-
-# Loo labuser kasutaja UID 1001-ga
-useradd -m -s /bin/bash -u 1001 labuser
-usermod -aG docker labuser
-echo "labuser:temppassword" | chpasswd
-
-# Kontrolli
-id labuser
-# Peaks näitama: uid=1001(labuser) gid=1001(labuser)
-```
-
-#### 8.1.11 SSH Server Paigaldamine (Konteineris)
-
-```bash
-apt-get install -y openssh-server
-
-cat > /etc/ssh/sshd_config.d/99-lab.conf << 'EOF'
-PermitRootLogin no
-PasswordAuthentication yes
-PubkeyAuthentication yes
-EOF
-
-systemctl enable ssh
-```
-
-#### 8.1.12 labuser Bash Konfiguratsioon (Konteineris)
-
-**Docker template (EI sisalda Kubernetes aliased!):**
-
-```bash
-su - labuser
-
-cat >> ~/.bashrc << 'EOF'
-
-# Proxy
-export http_proxy=http://cache1.sss:3128
-export https_proxy=http://cache1.sss:3128
-export HTTP_PROXY=http://cache1.sss:3128
-export HTTPS_PROXY=http://cache1.sss:3128
-export no_proxy="localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16"
-
-# Default Editor
-export EDITOR=vim
-export VISUAL=vim
-
-# Java Environment (todo-service jaoks)
-export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
-export PATH=$JAVA_HOME/bin:$PATH
-
-# Docker Aliases
-alias docker-stop-all="docker stop \$(docker ps -aq) 2>/dev/null || echo 'No containers running'"
-alias docker-clean="docker system prune -af --volumes"
-
-# Lab Aliases
-alias labs-reset="~/labs/labs-reset.sh"
-
-# Resource Check
-alias check-resources="echo '=== RAM ===' && free -h && echo && echo '=== DISK ===' && df -h / && echo && echo '=== Docker ===' && docker ps"
-
-# Docker AppArmor Workaround for LXD
-docker() {
-  case "\$1" in
-    run|exec|create)
-      /usr/bin/docker "\$1" --security-opt apparmor=unconfined "\${@:2}"
-      ;;
-    *)
-      /usr/bin/docker "\$@"
-      ;;
-  esac
-}
-export -f docker
-
-EOF
-
-exit
-```
-
-#### 8.1.13 Labs Kausta Ettevalmistus (Konteineris)
-
-```bash
-# Loo labs kataloog (sünkroniseeritakse hiljem)
-mkdir -p /home/labuser/labs
-chown -R labuser:labuser /home/labuser/labs
-```
-
-#### 8.1.14 Puhastamine (Konteineris)
-
-```bash
-apt-get clean
-apt-get autoremove -y
-rm -rf /tmp/* /var/tmp/*
-history -c
-exit
-```
-
-**Nüüd oled tagasi HOST'is.**
-
-#### 8.1.15 Template Publitseerimine (HOST)
-
-```bash
-# Peata konteiner
-lxc stop docker-template
-
-# Publitseeri image'ina
-lxc publish docker-template --alias devops-lab-base \
-  description="DevOps Lab Template: Ubuntu 24.04 + Docker + Java 21 + Node.js 20 + Proxy ($(date +%Y-%m-%d))"
-
-# Kontrolli
-lxc image list
-
-# Kustuta template konteiner
-lxc delete docker-template
-
-# Backup (valikuline, soovitatud)
-mkdir -p ~/lxd-backups
-lxc image export devops-lab-base ~/lxd-backups/devops-lab-base-$(date +%Y%m%d)
-```
-
-**✅ Template on valmis!** Järgmises sammus loome esimesed õpilaskonteinerid.
-
----
-
-### 8.2 Student1 Loomine (Täielik MANUAALNE Protsess)
-
-**⚠️ OLULINE:** Järgi seda sektsiooni täpselt, samm-sammult. See on BAAS student2-3 jaoks!
-
-**Eeldus:** devops-lab-base template on loodud (sektsioon 8.1).
-
-#### 8.2.1 Konteineri Käivitamine
-
-```bash
-# Loo konteiner template'ist
-lxc launch devops-lab-base devops-student1 -p default -p devops-lab
-
-# Oota IP (15-20 sek)
-sleep 15
-lxc list devops-student1
-```
-
-#### 8.2.2 Parooli Seadistamine
-
-```bash
-lxc exec devops-student1 -- bash -c 'echo "labuser:student1" | chpasswd'
-```
-
-#### 8.2.3 Port Forwarding (SSH + Web)
-
-```bash
-# SSH
-lxc config device add devops-student1 ssh-proxy proxy \
-  listen=tcp:0.0.0.0:2201 connect=tcp:127.0.0.1:22 nat=true
-
-# Frontend (React app)
-lxc config device add devops-student1 web-proxy proxy \
-  listen=tcp:0.0.0.0:8080 connect=tcp:127.0.0.1:8080 nat=true
-
-# User API (Node.js)
-lxc config device add devops-student1 user-api-proxy proxy \
-  listen=tcp:0.0.0.0:3000 connect=tcp:127.0.0.1:3000 nat=true
-
-# Todo API (Java Spring Boot)
-lxc config device add devops-student1 todo-api-proxy proxy \
-  listen=tcp:0.0.0.0:8081 connect=tcp:127.0.0.1:8081 nat=true
-```
-
-#### 8.2.4 Labs Failide Sünkroniseerimine
-
-```bash
-# Sync labs (kasuta sektsioonis 3 loodud skripti)
-~/scripts/sync-labs.sh devops-student1
-```
-
-#### 8.2.5 Kontrollimine
-
-```bash
-# SSH test (HOST'ist)
-ssh labuser@<HOST-IP> -p 2201
-# Parool: student1
-
-# Docker test konteineris
-lxc exec devops-student1 -- su - labuser -c 'docker run --rm hello-world'
-
-# Labs kataloog
-lxc exec devops-student1 -- ls -la /home/labuser/labs/
-# Peaks näitama: 01-docker-lab, 02-docker-compose-lab, apps, ...
-
-# Proxy kontroll
-lxc exec devops-student1 -- su - labuser -c 'env | grep -i proxy'
-
-# Port forwarding test
-netstat -tuln | grep -E ':(2201|8080|3000|8081)'
-```
-
-**✅ Student1 on valmis ja töötab!**
-
----
-
-### 8.3 Student2 ja Student3 Loomine (Lühike)
-
-**Märkus:** Analoogselt student1-le, aga erinevad pordid.
-
-#### 8.3.1 Student2
-
-```bash
-# Loo konteiner
-lxc launch devops-lab-base devops-student2 -p default -p devops-lab
-
-# Parool
-lxc exec devops-student2 -- bash -c 'echo "labuser:student2" | chpasswd'
-
-# Port forwarding (pordid: SSH 2202, Web 8180, UserAPI 3100, TodoAPI 8181)
-lxc config device add devops-student2 ssh-proxy proxy \
-  listen=tcp:0.0.0.0:2202 connect=tcp:127.0.0.1:22 nat=true
-
-lxc config device add devops-student2 web-proxy proxy \
-  listen=tcp:0.0.0.0:8180 connect=tcp:127.0.0.1:8080 nat=true
-
-lxc config device add devops-student2 user-api-proxy proxy \
-  listen=tcp:0.0.0.0:3100 connect=tcp:127.0.0.1:3000 nat=true
-
-lxc config device add devops-student2 todo-api-proxy proxy \
-  listen=tcp:0.0.0.0:8181 connect=tcp:127.0.0.1:8081 nat=true
-
-# Sync labs
-~/scripts/sync-labs.sh devops-student2
-
-# Test
-ssh labuser@<HOST-IP> -p 2202
-# Parool: student2
-```
-
-#### 8.3.2 Student3
-
-```bash
-# Loo konteiner
-lxc launch devops-lab-base devops-student3 -p default -p devops-lab
-
-# Parool
-lxc exec devops-student3 -- bash -c 'echo "labuser:student3" | chpasswd'
-
-# Port forwarding (pordid: SSH 2203, Web 8280, UserAPI 3200, TodoAPI 8281)
-lxc config device add devops-student3 ssh-proxy proxy \
-  listen=tcp:0.0.0.0:2203 connect=tcp:127.0.0.1:22 nat=true
-
-lxc config device add devops-student3 web-proxy proxy \
-  listen=tcp:0.0.0.0:8280 connect=tcp:127.0.0.1:8080 nat=true
-
-lxc config device add devops-student3 user-api-proxy proxy \
-  listen=tcp:0.0.0.0:3200 connect=tcp:127.0.0.1:3000 nat=true
-
-lxc config device add devops-student3 todo-api-proxy proxy \
-  listen=tcp:0.0.0.0:8281 connect=tcp:127.0.0.1:8081 nat=true
-
-# Sync labs
-~/scripts/sync-labs.sh devops-student3
-
-# Test
-ssh labuser@<HOST-IP> -p 2203
-# Parool: student3
-```
-
-**✅ Student1-3 on valmis!**
-
----
-
-### 8.4 Automatiseeritud Setup Skript (VALIKULINE - pärast manuaalset testimist!)
-
-**⚠️ OLULINE:** See on VALIKULINE! Admin peab esmalt manuaalselt läbi tegema 8.2 ja 8.3 ning kinnitama, et süsteem toimib. Alles siis võib lisada automatiseeritud skripti.
-
-**Miks manuaalne esmalt?**
-- Saad õppida, kuidas süsteem töötab
-- Saad tuvastada probleeme enne automatiseerimist
-- Automatiseeritud skript võib varjata vigu
-
-**Kui manuaalne protsess töötab:**
-
-```bash
-cat > ~/scripts/setup-docker-students.sh << 'EOFSCRIPT'
-#!/bin/bash
-# Setup Docker students 1-3 automatically
-
-set -e
-
-echo "====================================="
-echo "Setting up Docker students 1-3"
-echo "====================================="
-
-# Port mappings
-declare -A SSH_PORTS=([1]=2201 [2]=2202 [3]=2203)
-declare -A WEB_PORTS=([1]=8080 [2]=8180 [3]=8280)
-declare -A USER_PORTS=([1]=3000 [2]=3100 [3]=3200)
-declare -A TODO_PORTS=([1]=8081 [2]=8181 [3]=8281)
-
-for i in 1 2 3; do
-  NAME="devops-student$i"
-  PASSWORD="student$i"
-
-  echo ">>> Creating $NAME <<<"
-
-  # Launch container
-  lxc launch devops-lab-base $NAME -p default -p devops-lab
-
-  # Wait for container
-  sleep 15
-
-  # Set password
-  lxc exec $NAME -- bash -c "echo 'labuser:$PASSWORD' | chpasswd"
-
-  # Port forwarding
-  lxc config device add $NAME ssh-proxy proxy \
-    listen=tcp:0.0.0.0:${SSH_PORTS[$i]} connect=tcp:127.0.0.1:22 nat=true
-
-  lxc config device add $NAME web-proxy proxy \
-    listen=tcp:0.0.0.0:${WEB_PORTS[$i]} connect=tcp:127.0.0.1:8080 nat=true
-
-  lxc config device add $NAME user-api-proxy proxy \
-    listen=tcp:0.0.0.0:${USER_PORTS[$i]} connect=tcp:127.0.0.1:3000 nat=true
-
-  lxc config device add $NAME todo-api-proxy proxy \
-    listen=tcp:0.0.0.0:${TODO_PORTS[$i]} connect=tcp:127.0.0.1:8081 nat=true
-
-  echo "✅ $NAME created!"
-done
-
-echo ""
-echo "Syncing labs to all students..."
-~/scripts/sync-all-students.sh
-
-echo ""
-echo "✅ All Docker students ready!"
-lxc list | grep devops-student
-EOFSCRIPT
-
-chmod +x ~/scripts/setup-docker-students.sh
-```
-
-**Kasutamine:**
-```bash
-~/scripts/setup-docker-students.sh
-```
-
-**Kontrollimine pärast automatiseeritud setup'i:**
-```bash
-# Vaata kõiki
-lxc list | grep devops-student
-
-# Testi SSH
-ssh labuser@<HOST-IP> -p 2201
-ssh labuser@<HOST-IP> -p 2202
-ssh labuser@<HOST-IP> -p 2203
-
-# Testi Docker
-for c in devops-student{1..3}; do
-  echo "=== $c ==="
-  lxc exec $c -- su - labuser -c 'docker run --rm hello-world'
-done
-```
-
----
-
-### 8.5 Uue Õpilase Lisamine (Student4-6)
-
-**Märkus:** Süsteem toetab kuni 6 õpilast. Alltoodud näited student4, student5, student6 jaoks.
-
-#### 8.5.1 Student4 Lisamine
-
-```bash
-# 1. Käivita konteiner
-lxc launch devops-lab-base devops-student4 -p default -p devops-lab
-
-# 2. Oota IP
-sleep 15
-lxc list devops-student4
-
-# 3. Sea parool
-lxc exec devops-student4 -- bash -c 'echo "labuser:student4" | chpasswd'
-
-# 4. Port forwarding (vt port mapping tabel sektsioon 4.5)
-lxc config device add devops-student4 ssh-proxy proxy \
-  listen=tcp:0.0.0.0:2204 connect=tcp:127.0.0.1:22 nat=true
-
-lxc config device add devops-student4 web-proxy proxy \
-  listen=tcp:0.0.0.0:8380 connect=tcp:127.0.0.1:8080 nat=true
-
-lxc config device add devops-student4 user-api-proxy proxy \
-  listen=tcp:0.0.0.0:3300 connect=tcp:127.0.0.1:3000 nat=true
-
-lxc config device add devops-student4 todo-api-proxy proxy \
-  listen=tcp:0.0.0.0:8381 connect=tcp:127.0.0.1:8081 nat=true
-
-# 5. Sync labs
-~/scripts/sync-labs.sh devops-student4
-
-# 6. Testi SSH
-ssh labuser@<HOST-IP> -p 2204
-# Password: student4
-```
-
-#### 8.5.2 Student5 ja Student6 Lisamine
-
-Analoogselt student4-le, kasuta järgmisi porte (vt tabel sektsioon 4.5):
-- **Student5:** SSH 2205, Frontend 8480, User API 3400, Todo API 8481
-- **Student6:** SSH 2206, Frontend 8580, User API 3500, Todo API 8581
-
----
-
-## 9. Probleemide Lahendamine (Proxy Keskkond)
-
-### 9.1 Proxy Ei Tööta Konteineris
+### 11.1 Proxy Ei Tööta Konteineris
 
 **Sümptom:**
 ```
@@ -1686,7 +1686,7 @@ EOF'
 lxc exec devops-student1 -- apt-get update
 ```
 
-### 9.2 Docker Pull Ei Tööta (Proxy)
+### 11.2 Docker Pull Ei Tööta (Proxy)
 
 **Sümptom:**
 ```
@@ -1717,7 +1717,7 @@ systemctl restart docker
 lxc exec devops-student1 -- docker pull alpine:3.16
 ```
 
-### 9.3 containerd Pull Ei Tööta (Proxy)
+### 11.3 containerd Pull Ei Tööta (Proxy)
 
 **Sümptom:**
 Kubernetes pods (kui kasutad K8s template'i) jäävad ImagePullBackOff olekusse.
@@ -1742,7 +1742,7 @@ systemctl restart containerd
 lxc exec devops-student1 -- systemctl restart docker
 ```
 
-### 9.4 Proxy Login Shellis Ei Laadi
+### 11.4 Proxy Login Shellis Ei Laadi
 
 **Sümptom:**
 ```bash
@@ -1765,7 +1765,7 @@ env | grep -i proxy
 
 **Selgitus:** `/etc/environment` ja `/etc/profile.d/proxy.sh` laaditakse ainult login shell'is.
 
-### 9.5 containerd Versioon on Vale
+### 11.5 containerd Versioon on Vale
 
 **Sümptom:**
 ```bash
@@ -1790,7 +1790,7 @@ systemctl restart docker
 lxc exec devops-student1 -- docker run --rm alpine:3.16 echo "OK"
 ```
 
-### 9.6 Konteinerid Ei Käivitu (Üldine)
+### 11.6 Konteinerid Ei Käivitu (Üldine)
 
 ```bash
 # Kontrolli logisid
@@ -1804,7 +1804,7 @@ lxc delete --force devops-student1
 lxc launch devops-lab-base devops-student1 -p default -p devops-lab
 ```
 
-### 9.7 RAM Otsa
+### 11.7 RAM Otsa
 
 ```bash
 # 1. Kontrolli, kumb protsess kasutab palju
@@ -1820,7 +1820,7 @@ lxc restart devops-student1
 
 ---
 
-## 10. Kasulikud Käsud
+## 12. Kasulikud Käsud
 
 ### Proxy Debug
 
@@ -1871,7 +1871,7 @@ for c in devops-student{1..6}; do echo "=== $c ==="; lxc exec $c -- containerd -
 
 ---
 
-## 11. Quick Reference
+## 13. Quick Reference
 
 | Tegevus | Käsk |
 |---------|------|
