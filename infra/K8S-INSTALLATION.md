@@ -751,14 +751,21 @@ lsmod | grep br_netfilter
 
 ### 5.9 labuser Kasutaja Loomine (Konteineris)
 
+**⚠️ Märkus:** Ubuntu konteinerites on UID 1000 tavaliselt `ubuntu` kasutaja käes. Kasutame UID 1001.
+
 ```bash
-# Loo kasutaja
-useradd -m -s /bin/bash -u 1000 labuser
+# Kontrolli, kas UID 1000 on vaba (valikuline)
+getent passwd 1000
+# Kui tagastab 'ubuntu', siis UID 1000 on hõivatud
+
+# Loo labuser kasutaja UID 1001-ga
+useradd -m -s /bin/bash -u 1001 labuser
 usermod -aG docker labuser
 echo "labuser:temppassword" | chpasswd
 
 # Kontrolli
 id labuser
+# Peaks näitama: uid=1001(labuser) gid=1001(labuser)
 ```
 
 ### 5.10 SSH Server (Konteineris)
