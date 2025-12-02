@@ -98,14 +98,14 @@ lxc profile edit devops-lab
 
 ```yaml
 config:
-  limits.cpu: "1"
-  limits.memory: 2560MiB
+  limits.cpu: "2"
+  limits.memory: 4GB
   limits.memory.enforce: soft
   security.nesting: "true"
   security.privileged: "false"
   security.syscalls.intercept.mknod: "true"
   security.syscalls.intercept.setxattr: "true"
-description: DevOps Lab Profile - 2.5GB RAM, 1 CPU, Docker support
+description: DevOps Lab Profile - 4GB RAM, 2 CPU cores, Docker support
 devices:
   root:
     path: /
@@ -127,8 +127,8 @@ lxc profile list
 
 | Setting | Väärtus | Selgitus |
 |---------|---------|----------|
-| limits.cpu | "1" | 1 CPU core per student (piisav Docker jaoks) |
-| limits.memory | 2560MiB | 2.5GB RAM per student |
+| limits.cpu | "2" | 2 CPU cores (kiiremad build'id, npm/gradle) |
+| limits.memory | 4GB | 4GB RAM (npm install + Java build vajavad 2-3GB) |
 | limits.memory.enforce | soft | Lubab ajutiselt rohkem, kui vaja |
 | security.nesting | "true" | Docker-in-Docker support (KRIITILINE!) |
 | security.privileged | "false" | Turvalisuse pärast |
@@ -136,9 +136,11 @@ lxc profile list
 
 **Miks devops-lab, mitte devops-lab-k8s?**
 - Docker vajab vähem ressursse kui Kubernetes
-- 2.5GB RAM piisav vs K8s 5GB
-- 1 CPU core piisav vs K8s 2 cores
+- 4GB RAM piisav vs K8s 5GB
+- 2 CPU cores vs K8s 2 cores (sama, aga Docker ei vaja kernel mooduleid)
 - EI sisalda K8s spetsiifilisi seadistusi (kernel modules, kmsg device, raw.lxc)
+
+**⚠️ Muudatus 2025-12-02:** Tõstsin 2.5GB→4GB ja 1→2 CPU, kuna proxy keskkonnas npm/gradle build'id vajavad rohkem ressursse.
 
 ---
 

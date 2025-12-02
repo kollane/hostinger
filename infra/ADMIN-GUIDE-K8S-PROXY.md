@@ -151,10 +151,12 @@ lxc profile list
 | kmsg device | /dev/kmsg | K8s logide jaoks |
 
 **Miks devops-lab-k8s, mitte devops-lab?**
-- Kubernetes vajab rohkem ressursse: 5GB vs 2.5GB RAM, 2 vs 1 CPU
+- Kubernetes vajab veidi rohkem ressursse: 5GB vs 4GB RAM (sama 2 CPU)
 - K8s vajab spetsiifilisi kernel mooduleid (ip_tables, overlay, br_netfilter)
 - K8s vajab kmsg device'i logide jaoks
 - K8s vajab lihtsustatud AppArmor profiili (unconfined)
+
+**⚠️ Muudatus 2025-12-02:** Docker profiil uuendatud 2.5GB→4GB ja 1→2 CPU, seega ressursside vahe väiksem.
 
 ---
 
