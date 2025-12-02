@@ -417,6 +417,64 @@ lxc exec k8s-template -- bash -l
 
 **Kui apt-get annab vea**, kontrolli proxy URL-i õigsust.
 
+### 5.2a no_proxy Selgitus - Mida Tähendavad Erinevad Väärtused?
+
+**`no_proxy` sisaldab domeene/võrke, mis EI TOHI minna läbi proxy.**
+
+```bash
+no_proxy="localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16,.svc,.cluster.local"
+```
+
+| Väärtus | Tähendus | Miks vajalik? |
+|---------|----------|---------------|
+| `localhost` | Lokaalne hostname | Docker daemon, kubectl, health checks kasutavad |
+| `127.0.0.1` | Loopback IP | Mõned tööriistad kasutavad IP asemel DNS nime |
+| `10.0.0.0/8` | Private võrk (Class A) | LXD bridge (10.67.86.0/24), K8s pod network (10.244.0.0/16) |
+| `192.168.0.0/16` | Private võrk (Class C) | Kohalik võrk, kui kasutatakse |
+| `.svc` | K8s service DNS suffix | Pod'id suhtlevad: `my-service.default.svc` |
+| `.cluster.local` | K8s cluster DNS suffix | Täielik nimi: `my-service.default.svc.cluster.local` |
+
+**⚠️ OLULINE:**
+- **`localhost,127.0.0.1`** - Vajalikud ALATI (Docker, kubectl, health checks)
+- **`10.0.0.0/8,192.168.0.0/16`** - Vajalikud sisevõrgu jaoks (LXD, K8s networking)
+- **`.svc,.cluster.local`** - Vajalikud AINULT Kubernetes'i jaoks (Lab 3-10)
+
+**Docker-only template (Lab 1-2):** Võib jätta välja `.svc,.cluster.local`
+
+**Kubernetes template (Lab 3-10):** PEAB sisaldama kõiki!
+
+**Näited:**
+
+```bash
+# Kubernetes pod suhtleb teenusega:
+curl http://postgres-service.default.svc:5432
+# → Ilma .svc no_proxy's → proxy ERROR!
+# → Koos .svc → otsene ühendus K8s võrgus ✅
+
+# kubectl API:
+kubectl get nodes
+# → Ühendub https://127.0.0.1:6443
+# → Ilma 127.0.0.1 no_proxy's → proxy ERROR!
+# → Koos 127.0.0.1 → otsene ühendus ✅
+
+# Pod-to-pod K8s sisevõrgus:
+curl http://10.244.1.5:8080
+# → Ilma 10.0.0.0/8 no_proxy's → proxy ERROR!
+# → Koos 10.0.0.0/8 → otsene ühendus ✅
+```
+
+**Eraldaja:** Kasuta **koma** (`,`), mitte pipe (`|`)!
+
+```bash
+# ✅ Õige:
+no_proxy="localhost,127.0.0.1,10.0.0.0/8"
+
+# ❌ Vale:
+no_proxy="localhost|127.0.0.1|10.0.0.0/8"  # Ei tööta!
+```
+
+---
+
 ### 5.3 Süsteemi Uuendamine (Konteineris)
 
 ```bash
@@ -567,7 +625,9 @@ systemctl show --property=Environment docker
 1. **JÄTA VAHELE sektsioonid 5.7 - 5.8** (Kubernetes tööriistad ja kernel moodulid)
 2. **JÄTKA sektsioonist 5.9** (labuser Kasutaja Loomine)
 
-**Märkus:** Sektsioon 5.8 (kernel moodulid) on vajalik ainult Kubernetes'i jaoks. Docker töötab ilma nende mooduliteta.
+**Märkused:**
+- Sektsioon 5.8 (kernel moodulid) on vajalik ainult Kubernetes'i jaoks
+- Sektsioon 5.2a: Docker template puhul võib `no_proxy` seadistusest välja jätta `.svc,.cluster.local` (K8s spetsiifilised)
 
 **Mida Docker template sisaldab:**
 - ✅ Ubuntu 24.04 + Proxy seadistus
