@@ -518,19 +518,19 @@ lxc exec devops-student1 -- bash -c 'echo "labuser:student1" | chpasswd'
 ```bash
 # SSH
 lxc config device add devops-student1 ssh-proxy proxy \
-  listen=tcp:0.0.0.0:2201 connect=tcp:127.0.0.1:22 nat=true
+  listen=tcp:0.0.0.0:2201 connect=tcp:127.0.0.1:22
 
 # Frontend (React app)
 lxc config device add devops-student1 web-proxy proxy \
-  listen=tcp:0.0.0.0:8080 connect=tcp:127.0.0.1:8080 nat=true
+  listen=tcp:0.0.0.0:8080 connect=tcp:127.0.0.1:8080
 
 # User API (Node.js)
 lxc config device add devops-student1 user-api-proxy proxy \
-  listen=tcp:0.0.0.0:3000 connect=tcp:127.0.0.1:3000 nat=true
+  listen=tcp:0.0.0.0:3000 connect=tcp:127.0.0.1:3000
 
 # Todo API (Java Spring Boot)
 lxc config device add devops-student1 todo-api-proxy proxy \
-  listen=tcp:0.0.0.0:8081 connect=tcp:127.0.0.1:8081 nat=true
+  listen=tcp:0.0.0.0:8081 connect=tcp:127.0.0.1:8081
 ```
 
 #### 3.2.4 Labs Failide Sünkroniseerimine
@@ -580,16 +580,16 @@ lxc exec devops-student2 -- bash -c 'echo "labuser:student2" | chpasswd'
 
 # Port forwarding (pordid: SSH 2202, Web 8180, UserAPI 3100, TodoAPI 8181)
 lxc config device add devops-student2 ssh-proxy proxy \
-  listen=tcp:0.0.0.0:2202 connect=tcp:127.0.0.1:22 nat=true
+  listen=tcp:0.0.0.0:2202 connect=tcp:127.0.0.1:22
 
 lxc config device add devops-student2 web-proxy proxy \
-  listen=tcp:0.0.0.0:8180 connect=tcp:127.0.0.1:8080 nat=true
+  listen=tcp:0.0.0.0:8180 connect=tcp:127.0.0.1:8080
 
 lxc config device add devops-student2 user-api-proxy proxy \
-  listen=tcp:0.0.0.0:3100 connect=tcp:127.0.0.1:3000 nat=true
+  listen=tcp:0.0.0.0:3100 connect=tcp:127.0.0.1:3000
 
 lxc config device add devops-student2 todo-api-proxy proxy \
-  listen=tcp:0.0.0.0:8181 connect=tcp:127.0.0.1:8081 nat=true
+  listen=tcp:0.0.0.0:8181 connect=tcp:127.0.0.1:8081
 
 # Sync labs
 ~/scripts/sync-labs.sh devops-student2
@@ -610,16 +610,16 @@ lxc exec devops-student3 -- bash -c 'echo "labuser:student3" | chpasswd'
 
 # Port forwarding (pordid: SSH 2203, Web 8280, UserAPI 3200, TodoAPI 8281)
 lxc config device add devops-student3 ssh-proxy proxy \
-  listen=tcp:0.0.0.0:2203 connect=tcp:127.0.0.1:22 nat=true
+  listen=tcp:0.0.0.0:2203 connect=tcp:127.0.0.1:22
 
 lxc config device add devops-student3 web-proxy proxy \
-  listen=tcp:0.0.0.0:8280 connect=tcp:127.0.0.1:8080 nat=true
+  listen=tcp:0.0.0.0:8280 connect=tcp:127.0.0.1:8080
 
 lxc config device add devops-student3 user-api-proxy proxy \
-  listen=tcp:0.0.0.0:3200 connect=tcp:127.0.0.1:3000 nat=true
+  listen=tcp:0.0.0.0:3200 connect=tcp:127.0.0.1:3000
 
 lxc config device add devops-student3 todo-api-proxy proxy \
-  listen=tcp:0.0.0.0:8281 connect=tcp:127.0.0.1:8081 nat=true
+  listen=tcp:0.0.0.0:8281 connect=tcp:127.0.0.1:8081
 
 # Sync labs
 ~/scripts/sync-labs.sh devops-student3
@@ -678,16 +678,16 @@ for i in 1 2 3; do
 
   # Port forwarding
   lxc config device add $NAME ssh-proxy proxy \
-    listen=tcp:0.0.0.0:${SSH_PORTS[$i]} connect=tcp:127.0.0.1:22 nat=true
+    listen=tcp:0.0.0.0:${SSH_PORTS[$i]} connect=tcp:127.0.0.1:22
 
   lxc config device add $NAME web-proxy proxy \
-    listen=tcp:0.0.0.0:${WEB_PORTS[$i]} connect=tcp:127.0.0.1:8080 nat=true
+    listen=tcp:0.0.0.0:${WEB_PORTS[$i]} connect=tcp:127.0.0.1:8080
 
   lxc config device add $NAME user-api-proxy proxy \
-    listen=tcp:0.0.0.0:${USER_PORTS[$i]} connect=tcp:127.0.0.1:3000 nat=true
+    listen=tcp:0.0.0.0:${USER_PORTS[$i]} connect=tcp:127.0.0.1:3000
 
   lxc config device add $NAME todo-api-proxy proxy \
-    listen=tcp:0.0.0.0:${TODO_PORTS[$i]} connect=tcp:127.0.0.1:8081 nat=true
+    listen=tcp:0.0.0.0:${TODO_PORTS[$i]} connect=tcp:127.0.0.1:8081
 
   echo "✅ $NAME created!"
 done
@@ -747,16 +747,16 @@ lxc exec devops-student4 -- bash -c 'echo "labuser:student4" | chpasswd'
 
 # 4. Port forwarding (vt port mapping tabel sektsioon 7.5)
 lxc config device add devops-student4 ssh-proxy proxy \
-  listen=tcp:0.0.0.0:2204 connect=tcp:127.0.0.1:22 nat=true
+  listen=tcp:0.0.0.0:2204 connect=tcp:127.0.0.1:22
 
 lxc config device add devops-student4 web-proxy proxy \
-  listen=tcp:0.0.0.0:8380 connect=tcp:127.0.0.1:8080 nat=true
+  listen=tcp:0.0.0.0:8380 connect=tcp:127.0.0.1:8080
 
 lxc config device add devops-student4 user-api-proxy proxy \
-  listen=tcp:0.0.0.0:3300 connect=tcp:127.0.0.1:3000 nat=true
+  listen=tcp:0.0.0.0:3300 connect=tcp:127.0.0.1:3000
 
 lxc config device add devops-student4 todo-api-proxy proxy \
-  listen=tcp:0.0.0.0:8381 connect=tcp:127.0.0.1:8081 nat=true
+  listen=tcp:0.0.0.0:8381 connect=tcp:127.0.0.1:8081
 
 # 5. Sync labs
 ~/scripts/sync-labs.sh devops-student4
@@ -1312,15 +1312,15 @@ lxc exec devops-student1 -- systemctl status ssh
 ```bash
 # Student1
 lxc config device add devops-student1 ssh-proxy proxy \
-  listen=tcp:0.0.0.0:2201 connect=tcp:127.0.0.1:22 nat=true
+  listen=tcp:0.0.0.0:2201 connect=tcp:127.0.0.1:22
 
 # Student2
 lxc config device add devops-student2 ssh-proxy proxy \
-  listen=tcp:0.0.0.0:2202 connect=tcp:127.0.0.1:22 nat=true
+  listen=tcp:0.0.0.0:2202 connect=tcp:127.0.0.1:22
 
 # Student3
 lxc config device add devops-student3 ssh-proxy proxy \
-  listen=tcp:0.0.0.0:2203 connect=tcp:127.0.0.1:22 nat=true
+  listen=tcp:0.0.0.0:2203 connect=tcp:127.0.0.1:22
 ```
 
 ### 7.4 Paroolide Haldamine

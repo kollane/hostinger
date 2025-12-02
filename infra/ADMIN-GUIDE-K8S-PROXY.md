@@ -523,19 +523,19 @@ lxc exec devops-k8s-student1 -- bash -c 'echo "labuser:student1" | chpasswd'
 ```bash
 # SSH
 lxc config device add devops-k8s-student1 ssh-proxy proxy \
-  listen=tcp:0.0.0.0:2211 connect=tcp:127.0.0.1:22 nat=true
+  listen=tcp:0.0.0.0:2211 connect=tcp:127.0.0.1:22
 
 # K8s API Server
 lxc config device add devops-k8s-student1 k8s-api-proxy proxy \
-  listen=tcp:0.0.0.0:6443 connect=tcp:127.0.0.1:6443 nat=true
+  listen=tcp:0.0.0.0:6443 connect=tcp:127.0.0.1:6443
 
 # Ingress HTTP
 lxc config device add devops-k8s-student1 ingress-http-proxy proxy \
-  listen=tcp:0.0.0.0:30080 connect=tcp:127.0.0.1:30080 nat=true
+  listen=tcp:0.0.0.0:30080 connect=tcp:127.0.0.1:30080
 
 # Ingress HTTPS
 lxc config device add devops-k8s-student1 ingress-https-proxy proxy \
-  listen=tcp:0.0.0.0:30443 connect=tcp:127.0.0.1:30443 nat=true
+  listen=tcp:0.0.0.0:30443 connect=tcp:127.0.0.1:30443
 ```
 
 #### 3.2.4 Kubernetes Klastri Initialiseerimine (Konteineris)
@@ -654,16 +654,16 @@ lxc exec devops-k8s-student2 -- bash -c 'echo "labuser:student2" | chpasswd'
 
 # Port forwarding (pordid: SSH 2212, K8s API 6444, Ingress HTTP 30180, HTTPS 30543)
 lxc config device add devops-k8s-student2 ssh-proxy proxy \
-  listen=tcp:0.0.0.0:2212 connect=tcp:127.0.0.1:22 nat=true
+  listen=tcp:0.0.0.0:2212 connect=tcp:127.0.0.1:22
 
 lxc config device add devops-k8s-student2 k8s-api-proxy proxy \
-  listen=tcp:0.0.0.0:6444 connect=tcp:127.0.0.1:6443 nat=true
+  listen=tcp:0.0.0.0:6444 connect=tcp:127.0.0.1:6443
 
 lxc config device add devops-k8s-student2 ingress-http-proxy proxy \
-  listen=tcp:0.0.0.0:30180 connect=tcp:127.0.0.1:30080 nat=true
+  listen=tcp:0.0.0.0:30180 connect=tcp:127.0.0.1:30080
 
 lxc config device add devops-k8s-student2 ingress-https-proxy proxy \
-  listen=tcp:0.0.0.0:30543 connect=tcp:127.0.0.1:30443 nat=true
+  listen=tcp:0.0.0.0:30543 connect=tcp:127.0.0.1:30443
 
 # K8s cluster init (KONTEINERIS!)
 lxc exec devops-k8s-student2 -- su - labuser -c "
@@ -700,16 +700,16 @@ lxc exec devops-k8s-student3 -- bash -c 'echo "labuser:student3" | chpasswd'
 
 # Port forwarding (pordid: SSH 2213, K8s API 6445, Ingress HTTP 30280, HTTPS 30643)
 lxc config device add devops-k8s-student3 ssh-proxy proxy \
-  listen=tcp:0.0.0.0:2213 connect=tcp:127.0.0.1:22 nat=true
+  listen=tcp:0.0.0.0:2213 connect=tcp:127.0.0.1:22
 
 lxc config device add devops-k8s-student3 k8s-api-proxy proxy \
-  listen=tcp:0.0.0.0:6445 connect=tcp:127.0.0.1:6443 nat=true
+  listen=tcp:0.0.0.0:6445 connect=tcp:127.0.0.1:6443
 
 lxc config device add devops-k8s-student3 ingress-http-proxy proxy \
-  listen=tcp:0.0.0.0:30280 connect=tcp:127.0.0.1:30080 nat=true
+  listen=tcp:0.0.0.0:30280 connect=tcp:127.0.0.1:30080
 
 lxc config device add devops-k8s-student3 ingress-https-proxy proxy \
-  listen=tcp:0.0.0.0:30643 connect=tcp:127.0.0.1:30443 nat=true
+  listen=tcp:0.0.0.0:30643 connect=tcp:127.0.0.1:30443
 
 # K8s cluster init (KONTEINERIS!)
 lxc exec devops-k8s-student3 -- su - labuser -c "
@@ -791,16 +791,16 @@ for i in 1 2 3; do
 
   # Port forwarding
   lxc config device add $NAME ssh-proxy proxy \
-    listen=tcp:0.0.0.0:${SSH_PORTS[$i]} connect=tcp:127.0.0.1:22 nat=true
+    listen=tcp:0.0.0.0:${SSH_PORTS[$i]} connect=tcp:127.0.0.1:22
 
   lxc config device add $NAME k8s-api-proxy proxy \
-    listen=tcp:0.0.0.0:${API_PORTS[$i]} connect=tcp:127.0.0.1:6443 nat=true
+    listen=tcp:0.0.0.0:${API_PORTS[$i]} connect=tcp:127.0.0.1:6443
 
   lxc config device add $NAME ingress-http-proxy proxy \
-    listen=tcp:0.0.0.0:${HTTP_PORTS[$i]} connect=tcp:127.0.0.1:30080 nat=true
+    listen=tcp:0.0.0.0:${HTTP_PORTS[$i]} connect=tcp:127.0.0.1:30080
 
   lxc config device add $NAME ingress-https-proxy proxy \
-    listen=tcp:0.0.0.0:${HTTPS_PORTS[$i]} connect=tcp:127.0.0.1:30443 nat=true
+    listen=tcp:0.0.0.0:${HTTPS_PORTS[$i]} connect=tcp:127.0.0.1:30443
 
   echo "✅ $NAME created!"
   echo ""
@@ -896,16 +896,16 @@ lxc exec devops-k8s-student4 -- bash -c 'echo "labuser:student4" | chpasswd'
 
 # 4. Port forwarding (pordid: SSH 2214, K8s API 6446, Ingress HTTP 30380, HTTPS 30743)
 lxc config device add devops-k8s-student4 ssh-proxy proxy \
-  listen=tcp:0.0.0.0:2214 connect=tcp:127.0.0.1:22 nat=true
+  listen=tcp:0.0.0.0:2214 connect=tcp:127.0.0.1:22
 
 lxc config device add devops-k8s-student4 k8s-api-proxy proxy \
-  listen=tcp:0.0.0.0:6446 connect=tcp:127.0.0.1:6443 nat=true
+  listen=tcp:0.0.0.0:6446 connect=tcp:127.0.0.1:6443
 
 lxc config device add devops-k8s-student4 ingress-http-proxy proxy \
-  listen=tcp:0.0.0.0:30380 connect=tcp:127.0.0.1:30080 nat=true
+  listen=tcp:0.0.0.0:30380 connect=tcp:127.0.0.1:30080
 
 lxc config device add devops-k8s-student4 ingress-https-proxy proxy \
-  listen=tcp:0.0.0.0:30743 connect=tcp:127.0.0.1:30443 nat=true
+  listen=tcp:0.0.0.0:30743 connect=tcp:127.0.0.1:30443
 
 # 5. K8s init (sama nagu student1-3)
 lxc exec devops-k8s-student4 -- su - labuser -c "
@@ -1248,7 +1248,7 @@ Sama nagu Docker juhendis. SSH pordid: 2211-2216 (K8s students).
 ```bash
 # Näide: Student1
 lxc config device add devops-k8s-student1 ssh-proxy proxy \
-  listen=tcp:0.0.0.0:2211 connect=tcp:127.0.0.1:22 nat=true
+  listen=tcp:0.0.0.0:2211 connect=tcp:127.0.0.1:22
 ```
 
 ---
@@ -1308,20 +1308,20 @@ exit
 ```bash
 # K8s API (iga õpilane oma port)
 lxc config device add devops-k8s-student1 k8s-api-proxy proxy \
-  listen=tcp:0.0.0.0:6443 connect=tcp:127.0.0.1:6443 nat=true
+  listen=tcp:0.0.0.0:6443 connect=tcp:127.0.0.1:6443
 
 lxc config device add devops-k8s-student2 k8s-api-proxy proxy \
-  listen=tcp:0.0.0.0:6444 connect=tcp:127.0.0.1:6443 nat=true
+  listen=tcp:0.0.0.0:6444 connect=tcp:127.0.0.1:6443
 
 lxc config device add devops-k8s-student3 k8s-api-proxy proxy \
-  listen=tcp:0.0.0.0:6445 connect=tcp:127.0.0.1:6443 nat=true
+  listen=tcp:0.0.0.0:6445 connect=tcp:127.0.0.1:6443
 
 # Ingress HTTP/HTTPS (student1 näide)
 lxc config device add devops-k8s-student1 ingress-http-proxy proxy \
-  listen=tcp:0.0.0.0:30080 connect=tcp:127.0.0.1:30080 nat=true
+  listen=tcp:0.0.0.0:30080 connect=tcp:127.0.0.1:30080
 
 lxc config device add devops-k8s-student1 ingress-https-proxy proxy \
-  listen=tcp:0.0.0.0:30443 connect=tcp:127.0.0.1:30443 nat=true
+  listen=tcp:0.0.0.0:30443 connect=tcp:127.0.0.1:30443
 ```
 
 ### 9.3 Port Mapping Tabel (kuni 6 õpilast)
