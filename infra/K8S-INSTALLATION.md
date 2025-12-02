@@ -564,8 +564,10 @@ systemctl show --property=Environment docker
 
 **⚠️ Kui lood ainult Docker template't (Lab 1-2), siis:**
 
-1. **JÄTA VAHELE sektsioonid 5.7 - 5.8** (Kubernetes tööriistad)
+1. **JÄTA VAHELE sektsioonid 5.7 - 5.8** (Kubernetes tööriistad ja kernel moodulid)
 2. **JÄTKA sektsioonist 5.9** (labuser Kasutaja Loomine)
+
+**Märkus:** Sektsioon 5.8 (kernel moodulid) on vajalik ainult Kubernetes'i jaoks. Docker töötab ilma nende mooduliteta.
 
 **Mida Docker template sisaldab:**
 - ✅ Ubuntu 24.04 + Proxy seadistus
@@ -678,27 +680,74 @@ apt-get install -y terraform
 terraform version
 ```
 
-### 5.8 Kernel Moodulite Seadistamine (Konteineris)
+### 5.8 Kernel Moodulite Seadistamine (HOST'ist)
+
+**⚠️ KRIITILINE:** Kernel mooduleid **EI SAA** laadida konteinerist! LXD konteinerid jagavad HOST'i kerneli, seega moodulid tuleb laadida HOST masinasse.
+
+#### 5.8.1 Välju Konteinerist
 
 ```bash
-# Lae vajalikud moodulid
-cat > /etc/modules-load.d/k8s.conf << 'EOF'
+# Kui oled konteineris (k8s-template), välju HOST'i
+exit
+```
+
+**Nüüd oled HOST'is.**
+
+#### 5.8.2 Laadi Kernel Moodulid (HOST'is)
+
+```bash
+# HOST masinas
+sudo modprobe overlay
+sudo modprobe br_netfilter
+
+# Tee moodulid püsivaks (reboot'i järel)
+sudo tee /etc/modules-load.d/k8s.conf << 'EOF'
 overlay
 br_netfilter
 EOF
 
-modprobe overlay
-modprobe br_netfilter
+# Kontrolli, et moodulid on laaditud
+lsmod | grep overlay
+lsmod | grep br_netfilter
+```
 
-# Sysctl seadistused
-cat > /etc/sysctl.d/k8s.conf << 'EOF'
+#### 5.8.3 Sysctl Seadistused (HOST'is)
+
+```bash
+# HOST masinas
+sudo tee /etc/sysctl.d/k8s.conf << 'EOF'
 net.bridge.bridge-nf-call-iptables  = 1
 net.bridge.bridge-nf-call-ip6tables = 1
 net.ipv4.ip_forward                 = 1
 EOF
 
-sysctl --system
+# Rakenda seadistused
+sudo sysctl --system
+
+# Kontrolli
+sysctl net.bridge.bridge-nf-call-iptables
+sysctl net.ipv4.ip_forward
 ```
+
+**Oodatav tulemus:**
+```
+net.bridge.bridge-nf-call-iptables = 1
+net.ipv4.ip_forward = 1
+```
+
+#### 5.8.4 Logi Tagasi Konteinerisse
+
+```bash
+# HOST'ist konteinerisse (kasuta login shell'i)
+lxc exec k8s-template -- bash -l
+
+# Kontrolli, et moodulid on nähtavad (jagatud HOST'iga)
+lsmod | grep overlay
+lsmod | grep br_netfilter
+# Peaksid nägema sama väljundit nagu HOST'is
+```
+
+**Nüüd oled tagasi konteineris ja võid jätkata.**
 
 ### 5.9 labuser Kasutaja Loomine (Konteineris)
 
