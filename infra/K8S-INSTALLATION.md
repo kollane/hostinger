@@ -794,7 +794,7 @@ export http_proxy=http://cache1.sss:3128
 export https_proxy=http://cache1.sss:3128
 export HTTP_PROXY=http://cache1.sss:3128
 export HTTPS_PROXY=http://cache1.sss:3128
-export no_proxy=localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16,.svc,.cluster.local
+export no_proxy="localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16,.svc,.cluster.local"
 
 # Default Editor
 export EDITOR=vim
