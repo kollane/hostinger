@@ -364,6 +364,9 @@ PasswordAuthentication yes
 PubkeyAuthentication yes
 EOF
 
+# Eemalda Ubuntu cloud-init SSH config, mis blokeerib parooliga sisselogimist
+rm -f /etc/ssh/sshd_config.d/60-cloudimg-settings.conf
+
 systemctl enable ssh
 ```
 
@@ -1637,6 +1640,46 @@ sudo chown $(id -u):$(id -g) $HOME/.kube/config
 # Testi
 lxc exec devops-k8s-student1 -- su - labuser -c 'kubectl get nodes'
 ```
+
+### 13.7 SSH "Permission denied (publickey)" Viga
+
+**Sümptom:**
+```bash
+ssh labuser@<HOST-IP> -p 2211
+Permission denied (publickey).
+```
+
+**Põhjus:** Ubuntu cloud image default config (`60-cloudimg-settings.conf`) keelab parooliga sisselogimise.
+
+**Diagnostika:**
+```bash
+# Kontrolli SSH konfiguratsiooni
+lxc exec devops-k8s-student1 -- sshd -T | grep passwordauthentication
+# Kui näitab: passwordauthentication no
+
+# Kontrolli cloud-init faili olemasolu
+lxc exec devops-k8s-student1 -- cat /etc/ssh/sshd_config.d/60-cloudimg-settings.conf
+# Kui näitab: PasswordAuthentication no
+```
+
+**Lahendus:**
+```bash
+# Eemalda cloud-init SSH config
+lxc exec devops-k8s-student1 -- rm -f /etc/ssh/sshd_config.d/60-cloudimg-settings.conf
+
+# Taaskäivita SSH
+lxc exec devops-k8s-student1 -- systemctl restart ssh
+
+# Kontrolli
+lxc exec devops-k8s-student1 -- sshd -T | grep passwordauthentication
+# Peaks näitama: passwordauthentication yes
+
+# Testi SSH-d
+ssh labuser@<HOST-IP> -p 2211
+# Parool: student1
+```
+
+**Märkus:** See probleem on parandatud template loomise juhendis (sektsioon 3.1.12), aga võib esineda vanadel konteineritel või kui template loodi enne seda parandust.
 
 ---
 
