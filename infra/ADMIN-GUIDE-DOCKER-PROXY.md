@@ -374,9 +374,22 @@ useradd -m -s /bin/bash -u 1001 labuser
 usermod -aG docker labuser
 echo "labuser:temppassword" | chpasswd
 
-# Kontrolli
+# Seadista sudo õigused (laborite jaoks)
+cat > /etc/sudoers.d/labuser << 'EOF'
+labuser ALL=(ALL) NOPASSWD: /usr/bin/systemctl start docker
+labuser ALL=(ALL) NOPASSWD: /usr/bin/systemctl stop docker
+labuser ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart docker
+labuser ALL=(ALL) NOPASSWD: /usr/bin/systemctl status docker
+labuser ALL=(ALL) NOPASSWD: /usr/bin/systemctl enable docker
+EOF
+
+# Kontrolli õigusi
+chmod 440 /etc/sudoers.d/labuser
+visudo -c
+
+# Kontrolli kasutajat
 id labuser
-# Peaks näitama: uid=1001(labuser) gid=1001(labuser)
+# Peaks näitama: uid=1001(labuser) gid=1001(labuser) groups=1001(labuser),999(docker)
 ```
 
 #### 3.1.11 SSH Server Paigaldamine (Konteineris)
@@ -432,12 +445,12 @@ alias check-resources="echo '=== RAM ===' && free -h && echo && echo '=== DISK =
 
 # Docker AppArmor Workaround for LXD
 docker() {
-  case "\$1" in
+  case "$1" in
     run|exec|create)
-      /usr/bin/docker "\$1" --security-opt apparmor=unconfined "\${@:2}"
+      /usr/bin/docker "$1" --security-opt apparmor=unconfined "${@:2}"
       ;;
     *)
-      /usr/bin/docker "\$@"
+      /usr/bin/docker "$@"
       ;;
   esac
 }

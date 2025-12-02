@@ -347,8 +347,22 @@ useradd -m -s /bin/bash -u 1001 labuser
 usermod -aG docker labuser
 echo "labuser:temppassword" | chpasswd
 
+# Seadista sudo õigused (K8s laborite jaoks)
+cat > /etc/sudoers.d/labuser << 'EOF'
+labuser ALL=(ALL) NOPASSWD: /usr/bin/systemctl start docker
+labuser ALL=(ALL) NOPASSWD: /usr/bin/systemctl stop docker
+labuser ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart docker
+labuser ALL=(ALL) NOPASSWD: /usr/bin/systemctl status docker
+labuser ALL=(ALL) NOPASSWD: /usr/bin/systemctl enable docker
+labuser ALL=(ALL) NOPASSWD: /usr/bin/kubeadm *
+labuser ALL=(ALL) NOPASSWD: /usr/bin/kubectl *
+EOF
+
+chmod 440 /etc/sudoers.d/labuser
+visudo -c
+
 id labuser
-# uid=1001(labuser) gid=1001(labuser)
+# uid=1001(labuser) gid=1001(labuser) groups=1001(labuser),999(docker)
 ```
 
 #### 3.1.12 SSH Server (Konteineris)
@@ -435,12 +449,12 @@ alias check-resources="echo '=== RAM ===' && free -h && echo && echo '=== DISK =
 
 # Docker AppArmor Workaround for LXD
 docker() {
-  case "\$1" in
+  case "$1" in
     run|exec|create)
-      /usr/bin/docker "\$1" --security-opt apparmor=unconfined "\${@:2}"
+      /usr/bin/docker "$1" --security-opt apparmor=unconfined "${@:2}"
       ;;
     *)
-      /usr/bin/docker "\$@"
+      /usr/bin/docker "$@"
       ;;
   esac
 }
