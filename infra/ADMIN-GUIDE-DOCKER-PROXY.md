@@ -376,17 +376,23 @@ useradd -m -s /bin/bash -u 1001 labuser
 usermod -aG docker labuser
 echo "labuser:temppassword" | chpasswd
 
-# Seadista sudo õigused (laborite jaoks)
+# Seadista sudo õigused (Lab 1-2.5 jaoks)
 cat > /etc/sudoers.d/labuser << 'EOF'
-labuser ALL=(ALL) NOPASSWD: /usr/bin/systemctl start docker
-labuser ALL=(ALL) NOPASSWD: /usr/bin/systemctl stop docker
+# DevOps Training Lab - Sudo Access (Lab 1-2.5)
+Defaults:labuser !requiretty
+
+# Docker daemon management (troubleshooting)
 labuser ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart docker
 labuser ALL=(ALL) NOPASSWD: /usr/bin/systemctl status docker
-labuser ALL=(ALL) NOPASSWD: /usr/bin/systemctl enable docker
+
+# Lab 2.5: Network Analysis & Security Audit
+labuser ALL=(ALL) NOPASSWD: /usr/sbin/tcpdump
+labuser ALL=(ALL) NOPASSWD: /usr/bin/lsof
+labuser ALL=(ALL) NOPASSWD: /usr/bin/nmap
 EOF
 
 # Kontrolli õigusi
-chmod 440 /etc/sudoers.d/labuser
+chmod 0440 /etc/sudoers.d/labuser
 visudo -c
 
 # Kontrolli kasutajat
@@ -1627,24 +1633,26 @@ apt-mark hold containerd.io
 apt-get install -y jq nmap tcpdump netcat-openbsd dnsutils net-tools iproute2
 
 # 8. Sudo konfiguratsioon (kui muutub)
-cat > /etc/sudoers.d/labuser-devops << 'EOF'
-# DevOps Training Lab - Limited Sudo Access
+cat > /etc/sudoers.d/labuser << 'EOF'
+# DevOps Training Lab - Sudo Access (Lab 1-2.5)
 Defaults:labuser !requiretty
+
+# Docker daemon management (troubleshooting)
+labuser ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart docker
+labuser ALL=(ALL) NOPASSWD: /usr/bin/systemctl status docker
+
+# Lab 2.5: Network Analysis & Security Audit
+labuser ALL=(ALL) NOPASSWD: /usr/sbin/tcpdump
 labuser ALL=(ALL) NOPASSWD: /usr/bin/lsof
 labuser ALL=(ALL) NOPASSWD: /usr/bin/nmap
-labuser ALL=(ALL) NOPASSWD: /usr/sbin/tcpdump
-labuser ALL=(ALL) NOPASSWD: /bin/systemctl restart docker
-labuser ALL=(ALL) NOPASSWD: /bin/systemctl status docker
-labuser ALL=(ALL) NOPASSWD: /bin/ls /var/lib/docker/volumes/
-labuser ALL=(ALL) NOPASSWD: /bin/ls /var/lib/docker/volumes/*
-labuser ALL=(ALL) NOPASSWD: /usr/bin/du /var/lib/docker/containers/*
 EOF
 
-chmod 0440 /etc/sudoers.d/labuser-devops
-chown root:root /etc/sudoers.d/labuser-devops
-visudo -c -f /etc/sudoers.d/labuser-devops
+chmod 0440 /etc/sudoers.d/labuser
+chown root:root /etc/sudoers.d/labuser
+visudo -c -f /etc/sudoers.d/labuser
 
 # 9. Testi sudo
+su - labuser -c 'sudo systemctl status docker'
 su - labuser -c 'sudo lsof -i :22'
 
 # 10. Puhasta
@@ -1945,9 +1953,15 @@ for c in devops-student{1..6}; do echo "=== $c ==="; lxc exec $c -- containerd -
 
 ---
 
-**Viimane uuendus:** 2025-12-02
-**Versioon:** 1.0
+**Viimane uuendus:** 2025-12-03
+**Versioon:** 1.1
 **Proxy:** cache1.sss:3128
 **Hooldaja:** VPS Admin
 **Keskkond:** Ettevõtte sisevõrk (proxy)
-**Template:** devops-lab-base (Docker, Lab 1-2)
+**Template:** devops-lab-base (Docker, Lab 1-2.5)
+
+**Muudatused v1.1 (2025-12-03):**
+- ✅ Sudo konfiguratsioon ühtsustatud sektsioonides 3.1.10 ja 10.2
+- ✅ Eemaldatud ebavajalikud sudo õigused (start/stop/enable docker, ls volumes, du containers)
+- ✅ Lisatud Lab 2.5 vajalikud diagnostika tööriistad (tcpdump, lsof, nmap)
+- ✅ Faili nimi ühtsustatud: `/etc/sudoers.d/labuser` (mitte labuser-devops)
