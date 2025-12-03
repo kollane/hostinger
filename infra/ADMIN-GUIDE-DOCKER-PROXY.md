@@ -253,6 +253,40 @@ javac -version
 # Peaks näitama: openjdk version "21.0.x"
 ```
 
+#### 3.1.4A Gradle Proxy Seadistamine (Konteineris)
+
+**⚠️ KRIITILINE:** Gradle vajab proxy seadistust Lab 1-2 todo-service ehitamiseks!
+
+```bash
+# Loo Gradle proxy konfiguratsioon labuser'i jaoks
+mkdir -p /home/labuser/.gradle
+
+cat > /home/labuser/.gradle/gradle.properties << 'EOF'
+# Gradle Proxy Settings (cache1.sss:3128)
+# Vajalik Maven Central ja Gradle Plugin Portal'i ligipääsuks
+systemProp.http.proxyHost=cache1.sss
+systemProp.http.proxyPort=3128
+systemProp.https.proxyHost=cache1.sss
+systemProp.https.proxyPort=3128
+systemProp.http.nonProxyHosts=localhost|127.0.0.1|10.*|192.168.*
+
+# Gradle Daemon (kiirendab build'e)
+org.gradle.daemon=true
+org.gradle.parallel=true
+EOF
+
+# Õigused
+chown -R labuser:labuser /home/labuser/.gradle
+
+# Kontrolli
+cat /home/labuser/.gradle/gradle.properties
+```
+
+**Miks see on vajalik?**
+- Lab 1: Õpilased ehitavad todo-service'i Gradle'iga (`./gradlew build`)
+- Ilma proxy'ta: `Connection timeout` Maven Central'ist dependency'de allalaadimisel
+- Gradle kasutab `systemProp.*` seadeid HTTP(S) ühenduste jaoks
+
 #### 3.1.5 Node.js 20 Paigaldamine (Konteineris)
 
 **Node.js on vajalik user-service rakenduse ehitamiseks!**
@@ -440,6 +474,9 @@ export VISUAL=vim
 # Java Environment (todo-service jaoks)
 export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
 export PATH=$JAVA_HOME/bin:$PATH
+
+# Gradle Proxy (tagavaravariant, kui ~/.gradle/gradle.properties ei tööta)
+export GRADLE_OPTS="-Dhttp.proxyHost=cache1.sss -Dhttp.proxyPort=3128 -Dhttps.proxyHost=cache1.sss -Dhttps.proxyPort=3128 -Dhttp.nonProxyHosts=localhost|127.0.0.1|10.*|192.168.*"
 
 # Docker Aliases
 alias docker-stop-all="docker stop \$(docker ps -aq) 2>/dev/null || echo 'No containers running'"
@@ -1651,11 +1688,28 @@ chmod 0440 /etc/sudoers.d/labuser
 chown root:root /etc/sudoers.d/labuser
 visudo -c -f /etc/sudoers.d/labuser
 
-# 9. Testi sudo
+# 9. Gradle Proxy (kui muutub või puudub)
+mkdir -p /home/labuser/.gradle
+cat > /home/labuser/.gradle/gradle.properties << 'EOF'
+# Gradle Proxy Settings (cache1.sss:3128)
+systemProp.http.proxyHost=cache1.sss
+systemProp.http.proxyPort=3128
+systemProp.https.proxyHost=cache1.sss
+systemProp.https.proxyPort=3128
+systemProp.http.nonProxyHosts=localhost|127.0.0.1|10.*|192.168.*
+
+# Gradle Daemon
+org.gradle.daemon=true
+org.gradle.parallel=true
+EOF
+chown -R labuser:labuser /home/labuser/.gradle
+
+# 10. Testi sudo ja Gradle
 su - labuser -c 'sudo systemctl status docker'
 su - labuser -c 'sudo lsof -i :22'
+su - labuser -c 'cat ~/.gradle/gradle.properties'
 
-# 10. Puhasta
+# 11. Puhasta
 apt-get clean
 rm -rf /tmp/* /var/tmp/*
 history -c
@@ -1954,11 +2008,17 @@ for c in devops-student{1..6}; do echo "=== $c ==="; lxc exec $c -- containerd -
 ---
 
 **Viimane uuendus:** 2025-12-03
-**Versioon:** 1.1
+**Versioon:** 1.2
 **Proxy:** cache1.sss:3128
 **Hooldaja:** VPS Admin
 **Keskkond:** Ettevõtte sisevõrk (proxy)
 **Template:** devops-lab-base (Docker, Lab 1-2.5)
+
+**Muudatused v1.2 (2025-12-03):**
+- ✅ **KRIITILINE:** Lisatud Gradle proxy konfiguratsioon (sektsioonid 3.1.4A, 3.1.12, 10.2)
+- ✅ Gradle properties fail: `~/.gradle/gradle.properties` (Maven Central ligipääs)
+- ✅ GRADLE_OPTS keskkonna muutuja .bashrc'is (tagavaravariant)
+- ✅ Vajalik Lab 1-2 todo-service ehitamiseks (`./gradlew build`)
 
 **Muudatused v1.1 (2025-12-03):**
 - ✅ Sudo konfiguratsioon ühtsustatud sektsioonides 3.1.10 ja 10.2
