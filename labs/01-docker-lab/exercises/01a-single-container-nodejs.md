@@ -342,6 +342,37 @@ docker stats user-service
 
 ---
 
+## 🔒 Proxy Environments (Valikuline)
+
+**Kui oled corporate võrgus proksi keskkonnaga:**
+
+npm install võib ebaõnnestuda:
+```
+npm ERR! network request to https://registry.npmjs.org failed, reason: connect ETIMEDOUT
+```
+
+**Põhjus:** Corporate firewall blokeerib otseühenduse npmjs.org'i. Paketid peavad minema läbi proksi (nt. cache1.sss:3128).
+
+**Lahendus:**
+- 📖 Põhjalik juhend: [README-PROXY.md](../../solutions/backend-nodejs/README-PROXY.md)
+- 🚀 Kiire lahendus: Kasuta `Dockerfile.optimized.proxy` varianti build arg'idega
+
+**Näide:**
+```bash
+cd /home/janek/projects/hostinger/labs/01-docker-lab/solutions/backend-nodejs
+
+docker build \
+  --build-arg HTTP_PROXY=http://cache1.sss:3128 \
+  --build-arg HTTPS_PROXY=http://cache1.sss:3128 \
+  -f Dockerfile.optimized.proxy \
+  -t user-service:1.0 \
+  ../../../apps/backend-nodejs
+```
+
+**See on VALIKULINE** - kui Docker build töötab ilma proksita, siis jätka järgmise harjutusega!
+
+---
+
 **Õnnitleme! Oled loonud oma esimese Docker tõmmise! 🎉**
 
 ## 🔗 Järgmine Samm

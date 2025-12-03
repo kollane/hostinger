@@ -187,6 +187,29 @@ Peale selle labori läbimist oskad:
 - [x] YAML failivorming
 - [x] Keskkonnamuutujad
 
+### 🔧 Märkus Proxy Keskkonna Kohta
+
+Kui ehitasid Lab 1 pildid proxy keskkonnas (`Dockerfile.optimized.proxy`):
+- ✅ Tag'd pildid samaks nimeks: `user-service:1.0-optimized` ja `todo-service:1.0-optimized`
+- ✅ Lab 2 kasutab neid pilte (proxy ei ole enam vajalik)
+- ℹ️ Proxy on ehituse (build-time) mure, mitte orkestreerimise (orchestration) mure
+
+**Põhjus:** Docker Compose keskendub orkestreerimisele, mitte image ehitamisele. Kõik image'id on juba Lab 1's ehitatud - Lab 2 kasutab neid valmis pilte. Seetõttu proksi konfiguratsioon ei ole Lab 2's vajalik!
+
+**Kui siiski vajad build'imist Lab 2's:**
+```yaml
+# docker-compose.yml
+services:
+  user-service:
+    build:
+      context: ../apps/backend-nodejs
+      dockerfile: ../../01-docker-lab/solutions/backend-nodejs/Dockerfile.optimized.proxy
+      args:
+        HTTP_PROXY: http://cache1.sss:3128
+        HTTPS_PROXY: http://cache1.sss:3128
+    image: user-service:1.0-optimized
+```
+
 ---
 
 ## 🚀 Quick Start

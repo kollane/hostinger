@@ -1,0 +1,129 @@
+# ==========================================================================
+# ⚠️⚠️⚠️ ANTI-PATTERN DEMONSTRATION ⚠️⚠️⚠️
+# ==========================================================================
+#
+# See Dockerfile demonstreerib, mida MITTE TEHA!
+#
+# PROBLEEMID:
+# -----------
+# ❌ EI OLE porteeritav (töötab ainult cache1.sss võrgus)
+# ❌ Proxy LEAK'ib runtime konteineri (turvaviga)
+# ❌ Tekitab technical debt (tuleb refaktorida)
+# ❌ Arendaja masinas ei tööta (ei saa testida)
+# ❌ CI/CD pipeline'is ebaõnnestub (kui ei ole cache1.sss)
+# ❌ Image ei ole taaskasutatav teistes keskkondades
+#
+# MIKS selline kood eksisteerib corporate keskkonnas?
+# ----------------------------------------------------
+# - Quick fix surve all (deadline'id)
+# - Arendaja ei tea paremat meetodit (õppimisvõimaluse puudumine)
+# - "It works, don't touch it" kultuur (kardatakse refaktorida)
+# - Copy-paste StackOverflow'st (ilma mõistmata)
+# - Legacy code, mida keegi ei julge puutuda
+#
+# ÕIGE LAHENDUS:
+# --------------
+# ✅ Kasuta Dockerfile.optimized.proxy (ARG-põhine)
+# ✅ Proxy seadistamine build arg'idega
+# ✅ Runtime konteiner clean (ei leki proksi)
+# ✅ Portaabel (töötab proksi ja ilma)
+#
+# KASUTUS (AINULT DEMONSTRATSIOONIKS):
+# -------------------------------------
+# docker build \
+#   -f Dockerfile.proxy-hardcoded \
+#   -t user-service:1.0-hardcoded \
+#   ../../../apps/backend-nodejs
+#
+# ⚠️ See töötab AINULT cache1.sss võrgus!
+# ⚠️ Arendaja masinas ebaõnnestub!
+#
+# ==========================================================================
+
+FROM node:22-slim
+
+# ⚠️ HARDCODED PROXY - EI TÖÖTA arendaja masinas!
+# See on põhjus #1, miks see on halb:
+# - Kui sa oled Tallinna kontoris (cache1.sss võrk): ✅ Töötab
+# - Kui sa oled kodus (avatud internet):           ❌ Ei tööta (connection timeout)
+# - Kui kolleeg kloonib repo:                      ❌ Ei tööta tema masinas
+ENV HTTP_PROXY=http://cache1.sss:3128 \
+    HTTPS_PROXY=http://cache1.sss:3128 \
+    NO_PROXY=localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16
+
+# ⚠️ Proxy info on nüüd KOGU image'is!
+# See on põhjus #2, miks see on halb:
+# - Runtime konteiner proovib kasutada cache1.sss:3128
+# - Kui konteiner töötab AWS'is, GCP's, Azure'is → ei tööta
+# - Võrgupäringud ebaõnnestuvad (rakendus crashib)
+# - Debugging keeruline (miks runtime'is on proksi?)
+
+WORKDIR /app
+
+# npm install kasutab hardcoded HTTP_PROXY
+COPY package*.json ./
+RUN npm install --production
+
+# Kopeeri kood
+COPY . .
+
+EXPOSE 3000
+
+# ⚠️ PROXY on runtime'is ALLES (leak!)
+# Testi: docker run --rm user-service:1.0-hardcoded env | grep PROXY
+# Näed: HTTP_PROXY=http://cache1.sss:3128 ← See EI PEAKS olema runtime'is!
+
+CMD ["node", "server.js"]
+
+# ==========================================================================
+# REFAKTORIMISE JUHEND:
+# ==========================================================================
+#
+# Kui sa leiad corporate codebase'ist sellise Dockerfile'i, refaktori nii:
+#
+# SAMM 1: Asenda hardcoded ENV ARG'idega
+# ----------------------------------------
+# Eemalda:  ENV HTTP_PROXY=http://cache1.sss:3128
+# Lisa:     ARG HTTP_PROXY=""
+#           ENV HTTP_PROXY=${HTTP_PROXY}
+#
+# SAMM 2: Uuenda build käsud
+# ---------------------------
+# Build proksiga:
+#   docker build --build-arg HTTP_PROXY=http://cache1.sss:3128 ...
+#
+# Build ilma:
+#   docker build ...
+#
+# SAMM 3: Idealiter: multi-stage build
+# -------------------------------------
+# Järgi: Dockerfile.optimized.proxy pattern'i
+# - Proxy ainult builder stage'is
+# - Runtime clean (ei leki)
+#
+# SAMM 4: Uuenda CI/CD
+# ---------------------
+# - Lisa build-arg'id CI/CD secret'idesse
+# - Testi mõlemas keskkonnas (proxy + ilma)
+#
+# ==========================================================================
+#
+# CORPORATE SURVIVAL TIP:
+# -----------------------
+# Kui leiad sellise Dockerfile'i ja sulle öeldakse "don't touch it, it works":
+#
+# 1. Loo uus Dockerfile.optimized.proxy KÕRVALE (ära muuda vana)
+# 2. Testi põhjalikult
+# 3. Näita erinevust (image size, portability, security)
+# 4. Paku migreerimisplaani (deprecated vana → uus)
+# 5. Ole kannatlik (muutus võtab aega)
+#
+# ==========================================================================
+#
+# LINGID:
+# -------
+# 📖 Õige lahendus: Dockerfile.optimized.proxy
+# 📖 Dokumentatsioon: README-PROXY.md
+# 📖 Teooria: ../../../../resource/06-Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md
+#
+# ==========================================================================

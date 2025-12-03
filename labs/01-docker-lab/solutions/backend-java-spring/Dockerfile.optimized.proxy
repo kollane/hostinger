@@ -1,0 +1,221 @@
+# ==========================================================================
+# Proxy-teadlik Optimeeritud Dockerfile Todo Teenuse (Service) jaoks
+# ==========================================================================
+#
+# See Dockerfile lahendab Docker build'ide probleeme proksi-piiratud
+# corporate keskkonnas (nt. cache1.sss:3128). Kasutab ARG-põhist lähenemist
+# koos Gradle-spetsiifilise GRADLE_OPTS konfiguratsiooniga.
+#
+# KASUTUS:
+# --------
+#
+# 1. PROXY KESKKOND (corporate võrk, cache1.sss):
+#    docker build \
+#      --build-arg HTTP_PROXY=http://cache1.sss:3128 \
+#      --build-arg HTTPS_PROXY=http://cache1.sss:3128 \
+#      --build-arg NO_PROXY=localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16 \
+#      -f Dockerfile.optimized.proxy \
+#      -t todo-service:1.0-optimized \
+#      ../../../apps/backend-java-spring
+#
+# 2. ILMA PROXY'TA (arendaja masinas, avatud võrk):
+#    docker build \
+#      -f Dockerfile.optimized.proxy \
+#      -t todo-service:1.0-optimized \
+#      ../../../apps/backend-java-spring
+#
+# TÄHTIS (GRADLE PROXY):
+# ----------------------
+# Gradle EI kasuta HTTP_PROXY keskkonna muutujat otse!
+# Gradle vajab: -Dhttp.proxyHost=cache1.sss -Dhttp.proxyPort=3128
+# See Dockerfile parsib HTTP_PROXY stringi ja seadistab GRADLE_OPTS'i automaatselt.
+#
+# TÄHTIS (RUNTIME):
+# -----------------
+# - ARG väärtused on AINULT ehitusajal (build-time) nähtavad
+# - ENV väärtused on AINULT builder stage'is
+# - Runtime konteiner EI OLE proxy's (turvalisem, portaabel)
+#
+# DOKUMENTATSIOON:
+# ----------------
+# 📖 Põhjalik juhend: README-PROXY.md
+# 📖 Gradle proxy: ../../../../resource/06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md
+#
+# ==========================================================================
+
+# ARG deklaratsioonid ENNE esimest FROM (globaalsed, kõigis stage'ides)
+# Vaikeväärtused on tühjad stringid - töötab ilma proksita
+ARG HTTP_PROXY=""
+ARG HTTPS_PROXY=""
+ARG NO_PROXY=""
+
+# ==========================================================================
+# 1. ETAPP: Ehitus (Build)
+# ==========================================================================
+# See stage ehitab (build) JAR faili kasutades Gradle'it.
+# Proksi konfiguratsioon on AINULT siin - runtime'is ei ole vaja.
+
+FROM gradle:8.11-jdk21-alpine AS builder
+
+# ENV ainult selles stage'is
+ENV HTTP_PROXY=${HTTP_PROXY} \
+    HTTPS_PROXY=${HTTPS_PROXY} \
+    NO_PROXY=${NO_PROXY}
+
+WORKDIR /app
+
+# Kopeeri Gradle failid (sõltuvuste (dependencies) vahemälu (caching) jaoks)
+COPY build.gradle settings.gradle ./
+COPY gradle ./gradle
+
+# ==========================================================================
+# GRADLE PROXY KONFIGURATSIOON
+# ==========================================================================
+# Gradle vajab spetsiifilist formaati: -Dhttp.proxyHost=HOST -Dhttp.proxyPort=PORT
+# HTTP_PROXY formaat: http://cache1.sss:3128
+#
+# Parsinguloogika:
+# 1. Eemalda "http://" prefix: cache1.sss:3128
+# 2. Erista host: cache1.sss
+# 3. Erista port: 3128
+# 4. Seadista GRADLE_OPTS koos parsed väärtustega
+#
+# Kui HTTP_PROXY on tühi või puudub, jäta GRADLE_OPTS seadistamata (töötab ilma proksita).
+# ==========================================================================
+
+# Lae alla sõltuvused (dependencies) (on vahemälus (cached), kui build.gradle ei muutu)
+# Kui proxy on seadistatud, Gradle kasutab seda Maven Central'i pöördumiseks
+RUN if [ -n "$HTTP_PROXY" ]; then \
+        echo "🔧 Seadistan Gradle proxy konfiguratsiooni..."; \
+        # Parse proxy host (eemalda http:// ja :port)
+        PROXY_HOST=$(echo "$HTTP_PROXY" | sed -e 's|http://||' -e 's|https://||' -e 's|:[0-9]*$||'); \
+        # Parse proxy port (võta ainult numbrid lõpust)
+        PROXY_PORT=$(echo "$HTTP_PROXY" | grep -oE '[0-9]+$'); \
+        echo "   Proxy host: $PROXY_HOST"; \
+        echo "   Proxy port: $PROXY_PORT"; \
+        # Seadista GRADLE_OPTS koos parsed väärtustega
+        export GRADLE_OPTS="-Dhttp.proxyHost=$PROXY_HOST -Dhttp.proxyPort=$PROXY_PORT -Dhttps.proxyHost=$PROXY_HOST -Dhttps.proxyPort=$PROXY_PORT -Dhttp.nonProxyHosts=localhost|127.0.0.1"; \
+        echo "   GRADLE_OPTS=$GRADLE_OPTS"; \
+        # Lae alla sõltuvused proksiga
+        gradle dependencies --no-daemon; \
+    else \
+        echo "ℹ️  Proxy ei ole seadistatud - laen sõltuvused otse"; \
+        # Lae alla sõltuvused ilma proksita
+        gradle dependencies --no-daemon; \
+    fi
+
+# Kopeeri lähtekood ja ehita (build) JAR
+COPY src ./src
+
+# Ehita JAR fail (kasutab vahemälus cached sõltuvusi)
+# Gradle GRADLE_OPTS on endiselt aktiivne, kui seadistatud
+RUN if [ -n "$HTTP_PROXY" ]; then \
+        PROXY_HOST=$(echo "$HTTP_PROXY" | sed -e 's|http://||' -e 's|https://||' -e 's|:[0-9]*$||'); \
+        PROXY_PORT=$(echo "$HTTP_PROXY" | grep -oE '[0-9]+$'); \
+        export GRADLE_OPTS="-Dhttp.proxyHost=$PROXY_HOST -Dhttp.proxyPort=$PROXY_PORT -Dhttps.proxyHost=$PROXY_HOST -Dhttps.proxyPort=$PROXY_PORT"; \
+        gradle bootJar --no-daemon; \
+    else \
+        gradle bootJar --no-daemon; \
+    fi
+
+# ==========================================================================
+# 2. ETAPP: Runtime
+# ==========================================================================
+# See stage sisaldab ainult runtime'i vajalikku koodi (JRE + JAR).
+# ⚠️ TÄHTIS: ENV muutujad EI OLE siin - runtime konteiner on "clean"!
+
+FROM eclipse-temurin:21-jre-alpine
+
+# ⚠️ PROXY ENV MUUTUJAD EI OLE SIIN!
+# Iga FROM käsk nullib ENV muutujad - runtime on proksi-vaba.
+# See on ÕIGE käitumine:
+# - Runtime'is ei ole vaja proksi (konteinerid suhtlevad LXD sisevõrgus)
+# - Turvalisem (proxy info ei leki runtime konteineri)
+# - Portaabel (sama image töötab mõlemas keskkonnas)
+
+WORKDIR /app
+
+# Loo mitte-juurkasutaja (non-root user)
+# Turvalisuse best practice: ära käivita rakendust root'ina
+RUN addgroup -g 1001 -S spring && \
+    adduser -S spring -u 1001 -G spring
+
+# Kopeeri ainult JAR fail ehitaja (builder) etapist
+# --from=builder võtab JAR faili eelmisest stage'ist
+# --chown=spring:spring määrab faili omanikuks spring kasutaja
+COPY --from=builder --chown=spring:spring /app/build/libs/todo-service.jar app.jar
+
+# Kasuta mitte-juurkasutajat (non-root user)
+USER spring:spring
+
+EXPOSE 8081
+
+# Seisukorra kontroll (health check) (kontrollib iga 30s, ajalõpp 3s, alguse ooteaeg 40s)
+# Docker kasutab seda, et kontrollida konteineri tervist
+# Pikk start-period (40s) sest Spring Boot käivitus võtab aega
+HEALTHCHECK --interval=30s --timeout=3s --start-period=40s \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:8081/health || exit 1
+
+# Käivita rakendus (application) JVM mälu häälestamisega (konteineriteadlik)
+# -XX:InitialRAMPercentage=80: Algne heap size 80% konteiner RAM'ist
+# -XX:MaxRAMPercentage=80: Maksimaalne heap size 80% konteiner RAM'ist
+CMD ["java", \
+    "-XX:InitialRAMPercentage=80", \
+    "-XX:MaxRAMPercentage=80", \
+    "-jar", \
+    "app.jar"]
+
+# ==========================================================================
+# MÄRKUSED:
+# ==========================================================================
+#
+# MÄRKUS 1: Gradle vs. npm Proxy Konfiguratsioon
+# -----------------------------------------------
+# npm:     Kasutab HTTP_PROXY keskkonna muutujat otse ✅
+# Gradle:  EI kasuta HTTP_PROXY otse ❌
+#          Vajab: -Dhttp.proxyHost=HOST -Dhttp.proxyPort=PORT
+#
+# Sellepärast on Gradle konfiguratsioon keerulisem (vajab parsing'ut).
+#
+# MÄRKUS 2: Gradle Proxy Alternatiivid
+# -------------------------------------
+# Meetod 1 (see Dockerfile): GRADLE_OPTS koos parsing'uga ✅ PARIM
+# Meetod 2: ~/.gradle/gradle.properties fail (vajab koopia Dockerfile'i)
+# Meetod 3: Hardcoded GRADLE_OPTS (ei ole portaabel) ❌
+#
+# MÄRKUS 3: Proxy vs. Firewall
+# -----------------------------
+# Corporate keskkonnas:
+# - Otseühendus internetti on blokeeritud (firewall)
+# - Kõik HTTP/HTTPS liiklus peab minema läbi proksi (cache1.sss:3128)
+# - gradle dependencies ebaõnnestub ilma proksi konfiguratsioonita
+#
+# MÄRKUS 4: Miks ARG, mitte hardcoded ENV?
+# -----------------------------------------
+# ✅ ARG-põhine (see Dockerfile):
+#    - Portaabel (töötab proksi ja ilma)
+#    - Turvaline (ei leki runtime'i)
+#    - Production-ready
+#
+# ❌ Hardcoded ENV (vt. Dockerfile.proxy-hardcoded):
+#    - Töötab ainult cache1.sss võrgus
+#    - Proxy leak'ib runtime'i (turvaviga)
+#    - Tekitab technical debt
+#
+# MÄRKUS 5: Testimine
+# -------------------
+# Veendu, et proxy ei leki runtime'i:
+#
+#   docker run --rm todo-service:1.0-optimized env | grep -i proxy
+#
+# Tulemus peaks olema TÜHI (ei leia midagi). Kui näed HTTP_PROXY=... või
+# GRADLE_OPTS=..., siis on proxy leakinud runtime'i - see on VIGA! ⚠️
+#
+# MÄRKUS 6: Pildi (Image) Suurus
+# -------------------------------
+# Multi-stage build vähendab image suurust:
+# - Builder stage: ~600MB (JDK + Gradle + sõltuvused)
+# - Runtime stage: ~250MB (ainult JRE + JAR)
+# - Proxy konfiguratsioon ei suurenda image suurust!
+#
+# ==========================================================================

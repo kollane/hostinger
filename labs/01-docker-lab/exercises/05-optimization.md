@@ -663,6 +663,107 @@ docker images | grep -E 'user-service|todo-service' | sort
 
 ---
 
+### Samm 8: Proxy Variant Comparison (10 min, Valikuline)
+
+**Eesmärk:** Veendu, et proksi konfiguratsioon ei suurenda image suurust ja ei leki runtime'i.
+
+**ℹ️ See samm on VALIKULINE** - vajalik ainult kui ehitad Docker image'eid corporate proksi keskkonnas (nt. cache1.sss:3128).
+
+#### 8.1 Ehita Proxy Variant (Node.js)
+
+```bash
+cd /home/janek/projects/hostinger/labs/01-docker-lab/solutions/backend-nodejs
+
+# Ehita proksiga (või ilma - sama Dockerfile!)
+docker build \
+  --build-arg HTTP_PROXY=http://cache1.sss:3128 \
+  --build-arg HTTPS_PROXY=http://cache1.sss:3128 \
+  -f Dockerfile.optimized.proxy \
+  -t user-service:1.0-proxy \
+  ../../../apps/backend-nodejs
+
+# EXPECTED: Build õnnestub mõlemas keskkonnas (proksi ja ilma)
+```
+
+#### 8.2 Võrdle Image Suurusi
+
+```bash
+docker images | grep user-service
+
+# EXPECTED:
+# user-service:1.0-optimized   ~305MB
+# user-service:1.0-proxy       ~305MB  ← SAMA suurus! ✅
+```
+
+**Järeldus:** Proxy konfiguratsioon ei suurenda image suurust!
+
+#### 8.3 Veendu, et Proxy Ei Leki Runtime'i
+
+```bash
+# Test: runtime konteineris EI TOHI olla proksi muutujaid
+docker run --rm user-service:1.0-proxy env | grep -i proxy
+
+# EXPECTED: Tühi väljund (ei leia midagi) ✅
+# Kui näed HTTP_PROXY=..., siis proxy leak'is! ⚠️
+```
+
+**Miks see on oluline?**
+- ✅ Proxy on AINULT build-time ajal (npm/gradle download'id)
+- ✅ Runtime konteiner on "clean" (ei sõltu proksist)
+- ✅ Image on portaabel (töötab AWS, GCP, Azure, kodus)
+
+#### 8.4 Ehita Java Proxy Variant (valikuline)
+
+```bash
+cd /home/janek/projects/hostinger/labs/01-docker-lab/solutions/backend-java-spring
+
+docker build \
+  --build-arg HTTP_PROXY=http://cache1.sss:3128 \
+  --build-arg HTTPS_PROXY=http://cache1.sss:3128 \
+  -f Dockerfile.optimized.proxy \
+  -t todo-service:1.0-proxy \
+  ../../../apps/backend-java-spring
+
+# Võrdle suurusi
+docker images | grep todo-service
+
+# EXPECTED:
+# todo-service:1.0-optimized   ~250MB
+# todo-service:1.0-proxy       ~250MB  ← SAMA suurus! ✅
+
+# Verifitseeri runtime (peaks olema clean)
+docker run --rm todo-service:1.0-proxy env | grep -i proxy
+# EXPECTED: Tühi väljund ✅
+
+docker run --rm todo-service:1.0-proxy env | grep -i gradle
+# EXPECTED: Tühi väljund (GRADLE_OPTS ei ole runtime'is) ✅
+```
+
+#### 8.5 Test Application Functionality
+
+```bash
+# Testi, et proxy variant töötab nagu optimeeritud variant
+docker run --rm -d --name test-proxy -p 3000:3000 user-service:1.0-proxy
+curl http://localhost:3000/health  # Peaks tagastama: {"status":"healthy"}
+docker stop test-proxy
+
+# EXPECTED: Töötab identeselt optimeeritud variandiga! ✅
+```
+
+**📖 Põhjalik selgitus:**
+- Node.js: [README-PROXY.md](../../solutions/backend-nodejs/README-PROXY.md)
+- Java/Gradle: [README-PROXY.md](../../solutions/backend-java-spring/README-PROXY.md)
+
+---
+
+**Järeldus (Samm 8):** ARG-põhine proxy konfiguratsioon:
+- ✅ Ei suurenda image suurust
+- ✅ Ei leki runtime'i
+- ✅ Töötab nii proksi kui ilma
+- ✅ Production-ready (portaabel, turvaline)
+
+---
+
 ## 🎓 Parimad tavad
 
 1. ✅ Mitmeastmelised ehitused (JDK → JRE, sõltuvused → runtime)

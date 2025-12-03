@@ -444,6 +444,39 @@ docker logs todo-service
 
 ---
 
+## 🔒 Proxy Environments (Valikuline)
+
+**Kui oled corporate võrgus proksi keskkonnaga:**
+
+Gradle võib ebaõnnestuda sõltuvuste allalaadimisel:
+```
+Could not resolve all dependencies for configuration ':compileClasspath'
+```
+
+**Põhjus:** Corporate firewall blokeerib otseühenduse Maven Central'i. Sõltuvused peavad minema läbi proksi (nt. cache1.sss:3128).
+
+**Lahendus:**
+- 📖 Põhjalik juhend: [README-PROXY.md](../../solutions/backend-java-spring/README-PROXY.md)
+- 🚀 Kiire lahendus: Kasuta `Dockerfile.optimized.proxy` varianti build arg'idega
+
+**Näide:**
+```bash
+cd /home/janek/projects/hostinger/labs/01-docker-lab/solutions/backend-java-spring
+
+docker build \
+  --build-arg HTTP_PROXY=http://cache1.sss:3128 \
+  --build-arg HTTPS_PROXY=http://cache1.sss:3128 \
+  -f Dockerfile.optimized.proxy \
+  -t todo-service:1.0 \
+  ../../../apps/backend-java-spring
+```
+
+**ℹ️ Gradle Eripära:** Gradle EI kasuta HTTP_PROXY otse (erinevalt npm'ist). Dockerfile.optimized.proxy parsib HTTP_PROXY automaatselt GRADLE_OPTS formaati.
+
+**See on VALIKULINE** - kui Docker build töötab ilma proksita, siis jätka järgmise harjutusega!
+
+---
+
 **Õnnitleme! Oled loonud oma esimese Docker tõmmise! 🎉**
 
 ## 🔗 Järgmine Samm
