@@ -671,6 +671,8 @@ docker images | grep -E 'user-service|todo-service' | sort
 
 #### 8.1 Ehita Proxy Variant (Node.js)
 
+**ℹ️ Märkus:** Harjutus 01a-s õppisid juba 2-stage build'i ARG proksiga. See samm katsetab optimeeritud versiooni (täiendavad parandused).
+
 ```bash
 cd /home/janek/projects/hostinger/labs/01-docker-lab/solutions/backend-nodejs
 
@@ -713,6 +715,8 @@ docker run --rm user-service:1.0-proxy env | grep -i proxy
 - ✅ Image on portaabel (töötab AWS, GCP, Azure, kodus)
 
 #### 8.4 Ehita Java Proxy Variant (valikuline)
+
+**ℹ️ Märkus:** Harjutus 01b-s õppisid juba 2-stage build'i Gradle proksiga. See samm katsetab optimeeritud versiooni (täiendavad parandused).
 
 ```bash
 cd /home/janek/projects/hostinger/labs/01-docker-lab/solutions/backend-java-spring

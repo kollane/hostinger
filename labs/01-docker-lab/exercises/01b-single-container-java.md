@@ -92,38 +92,95 @@ cat build.gradle
 
 ### Samm 2: Loo Dockerfile
 
-Loo fail nimega `Dockerfile`:
-
 **⚠️ Oluline:** Dockerfail tuleb luua rakenduse juurkataloogi `~/labs/apps/backend-java-spring`
 
 ```bash
 vim Dockerfile
 ```
 
-**📖 Dockerfile põhitõed:** Kui vajad abi Dockerfile instruktsioonide (FROM, WORKDIR, COPY, CMD, EXPOSE) mõistmisega, loe [Peatükk 06: Dockerfile - Rakenduste Konteineriseerimise Detailid](../../../resource/06-Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md).
+**📖 Dockerfile põhitõed:** Kui vajad abi Dockerfile instruktsioonide (FROM, WORKDIR, COPY, RUN, CMD, ARG, multi-stage) mõistmisega, loe [Peatükk 06: Dockerfile - Rakenduste Konteineriseerimise Detailid](../../../resource/06-Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md).
 
-**Ülesanne:** Kirjuta Dockerfile, mis:
-1. Kasutab Java 21 JRE alpine baastõmmist (base image)
-2. Seadistab töökataloogiks `/app`
-3. Kopeerib JAR faili (eeldab, et ehitamine on tehtud)
-4. Avaldab pordi 8081
-5. Käivitab rakenduse
+---
 
-**Märkus:** See on lihtne Dockerfile, mis eeldab, et JAR fail on juba ehitatud. Optimeeritud versioonis (Harjutus 5) lisame mitmeastmelise (multi-stage) ehitamise.
+#### Variant A: Lihtne (VPS, õppemeetod)
 
-**💡 Abi vajadusel:**
-- Vaata Docker dokumentatsiooni: https://docs.docker.com/engine/reference/builder/
-- Vaata näidislahendust lahenduste kataloogis: `~/labs/01-docker-lab/solutions/backend-java-spring/Dockerfile`
-
-**💡 Näpunäide: Dockerfile struktuur**
+Lihtne 1-stage Dockerfile VPS'i jaoks (eeldab pre-built JAR'i):
 
 ```dockerfile
 FROM eclipse-temurin:21-jre-alpine
 
 WORKDIR /app
 
-# Kopeeri JAR fail
+# Kopeeri JAR fail (eeldab host'is ehitatud JAR'i!)
 COPY build/libs/todo-service.jar app.jar
+
+# Avalda port
+EXPOSE 8081
+
+# Käivita
+CMD ["java", "-jar", "app.jar"]
+```
+
+**Ehita:**
+```bash
+# 1. Ehita JAR host'is
+./gradlew clean bootJar
+
+# 2. Ehita Docker tõmmis
+docker build -t todo-service:1.0 .
+```
+
+⚠️ **Märkus:** See on NÄIDIS VPS testimiseks. Praktikas kasuta Variant B (Gradle build containeris)!
+
+---
+
+#### Variant B: Corporate Keskkond (PRIMAARNE) ⭐
+
+**Enamik õpilasi kasutab seda!** 2-stage build Gradle containeris ARG proksiga:
+
+```dockerfile
+# ====================================
+# 1. etapp: Builder (JAR'i ehitamine)
+# ====================================
+FROM gradle:8.11-jdk21-alpine AS builder
+
+# ARG võimaldab anda proxy build-time'is (portaabel!)
+ARG HTTP_PROXY
+ARG HTTPS_PROXY
+
+# Gradle vajab proxy't GRADLE_OPTS formaadis
+# Konverteerime HTTP_PROXY → GRADLE_OPTS
+RUN if [ -n "$HTTP_PROXY" ]; then \
+      PROXY_HOST=$(echo "$HTTP_PROXY" | sed 's|^.*://||; s|:.*$||'); \
+      PROXY_PORT=$(echo "$HTTP_PROXY" | grep -oE '[0-9]+$'); \
+      export GRADLE_OPTS="-Dhttp.proxyHost=$PROXY_HOST -Dhttp.proxyPort=$PROXY_PORT -Dhttps.proxyHost=$PROXY_HOST -Dhttps.proxyPort=$PROXY_PORT"; \
+      echo "GRADLE_OPTS=$GRADLE_OPTS" >> /etc/environment; \
+    fi
+
+WORKDIR /app
+
+# Kopeeri Gradle konfiguratsiooni failid
+COPY build.gradle settings.gradle ./
+COPY gradle ./gradle
+
+# Lae alla sõltuvused (cached kui build.gradle ei muutu)
+RUN gradle dependencies --no-daemon
+
+# Kopeeri lähtekood
+COPY src ./src
+
+# Ehita JAR fail
+RUN gradle bootJar --no-daemon
+
+# ====================================
+# 2. etapp: Runtime (clean JRE, ilma proksita)
+# ====================================
+FROM eclipse-temurin:21-jre-alpine AS runtime
+
+WORKDIR /app
+
+# Kopeeri ainult JAR builder'ist
+COPY --from=builder /app/build/libs/todo-service.jar app.jar
 
 # Avalda port
 EXPOSE 8081
@@ -131,6 +188,47 @@ EXPOSE 8081
 # Käivita rakendus
 CMD ["java", "-jar", "app.jar"]
 ```
+
+**Ehita proksiga (corporate võrk):**
+```bash
+# Asenda oma proxy aadress!
+docker build \
+  --build-arg HTTP_PROXY=http://cache1.sss:3128 \
+  --build-arg HTTPS_PROXY=http://cache1.sss:3128 \
+  -t todo-service:1.0 .
+```
+
+**Ehita ilma proksita (avalik võrk):**
+```bash
+docker build -t todo-service:1.0 .
+# Gradle download töötab avalikus võrgus
+```
+
+**Kontrolli: Kas proxy leak'ib?**
+```bash
+docker run --rm todo-service:1.0 env | grep -i proxy
+# Oodatud: TÜHI! ✅ Proxy EI OLE runtime'is
+```
+
+**Mida õppisid?**
+- ✅ Multi-stage build (Gradle build containeris!)
+- ✅ ARG vs ENV (build-time vs runtime)
+- ✅ Proxy ei leki (clean runtime!)
+- ✅ Ei vaja host'is Java/Gradle installimist
+
+---
+
+**📖 Põhjalik selgitus:**
+
+Kui vajad ARG, ENV, multi-stage build'i ja Gradle proxy konfiguratsioonide põhjalikku selgitust, loe:
+- 👉 [Peatükk 06: Dockerfile Detailid](../../../resource/06-Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md)
+- 👉 [Peatükk 06A: Java Spring Boot Spetsiifika](../../../resource/06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md)
+
+**💡 Näidislahendused:**
+- `solutions/backend-java-spring/Dockerfile.simple` - Variant B (2-stage Gradle containeris)
+- `solutions/backend-java-spring/Dockerfile.vps-simple` - Variant A (1-stage pre-built JAR)
+
+---
 
 ### Samm 3: Loo .dockerignore
 
@@ -169,25 +267,35 @@ gradlew.bat
 
 **Asukoht:** `~/labs/apps/backend-java-spring`
 
-Esmalt ehita JAR fail, seejärel Docker tõmmis:
+**⚠️ Oluline:** Sõltuvalt valitud variandist, ehitamine erineb:
 
-**⚠️ Oluline:** Nii JAR-i kui ka Docker tõmmise ehitamiseks pead olema rakenduse juurkataloogis (kus asuvad `build.gradle` ja `Dockerfile`).
+#### Kui kasutad Variant A (VPS, pre-built JAR):
 
 ```bash
-# Ehita JAR fail
+# 1. Ehita JAR host'is
 ./gradlew clean bootJar
 
-# Kontrolli, et JAR on loodud
+# 2. Kontrolli JAR'i
 ls -lh build/libs/
 
-# Ehita Docker tõmmis sildiga (tag)
+# 3. Ehita Docker tõmmis
 docker build -t todo-service:1.0 .
-
-# Vaata ehitamise protsessi
-# Märka: iga käsk loob uue kihi (layer)
 ```
 
-Kontrolli tõmmist:
+#### Kui kasutad Variant B (PRIMAARNE - Gradle containeris):
+
+```bash
+# Ainult Docker build (Gradle build toimub containeris!)
+docker build \
+  --build-arg HTTP_PROXY=http://cache1.sss:3128 \
+  --build-arg HTTPS_PROXY=http://cache1.sss:3128 \
+  -t todo-service:1.0 .
+
+# VÕI ilma proksita (avalik võrk):
+docker build -t todo-service:1.0 .
+```
+
+**Kontrolli tõmmist:**
 
 ```bash
 # Vaata kõiki tõmmiseid
@@ -201,7 +309,7 @@ docker images todo-service:1.0
 ```
 
 **Küsimused:**
-- Kui suur on sinu tõmmis?
+- Kui suur on sinu tõmmis? (peaks olema ~180-230MB)
 - Mitu kihti (layers) on tõmmisel?
 - Millal tõmmis loodi?
 
@@ -441,39 +549,6 @@ docker logs todo-service
 6. **JWT_SECRET peab olema turvaline** - Min 32 tähemärki; testiks sobib lihtsalt string, tootmises kasuta `openssl rand -base64 32`
 
 **📖 Java konteineriseerimise parimad tavad:** Põhjalikum käsitlus JAR vs WAR, Spring Boot spetsiifikast, JVM memory tuning'ust ja teised Java spetsiifilised teemad leiad [Peatükk 06A: Java Spring Boot ja Node.js Konteineriseerimise Spetsiifika](../../../resource/06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md).
-
----
-
-## 🔒 Proxy Environments (Valikuline)
-
-**Kui oled corporate võrgus proksi keskkonnaga:**
-
-Gradle võib ebaõnnestuda sõltuvuste allalaadimisel:
-```
-Could not resolve all dependencies for configuration ':compileClasspath'
-```
-
-**Põhjus:** Corporate firewall blokeerib otseühenduse Maven Central'i. Sõltuvused peavad minema läbi proksi (nt. cache1.sss:3128).
-
-**Lahendus:**
-- 📖 Põhjalik juhend: [README-PROXY.md](../../solutions/backend-java-spring/README-PROXY.md)
-- 🚀 Kiire lahendus: Kasuta `Dockerfile.optimized.proxy` varianti build arg'idega
-
-**Näide:**
-```bash
-cd /home/janek/projects/hostinger/labs/01-docker-lab/solutions/backend-java-spring
-
-docker build \
-  --build-arg HTTP_PROXY=http://cache1.sss:3128 \
-  --build-arg HTTPS_PROXY=http://cache1.sss:3128 \
-  -f Dockerfile.optimized.proxy \
-  -t todo-service:1.0 \
-  ../../../apps/backend-java-spring
-```
-
-**ℹ️ Gradle Eripära:** Gradle EI kasuta HTTP_PROXY otse (erinevalt npm'ist). Dockerfile.optimized.proxy parsib HTTP_PROXY automaatselt GRADLE_OPTS formaati.
-
-**See on VALIKULINE** - kui Docker build töötab ilma proksita, siis jätka järgmise harjutusega!
 
 ---
 

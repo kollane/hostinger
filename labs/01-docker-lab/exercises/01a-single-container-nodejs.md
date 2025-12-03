@@ -93,28 +93,19 @@ head -50 server.js
 
 ### Samm 2: Loo Dockerfile
 
-Loo fail nimega `Dockerfile`:
-
-**⚠️ Oluline:** Dockerfail tuleb luua rakenduse juurkataloogi `~/labs/apps/backend-nodejs`. 
+**⚠️ Oluline:** Dockerfail tuleb luua rakenduse juurkataloogi `~/labs/apps/backend-nodejs`.
 
 ```bash
 vim Dockerfile
 ```
 
-**📖 Dockerfile põhitõed:** Kui vajad abi Dockerfile instruktsioonide (FROM, WORKDIR, COPY, RUN, CMD) mõistmisega, loe [Peatükk 06: Dockerfile - Rakenduste Konteineriseerimise Detailid](../../../resource/06-Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md).
+**📖 Dockerfile põhitõed:** Kui vajad abi Dockerfile instruktsioonide (FROM, WORKDIR, COPY, RUN, CMD, ARG, multi-stage) mõistmisega, loe [Peatükk 06: Dockerfile - Rakenduste Konteineriseerimise Detailid](../../../resource/06-Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md).
 
-**Ülesanne:** Kirjuta Dockerfile, mis:
-1. Kasutab Node.js 22 slim baastõmmist (base image)
-2. Seadistab töökataloogiks `/app`
-3. Kopeerib `package*.json` failid
-4. Installib sõltuvused
-5. Kopeerib rakenduse koodi
-6. Avaldab pordi 3000
-7. Käivitab rakenduse
+---
 
-**Vihje:** Vaata Docker dokumentatsiooni või solutions/ kausta!
+#### Variant A: Lihtne (VPS, õppemeetod)
 
-**Näidis:**
+Lihtne 1-stage Dockerfile avaliku võrgu jaoks (VPS):
 
 ```dockerfile
 FROM node:22-slim
@@ -124,7 +115,7 @@ WORKDIR /app
 # Kopeeri sõltuvuste failid
 COPY package*.json ./
 
-# Paigalda sõltuvused
+# Installi sõltuvused
 RUN npm install --production
 
 # Kopeeri rakenduse kood
@@ -136,6 +127,105 @@ EXPOSE 3000
 # Käivita
 CMD ["node", "server.js"]
 ```
+
+**Ehita:**
+```bash
+docker build -t user-service:1.0 .
+```
+
+⚠️ **Märkus:** See on NÄIDIS VPS avaliku võrgu jaoks. Praktikas kasuta Variant B (corporate keskkond)!
+
+---
+
+#### Variant B: Corporate Keskkond (PRIMAARNE) ⭐
+
+**Enamik õpilasi kasutab seda!** 2-stage build ARG proksiga:
+
+```dockerfile
+# ====================================
+# 1. etapp: Builder (sõltuvuste installimine)
+# ====================================
+FROM node:22-slim AS builder
+
+# ARG võimaldab anda proxy build-time'is (portaabel!)
+ARG HTTP_PROXY
+ARG HTTPS_PROXY
+
+# ENV ainult builder etapis (ei leki runtime'i!)
+ENV HTTP_PROXY=${HTTP_PROXY} \
+    HTTPS_PROXY=${HTTPS_PROXY}
+
+WORKDIR /app
+
+# Kopeeri sõltuvuste failid
+COPY package*.json ./
+
+# Installi sõltuvused (kasutab proxy't, kui antud)
+RUN npm install --production
+
+# ====================================
+# 2. etapp: Runtime (clean, ilma proksita)
+# ====================================
+FROM node:22-slim AS runtime
+
+WORKDIR /app
+
+# Kopeeri node_modules builder'ist
+COPY --from=builder /app/node_modules ./node_modules
+
+# Kopeeri rakenduse kood
+COPY . .
+
+# Avalda port
+EXPOSE 3000
+
+# Keskkond
+ENV NODE_ENV=production
+
+# Käivita rakendus
+CMD ["node", "server.js"]
+```
+
+**Ehita proksiga (corporate võrk):**
+```bash
+# Asenda oma proxy aadress!
+docker build \
+  --build-arg HTTP_PROXY=http://cache1.sss:3128 \
+  --build-arg HTTPS_PROXY=http://cache1.sss:3128 \
+  -t user-service:1.0 .
+```
+
+**Ehita ilma proksita (avalik võrk):**
+```bash
+docker build -t user-service:1.0 .
+# ARG-id jäävad tühjaks, npm install töötab avalikus võrgus
+```
+
+**Kontrolli: Kas proxy leak'ib runtime'i?**
+```bash
+docker run --rm user-service:1.0 env | grep -i proxy
+# Oodatud: TÜHI VÄLJUND! ✅
+# Proxy EI OLE runtime'is = clean, turvaline, portaabel!
+```
+
+**Mida õppisid?**
+- ✅ Multi-stage build (põhitõed!)
+- ✅ ARG vs ENV (build-time vs runtime)
+- ✅ Proxy ei leki (clean runtime!)
+- ✅ Portaabel (töötab mõlemas keskkonnas)
+
+---
+
+**📖 Põhjalik selgitus:**
+
+Kui vajad ARG, ENV, multi-stage build'i ja proxy konfiguratsioonide põhjalikku selgitust, loe:
+- 👉 [Peatükk 06: Dockerfile Detailid](../../../resource/06-Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md)
+
+**💡 Näidislahendused:**
+- `solutions/backend-nodejs/Dockerfile.simple` - Variant B (2-stage ARG proksiga)
+- `solutions/backend-nodejs/Dockerfile.vps-simple` - Variant A (1-stage VPS)
+
+---
 
 ### Samm 3: Loo .dockerignore
 
@@ -339,37 +429,6 @@ docker stats user-service
 5. **Kasuta `EXPOSE`** - Dokumenteeri, millist porti rakendus kasutab
 
 **📖 Node.js konteineriseerimise parimad tavad:**Põhjalikum käsitlus `npm ci`, Alpine images, bcrypt native moodulid, ja teised Node.js spetsiifilised teemad leiad [Peatükk 06A: Java Spring Boot ja Node.js Konteineriseerimise Spetsiifika](../../../resource/06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md).
-
----
-
-## 🔒 Proxy Environments (Valikuline)
-
-**Kui oled corporate võrgus proksi keskkonnaga:**
-
-npm install võib ebaõnnestuda:
-```
-npm ERR! network request to https://registry.npmjs.org failed, reason: connect ETIMEDOUT
-```
-
-**Põhjus:** Corporate firewall blokeerib otseühenduse npmjs.org'i. Paketid peavad minema läbi proksi (nt. cache1.sss:3128).
-
-**Lahendus:**
-- 📖 Põhjalik juhend: [README-PROXY.md](../../solutions/backend-nodejs/README-PROXY.md)
-- 🚀 Kiire lahendus: Kasuta `Dockerfile.optimized.proxy` varianti build arg'idega
-
-**Näide:**
-```bash
-cd /home/janek/projects/hostinger/labs/01-docker-lab/solutions/backend-nodejs
-
-docker build \
-  --build-arg HTTP_PROXY=http://cache1.sss:3128 \
-  --build-arg HTTPS_PROXY=http://cache1.sss:3128 \
-  -f Dockerfile.optimized.proxy \
-  -t user-service:1.0 \
-  ../../../apps/backend-nodejs
-```
-
-**See on VALIKULINE** - kui Docker build töötab ilma proksita, siis jätka järgmise harjutusega!
 
 ---
 
