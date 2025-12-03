@@ -258,6 +258,10 @@ javac -version
 **Node.js on vajalik user-service rakenduse ehitamiseks!**
 
 ```bash
+# Veendu, et proxy on aktiivne (kui pole source'inud /etc/environment)
+export http_proxy=http://cache1.sss:3128
+export https_proxy=http://cache1.sss:3128
+
 # Lisa NodeSource repository (Node.js 20 LTS)
 curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
 
@@ -268,6 +272,12 @@ apt-get install -y nodejs
 node --version
 npm --version
 # Peaks näitama: Node v20.x.x, NPM 10.x.x
+```
+
+**⚠️ Kui curl timeout'ib:**
+```bash
+# Alternatiiv: Lisa proxy eksplisiitselt curl'ile
+curl -x http://cache1.sss:3128 -fsSL https://deb.nodesource.com/setup_20.x | bash -
 ```
 
 #### 3.1.6 Diagnostika Tööriistad (Konteineris)
@@ -298,6 +308,10 @@ which jq nmap tcpdump nc dig netstat ip
 #### 3.1.7 Docker Paigaldamine (Konteineris)
 
 ```bash
+# Veendu, et proxy on aktiivne
+export http_proxy=http://cache1.sss:3128
+export https_proxy=http://cache1.sss:3128
+
 # Docker GPG key
 install -m 0755 -d /etc/apt/keyrings
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
@@ -1992,11 +2006,18 @@ for c in devops-student{1..6}; do echo "=== $c ==="; lxc exec $c -- containerd -
 ---
 
 **Viimane uuendus:** 2025-12-03
-**Versioon:** 1.3
+**Versioon:** 1.4
 **Proxy:** cache1.sss:3128
 **Hooldaja:** VPS Admin
 **Keskkond:** Ettevõtte sisevõrk (proxy)
 **Template:** devops-lab-base (Docker, Lab 1-2.5)
+
+**Muudatused v1.4 (2025-12-03):**
+- ✅ **PARANDUS:** Lisatud eksplisiitne proxy export curl'i käskudele
+- ✅ Sektsioon 3.1.5 (Node.js): export proxy enne curl'i
+- ✅ Sektsioon 3.1.7 (Docker): export proxy enne curl'i
+- ✅ Alternatiiv lisatud: `curl -x http://cache1.sss:3128`
+- ✅ Lahendab "curl timeout" probleemi template loomise ajal
 
 **Muudatused v1.3 (2025-12-03):**
 - ✅ **PARANDUS:** Gradle proxy seadistamine liigutatud õigesse kohta (3.1.12)
