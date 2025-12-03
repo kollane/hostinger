@@ -253,40 +253,6 @@ javac -version
 # Peaks näitama: openjdk version "21.0.x"
 ```
 
-#### 3.1.4A Gradle Proxy Seadistamine (Konteineris)
-
-**⚠️ KRIITILINE:** Gradle vajab proxy seadistust Lab 1-2 todo-service ehitamiseks!
-
-```bash
-# Loo Gradle proxy konfiguratsioon labuser'i jaoks
-mkdir -p /home/labuser/.gradle
-
-cat > /home/labuser/.gradle/gradle.properties << 'EOF'
-# Gradle Proxy Settings (cache1.sss:3128)
-# Vajalik Maven Central ja Gradle Plugin Portal'i ligipääsuks
-systemProp.http.proxyHost=cache1.sss
-systemProp.http.proxyPort=3128
-systemProp.https.proxyHost=cache1.sss
-systemProp.https.proxyPort=3128
-systemProp.http.nonProxyHosts=localhost|127.0.0.1|10.*|192.168.*
-
-# Gradle Daemon (kiirendab build'e)
-org.gradle.daemon=true
-org.gradle.parallel=true
-EOF
-
-# Õigused
-chown -R labuser:labuser /home/labuser/.gradle
-
-# Kontrolli
-cat /home/labuser/.gradle/gradle.properties
-```
-
-**Miks see on vajalik?**
-- Lab 1: Õpilased ehitavad todo-service'i Gradle'iga (`./gradlew build`)
-- Ilma proxy'ta: `Connection timeout` Maven Central'ist dependency'de allalaadimisel
-- Gradle kasutab `systemProp.*` seadeid HTTP(S) ühenduste jaoks
-
 #### 3.1.5 Node.js 20 Paigaldamine (Konteineris)
 
 **Node.js on vajalik user-service rakenduse ehitamiseks!**
@@ -458,6 +424,23 @@ systemctl enable ssh
 ```bash
 su - labuser
 
+# Loo Gradle proxy konfiguratsioon (Lab 1-2 todo-service jaoks)
+mkdir -p ~/.gradle
+cat > ~/.gradle/gradle.properties << 'EOF'
+# Gradle Proxy Settings (cache1.sss:3128)
+# Vajalik Maven Central ja Gradle Plugin Portal'i ligipääsuks
+systemProp.http.proxyHost=cache1.sss
+systemProp.http.proxyPort=3128
+systemProp.https.proxyHost=cache1.sss
+systemProp.https.proxyPort=3128
+systemProp.http.nonProxyHosts=localhost|127.0.0.1|10.*|192.168.*
+
+# Gradle Daemon (kiirendab build'e)
+org.gradle.daemon=true
+org.gradle.parallel=true
+EOF
+
+# Seadista .bashrc
 cat >> ~/.bashrc << 'EOF'
 
 # Proxy
@@ -1689,6 +1672,7 @@ chown root:root /etc/sudoers.d/labuser
 visudo -c -f /etc/sudoers.d/labuser
 
 # 9. Gradle Proxy (kui muutub või puudub)
+# NB! Tehakse root'ina, labuser on juba loodud template'is
 mkdir -p /home/labuser/.gradle
 cat > /home/labuser/.gradle/gradle.properties << 'EOF'
 # Gradle Proxy Settings (cache1.sss:3128)
@@ -1715,23 +1699,23 @@ rm -rf /tmp/* /var/tmp/*
 history -c
 exit
 
-# 11. Peata konteiner
+# 12. Peata konteiner (nüüd tagasi HOST'is)
 lxc stop temp-update
 
-# 12. Backup vana template
+# 13. Backup vana template
 lxc image export devops-lab-base /tmp/devops-lab-base-backup-$(date +%Y%m%d)
 
-# 13. Kustuta vana alias
+# 14. Kustuta vana alias
 lxc image delete devops-lab-base
 
-# 14. Publitseeri uus
+# 15. Publitseeri uus
 lxc publish temp-update --alias devops-lab-base \
   description="DevOps Lab Template: Ubuntu 24.04 + Docker + Java 21 + Node.js 20 + Proxy (Updated $(date +%Y-%m-%d))"
 
-# 15. Kustuta ajutine konteiner
+# 16. Kustuta ajutine konteiner
 lxc delete temp-update
 
-# 16. Testi uut template'i
+# 17. Testi uut template'i
 lxc launch devops-lab-base test-new-template -p default -p devops-lab
 lxc exec test-new-template -- docker --version
 lxc exec test-new-template -- ls -la /home/labuser/labs/
@@ -2008,14 +1992,21 @@ for c in devops-student{1..6}; do echo "=== $c ==="; lxc exec $c -- containerd -
 ---
 
 **Viimane uuendus:** 2025-12-03
-**Versioon:** 1.2
+**Versioon:** 1.3
 **Proxy:** cache1.sss:3128
 **Hooldaja:** VPS Admin
 **Keskkond:** Ettevõtte sisevõrk (proxy)
 **Template:** devops-lab-base (Docker, Lab 1-2.5)
 
+**Muudatused v1.3 (2025-12-03):**
+- ✅ **PARANDUS:** Gradle proxy seadistamine liigutatud õigesse kohta (3.1.12)
+- ✅ Eemaldatud sektsioon 3.1.4A (labuser ei eksisteeri seal veel)
+- ✅ Lisatud Gradle proxy 3.1.12 sisse (pärast `su - labuser`)
+- ✅ Parandatud sammu numbrid 10.2's (12-17)
+- ✅ Lisatud kommentaar 10.2 samm 9: "NB! Tehakse root'ina"
+
 **Muudatused v1.2 (2025-12-03):**
-- ✅ **KRIITILINE:** Lisatud Gradle proxy konfiguratsioon (sektsioonid 3.1.4A, 3.1.12, 10.2)
+- ✅ **KRIITILINE:** Lisatud Gradle proxy konfiguratsioon
 - ✅ Gradle properties fail: `~/.gradle/gradle.properties` (Maven Central ligipääs)
 - ✅ GRADLE_OPTS keskkonna muutuja .bashrc'is (tagavaravariant)
 - ✅ Vajalik Lab 1-2 todo-service ehitamiseks (`./gradlew build`)
