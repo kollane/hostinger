@@ -79,10 +79,12 @@ cd ~/labs/apps/backend-nodejs
 ```bash
 # Vaata faile
 ls -la
-
+```
+```bash
 # Loe README
 cat README.md
-
+```
+```bash
 # Vaata server.js
 head -50 server.js
 ```
