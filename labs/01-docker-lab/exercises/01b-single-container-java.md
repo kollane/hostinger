@@ -11,7 +11,7 @@ Selles harjutuses õpid looma **OCI-standardset** (Open Container Initiative) Do
 - Clean runtime (ei leki build-time saladusi, väiksem image)
 - Portaabel (töötab Docker, Kubernetes, Podman jne)
 
-📝 **Märkus turvalisuse kohta:** Production keskkonnas lisaks non-root USER (Java rakenduste jaoks eraldi kasutaja), kuid see harjutus keskendub põhitõdedele. Kubernetes Pod Security Standards ja non-root käsitlus tuleb hilisemates laboriharjutustes.
+📝 **Märkus turvalisuse kohta:** See harjutus keskendub Docker põhitõdedele. **Täielikult OCI-standardne** ja **production-ready** lahendus (sh non-root USER, Java rakenduste jaoks eraldi kasutaja) tuleb **[Harjutus 5: Tõmmise Optimeerimine](05-optimization.md)**, kus lisame Kubernetes Pod Security Standards'ile vastava turvalisuse.
 
 ---
 
