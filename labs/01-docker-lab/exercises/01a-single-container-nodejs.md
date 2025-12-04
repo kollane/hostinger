@@ -198,10 +198,10 @@ Kui vajad ülaloleva Dockerfile'i täpset rea-haaval selgitust (mida teevad ARG,
 **💡 Näidislahendused:**
 
 Lahendused asuvad `solutions/backend-nodejs/` kaustas:
-- [`Dockerfile.simple`](https://github.com/kollane/hostinger/blob/proksilabor/labs/01-docker-lab/solutions/backend-nodejs/Dockerfile.simple) - 2-stage ARG proksiga (PRIMAARNE)
-- [`Dockerfile.vps-simple`](https://github.com/kollane/hostinger/blob/proksilabor/labs/01-docker-lab/solutions/backend-nodejs/Dockerfile.vps-simple) - 1-stage VPS (avalik võrk)
+- [`Dockerfile.simple`](../solutions/backend-nodejs/Dockerfile.simple) - 2-stage ARG proksiga (PRIMAARNE)
+- [`Dockerfile.vps-simple`](../solutions/backend-nodejs/Dockerfile.vps-simple) - 1-stage VPS (avalik võrk)
 
-📂 Kõik lahendused: [`solutions/backend-nodejs/`](https://github.com/kollane/hostinger/tree/proksilabor/labs/01-docker-lab/solutions/backend-nodejs)
+📂 Kõik lahendused: [`solutions/backend-nodejs/`](../solutions/backend-nodejs/)
 
 ---
 
