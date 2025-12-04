@@ -10,15 +10,6 @@ FROM gradle:8.11-jdk21-alpine AS builder
 ARG HTTP_PROXY
 ARG HTTPS_PROXY
 
-# Gradle vajab proxy't GRADLE_OPTS formaadis
-# Konverteerime HTTP_PROXY → GRADLE_OPTS
-RUN if [ -n "$HTTP_PROXY" ]; then \
-      PROXY_HOST=$(echo "$HTTP_PROXY" | sed 's|^.*://||; s|:.*$||'); \
-      PROXY_PORT=$(echo "$HTTP_PROXY" | grep -oE '[0-9]+$'); \
-      export GRADLE_OPTS="-Dhttp.proxyHost=$PROXY_HOST -Dhttp.proxyPort=$PROXY_PORT -Dhttps.proxyHost=$PROXY_HOST -Dhttps.proxyPort=$PROXY_PORT"; \
-      echo "GRADLE_OPTS=$GRADLE_OPTS" >> /etc/environment; \
-    fi
-
 WORKDIR /app
 
 # Kopeeri Gradle konfiguratsiooni failid
@@ -26,13 +17,29 @@ COPY build.gradle settings.gradle ./
 COPY gradle ./gradle
 
 # Lae alla sõltuvused (cached kui build.gradle ei muutu)
-RUN gradle dependencies --no-daemon
+# OLULINE: export GRADLE_OPTS ja gradle käsk peavad olema SAMAS RUN blokis!
+RUN if [ -n "$HTTP_PROXY" ]; then \
+      PROXY_HOST=$(echo "$HTTP_PROXY" | sed 's|^.*://||; s|:.*$||'); \
+      PROXY_PORT=$(echo "$HTTP_PROXY" | grep -oE '[0-9]+$'); \
+      export GRADLE_OPTS="-Dhttp.proxyHost=$PROXY_HOST -Dhttp.proxyPort=$PROXY_PORT -Dhttps.proxyHost=$PROXY_HOST -Dhttps.proxyPort=$PROXY_PORT"; \
+      gradle dependencies --no-daemon; \
+    else \
+      gradle dependencies --no-daemon; \
+    fi
 
 # Kopeeri lähtekood (source code)
 COPY src ./src
 
 # Ehita JAR fail
-RUN gradle bootJar --no-daemon
+# OLULINE: Proxy seadistus tuleb korrata iga RUN käsu jaoks!
+RUN if [ -n "$HTTP_PROXY" ]; then \
+      PROXY_HOST=$(echo "$HTTP_PROXY" | sed 's|^.*://||; s|:.*$||'); \
+      PROXY_PORT=$(echo "$HTTP_PROXY" | grep -oE '[0-9]+$'); \
+      export GRADLE_OPTS="-Dhttp.proxyHost=$PROXY_HOST -Dhttp.proxyPort=$PROXY_PORT -Dhttps.proxyHost=$PROXY_HOST -Dhttps.proxyPort=$PROXY_PORT"; \
+      gradle bootJar --no-daemon; \
+    else \
+      gradle bootJar --no-daemon; \
+    fi
 
 # ====================================
 # 2. etapp: Runtime (clean JRE, ilma proksita)
