@@ -272,9 +272,22 @@ Need käsud **TÖÖTAVAD** wrapper'iga:
 
 ### Miks `--security-opt` on vajalik?
 
-AppArmor on Linux turvamoodul, mis piirab protsesside õigusi. VPS kasutab seda piiramaks konteinerite võimekust.
+**AppArmor (Application Armor)** on Linux kernel'i turvamoodul, mis piirab protsesside õigusi:
+
+- **Docker vaikimisi:** Laeb kõigile konteineritele `docker-default` AppArmor profiili
+- **Profiil piirab:** Võrguligipääs, failisüsteemi ligipääs, kernel võimalused
+- **VPS eesmärk:** Lihtsamaks õppimiseks eemaldada AppArmor piirangud
+
+**`apparmor=unconfined` tähendab:**
+```
+"Ära kasuta AppArmor profiili sellel konteineril"
+= Konteiner töötab ILMA AppArmor piiranguteta
+= Tavapärane Linux protsess (ainult user permissions kehtivad)
+```
 
 ### Miks wrapper on valesti implementeeritud?
+
+**Probleem 1: Vale positsioon**
 
 Docker CLI järjekord on:
 ```
@@ -293,9 +306,73 @@ See on **VALE**, sest `-i` on `exec` käsu option, mitte konteineri nimi.
 docker exec -i --security-opt apparmor=unconfined postgres-user psql ...
 ```
 
+**Probleem 2: `docker exec` EI VAJA `--security-opt`**
+
+`--security-opt` on vajalik ainult **`docker run`** ja **`docker create`** käskudele:
+
+```bash
+# ✅ Vajalik - loob uue konteineri
+docker run --security-opt apparmor=unconfined postgres:16
+
+# ❌ EI OLE vajalik - juba töötav konteiner
+docker exec -i postgres-user psql
+# (konteiner juba töötab oma AppArmor profiilid seadistatud docker run ajal)
+```
+
 ### Kuidas parandada wrapper'it?
 
-Variant 3 (ülalpool) parsib flag'id korrektselt ja lisab `--security-opt` õigesse kohta.
+**Variant 3 (ülalpool)** parsib flag'id korrektselt ja lisab `--security-opt` õigesse kohta, **AGA** see on üle keerulisem kui vaja.
+
+**✅ PARIM LAHENDUS VPS ADMINILE:**
+
+Eemalda `exec` wrapper'ist täielikult, sest `docker exec` ei vaja `--security-opt`:
+
+```bash
+docker ()
+{
+    case "$1" in
+        run | create)
+            # Ainult run ja create vajavad --security-opt
+            /usr/bin/docker "$1" --security-opt apparmor=unconfined "${@:2}"
+        ;;
+        *)
+            # Kõik muud käsud (sh exec) ilma --security-opt'ita
+            /usr/bin/docker "$@"
+        ;;
+    esac
+}
+```
+
+**Mida see muudab:**
+- ✅ `docker run` ja `docker create` lisavad endiselt `--security-opt apparmor=unconfined`
+- ✅ `docker exec` töötab normaalset (ilma `--security-opt`'ita, nagu peabki)
+- ✅ Kõik muud käsud (`ps`, `logs`, `stop`, jne) töötavad normaalset
+- ✅ Õpilased ei kohta enam "unknown flag: --security-opt" viga
+
+**Kuidas paigaldada VPS'is:**
+
+```bash
+# 1. Ava bash config
+sudo vim /etc/bash.bashrc
+# VÕI iga kasutaja jaoks:
+vim ~/.bashrc
+
+# 2. Leia olemasolev docker() funktsioon
+# 3. Asenda see ülaloleva parandatud versiooniga
+# 4. Salvesta
+
+# 5. Lae config uuesti
+source /etc/bash.bashrc
+# VÕI
+source ~/.bashrc
+
+# 6. Testi
+type docker
+# Peaks näitama uut funktsiooni
+
+# 7. Testi, et exec töötab
+docker exec -i <container> echo "Test"
+```
 
 ## 🔗 Seotud Failid
 
@@ -305,6 +382,46 @@ Variant 3 (ülalpool) parsib flag'id korrektselt ja lisab `--security-opt` õige
 
 ---
 
-**Viimane uuendus:** 2025-01-04
+**Viimane uuendus:** 2025-01-25
 **Mõjutatud versioonid:** VPS devops-student1, student2, student3
 **Staatus:** ⚠️ KRIITILINE - Blokeerib Lab 1 Harjutus 2+
+
+---
+
+## 🔧 VPS Adminile: Püsiv Lahendus
+
+**Paranda wrapper VPS'is**, et õpilased ei kohta enam seda viga:
+
+1. **Ava bash config:**
+   ```bash
+   sudo vim /etc/bash.bashrc
+   ```
+
+2. **Leia ja asenda olemasolev `docker()` funktsioon:**
+   ```bash
+   docker ()
+   {
+       case "$1" in
+           run | create)
+               # Ainult run ja create vajavad --security-opt
+               /usr/bin/docker "$1" --security-opt apparmor=unconfined "${@:2}"
+           ;;
+           *)
+               # Kõik muud käsud (sh exec) ilma --security-opt'ita
+               /usr/bin/docker "$@"
+           ;;
+       esac
+   }
+   ```
+
+3. **Salvesta ja lae uuesti:**
+   ```bash
+   source /etc/bash.bashrc
+   ```
+
+4. **Testi:**
+   ```bash
+   docker exec -i postgres-user echo "Test töötab!"
+   ```
+
+**Tulemus:** Õpilased ei vaja enam `unset -f docker` käsku! ✅
