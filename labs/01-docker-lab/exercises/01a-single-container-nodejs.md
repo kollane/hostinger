@@ -92,13 +92,11 @@ head -50 server.js
 - Millised sõltuvused (dependencies) on vajalikud? (vaata package.json)
 - Kas rakendus vajab andmebaasi? (Jah, PostgreSQL)
 
-### Samm 2: Loo Dockerfile
+### Samm 2: Dockerfile loomine
 
 ---
 
-#### Variant A: Lihtne (VPS, õppemeetod)
-
-Lihtne 1-stage Dockerfile avaliku võrgu jaoks (VPS):
+Lihtne 1-stage Dockerfile näidis avaliku võrgu jaoks (VPS):
 
 ```dockerfile
 FROM node:22-slim
@@ -121,13 +119,13 @@ EXPOSE 3000
 CMD ["node", "server.js"]
 ```
 
-⚠️ **Märkus:** See on NÄIDIS VPS avaliku võrgu jaoks. Praktikas kasuta Variant B (corporate keskkond)!
+⚠️ **Märkus:** See on NÄIDIS VPS avaliku võrgu jaoks. Laboris kasuta järgmist näidist (corporate keskkond)!
 
 **📖 Dockerfile põhitõed:** Kui vajad abi Dockerfile instruktsioonide (FROM, WORKDIR, COPY, RUN, CMD, ARG, multi-stage) mõistmisega, loe [Peatükk 06: Dockerfile - Rakenduste Konteineriseerimise Detailid](../../../resource/06-Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md).
 
 ---
 
-#### Variant B: Corporate Keskkond (PRIMAARNE) ⭐
+#### Dockerfile loomine Corporate Keskkond (PRIMAARNE) ⭐
 
 **⚠️ Oluline:** Dockerfail tuleb luua rakenduse juurkataloogi `~/labs/apps/backend-nodejs`.
 ```bash
