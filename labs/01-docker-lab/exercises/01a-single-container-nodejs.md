@@ -1,5 +1,20 @@
 # Harjutus 1: Üksiku konteineri loomine (User Service)
 
+**🏗️ Arhitektuurne Lähenemine:**
+
+Selles harjutuses õpid looma **OCI-standardset** (Open Container Initiative) Docker tõmmist, mis sobib kasutamiseks nii Docker'iga kui ka **Kubernetes orkestratsioonisüsteemidega**.
+
+✅ **OCI Standard & Kubernetes Compatible:**
+- Multi-stage build (väiksem runtime image)
+- `CMD` JSON array formaat (Kubernetes nõue)
+- `EXPOSE` dokumenteerib porte (Service discovery)
+- Clean runtime (ei leki build-time saladusi)
+- Portaabel (töötab Docker, Kubernetes, Podman jne)
+
+📝 **Märkus turvalisuse kohta:** Production keskkonnas lisaks non-root USER (nt `node` kasutaja Node.js'is), kuid see harjutus keskendub põhitõdedele. Kubernetes Pod Security Standards ja non-root käsitlus tuleb hilisemates laboriharjutustes.
+
+---
+
 **User Service'i rakenduse lühitutvustus:**
 - 🔐 Registreerib uusi kasutajaid
 - 🎫 Loob JWT "token"-eid (digitaalsed tõendid)

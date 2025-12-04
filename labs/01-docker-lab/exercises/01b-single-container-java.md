@@ -1,5 +1,20 @@
 # Harjutus 1: Üksiku konteineri loomine (Todo Service)
 
+**🏗️ Arhitektuurne Lähenemine:**
+
+Selles harjutuses õpid looma **OCI-standardset** (Open Container Initiative) Docker tõmmist, mis sobib kasutamiseks nii Docker'iga kui ka **Kubernetes orkestratsioonisüsteemidega**.
+
+✅ **OCI Standard & Kubernetes Compatible:**
+- Multi-stage build (JDK builder → JRE runtime)
+- `CMD` JSON array formaat (Kubernetes nõue)
+- `EXPOSE` dokumenteerib porte (Service discovery)
+- Clean runtime (ei leki build-time saladusi, väiksem image)
+- Portaabel (töötab Docker, Kubernetes, Podman jne)
+
+📝 **Märkus turvalisuse kohta:** Production keskkonnas lisaks non-root USER (Java rakenduste jaoks eraldi kasutaja), kuid see harjutus keskendub põhitõdedele. Kubernetes Pod Security Standards ja non-root käsitlus tuleb hilisemates laboriharjutustes.
+
+---
+
 **Todo Service'i rakenduse lühitutvustus:**
 - ✍️ Loob ja haldab todo ülesandeid (CRUD)
 - 👀 Kuvab kasutaja ülesandeid (filtreerimine, sorteerimine)
