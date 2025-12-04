@@ -333,7 +333,9 @@ git --version            # Versioonikontroll
 ├── resource/
 │   ├── 05-Docker-Pohimotted.md                      ✅ VALMIS
 │   ├── 06-Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md  ✅ VALMIS
-│   └── 06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md  ✅ VALMIS
+│   ├── 06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md  ✅ VALMIS
+│   └── code-explanations/                          ← Koodiselgitused
+│       └── Node.js-Dockerfile-Proxy-Explained.md   ✅ VALMIS
 │
 ├── 01-DevOps-Sissejuhatus-VPS-Setup.md         ⏳
 ├── 02-Linux-Pohitoed-DevOps-Kontekstis.md      ⏳
@@ -366,6 +368,19 @@ git --version            # Versioonikontroll
     ├── 09-backup-disaster-recovery-lab/          📦 Backup & DR
     └── 10-terraform-iac-lab/                     📦 Terraform IaC
 ```
+
+### Koodiselgitused (Code Explanations)
+
+Lisaks põhjalikele peatükkidele (05-30) sisaldab koolituskava ka **lühikesi koodiselgitusi** - konkreetsete koodilõikude rea-haaval analüüse.
+
+**Asukoht:** `resource/code-explanations/`
+
+**Eristus peatükkidest:**
+- Peatükid: Põhjalikud teoreetilised käsitlused (10-20 lk)
+- Koodiselgitused: Lühikesed, koodikesksed analüüsid (3-5 lk)
+
+**Olemasolevad:**
+- `Node.js-Dockerfile-Proxy-Explained.md` - 2-stage Dockerfile ARG proxy pattern (Lab 1, Exercise 01a)
 
 ---
 

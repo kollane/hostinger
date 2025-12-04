@@ -75,7 +75,8 @@ Vaata "User Service" koodi:
 
 ```bash
 cd ~/labs/apps/backend-nodejs
-
+```
+```bash
 # Vaata faile
 ls -la
 
@@ -92,12 +93,6 @@ head -50 server.js
 - Kas rakendus vajab andmebaasi? (Jah, PostgreSQL)
 
 ### Samm 2: Loo Dockerfile
-
-**⚠️ Oluline:** Dockerfail tuleb luua rakenduse juurkataloogi `~/labs/apps/backend-nodejs`.
-
-```bash
-vim Dockerfile
-```
 
 **📖 Dockerfile põhitõed:** Kui vajad abi Dockerfile instruktsioonide (FROM, WORKDIR, COPY, RUN, CMD, ARG, multi-stage) mõistmisega, loe [Peatükk 06: Dockerfile - Rakenduste Konteineriseerimise Detailid](../../../resource/06-Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md).
 
@@ -128,18 +123,34 @@ EXPOSE 3000
 CMD ["node", "server.js"]
 ```
 
-**Ehita:**
-```bash
-docker build -t user-service:1.0 .
-```
-
 ⚠️ **Märkus:** See on NÄIDIS VPS avaliku võrgu jaoks. Praktikas kasuta Variant B (corporate keskkond)!
 
 ---
 
 #### Variant B: Corporate Keskkond (PRIMAARNE) ⭐
 
-**Enamik õpilasi kasutab seda!** 2-stage build ARG proksiga:
+**⚠️ Oluline:** Dockerfail tuleb luua rakenduse juurkataloogi `~/labs/apps/backend-nodejs`.
+```bash
+cd ~/labs/apps/backend-nodejs
+```
+
+**Kasutame laboris** 2-stage ehitus ARG proksiga:
+```bash
+vim Dockerfile
+```
+
+**📖 Põhjalik koodi selgitus:**
+
+Kui vajad alljärgneva Dockerfile'i täpset rea-haaval selgitust (mida teevad ARG, ENV, mitmeastmeline build jne), loe:
+- 👉 **[Koodiselgitus: Node.js Dockerfile Proxy Pattern](../../../resource/code-explanations/Node.js-Dockerfile-Proxy-Explained.md)**
+
+**Selgitus käsitleb:**
+- ✅ Miks kasutada ARG'd (build-time proxy)
+- ✅ Kuidas ENV töötab builder etapis
+- ✅ Miks mitmeastmeline build väldib proxy lekkimist
+- ✅ Iga Dockerfile instruktsioon üksikasjalikult
+
+---
 
 ```dockerfile
 # ====================================
@@ -186,34 +197,6 @@ ENV NODE_ENV=production
 CMD ["node", "server.js"]
 ```
 
-**Ehita proksiga (corporate võrk):**
-```bash
-# Asenda oma proxy aadress!
-docker build \
-  --build-arg HTTP_PROXY=http://cache1.sss:3128 \
-  --build-arg HTTPS_PROXY=http://cache1.sss:3128 \
-  -t user-service:1.0 .
-```
-
-**Ehita ilma proksita (avalik võrk):**
-```bash
-docker build -t user-service:1.0 .
-# ARG-id jäävad tühjaks, npm install töötab avalikus võrgus
-```
-
-**Kontrolli: Kas proxy leak'ib runtime'i?**
-```bash
-docker run --rm user-service:1.0 env | grep -i proxy
-# Oodatud: TÜHI VÄLJUND! ✅
-# Proxy EI OLE runtime'is = clean, turvaline, portaabel!
-```
-
-**Mida õppisid?**
-- ✅ Multi-stage build (põhitõed!)
-- ✅ ARG vs ENV (build-time vs runtime)
-- ✅ Proxy ei leki (clean runtime!)
-- ✅ Portaabel (töötab mõlemas keskkonnas)
-
 ---
 
 **📖 Põhjalik selgitus:**
@@ -255,18 +238,36 @@ README.md
 
 ### Samm 4: Ehita Docker tõmmis
 
-**Asukoht:** `~/labs/apps/backend-nodejs`
-
-Ehita oma esimene Docker tõmmis:
 
 **⚠️ Oluline:** Docker tõmmise ehitamiseks pead olema rakenduse juurkataloogis (kus asub `Dockerfile`).
 
 ```bash
-# Ehita tõmmis sildiga (tag)
-docker build -t user-service:1.0 .
+cd ~/labs/apps/backend-nodejs
+```
+
+**Ehita proksiga (corporate võrk):**
+```bash
+# Asenda oma proxy aadress!
+docker build \
+  --build-arg HTTP_PROXY=http://cache1.sss:3128 \
+  --build-arg HTTPS_PROXY=http://cache1.sss:3128 \
+  -t user-service:1.0 .
 
 # Vaata ehitamise protsessi
 # Märka: iga RUN käsk loob uue kihi (layer)
+```
+
+**Ehita ilma proksita (avalik võrk):**
+```bash
+docker build -t user-service:1.0 .
+# ARG-id jäävad tühjaks, npm install töötab avalikus võrgus
+```
+
+**Kontrolli: Kas proxy leak'ib runtime'i?**
+```bash
+docker run --rm user-service:1.0 env | grep -i proxy
+# Oodatud: TÜHI VÄLJUND! ✅
+# Proxy EI OLE runtime'is = clean, turvaline, portaabel!
 ```
 
 **Kontrolli tõmmist:**
@@ -289,12 +290,10 @@ docker images user-service:1.0
 
 ### Samm 5: Käivita Konteiner
 
-⚠️ OLULINE: Järgnevad käsud käivitavad konteineri, aga rakendus hangub, sest PostgreSQL puudub. See on OODATUD käitumine! Hetkel on fookus on õppida Docker käske, mitte saada töötav rakendus.
-
 **ℹ️ Portide turvalisus:**
 
 Selles harjutuses kasutame lihtsustatud portide vastendust (`-p 3000:3000`).
-- ✅ **Host'i tulemüür kaitseb:** VPS-is on UFW tulemüür, mis blokeerib pordi 3000 internetist
+- ✅ **Etteveõtte sisevõrk kaitseb**
 - 📚 **Tootmises oleks õige:** `-p 127.0.0.1:3000:3000` (avab pordi ainult localhost'il)
 - 🎯 **Lab 2 käsitleb:** Võrguturvalisust ja reverse proxy seadistust
 

@@ -975,6 +975,35 @@ Iga peatükk on eraldi Markdown fail järgmise nimetusstandardiga:
 
 ---
 
+## Koodiselgitused (Code Explanations)
+
+**Asukoht:** `resource/code-explanations/`
+
+**Eesmärk:** Lühikesed, koodikesksed selgitused, mis ei ole täielikud peatükid, vaid spetsiifiliste koodilõikude analüüs.
+
+**Eristus peatükkidest:**
+- **Peatükid (05-30):** Põhjalikud teoreetilised käsitlused, standardne struktuur (Õpieesmärgid, Põhimõisted, Teooria 70%, Näited 30%, Best Practices)
+- **Koodiselgitused:** Lühikesed (3-5 lk), konkreetse koodi rea-haaval analüüs, AI-genereeritud stiil OK, ei järgi peatüki struktuuri
+
+**Olemasolevad koodiselgitused:**
+
+| Fail | Teema | Kasutatakse | Staatus |
+|------|-------|-------------|---------|
+| `Node.js-Dockerfile-Proxy-Explained.md` | 2-stage Node.js Dockerfile ARG proxy pattern | Lab 1, Exercise 01a | ✅ Valmis |
+
+**Tulevikus võimalikud:**
+- `Java-Gradle-Dependency-Cache-Explained.md` - Gradle dependencies cache in Docker
+- `PostgreSQL-Init-Script-Explained.md` - Database initialization patterns
+- `Kubernetes-HPA-Manifest-Explained.md` - HPA configuration breakdown
+- `Nginx-Config-Explained.md` - nginx.conf line-by-line analysis
+
+**Kasutamine:**
+- Labori harjutusest viidatakse: `[Koodiselgitus: Title](../../../resource/code-explanations/File-Explained.md)`
+- Koodiselgitus võib olla AI-genereeritud (Perplexity, ChatGPT), kui kvaliteet on hea
+- Lühike ja praktiline, fookus koodil, mitte üldistel kontseptsioonidel
+
+---
+
 ## Peatüki Template/Struktuur
 
 Iga peatükk järgib standardset struktuuri:
