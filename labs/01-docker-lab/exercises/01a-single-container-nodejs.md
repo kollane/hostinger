@@ -94,8 +94,6 @@ head -50 server.js
 
 ### Samm 2: Loo Dockerfile
 
-**📖 Dockerfile põhitõed:** Kui vajad abi Dockerfile instruktsioonide (FROM, WORKDIR, COPY, RUN, CMD, ARG, multi-stage) mõistmisega, loe [Peatükk 06: Dockerfile - Rakenduste Konteineriseerimise Detailid](../../../resource/06-Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md).
-
 ---
 
 #### Variant A: Lihtne (VPS, õppemeetod)
@@ -125,6 +123,8 @@ CMD ["node", "server.js"]
 
 ⚠️ **Märkus:** See on NÄIDIS VPS avaliku võrgu jaoks. Praktikas kasuta Variant B (corporate keskkond)!
 
+**📖 Dockerfile põhitõed:** Kui vajad abi Dockerfile instruktsioonide (FROM, WORKDIR, COPY, RUN, CMD, ARG, multi-stage) mõistmisega, loe [Peatükk 06: Dockerfile - Rakenduste Konteineriseerimise Detailid](../../../resource/06-Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md).
+
 ---
 
 #### Variant B: Corporate Keskkond (PRIMAARNE) ⭐
@@ -138,19 +138,6 @@ cd ~/labs/apps/backend-nodejs
 ```bash
 vim Dockerfile
 ```
-
-**📖 Põhjalik koodi selgitus:**
-
-Kui vajad alljärgneva Dockerfile'i täpset rea-haaval selgitust (mida teevad ARG, ENV, mitmeastmeline build jne), loe:
-- 👉 **[Koodiselgitus: Node.js Dockerfile Proxy Pattern](../../../resource/code-explanations/Node.js-Dockerfile-Proxy-Explained.md)**
-
-**Selgitus käsitleb:**
-- ✅ Miks kasutada ARG'd (build-time proxy)
-- ✅ Kuidas ENV töötab builder etapis
-- ✅ Miks mitmeastmeline build väldib proxy lekkimist
-- ✅ Iga Dockerfile instruktsioon üksikasjalikult
-
----
 
 ```dockerfile
 # ====================================
@@ -197,12 +184,18 @@ ENV NODE_ENV=production
 CMD ["node", "server.js"]
 ```
 
+**📖 Põhjalik koodi selgitus:**
+
+Kui vajad ülaloleva Dockerfile'i täpset rea-haaval selgitust (mida teevad ARG, ENV, mitmeastmeline build jne), loe:
+- 👉 **[Koodiselgitus: Node.js Dockerfile Proxy Pattern](../../../resource/code-explanations/Node.js-Dockerfile-Proxy-Explained.md)**
+
+**Selgitus käsitleb:**
+- ✅ Miks kasutada ARG'd (build-time proxy)
+- ✅ Kuidas ENV töötab builder etapis
+- ✅ Miks mitmeastmeline build väldib proxy lekkimist
+- ✅ Iga Dockerfile instruktsioon üksikasjalikult
+
 ---
-
-**📖 Põhjalik selgitus:**
-
-Kui vajad ARG, ENV, multi-stage build'i ja proxy konfiguratsioonide põhjalikku selgitust, loe:
-- 👉 [Peatükk 06: Dockerfile Detailid](../../../resource/06-Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md)
 
 **💡 Näidislahendused:**
 - `solutions/backend-nodejs/Dockerfile.simple` - Variant B (2-stage ARG proksiga)
