@@ -309,14 +309,30 @@ else
         echo -e "${YELLOW}📦 Ehitan baaspilte (base images)...${NC}"
         echo ""
 
+        # Seadista vaikimisi proxy (kui ei ole juba seadistatud)
+        if [ -z "$HTTP_PROXY" ]; then
+            HTTP_PROXY="http://proxy-chain.intel.com:911"
+        fi
+        if [ -z "$HTTPS_PROXY" ]; then
+            HTTPS_PROXY="http://proxy-chain.intel.com:912"
+        fi
+
+        echo -e "${GREEN}✓ Proxy seadistused build'i jaoks:${NC}"
+        echo "   HTTP_PROXY=$HTTP_PROXY"
+        echo "   HTTPS_PROXY=$HTTPS_PROXY"
+        echo ""
+
         # Ehita (build) User Teenuse (Service) pilt (image)
         echo "1/2: Ehitan user-service:1.0..."
-        if [ -f "solutions/backend-nodejs/Dockerfile" ]; then
+        if [ -f "solutions/backend-nodejs/Dockerfile.simple" ]; then
             cd ../apps/backend-nodejs
-            cp ../../01-docker-lab/solutions/backend-nodejs/Dockerfile .
+            cp ../../01-docker-lab/solutions/backend-nodejs/Dockerfile.simple ./Dockerfile
             cp ../../01-docker-lab/solutions/backend-nodejs/.dockerignore .
 
-            if docker build -t user-service:1.0 . > "$LOGDIR/user-service-build.log" 2>&1; then
+            # Koosta build käsk koos proxy argumentidega
+            BUILD_CMD="docker build -t user-service:1.0 --build-arg HTTP_PROXY=$HTTP_PROXY --build-arg HTTPS_PROXY=$HTTPS_PROXY ."
+
+            if eval "$BUILD_CMD" > "$LOGDIR/user-service-build.log" 2>&1; then
                 echo -e "${GREEN}   ✓ user-service:1.0 ehitatud edukalt!${NC}"
             else
                 echo -e "${RED}   ✗ user-service:1.0 ehitamine (build) ebaõnnestus${NC}"
@@ -327,39 +343,32 @@ else
             rm -f Dockerfile .dockerignore
             cd ../../01-docker-lab
         else
-            echo -e "${RED}   ✗ Dockerfile lahendust ei leitud${NC}"
+            echo -e "${RED}   ✗ Dockerfile.simple lahendust ei leitud${NC}"
         fi
         echo ""
 
         # Ehita (build) Todo Teenuse (Service) pilt (image)
         echo "2/2: Ehitan todo-service:1.0..."
-        if [ -f "solutions/backend-java-spring/Dockerfile" ]; then
+        if [ -f "solutions/backend-java-spring/Dockerfile.simple" ]; then
             cd ../apps/backend-java-spring
-            cp ../../01-docker-lab/solutions/backend-java-spring/Dockerfile .
+            cp ../../01-docker-lab/solutions/backend-java-spring/Dockerfile.simple ./Dockerfile
             cp ../../01-docker-lab/solutions/backend-java-spring/.dockerignore .
 
-            # Esmalt ehita (build) JAR fail
-            echo "   Building JAR file..."
-            if ./gradlew clean bootJar > "$LOGDIR/todo-gradle-build.log" 2>&1; then
-                echo -e "${GREEN}   ✓ JAR file ehitatud${NC}"
+            # Koosta build käsk koos proxy argumentidega
+            BUILD_CMD="docker build -t todo-service:1.0 --build-arg HTTP_PROXY=$HTTP_PROXY --build-arg HTTPS_PROXY=$HTTPS_PROXY ."
 
-                if docker build -t todo-service:1.0 . > "$LOGDIR/todo-service-build.log" 2>&1; then
-                    echo -e "${GREEN}   ✓ todo-service:1.0 ehitatud edukalt!${NC}"
-                else
-                    echo -e "${RED}   ✗ todo-service:1.0 ehitamine (build) ebaõnnestus${NC}"
-                    echo "   Logi: cat $LOGDIR/todo-service-build.log"
-                    CLEANUP_LOGS=false
-                fi
+            if eval "$BUILD_CMD" > "$LOGDIR/todo-service-build.log" 2>&1; then
+                echo -e "${GREEN}   ✓ todo-service:1.0 ehitatud edukalt!${NC}"
             else
-                echo -e "${RED}   ✗ JAR ehitamine (build) ebaõnnestus${NC}"
-                echo "   Logi: cat $LOGDIR/todo-gradle-build.log"
+                echo -e "${RED}   ✗ todo-service:1.0 ehitamine (build) ebaõnnestus${NC}"
+                echo "   Logi: cat $LOGDIR/todo-service-build.log"
                 CLEANUP_LOGS=false
             fi
 
             rm -f Dockerfile .dockerignore
             cd ../../01-docker-lab
         else
-            echo -e "${RED}   ✗ Dockerfile lahendust ei leitud${NC}"
+            echo -e "${RED}   ✗ Dockerfile.simple lahendust ei leitud${NC}"
         fi
         echo ""
 
