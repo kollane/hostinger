@@ -14,7 +14,9 @@ Selles harjutuses õpid looma **OCI-standardset** (Open Container Initiative) Do
 📝 **Märkus turvalisuse kohta:** See harjutus keskendub Docker põhitõdedele. **Täielikult OCI-standardne** ja **production-ready** lahendus (sh non-root USER, HEALTHCHECK) tuleb **[Harjutus 5: Tõmmise Optimeerimine](05-optimization.md)**, kus lisame Kubernetes Pod Security Standards'ile vastava turvalisuse.
 
 ---
+## 📋 Harjutuse ülevaade
 
+**Harjutuse eesmärk:** Node.js kasutajahalduse rakenduse (User Service) konteineriseerimine ja Dockerfile'i loomine
 **User Service'i rakenduse lühitutvustus:**
 - 🔐 Registreerib uusi kasutajaid
 - 🎫 Loob JWT "token"-eid (digitaalsed tõendid)
@@ -22,11 +24,6 @@ Selles harjutuses õpid looma **OCI-standardset** (Open Container Initiative) Do
 - 💾 Salvestab kasutajate andmed PostgreSQL andmebaasi
   
 **📖 Rakenduse funktsionaalsuse kohta lähemalt siit:** [User Service README](../../apps/backend-nodejs/README.md)
-
----
-## 📋 Harjutuse ülevaade
-
-**Harjutuse eesmärk:** Node.js kasutajahalduse rakenduse (User Service) konteineriseerimine ja Dockerfile'i loomine
 
 **Harjutuse Fookus:** See harjutus keskendub Docker põhitõdede õppimisele, MITTE töötavale rakendusele!
 
