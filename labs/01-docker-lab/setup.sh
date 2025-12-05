@@ -310,12 +310,13 @@ else
         echo ""
 
         # Seadista vaikimisi proxy (kui ei ole juba seadistatud)
-        # MÄRKUS: Vaikimisi proxy pole seadistatud - kasutaja peab ise määrama
+        # MÄRKUS: See on näidis-proxy corporate keskkonnas
+        # Kui sul pole proxy't vaja, seadista: export HTTP_PROXY="" enne setup.sh käivitamist
         if [ -z "$HTTP_PROXY" ]; then
-            HTTP_PROXY=""
+            HTTP_PROXY="http://proxy.example.com:8080"
         fi
         if [ -z "$HTTPS_PROXY" ]; then
-            HTTPS_PROXY=""
+            HTTPS_PROXY="http://proxy.example.com:8080"
         fi
 
         echo -e "${GREEN}✓ Proxy seadistused build'i jaoks:${NC}"
