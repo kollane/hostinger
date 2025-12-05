@@ -310,11 +310,12 @@ else
         echo ""
 
         # Seadista vaikimisi proxy (kui ei ole juba seadistatud)
+        # MÄRKUS: Vaikimisi proxy pole seadistatud - kasutaja peab ise määrama
         if [ -z "$HTTP_PROXY" ]; then
-            HTTP_PROXY="http://cache1.rmv:3128"
+            HTTP_PROXY=""
         fi
         if [ -z "$HTTPS_PROXY" ]; then
-            HTTPS_PROXY="http://cache1.rmv:3128"
+            HTTPS_PROXY=""
         fi
 
         echo -e "${GREEN}✓ Proxy seadistused build'i jaoks:${NC}"
