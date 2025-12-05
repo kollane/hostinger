@@ -1095,6 +1095,89 @@ RUN apt-get update && apt-get install -y wget
 
 **DevOps parim praktika:** Kasuta seda, mis juba on - `node`, `npm`, `healthcheck.js`
 
+### Probleem 6: "image 'user-service:1.0-optimized' not found"
+
+**Sümptomid:**
+```bash
+docker compose up -d
+# Error: pull access denied for user-service, repository does not exist or may require 'docker login'
+# või
+# Error: image user-service:1.0-optimized: not found
+```
+
+**Põhjus:** Lab 1 Docker image'd puuduvad või on kustutatud
+
+**Diagnoos:**
+```bash
+# Kontrolli, kas image'd on olemas
+docker images | grep -E "user-service|todo-service"
+
+# Kui tulemus on tühi → image'd puuduvad
+```
+
+**Lahendus A: setup.sh (SOOVITATAV - Kõige Kiirem)**
+```bash
+cd ..  # Tagasi 02-docker-compose-lab/
+lab2-setup
+# Vali: 1) Ehita puuduvad image'd automaatselt
+```
+
+**setup.sh teeb automaatselt:**
+- ✅ Kontrollib puuduvad image'd
+- ✅ Kasutab Lab 1 `Dockerfile.optimized.proxy` faile
+- ✅ Seadistab vaikimisi proxy (Intel proxy: 911/912)
+- ✅ Ehitab mõlemad image'd (Node.js + Java)
+
+**Lahendus B: Käsitsi Building (VALIKULINE)**
+
+**📖 Põhjalik juhend:**
+
+👉 **Loe:** [Lisainfo sektsioon selles failis](#-lisainfo-building-images-proxy-keskkonnas-valikuline)
+
+**või**
+
+👉 **Loe:** [Lab 2 README - Stsenaarium C](../README.md#stsenaarium-c-käsitsi-building-proxy-keskkonnas-harva-vajalik)
+
+**Kiirviide:**
+```bash
+# 1. Ehita user-service
+cd ../apps/backend-nodejs
+docker build \
+  --build-arg HTTP_PROXY=http://cache1.sss:3128 \
+  --build-arg HTTPS_PROXY=http://cache1.sss:3128 \
+  -f ../../01-docker-lab/solutions/backend-nodejs/Dockerfile.optimized.proxy \
+  -t user-service:1.0-optimized .
+
+# 2. Ehita todo-service
+cd ../apps/backend-java-spring
+docker build \
+  --build-arg HTTP_PROXY=http://cache1.sss:3128 \
+  --build-arg HTTPS_PROXY=http://cache1.sss:3128 \
+  -f ../../01-docker-lab/solutions/backend-java-spring/Dockerfile.optimized.proxy \
+  -t todo-service:1.0-optimized .
+
+# 3. Jätka harjutust
+cd ../../02-docker-compose-lab/exercises
+docker compose up -d
+```
+
+**Lahendus C: Lab 1 (Kui Pole Veel Läbitud)**
+```bash
+cd ../../01-docker-lab
+cat README.md
+# Loe ja läbi Lab 1 harjutused
+```
+
+**Miks see juhtub?**
+- Lab 2 eeldab, et Lab 1 on läbitud
+- Lab 1 ehitab `user-service:1.0-optimized` ja `todo-service:1.0-optimized` image'd
+- Lab 2 docker-compose.yml kasutab neid valmis image'id
+
+**Miks Lab 2 EI EHI automaatselt?**
+- Lab 2 õpetab orkestreerimist (orchestration), mitte building'ut
+- setup.sh pakub mugavat lahendust puuduvate image'ide jaoks
+- Selge vastutuste jaotus: Lab 1 = building, Lab 2 = orchestration
+
 ---
 
 ## 🔗 Järgmine Samm
@@ -1109,6 +1192,96 @@ Suurepärane! Nüüd käivitad 4 teenust ühe docker-compose.yml failiga.
 - ⏭️ **Järgmine:** Lisa Frontend (5. teenus)
 
 **Jätka:** [Harjutus 2: Lisa frontend teenus](02-add-frontend.md)
+
+---
+
+## 📦 Lisainfo: Building Images Proxy Keskkonnas (VALIKULINE)
+
+**💡 Märkus:** See sektsioon on ainult neile, kes peavad käsitsi ehitama Docker image'id.
+
+**Enamiku kasutajate jaoks:**
+- ✅ Lab 1 image'd on juba olemas
+- ✅ `setup.sh` ehitab automaatselt, kui puuduvad
+- ✅ Compose kasutab valmis image'id (`image:` direktiiv)
+
+---
+
+### Millal Vajad Käsitsi Building'ut?
+
+Käsitsi building on vajalik ainult siis, kui:
+- ❌ Lab 1 image'd puuduvad **JA** `setup.sh` ei tööta
+- ❌ Tahad rebuild'ida image'id uue koodiga
+- ❌ `Dockerfile.optimized.proxy` on muutunud
+
+**Tavaliselt see EI OLE vajalik!** Lab 2 keskendub orkestreerimisele, mitte building'ule.
+
+---
+
+### Kuidas Ehitada Image'id Proxy Keskkonnas?
+
+**📖 Põhjalik juhend:**
+
+👉 **Loe:** [Lab 2 README - Proxy Sektsioon](../README.md#-märkus-proxy-keskkonna-kohta)
+
+**See sektsioon käsitleb 4 stsenaariumit:**
+- ✅ **Stsenaarium A:** Lab 1 image'd on olemas (KÕIGE TAVALISEM)
+- ✅ **Stsenaarium B:** `setup.sh` ehitab automaatselt
+- ✅ **Stsenaarium C:** Käsitsi building juhised
+- ✅ **Stsenaarium D:** Compose `build:` direktiiv (valikuline)
+
+**Kiirviide käsitsi building'uks (Stsenaarium C):**
+
+```bash
+# 1. Node.js User Service
+cd ../apps/backend-nodejs
+docker build \
+  --build-arg HTTP_PROXY=http://cache1.sss:3128 \
+  --build-arg HTTPS_PROXY=http://cache1.sss:3128 \
+  -f ../../01-docker-lab/solutions/backend-nodejs/Dockerfile.optimized.proxy \
+  -t user-service:1.0-optimized .
+
+# 2. Java Spring Boot Todo Service
+cd ../apps/backend-java-spring
+docker build \
+  --build-arg HTTP_PROXY=http://cache1.sss:3128 \
+  --build-arg HTTPS_PROXY=http://cache1.sss:3128 \
+  -f ../../01-docker-lab/solutions/backend-java-spring/Dockerfile.optimized.proxy \
+  -t todo-service:1.0-optimized .
+```
+
+**Seejärel jätka harjutust:**
+```bash
+cd ../../02-docker-compose-lab/exercises
+docker compose up -d
+```
+
+---
+
+### Miks Compose Failid EI Kasuta `build:` Direktiivi?
+
+**Hea küsimus! 🤔**
+
+Lab 2 docker-compose.yml failid kasutavad `image:` direktiivi, mitte `build:`:
+
+```yaml
+# Meie lähenemine
+services:
+  user-service:
+    image: user-service:1.0-optimized  # Kasutab valmis pilti
+```
+
+**Põhjused:**
+1. **Lab 2 eesmärk:** Õpetab orkestreerimist (orchestration), MITTE image building'ut
+2. **Kiire startup:** Image'd on juba ehitatud (ei rebuild'i igakord)
+3. **Selge vastutuste jaotus:**
+   - 🏗️ **Lab 1:** Image building (Dockerfile, build args, proxy)
+   - 🎭 **Lab 2:** Orchestration (Compose, services, networks)
+
+**Kui tahad `build:` direktiivi näha (valikuline):**
+
+👉 **Vaata:** [Lab 2 README - Stsenaarium D](../README.md#stsenaarium-d-compose-build-direktiiv-valikuline---harva-kasutatud)
+
+**⚠️ Märkus:** Harva kasutatav lähenemine Lab 2's. **Soovituslik:** Kasuta `setup.sh` või käsitsi building'ut (Stsenaarium C).
 
 ---
 
