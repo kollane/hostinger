@@ -232,36 +232,6 @@ docker run --rm todo-service:1.0 env | grep -i proxy
 # Oodatud: TÜHI! ✅ Proxy EI OLE runtime'is
 ```
 
-**Mida õppisid?**
-- ✅ Multi-stage build (Gradle build containeris!)
-- ✅ ARG vs ENV (build-time vs runtime)
-- ✅ Proxy ei leki (clean runtime!)
-- ✅ Ei vaja host'is Java/Gradle installimist
-
----
-
-### 🔍 Miks just ARG Multi-Stage?
-
-**Küsimus:** Kas see on AINUS viis proxy seadistamiseks?
-
-**Vastus:** **EI!** On **8 erinevat meetodit**, aga see on **parim tootmiseks**:
-
-✅ **Portaabel** - Töötab igal masinal (developer, CI/CD, production, avalik võrk)
-✅ **Turvaline** - Proxy **EI LEKI** runtime'i (test: `docker run --rm todo-service:1.0 env | grep -i proxy` → tühi väljund)
-✅ **Lihtne CI/CD** - GitHub Actions `--build-arg` integreerub lihtsalt
-✅ **Töötab ilma proksita** - Avalikes võrkudes sama Dockerfile
-
-❌ **Alternatiivid (miks ei kasuta):**
-- **`daemon.json`** - Vajab admin õiguseid, pole portable, mõjutab kõiki projekte
-- **Hardcoded ENV** - Ei tööta developer masinal ega avalikus võrgus, proxy leak
-- **BuildKit secrets** - Liiga keeruline beginneritele (Docker 23.0+)
-
-👉 **Täielik võrdlus (8 meetodit):** [Peatükk 06A: Corporate Võrgu Piirangud](../../../resource/06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md#corporate-võrgu-piirangud-proxy-seadistamine-docker-buildis)
-
-**💡 Corporate Nexus Repository:**
-Kui sinu ettevõte kasutab Nexus Repository Manager'it (company internal packages):
-👉 [Peatükk 06A: Nexus Integratsioon](../../../resource/06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md#lisastsenaarium-private-repository-manager-sonatype-nexus)
-
 ---
 
 **📖 Põhjalik selgitus:**
@@ -313,32 +283,29 @@ gradlew.bat
 
 **Asukoht:** `~/labs/apps/backend-java-spring`
 
-**⚠️ Oluline:** Sõltuvalt valitud variandist, ehitamine erineb:
-
-#### Kui kasutad Variant A (VPS, pre-built JAR):
-
+**Ehita proksiga (corporate võrk):**
 ```bash
-# 1. Ehita JAR host'is
-./gradlew clean bootJar
-
-# 2. Kontrolli JAR'i
-ls -lh build/libs/
-
-# 3. Ehita Docker tõmmis
-docker build -t todo-service:1.0 .
-```
-
-#### Kui kasutad Variant B (PRIMAARNE - Gradle containeris):
-
-```bash
-# Ainult Docker build (Gradle build toimub containeris!)
+# Asenda oma proxy aadress!
 docker build \
   --build-arg HTTP_PROXY=http://cache1.sss:3128 \
   --build-arg HTTPS_PROXY=http://cache1.sss:3128 \
   -t todo-service:1.0 .
 
-# VÕI ilma proksita (avalik võrk):
+# Vaata ehitamise protsessi
+# Märka: iga RUN käsk loob uue kihi (layer)
+```
+
+**Ehita ilma proksita (avalik võrk):**
+```bash
 docker build -t todo-service:1.0 .
+# ARG-id jäävad tühjaks, Gradle download töötab avalikus võrgus
+```
+
+**Kontrolli: Kas proxy leak'ib runtime'i?**
+```bash
+docker run --rm todo-service:1.0 env | grep -i proxy
+# Oodatud: TÜHI VÄLJUND! ✅
+# Proxy EI OLE runtime'is = clean, turvaline, portaabel!
 ```
 
 **Kontrolli tõmmist:**
@@ -361,8 +328,6 @@ docker images todo-service:1.0
 
 ### Samm 5: Käivita Konteiner
 
-**⚠️ OLULINE:** Järgnevad käsud käivitavad konteineri, aga rakendus hangub, sest PostgreSQL puudub. See on **OODATUD** käitumine! Hetkel on fookus õppida Docker käske, mitte saada töötav rakendus.
-
 **ℹ️ Portide turvalisus:**
 
 Selles harjutuses kasutame lihtsustatud portide vastendust (`-p 8081:8081`).
@@ -374,16 +339,13 @@ Selles harjutuses kasutame lihtsustatud portide vastendust (`-p 8081:8081`).
 
 ---
 
-#### Variant A: Interaktiivne režiim (näed kohe vigu)
-
-**See variant on PARIM õppimiseks** - näed kohe, mida juhtub:
+#### Variant A: Ilma andmebaasita (testimiseks)
 
 ```bash
 # Käivita konteiner interaktiivselt
-# MÄRKUS: DB_HOST on vale, seega hangub (see on ÕIGE käitumine!)
 docker run -it --name todo-service-test \
   -p 8081:8081 \
-  -e DB_HOST=nonexistent-db \
+  -e DB_HOST=localhost \
   -e DB_PORT=5432 \
   -e DB_NAME=todo_service_db \
   -e DB_USER=postgres \
@@ -393,18 +355,15 @@ docker run -it --name todo-service-test \
 ```
 
 **Märkused:**
-- `-it` - interactive + tty (näed logisid real-time)
+- `-it` - interactive + tty
 - `--name` - anna konteinerile nimi
 - `-p 8081:8081` - portide vastendamine hostist konteinerisse
 - `-e` - keskkonna muutuja
-- `JWT_SECRET` - lihtsalt test väärtus (min 32 tähemärki); tootmises kasuta `openssl rand -base64 32`
 
 **Oodatud tulemus:**
 ```
-...
-Error connecting to database
-...
-Application failed to start
+❌ Error connecting to database
+Connection refused...
 ```
 
 **See on TÄPSELT see, mida tahame näha!** 🎉
@@ -415,19 +374,13 @@ Application failed to start
 
 Vajuta `Ctrl+C` et peatada.
 
-#### Variant B: Taustal töötav režiim (detached mode) (õpi `docker ps` ja `docker logs`)
-
-**See variant õpetab, kuidas veatuvastust teostada hangunud konteineritele:**
+#### Variant B: Taustal töötav režiim (Detached Mode)
 
 ```bash
-# Puhasta eelmine test konteiner
-docker rm -f todo-service-test
-
 # Käivita taustal ehk detached režiimis (-d)
-# MÄRKUS: DB_HOST on vale, seega hangub (see on ÕIGE käitumine!)
 docker run -d --name todo-service \
   -p 8081:8081 \
-  -e DB_HOST=nonexistent-db \
+  -e DB_HOST=host.docker.internal \
   -e DB_PORT=5432 \
   -e DB_NAME=todo_service_db \
   -e DB_USER=postgres \
@@ -437,53 +390,20 @@ docker run -d --name todo-service \
   todo-service:1.0
 ```
 
-**Vaata, mis juhtus:**
-
-```bash
-# Kas töötab? (HINT: Ei tööta!)
-docker ps
-
-# Vaata ka peatatud konteinereid
-docker ps -a
-# STATUS peaks olema: Exited (1)
-```
-
-**Miks konteiner puudub `docker ps` väljundis?**
-- Konteiner käivitus, aga rakendus hangus kohe
-- Docker peatas hangunud konteineri automaatselt
-- `docker ps` näitab ainult TÖÖTAVAID konteinereid
-- `docker ps -a` näitab KÕIKI konteinereid (ka peatatud)
-
-**Õpi logisid vaatama:**
-
-```bash
-# Vaata logisid (isegi kui konteiner on peatatud!)
-docker logs todo-service
-
-# Oodatud väljund:
-# Error: Unable to connect to database...
-# Connection refused...
-```
-
-**See on PERFEKTNE õppetund! 🎓**
-- Õppisid `-d` (taustal töötav režiim) ✅
-- Õppisid vahet `docker ps` vs `docker ps -a` ✅
-- Õppisid, et logid on ka peatatud konteinerites ✅
-- Mõistad, miks mitme konteineri lahendus on vaja ✅
-
-**Miks kasutasime `DB_HOST=nonexistent-db`?**
-- See tagab, et konteiner **hangub**, sest andmebaasi pole
-- See on OODATUD käitumine Harjutus 1's!
-- Töötava lahenduse saad [Harjutus 2: Mitme Konteineri Käivitamine](02-multi-container.md)-s
-
 ### Samm 6: Veatuvastus ja tõrkeotsing
 
 ```bash
+# Vaata kas töötab
+docker ps
+
 # Vaata konteineri staatust
 docker ps -a
 
 # Vaata logisid
 docker logs todo-service
+
+# Vaata reaalajas
+docker logs -f todo-service
 
 # Sisene konteinerisse
 docker exec -it todo-service sh
@@ -497,9 +417,15 @@ exit
 # Inspekteeri konteinerit
 docker inspect todo-service
 
-# Vaata ressursside kasutust
+# Vaata ressursikasutust
 docker stats todo-service
 ```
+
+**Miks konteiner puudub `docker ps` väljundis?**
+- Konteiner käivitus, aga rakendus hangus kohe
+- Docker peatas hangunud konteineri automaatselt
+- `docker ps` näitab ainult TÖÖTAVAID konteinereid
+- `docker ps -a` näitab KÕIKI konteinereid (ka peatatud)
 
 **Levinud probleemid:**
 
@@ -527,23 +453,6 @@ docker stats todo-service
 
    # Vaata võrku (docker network)
    docker inspect todo-service | grep IPAddress
-   ```
-
-4. **JWT_SECRET liiga lühike (kui kasutad oma väärtust):**
-   ```bash
-   # Viga (error): The specified key byte array is 88 bits which is not secure enough
-
-   # Lahendus: Kasuta vähemalt 32 tähemärki (256 bits)
-   # Test jaoks: my-test-secret-key-min-32-chars-long
-   # Tootmises: openssl rand -base64 32
-   ```
-
-5. **Konteiner hangub kohe (andmebaas puudub):**
-   ```bash
-   # Veateade: Unable to connect to database
-
-   # See on OODATUD käitumine Harjutus 1's!
-   # Lahendus: Käivita PostgreSQL konteiner (Harjutus 2)
    ```
 
 ---
