@@ -17,6 +17,7 @@ Selles harjutuses õpid looma **OCI-standardset** (Open Container Initiative) Do
 ## 📋 Harjutuse ülevaade
 
 **Harjutuse eesmärk:** Node.js kasutajahalduse rakenduse (User Service) konteineriseerimine ja Dockerfile'i loomine
+
 **User Service'i rakenduse lühitutvustus:**
 - 🔐 Registreerib uusi kasutajaid
 - 🎫 Loob JWT "token"-eid (digitaalsed tõendid)
