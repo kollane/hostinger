@@ -98,17 +98,50 @@ if [ $missing_images -gt 0 ]; then
         echo ""
 
         # Seadista vaikimisi proxy (kui ei ole juba seadistatud)
+        # MÄRKUS: See on näidis-proxy corporate keskkonnas
+        # Kui sul pole proxy't vaja, seadista: export HTTP_PROXY="" enne setup.sh käivitamist
         if [ -z "$HTTP_PROXY" ]; then
-            HTTP_PROXY="http://proxy-chain.intel.com:911"
+            HTTP_PROXY="http://proxy.example.com:8080"
         fi
         if [ -z "$HTTPS_PROXY" ]; then
-            HTTPS_PROXY="http://proxy-chain.intel.com:912"
+            HTTPS_PROXY="http://proxy.example.com:8080"
         fi
 
         echo "✓ Proxy seadistused build'i jaoks:"
         echo "   HTTP_PROXY=$HTTP_PROXY"
         echo "   HTTPS_PROXY=$HTTPS_PROXY"
         echo ""
+
+        # Kontrolli proxy ühenduvust (kui proxy on seadistatud)
+        if [ -n "$HTTP_PROXY" ]; then
+            echo "🔍 Kontrollin proxy ühenduvust..."
+            if curl -x "$HTTP_PROXY" -s --max-time 5 -I https://registry.npmjs.org > /dev/null 2>&1; then
+                echo "✓ Proxy töötab (npm registry on kättesaadav)"
+            else
+                echo "⚠️  Proxy ei tööta! npm registry ei ole kättesaadav läbi $HTTP_PROXY"
+                echo ""
+                echo "Kas soovid jätkata ilma proxy'ta?"
+                echo "  [Y] Jah, proovi ilma proxy'ta (HTTP_PROXY ja HTTPS_PROXY tühjendatakse)"
+                echo "  [N] Ei, katkesta (saad proxy'd ise seadistada)"
+                echo ""
+                read -p "Vali [y/N]: " -n 1 -r CONTINUE_WITHOUT_PROXY
+                echo ""
+                echo ""
+
+                if [[ $CONTINUE_WITHOUT_PROXY =~ ^[Yy]$ ]]; then
+                    HTTP_PROXY=""
+                    HTTPS_PROXY=""
+                    echo "✓ Jätkan ilma proxy'ta"
+                else
+                    echo "❌ Seadista proxy käsitsi:"
+                    echo "   export HTTP_PROXY=\"http://sinu-proxy:port\""
+                    echo "   export HTTPS_PROXY=\"http://sinu-proxy:port\""
+                    echo "   ./setup.sh"
+                    exit 1
+                fi
+            fi
+            echo ""
+        fi
 
         # Ehita user-service:1.0-optimized
         if ! docker images | grep -q "user-service.*1.0-optimized"; then
@@ -443,6 +476,43 @@ if [ "$DB_INIT_MODE" == "auto" ]; then
     echo "=========================================="
     echo ""
 
+    # Veendu, et PostgreSQL on valmis SQL käskude vastu võtmiseks
+    echo "Kontrollin PostgreSQL konteinrite valmidust SQL käskude jaoks..."
+    postgres_ready=false
+    max_retries=15
+    retry=0
+
+    while [ $retry -lt $max_retries ]; do
+        user_ready=$(docker exec postgres-user pg_isready -U postgres 2>/dev/null | grep -q "accepting connections" && echo "yes" || echo "no")
+        todo_ready=$(docker exec postgres-todo pg_isready -U postgres 2>/dev/null | grep -q "accepting connections" && echo "yes" || echo "no")
+
+        if [ "$user_ready" = "yes" ] && [ "$todo_ready" = "yes" ]; then
+            postgres_ready=true
+            break
+        fi
+
+        echo "  Ootan PostgreSQL valmimist... ($((retry + 1))/$max_retries)"
+        sleep 2
+        retry=$((retry + 1))
+    done
+
+    if [ "$postgres_ready" = false ]; then
+        echo "❌ PostgreSQL konteinerid ei vasta pg_isready kontrollile!"
+        echo "   Andmebaasi initsialiseerimine võib ebaõnnestuda"
+        echo ""
+        read -p "Kas soovid siiski jätkata? [y/N]: " -n 1 -r CONTINUE_ANYWAY
+        echo ""
+        if [[ ! $CONTINUE_ANYWAY =~ ^[Yy]$ ]]; then
+            echo "Setup katkestatud. Kontrolli konteinereid:"
+            echo "  docker compose -f solutions/01-compose-basics/docker-compose.yml ps"
+            echo "  docker compose -f solutions/01-compose-basics/docker-compose.yml logs postgres-user postgres-todo"
+            exit 1
+        fi
+    else
+        echo "✓ PostgreSQL konteinerid on valmis SQL käskude jaoks"
+    fi
+    echo ""
+
     # 1. Loo users tabel
     echo "Loon users tabeli..."
     docker exec -i postgres-user psql -U postgres -d user_service_db > /dev/null 2>&1 <<'EOF'
@@ -458,7 +528,13 @@ CREATE TABLE IF NOT EXISTS users (
 EOF
 
     if [ $? -eq 0 ]; then
-        echo "✓ users tabel loodud"
+        # Veendu, et tabel tegelikult loodi
+        table_exists=$(docker exec postgres-user psql -U postgres -d user_service_db -tAc "SELECT COUNT(*) FROM information_schema.tables WHERE table_name='users';" 2>/dev/null || echo "0")
+        if [ "$table_exists" = "1" ]; then
+            echo "✓ users tabel loodud ja eksisteerib"
+        else
+            echo "❌ users tabel ei eksisteeri (CREATE TABLE käsk täideti, aga tabel puudub!)"
+        fi
     else
         echo "❌ users tabeli loomine ebaõnnestus"
     fi
@@ -480,7 +556,13 @@ CREATE TABLE IF NOT EXISTS todos (
 EOF
 
     if [ $? -eq 0 ]; then
-        echo "✓ todos tabel loodud"
+        # Veendu, et tabel tegelikult loodi
+        table_exists=$(docker exec postgres-todo psql -U postgres -d todo_service_db -tAc "SELECT COUNT(*) FROM information_schema.tables WHERE table_name='todos';" 2>/dev/null || echo "0")
+        if [ "$table_exists" = "1" ]; then
+            echo "✓ todos tabel loodud ja eksisteerib"
+        else
+            echo "❌ todos tabel ei eksisteeri (CREATE TABLE käsk täideti, aga tabel puudub!)"
+        fi
     else
         echo "❌ todos tabeli loomine ebaõnnestus"
     fi
@@ -510,7 +592,13 @@ INSERT INTO users (name, email, password, role, created_at, updated_at) VALUES
 EOF
 
     if [ $? -eq 0 ]; then
-        echo "✓ users andmed täidetud (4 kasutajat)"
+        # Veendu, et andmed tegelikult lisati
+        user_count=$(docker exec postgres-user psql -U postgres -d user_service_db -tAc "SELECT COUNT(*) FROM users;" 2>/dev/null || echo "0")
+        if [ "$user_count" -ge 4 ]; then
+            echo "✓ users andmed täidetud ($user_count kasutajat)"
+        else
+            echo "❌ users andmeid ei lisatud (oodati vähemalt 4, leiti: $user_count)"
+        fi
     else
         echo "❌ users andmete täitmine ebaõnnestus"
     fi
@@ -548,17 +636,24 @@ INSERT INTO todos (user_id, title, description, priority, due_date, completed, c
 EOF
 
     if [ $? -eq 0 ]; then
-        echo "✓ todos andmed täidetud (8 TODO'd)"
+        # Veendu, et andmed tegelikult lisati
+        todo_count=$(docker exec postgres-todo psql -U postgres -d todo_service_db -tAc "SELECT COUNT(*) FROM todos;" 2>/dev/null || echo "0")
+        if [ "$todo_count" -ge 8 ]; then
+            echo "✓ todos andmed täidetud ($todo_count TODO'd)"
+        else
+            echo "❌ todos andmeid ei lisatud (oodati vähemalt 8, leiti: $todo_count)"
+        fi
     else
         echo "❌ todos andmete täitmine ebaõnnestus"
     fi
 
     echo ""
     echo "=========================================="
-    echo "Andmete kontroll (kas jäid püsima?):"
+    echo "Lõplik andmete kontroll (püsivus volume'is):"
     echo "=========================================="
     echo ""
 
+    # Loe andmete arv uuesti (et kontrollida püsivust)
     user_count=$(docker exec postgres-user psql -U postgres -d user_service_db -tAc "SELECT COUNT(*) FROM users;" 2>/dev/null || echo "0")
     todo_count=$(docker exec postgres-todo psql -U postgres -d todo_service_db -tAc "SELECT COUNT(*) FROM todos;" 2>/dev/null || echo "0")
 
