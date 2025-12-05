@@ -311,16 +311,47 @@ else
 
         # Seadista vaikimisi proxy (kui ei ole juba seadistatud)
         if [ -z "$HTTP_PROXY" ]; then
-            HTTP_PROXY="http://proxy-chain.intel.com:911"
+            HTTP_PROXY="http://cache1.rmv:3128"
         fi
         if [ -z "$HTTPS_PROXY" ]; then
-            HTTPS_PROXY="http://proxy-chain.intel.com:912"
+            HTTPS_PROXY="http://cache1.rmv:3128"
         fi
 
         echo -e "${GREEN}✓ Proxy seadistused build'i jaoks:${NC}"
         echo "   HTTP_PROXY=$HTTP_PROXY"
         echo "   HTTPS_PROXY=$HTTPS_PROXY"
         echo ""
+
+        # Kontrolli proxy ühenduvust (kui proxy on seadistatud)
+        if [ -n "$HTTP_PROXY" ]; then
+            echo "🔍 Kontrollin proxy ühenduvust..."
+            if curl -x "$HTTP_PROXY" -s --max-time 5 -I https://registry.npmjs.org > /dev/null 2>&1; then
+                echo -e "${GREEN}✓ Proxy töötab (npm registry on kättesaadav)${NC}"
+            else
+                warn "Proxy ei tööta! npm registry ei ole kättesaadav läbi $HTTP_PROXY"
+                echo ""
+                echo "Kas soovid jätkata ilma proxy'ta?"
+                echo "  [Y] Jah, proovi ilma proxy'ta (HTTP_PROXY ja HTTPS_PROXY tühjendatakse)"
+                echo "  [N] Ei, katkesta (saad proxy'd ise seadistada)"
+                echo ""
+                read -p "Vali [y/N]: " -n 1 -r CONTINUE_WITHOUT_PROXY
+                echo ""
+                echo ""
+
+                if [[ $CONTINUE_WITHOUT_PROXY =~ ^[Yy]$ ]]; then
+                    HTTP_PROXY=""
+                    HTTPS_PROXY=""
+                    echo -e "${GREEN}✓ Jätkan ilma proxy'ta${NC}"
+                else
+                    echo -e "${RED}❌ Seadista proxy käsitsi:${NC}"
+                    echo "   export HTTP_PROXY=\"http://sinu-proxy:port\""
+                    echo "   export HTTPS_PROXY=\"http://sinu-proxy:port\""
+                    echo "   ./setup.sh"
+                    exit 1
+                fi
+            fi
+            echo ""
+        fi
 
         # Ehita (build) User Teenuse (Service) pilt (image)
         echo "1/2: Ehitan user-service:1.0..."
