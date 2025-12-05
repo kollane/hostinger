@@ -1624,6 +1624,330 @@ docker run --rm myapp env | grep -i proxy
    - Security risk
    - Mitte production-ready
 
+---
+
+### Lisastsenaarium: Private Repository Manager (Sonatype Nexus)
+
+**Mis on Nexus Repository Manager?**
+
+Nexus on **corporate artifact repository**, mis:
+- Cache'ib avalikud pakid (Maven Central, npmjs.org) → kiire, reliable
+- Hostib company internal packages → private sõltuvused
+- Pakub security scanning (Nexus IQ), access control (RBAC)
+- Asub corporate võrgus (nt `https://nexus.company.com`)
+
+**Erinevus HTTP Proxy vs Nexus:**
+
+| Aspekt | HTTP Proxy (cache1.sss:3128) | Nexus Repository Manager |
+|--------|------------------------------|--------------------------|
+| **Eesmärk** | Network-level proxy (CONNECT) | Package repository manager |
+| **Konfiguratsioon** | `HTTP_PROXY` env var | Build tool settings (settings.xml, .npmrc, build.gradle) |
+| **Cache** | Generic HTTP cache | Package-aware artifacts cache |
+| **Private packages** | ❌ Ei toeta | ✅ Toetab (hosted repos) |
+| **Security scanning** | ❌ Pole | ✅ Nexus IQ integration |
+| **Access control** | ⚠️ Basic auth (optional) | ✅ RBAC (required) |
+
+**Oluline:** Nexus **ei ole HTTP proxy** - see on **application-level package repository**.
+
+---
+
+#### Gradle + Nexus
+
+**build.gradle (repositories config):**
+
+```groovy
+repositories {
+    maven {
+        url = uri("https://nexus.company.com/repository/maven-public/")
+        credentials {
+            username = System.getenv("NEXUS_USERNAME") ?: project.findProperty("nexusUsername")
+            password = System.getenv("NEXUS_PASSWORD") ?: project.findProperty("nexusPassword")
+        }
+    }
+}
+```
+
+**Dockerfile (multi-stage):**
+
+```dockerfile
+FROM gradle:8.11-jdk21-alpine AS builder
+
+ARG NEXUS_USERNAME
+ARG NEXUS_PASSWORD
+
+WORKDIR /app
+
+COPY build.gradle settings.gradle ./
+RUN gradle dependencies --no-daemon
+
+COPY src ./src
+RUN gradle bootJar --no-daemon
+
+FROM eclipse-temurin:21-jre-alpine
+COPY --from=builder /app/build/libs/*.jar app.jar
+CMD ["java", "-jar", "app.jar"]
+```
+
+**Build:**
+```bash
+docker build \
+  --build-arg NEXUS_USERNAME=build-user \
+  --build-arg NEXUS_PASSWORD=secret123 \
+  -t todo-service:1.0 .
+```
+
+**Security check:**
+```bash
+docker run --rm todo-service:1.0 env | grep NEXUS
+# Oodatud: TÜHI ✅ (credentials ei leki runtime'i)
+```
+
+---
+
+#### Maven + Nexus
+
+**settings.xml (project root või ~/.m2/settings.xml):**
+
+```xml
+<settings>
+  <servers>
+    <server>
+      <id>nexus</id>
+      <username>${env.NEXUS_USERNAME}</username>
+      <password>${env.NEXUS_PASSWORD}</password>
+    </server>
+  </servers>
+
+  <mirrors>
+    <mirror>
+      <id>nexus</id>
+      <mirrorOf>*</mirrorOf>
+      <url>https://nexus.company.com/repository/maven-public/</url>
+    </mirror>
+  </mirrors>
+</settings>
+```
+
+**Dockerfile:**
+
+```dockerfile
+FROM maven:3.9-eclipse-temurin-17-alpine AS builder
+
+ARG NEXUS_USERNAME
+ARG NEXUS_PASSWORD
+
+WORKDIR /app
+
+COPY settings.xml /root/.m2/settings.xml
+COPY pom.xml ./
+RUN mvn dependency:go-offline -B
+
+COPY src ./src
+RUN mvn package -DskipTests -B
+
+FROM eclipse-temurin:17-jre-alpine
+COPY --from=builder /app/target/*.jar app.jar
+CMD ["java", "-jar", "app.jar"]
+```
+
+---
+
+#### npm + Nexus
+
+**.npmrc (project root):**
+
+```ini
+registry=https://nexus.company.com/repository/npm-public/
+always-auth=true
+_auth=${NPM_AUTH_TOKEN}
+```
+
+**Dockerfile:**
+
+```dockerfile
+FROM node:18-alpine AS builder
+
+ARG NPM_AUTH_TOKEN
+
+WORKDIR /app
+
+COPY package.json package-lock.json .npmrc ./
+RUN echo "_auth=${NPM_AUTH_TOKEN}" >> .npmrc
+RUN npm ci
+
+COPY . .
+RUN npm run build
+
+FROM node:18-alpine
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --only=production && npm cache clean --force
+COPY --from=builder /app/dist ./dist
+CMD ["node", "dist/server.js"]
+```
+
+**Build:**
+```bash
+# Generate token: echo -n "username:password" | base64
+docker build \
+  --build-arg NPM_AUTH_TOKEN=dXNlcm5hbWU6cGFzc3dvcmQ= \
+  -t user-service:1.0 .
+```
+
+---
+
+#### Nexus + HTTP Proxy (kombineeritud)
+
+Kui Nexus on HTTP proxy taga (maksimum security setup):
+
+**Dockerfile:**
+
+```dockerfile
+FROM gradle:8.11-jdk21-alpine AS builder
+
+ARG HTTP_PROXY
+ARG HTTPS_PROXY
+ARG NO_PROXY=nexus.company.com,*.company.com
+ARG NEXUS_USERNAME
+ARG NEXUS_PASSWORD
+
+WORKDIR /app
+
+# Seadista proxy (kui Nexus proxy taga)
+RUN if [ -n "$HTTP_PROXY" ]; then \
+      PROXY_HOST=$(echo "$HTTP_PROXY" | sed 's|^.*://||; s|:.*$||'); \
+      PROXY_PORT=$(echo "$HTTP_PROXY" | grep -oE '[0-9]+$'); \
+      export GRADLE_OPTS="-Dhttp.proxyHost=$PROXY_HOST -Dhttp.proxyPort=$PROXY_PORT -Dhttps.proxyHost=$PROXY_HOST -Dhttps.proxyPort=$PROXY_PORT -Dhttp.nonProxyHosts=${NO_PROXY}"; \
+    fi
+
+COPY build.gradle settings.gradle ./
+RUN gradle dependencies --no-daemon
+
+COPY src ./src
+RUN gradle bootJar --no-daemon
+
+FROM eclipse-temurin:21-jre-alpine
+COPY --from=builder /app/build/libs/*.jar app.jar
+CMD ["java", "-jar", "app.jar"]
+```
+
+**Build:**
+```bash
+docker build \
+  --build-arg HTTP_PROXY=http://cache1.sss:3128 \
+  --build-arg HTTPS_PROXY=http://cache1.sss:3128 \
+  --build-arg NEXUS_USERNAME=build-user \
+  --build-arg NEXUS_PASSWORD=secret123 \
+  -t todo-service:1.0 .
+```
+
+**Märkus:** `NO_PROXY` exception on kritiline - Nexus domain peab olema proxy exclusion'is.
+
+---
+
+#### Credentials Management
+
+**❌ MITTE KUNAGI:**
+
+```dockerfile
+ENV NEXUS_USERNAME=admin  # ❌ Leak runtime'i!
+ENV NEXUS_PASSWORD=admin123
+```
+
+```groovy
+// build.gradle
+credentials {
+    username = "admin"  // ❌ Git history'sse!
+    password = "admin123"
+}
+```
+
+**✅ ÕIGE VIIS:**
+
+```dockerfile
+# ARG (build-time only)
+ARG NEXUS_USERNAME
+ARG NEXUS_PASSWORD
+# Runtime stage: NO CREDENTIALS ✅
+```
+
+**CI/CD integratsioon:**
+
+```yaml
+# GitHub Actions
+- name: Build Docker image
+  run: |
+    docker build \
+      --build-arg NEXUS_USERNAME=${{ secrets.NEXUS_USERNAME }} \
+      --build-arg NEXUS_PASSWORD=${{ secrets.NEXUS_PASSWORD }} \
+      -t myapp:${{ github.sha }} .
+```
+
+---
+
+#### Troubleshooting: Nexus Probleemid
+
+**Probleem 1: "Unauthorized" (401)**
+
+```
+Received status code 401 from server: Unauthorized
+```
+
+**Lahendus:**
+```bash
+# Test credentials
+curl -u username:password https://nexus.company.com/repository/maven-public/
+
+# Debug build
+docker build --progress=plain \
+  --build-arg NEXUS_USERNAME=test \
+  --build-arg NEXUS_PASSWORD=test \
+  -t myapp .
+```
+
+**Probleem 2: SSL Certificate Error**
+
+```
+PKIX path building failed: unable to find valid certification path
+```
+
+**Lahendus (DEV ONLY):**
+```dockerfile
+COPY nexus-cert.pem /usr/local/share/ca-certificates/nexus.crt
+RUN update-ca-certificates
+```
+
+**Production:** Kasuta proper CA-signed certificate.
+
+**Probleem 3: Proxy blokeerib Nexus'i**
+
+```
+Connection refused: https://nexus.company.com
+```
+
+**Lahendus:**
+```dockerfile
+ARG NO_PROXY=nexus.company.com,*.company.com
+
+RUN export http_proxy=$HTTP_PROXY && \
+    export https_proxy=$HTTP_PROXY && \
+    export no_proxy=$NO_PROXY && \
+    gradle dependencies --no-daemon
+```
+
+---
+
+#### Best Practices
+
+1. ✅ **ARG credentials** (mitte ENV) - build-time only, ei leki runtime'i
+2. ✅ **Mirror all repositories** läbi Nexus - Maven `<mirrorOf>*</mirrorOf>`, npm `registry=`
+3. ✅ **CI/CD secrets** - GitHub Secrets, GitLab CI Variables
+4. ✅ **Multi-stage build** - credentials builder stage'is, runtime clean
+5. ✅ **NO_PROXY exception** - Nexus domain proxy exclusion'is
+6. ✅ **Test credential leak** - `docker run --rm myapp env | grep -i nexus` → tühi
+
+---
+
 ### Viited
 
 - **Docker daemon proxy config:** https://docs.docker.com/config/daemon/systemd/#httphttps-proxy

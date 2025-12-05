@@ -258,6 +258,10 @@ docker run --rm todo-service:1.0 env | grep -i proxy
 
 👉 **Täielik võrdlus (8 meetodit):** [Peatükk 06A: Corporate Võrgu Piirangud](../../../resource/06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md#corporate-võrgu-piirangud-proxy-seadistamine-docker-buildis)
 
+**💡 Corporate Nexus Repository:**
+Kui sinu ettevõte kasutab Nexus Repository Manager'it (company internal packages):
+👉 [Peatükk 06A: Nexus Integratsioon](../../../resource/06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md#lisastsenaarium-private-repository-manager-sonatype-nexus)
+
 ---
 
 **📖 Põhjalik selgitus:**

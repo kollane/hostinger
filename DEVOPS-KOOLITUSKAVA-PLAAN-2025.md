@@ -234,9 +234,9 @@ Iga peatükk on eraldi Markdown fail järgmise nimetusstandardiga:
 ---
 
 #### Peatükk 6A: Java/Spring Boot ja Node.js Rakenduste Konteineriseerimise Spetsiifika
-**Staatus:** ✅ **VALMIS** (2025-01-25, uuendatud corporate proxy käsitlusega)
-**Maht:** 23 lk (~12,000 sõna)
-**Kestus:** 3.5h teooria + 2h näited
+**Staatus:** ✅ **VALMIS** (2025-01-25, uuendatud corporate proxy ja Nexus käsitlusega)
+**Maht:** 26 lk (~14,000 sõna)
+**Kestus:** 4h teooria + 2h näited
 
 **Põhiteemad:**
 - **Traditsiooniline Java deployment (WAR Tomcat'is):**
@@ -265,7 +265,7 @@ Iga peatükk on eraldi Markdown fail järgmise nimetusstandardiga:
   - Multi-stage builds (TypeScript compile → runtime)
   - NODE_ENV=production
   - Non-root user (node user)
-- **Corporate võrgu piirangud: Proxy seadistamine Docker build'is (UUS!):**
+- **Corporate võrgu piirangud: Proxy seadistamine Docker build'is:**
   - 8 meetodit võrdlustabeliga (portability, security, CI/CD)
   - ARG multi-stage build (soovitatud production)
   - Gradle vs npm proxy erinevused
@@ -274,8 +274,17 @@ Iga peatükk on eraldi Markdown fail järgmise nimetusstandardiga:
   - CI/CD integratsioon (GitHub Actions vihje)
   - Troubleshooting (3 levinud probleemi + lahendused)
   - Flowchart: "Millist meetodit kasutada?"
+  - **Lisastsenaarium: Sonatype Nexus Repository Manager (UUS!):**
+    - Nexus vs HTTP proxy erinevus (tabel 6 aspektiga)
+    - Gradle + Nexus (build.gradle repositories + ARG credentials)
+    - Maven + Nexus (settings.xml mirror + ARG credentials)
+    - npm + Nexus (.npmrc registry + base64 token)
+    - Nexus + HTTP proxy kombinatsioon (NO_PROXY exception)
+    - Credentials management (ARG build-time, BuildKit secrets, CI/CD)
+    - Troubleshooting (401 unauthorized, SSL errors, proxy conflicts)
+    - Best practices (6 punkti)
 
-**Seos laboritega:** Lab 1 (User Service Node.js, Todo Service Java Spring Boot, corporate proxy käsitlus)
+**Seos laboritega:** Lab 1 (User Service Node.js, Todo Service Java Spring Boot, corporate proxy ja Nexus käsitlus)
 
 ---
 
