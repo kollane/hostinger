@@ -44,42 +44,6 @@ Selles harjutuses õpid looma **OCI-standardset** (Open Container Initiative) Do
 
 ---
 
-## 🖥️ Sinu Testimise Konfiguratsioon
-
-### SSH Ühendus VPS-iga
-```bash
-ssh labuser@93.127.213.242 -p [SINU-PORT]
-```
-
-| Õpilane | SSH Port | Password |
-|---------|----------|----------|
-| student1 | 2201 | student1 |
-| student2 | 2202 | student2 |
-| student3 | 2203 | student3 |
-
----
-
-## 🏗️ Arhitektuur
-
-```
-┌─────────────────────────────┐
-│   Docker Konteiner          │
-│                             │
-│  ┌───────────────────────┐  │
-│  │  Node.js Rakendus     │  │
-│  │  User Service         │  │
-│  │  Port: 3000           │  │
-│  └───────────────────────┘  │
-│                             │
-└─────────────────────────────┘
-          │
-          │ Portide vastendamine
-          │ (Port mapping)
-    localhost:3000
-```
-
----
-
 ## 📝 Sammud
 
 ### Samm 1: Tutvu rakenduse koodiga
@@ -204,34 +168,10 @@ CMD ["node", "server.js"]
 Kui vajad ülaloleva Dockerfile'i täpset rea-haaval selgitust (mida teevad ARG, ENV, mitmeastmeline build jne), loe:
 - 👉 **[Node.js Dockerfile Proxy Pattern](../../../resource/code-explanations/Node.js-Dockerfile-Proxy-Explained.md)**
 
-**Selgitus käsitleb:**
-- ✅ Miks kasutada ARG'd (build-time proxy)
-- ✅ Kuidas ENV töötab builder etapis
-- ✅ Miks mitmeastmeline build väldib proxy lekkimist
-- ✅ Iga Dockerfile instruktsioon üksikasjalikult
-
----
-
 **🔍 Lisaselgitus: Proksi Build-time vs Runtime**
 
 Kui soovid mõista, kuidas proksi töötab Docker build'i ajal vs runtime'il, loe:
 - 👉 **[Docker Proxy: Build-time vs Runtime Selgitus](../../../resource/Docker-Proxy-Build-vs-Runtime-Selgitus.md)**
-
-**Selgitus käsitleb:**
-- ✅ Kas host'i proksi mõjutab Docker build'i?
-- ✅ Millal vajab konteiner proksi runtime'il?
-- ✅ Kuidas host OS edastab liiklust runtime'il?
-- ✅ Build-time vs runtime liikluse visualiseerimine
-
----
-
-**💡 Näidislahendused:**
-
-Lahendused asuvad `solutions/backend-nodejs/` kaustas:
-- [`Dockerfile.simple`](../solutions/backend-nodejs/Dockerfile.simple) - 2-stage ARG proksiga (PRIMAARNE)
-- [`Dockerfile.vps-simple`](../solutions/backend-nodejs/Dockerfile.vps-simple) - 1-stage VPS (avalik võrk)
-
-📂 Kõik lahendused: [`solutions/backend-nodejs/`](../solutions/backend-nodejs/)
 
 ---
 
@@ -453,6 +393,16 @@ docker stats user-service
 5. **Kasuta `EXPOSE`** - Dokumenteeri, millist porti rakendus kasutab
 
 **📖 Node.js konteineriseerimise parimad tavad:**Põhjalikum käsitlus `npm ci`, Alpine images, bcrypt native moodulid, ja teised Node.js spetsiifilised teemad leiad [Peatükk 06A: Java Spring Boot ja Node.js Konteineriseerimise Spetsiifika](../../../resource/06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md).
+
+---
+
+**💡 Näidislahendused:**
+
+Lahendused asuvad `solutions/backend-nodejs/` kaustas:
+- [`Dockerfile.simple`](../solutions/backend-nodejs/Dockerfile.simple) - 2-stage ARG proksiga (PRIMAARNE)
+- [`Dockerfile.vps-simple`](../solutions/backend-nodejs/Dockerfile.vps-simple) - 1-stage VPS (avalik võrk)
+
+📂 Kõik lahendused: [`solutions/backend-nodejs/`](../solutions/backend-nodejs/)
 
 ---
 
