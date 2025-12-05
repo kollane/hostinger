@@ -177,7 +177,7 @@ Kui soovid mõista, kuidas proksi töötab Docker build'i ajal vs runtime'il, lo
 
 Loo `.dockerignore` fail, et vältida tarbetute failide kopeerimist:
 
-**⚠️ Oluline:** .dockerignore tuleb luua rakenduse juurkataloogi `~/labs/apps/backend-nodejs`. 
+**⚠️ Oluline:** .dockerignore tuleb luua rakenduse juurkataloogi `~/labs/apps/backend-nodejs`.
 
 ```bash
 vim .dockerignore
@@ -193,6 +193,19 @@ npm-debug.log
 README.md
 *.md
 ```
+
+**📖 Põhjalik selgitus:**
+
+Kui vajad rea-haaval selgitust, mida iga rida teeb ja miks, loe:
+- 👉 **[.dockerignore Selgitus](../../../resource/code-explanations/Dockerignore-Explained.md)**
+
+**Selgitus käsitleb:**
+- ✅ Miks `node_modules` välistada? (host'i sõltuvused vs Docker)
+- ✅ Miks `.env` on turvarisk? (paroole tõmmises!)
+- ✅ Võrdlus: Ilma vs koos `.dockerignore` (600MB → 150MB)
+- ✅ Iga rea täpne selgitus
+
+---
 
 **Miks see oluline on?**
 - Väiksem tõmmise suurus

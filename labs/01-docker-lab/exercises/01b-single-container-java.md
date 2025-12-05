@@ -240,9 +240,6 @@ Loo `.dockerignore` fail, et vältida tarbetute failide kopeerimist:
 vim .dockerignore
 ```
 
-**💡 Abi vajadusel:**
-Vaata näidislahendust: [`solutions/backend-java-spring/.dockerignore`](../solutions/backend-java-spring/.dockerignore)
-
 **Sisu:**
 ```
 .gradle
@@ -256,6 +253,23 @@ README.md
 gradlew
 gradlew.bat
 ```
+
+**📖 Põhjalik selgitus:**
+
+Kui vajad rea-haaval selgitust, mida iga rida teeb ja miks, loe:
+- 👉 **[.dockerignore Selgitus](../../../resource/code-explanations/Dockerignore-Explained.md)**
+
+**Selgitus käsitleb:**
+- ✅ Miks `.gradle` välistada? (cache võib olla 500MB!)
+- ✅ Miks `.env` on turvarisk? (paroole tõmmises!)
+- ✅ Mis on `!build/libs/todo-service.jar` negation pattern?
+- ✅ Võrdlus: Ilma vs koos `.dockerignore` (500MB → 230MB)
+- ✅ Iga rea täpne selgitus
+
+---
+
+**💡 Abi vajadusel:**
+Vaata näidislahendust: [`solutions/backend-java-spring/.dockerignore`](../solutions/backend-java-spring/.dockerignore)
 
 **Miks see oluline on?**
 - Väiksem tõmmise suurus
