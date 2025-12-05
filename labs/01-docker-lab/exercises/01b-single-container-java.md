@@ -89,13 +89,16 @@ Vaata Todo Service koodi:
 
 ```bash
 cd ~/labs/apps/backend-java-spring
-
+```
+```bash
 # Vaata faile
 ls -la
-
+```
+```bash
 # Loe README
 cat README.md
-
+```
+```bash
 # Vaata build.gradle
 cat build.gradle
 ```
@@ -105,19 +108,7 @@ cat build.gradle
 - Millised sõltuvused (dependencies) on vajalikud? (vaata build.gradle)
 - Kas rakendus vajab andmebaasi? (Jah, PostgreSQL)
 
-### Samm 2: Loo Dockerfile
-
-**⚠️ Oluline:** Dockerfail tuleb luua rakenduse juurkataloogi `~/labs/apps/backend-java-spring`
-
-```bash
-vim Dockerfile
-```
-
-**📖 Dockerfile põhitõed:** Kui vajad abi Dockerfile instruktsioonide (FROM, WORKDIR, COPY, RUN, CMD, ARG, multi-stage) mõistmisega, loe [Peatükk 06: Dockerfile - Rakenduste Konteineriseerimise Detailid](../../../resource/06-Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md).
-
----
-
-#### Variant A: Lihtne (VPS, õppemeetod)
+### Samm 2: Dockerfile loomine
 
 Lihtne 1-stage Dockerfile VPS'i jaoks (eeldab pre-built JAR'i):
 
@@ -147,11 +138,27 @@ docker build -t todo-service:1.0 .
 
 ⚠️ **Märkus:** See on NÄIDIS VPS testimiseks. Praktikas kasuta Variant B (Gradle build containeris)!
 
+**📖 Dockerfile põhitõed:**
+
+Kui vajad ARG, ENV, multi-stage build'i ja Gradle proxy konfiguratsioonide põhjalikku selgitust, loe:
+- 👉 [Peatükk 06: Dockerfile Detailid](../../../resource/06-Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md)
+- 👉 [Peatükk 06A: Java Spring Boot Spetsiifika](../../../resource/06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md)
+
 ---
 
-#### Variant B: Corporate Keskkond (PRIMAARNE) ⭐
+####  Dockerfile loomine Corporate Keskkond (PRIMAARNE) ⭐
 
-**Enamik õpilasi kasutab seda!** 2-stage build Gradle containeris ARG proksiga:
+**⚠️ Oluline:** Dockerfail tuleb luua rakenduse juurkataloogi `~/labs/apps/backend-java-spring`.
+
+```bash
+cd ~/labs/apps/backend-java-spring
+```
+
+**Kasutame laboris** 2-stage build Gradle containeris ARG proksiga:
+
+```bash
+vim Dockerfile
+```
 
 ```dockerfile
 # ====================================
@@ -211,34 +218,7 @@ EXPOSE 8081
 CMD ["java", "-jar", "app.jar"]
 ```
 
-**Ehita proksiga (corporate võrk):**
-```bash
-# Asenda oma proxy aadress!
-docker build \
-  --build-arg HTTP_PROXY=http://cache1.sss:3128 \
-  --build-arg HTTPS_PROXY=http://cache1.sss:3128 \
-  -t todo-service:1.0 .
-```
-
-**Ehita ilma proksita (avalik võrk):**
-```bash
-docker build -t todo-service:1.0 .
-# Gradle download töötab avalikus võrgus
-```
-
-**Kontrolli: Kas proxy leak'ib?**
-```bash
-docker run --rm todo-service:1.0 env | grep -i proxy
-# Oodatud: TÜHI! ✅ Proxy EI OLE runtime'is
-```
-
 ---
-
-**📖 Põhjalik selgitus:**
-
-Kui vajad ARG, ENV, multi-stage build'i ja Gradle proxy konfiguratsioonide põhjalikku selgitust, loe:
-- 👉 [Peatükk 06: Dockerfile Detailid](../../../resource/06-Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md)
-- 👉 [Peatükk 06A: Java Spring Boot Spetsiifika](../../../resource/06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md)
 
 **💡 Näidislahendused:**
 
