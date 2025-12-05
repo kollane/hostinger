@@ -1,4 +1,8 @@
 # Harjutus 1: Üksiku konteineri loomine (Todo Service)
+---
+## 📋 Harjutuse ülevaade
+
+**Harjutuse eesmärk:** Selles harjutuses konteineriseerid Java Spring Boot Todo Service'i rakenduse. Õpid looma Dockerfile'i, ehitama Docker tõmmist ja käivitama konteinereid.
 
 **Todo Service'i rakenduse lühitutvustus:**
 - ✍️ Loob ja haldab todo ülesandeid (CRUD)
@@ -7,10 +11,6 @@
 - 🔐 Valideerib JWT "token"-eid User Service'ilt
 
 **📖 Rakenduse funktsionaalsuse kohta lähemalt siit:** [Todo Service README](../../apps/backend-java-spring/README.md)
-
----
-## 📋 Harjutuse ülevaade
-**Harjutuse eesmärk:** Selles harjutuses konteineriseerid Java Spring Boot Todo Service'i rakenduse. Õpid looma Dockerfile'i, ehitama Docker tõmmist ja käivitama konteinereid.
 
 **Harjutuse Fookus:** See harjutus keskendub Docker põhitõdede õppimisele, MITTE töötavale rakendusele (application)!
 
@@ -25,42 +25,6 @@
 - Todo Service vajab PostgreSQL andmebaasi
 - Konteiner käivitub, aga hangub kohe (see on **OODATUD**)
 - Töötava rakenduse saad **Harjutus 2**-s (mitme konteineri käivitamine)
-
----
-
-## 🖥️ Sinu Testimise Konfiguratsioon
-
-### SSH Ühendus VPS-iga
-```bash
-ssh labuser@93.127.213.242 -p [SINU-PORT]
-```
-
-| Õpilane | SSH Port | Password |
-|--------|----------|----------|
-| student1 | 2201 | student1 |
-| student2 | 2202 | student2 |
-| student3 | 2203 | student3 |
-
----
-
-## 🏗️ Arhitektuur
-
-```
-┌─────────────────────────────┐
-│   Docker Konteiner          │
-│                             │
-│  ┌───────────────────────┐  │
-│  │  Java Rakendus        │  │
-│  │  Todo Service         │  │
-│  │  Port: 8081           │  │
-│  └───────────────────────┘  │
-│                             │
-└─────────────────────────────┘
-          │
-          │ Portide vastendamine
-          │
-    localhost:8081
-```
 
 ---
 
