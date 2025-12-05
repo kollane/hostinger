@@ -97,6 +97,19 @@ if [ $missing_images -gt 0 ]; then
         echo "See võib võtta 5-10 minutit (multi-stage builds)"
         echo ""
 
+        # Seadista vaikimisi proxy (kui ei ole juba seadistatud)
+        if [ -z "$HTTP_PROXY" ]; then
+            HTTP_PROXY="http://proxy-chain.intel.com:911"
+        fi
+        if [ -z "$HTTPS_PROXY" ]; then
+            HTTPS_PROXY="http://proxy-chain.intel.com:912"
+        fi
+
+        echo "✓ Proxy seadistused build'i jaoks:"
+        echo "   HTTP_PROXY=$HTTP_PROXY"
+        echo "   HTTPS_PROXY=$HTTPS_PROXY"
+        echo ""
+
         # Ehita user-service:1.0-optimized
         if ! docker images | grep -q "user-service.*1.0-optimized"; then
             echo "[1/2] Ehitan user-service:1.0-optimized..."
@@ -135,14 +148,18 @@ HEALTHCHECK_EOF
                 fi
             fi
 
-            docker build -f ../../01-docker-lab/solutions/backend-nodejs/Dockerfile.optimized -t user-service:1.0-optimized . > /dev/null 2>&1
+            docker build \
+                --build-arg HTTP_PROXY=$HTTP_PROXY \
+                --build-arg HTTPS_PROXY=$HTTPS_PROXY \
+                -f ../../01-docker-lab/solutions/backend-nodejs/Dockerfile.optimized.proxy \
+                -t user-service:1.0-optimized . > /dev/null 2>&1
             if [ $? -eq 0 ]; then
                 echo "✓ user-service:1.0-optimized ehitatud edukalt"
             else
                 echo "❌ user-service ehitamine ebaõnnestus"
                 echo "Vaata logisid käsitsi:"
                 echo "  cd ../apps/backend-nodejs"
-                echo "  docker build -f ../../01-docker-lab/solutions/backend-nodejs/Dockerfile.optimized -t user-service:1.0-optimized ."
+                echo "  docker build --build-arg HTTP_PROXY=$HTTP_PROXY --build-arg HTTPS_PROXY=$HTTPS_PROXY -f ../../01-docker-lab/solutions/backend-nodejs/Dockerfile.optimized.proxy -t user-service:1.0-optimized ."
                 exit 1
             fi
             cd ../../02-docker-compose-lab
@@ -152,14 +169,18 @@ HEALTHCHECK_EOF
         if ! docker images | grep -q "todo-service.*1.0-optimized"; then
             echo "[2/2] Ehitan todo-service:1.0-optimized..."
             cd ../apps/backend-java-spring
-            docker build -f ../../01-docker-lab/solutions/backend-java-spring/Dockerfile.optimized -t todo-service:1.0-optimized . > /dev/null 2>&1
+            docker build \
+                --build-arg HTTP_PROXY=$HTTP_PROXY \
+                --build-arg HTTPS_PROXY=$HTTPS_PROXY \
+                -f ../../01-docker-lab/solutions/backend-java-spring/Dockerfile.optimized.proxy \
+                -t todo-service:1.0-optimized . > /dev/null 2>&1
             if [ $? -eq 0 ]; then
                 echo "✓ todo-service:1.0-optimized ehitatud edukalt"
             else
                 echo "❌ todo-service ehitamine ebaõnnestus"
                 echo "Vaata logisid käsitsi:"
                 echo "  cd ../apps/backend-java-spring"
-                echo "  docker build -f ../../01-docker-lab/solutions/backend-java-spring/Dockerfile.optimized -t todo-service:1.0-optimized ."
+                echo "  docker build --build-arg HTTP_PROXY=$HTTP_PROXY --build-arg HTTPS_PROXY=$HTTPS_PROXY -f ../../01-docker-lab/solutions/backend-java-spring/Dockerfile.optimized.proxy -t todo-service:1.0-optimized ."
                 exit 1
             fi
             cd ../../02-docker-compose-lab
