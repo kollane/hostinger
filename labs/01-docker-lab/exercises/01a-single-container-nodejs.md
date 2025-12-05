@@ -202,13 +202,26 @@ CMD ["node", "server.js"]
 **📖 Põhjalik koodi selgitus:**
 
 Kui vajad ülaloleva Dockerfile'i täpset rea-haaval selgitust (mida teevad ARG, ENV, mitmeastmeline build jne), loe:
-- 👉 **[Koodiselgitus: Node.js Dockerfile Proxy Pattern](../../../resource/code-explanations/Node.js-Dockerfile-Proxy-Explained.md)**
+- 👉 **[Node.js Dockerfile Proxy Pattern](../../../resource/code-explanations/Node.js-Dockerfile-Proxy-Explained.md)**
 
 **Selgitus käsitleb:**
 - ✅ Miks kasutada ARG'd (build-time proxy)
 - ✅ Kuidas ENV töötab builder etapis
 - ✅ Miks mitmeastmeline build väldib proxy lekkimist
 - ✅ Iga Dockerfile instruktsioon üksikasjalikult
+
+---
+
+**🔍 Lisaselgitus: Proksi Build-time vs Runtime**
+
+Kui soovid mõista, kuidas proksi töötab Docker build'i ajal vs runtime'il, loe:
+- 👉 **[Docker Proxy: Build-time vs Runtime Selgitus](../../../resource/Docker-Proxy-Build-vs-Runtime-Selgitus.md)**
+
+**Selgitus käsitleb:**
+- ✅ Kas host'i proksi mõjutab Docker build'i?
+- ✅ Millal vajab konteiner proksi runtime'il?
+- ✅ Kuidas host OS edastab liiklust runtime'il?
+- ✅ Build-time vs runtime liikluse visualiseerimine
 
 ---
 
