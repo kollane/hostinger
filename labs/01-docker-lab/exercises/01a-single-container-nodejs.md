@@ -196,14 +196,7 @@ README.md
 
 **📖 Põhjalik selgitus:**
 
-Kui vajad rea-haaval selgitust, mida iga rida teeb ja miks, loe:
 - 👉 **[.dockerignore Selgitus](../../../resource/code-explanations/Dockerignore-Explained.md)**
-
-**Selgitus käsitleb:**
-- ✅ Miks `node_modules` välistada? (host'i sõltuvused vs Docker)
-- ✅ Miks `.env` on turvarisk? (paroole tõmmises!)
-- ✅ Võrdlus: Ilma vs koos `.dockerignore` (600MB → 150MB)
-- ✅ Iga rea täpne selgitus
 
 ---
 
