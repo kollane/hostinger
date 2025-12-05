@@ -234,9 +234,9 @@ Iga peatükk on eraldi Markdown fail järgmise nimetusstandardiga:
 ---
 
 #### Peatükk 6A: Java/Spring Boot ja Node.js Rakenduste Konteineriseerimise Spetsiifika
-**Staatus:** ✅ **VALMIS** (2025-11-23)
-**Maht:** 20 lk (~10,000 sõna)
-**Kestus:** 3h teooria + 2h näited
+**Staatus:** ✅ **VALMIS** (2025-01-25, uuendatud corporate proxy käsitlusega)
+**Maht:** 23 lk (~12,000 sõna)
+**Kestus:** 3.5h teooria + 2h näited
 
 **Põhiteemad:**
 - **Traditsiooniline Java deployment (WAR Tomcat'is):**
@@ -265,8 +265,17 @@ Iga peatükk on eraldi Markdown fail järgmise nimetusstandardiga:
   - Multi-stage builds (TypeScript compile → runtime)
   - NODE_ENV=production
   - Non-root user (node user)
+- **Corporate võrgu piirangud: Proxy seadistamine Docker build'is (UUS!):**
+  - 8 meetodit võrdlustabeliga (portability, security, CI/CD)
+  - ARG multi-stage build (soovitatud production)
+  - Gradle vs npm proxy erinevused
+  - daemon.json vs Dockerfile trade-offs
+  - BuildKit secrets (modern alternative)
+  - CI/CD integratsioon (GitHub Actions vihje)
+  - Troubleshooting (3 levinud probleemi + lahendused)
+  - Flowchart: "Millist meetodit kasutada?"
 
-**Seos laboritega:** Lab 1 (User Service Node.js, Todo Service Java Spring Boot)
+**Seos laboritega:** Lab 1 (User Service Node.js, Todo Service Java Spring Boot, corporate proxy käsitlus)
 
 ---
 

@@ -240,6 +240,26 @@ docker run --rm todo-service:1.0 env | grep -i proxy
 
 ---
 
+### 🔍 Miks just ARG Multi-Stage?
+
+**Küsimus:** Kas see on AINUS viis proxy seadistamiseks?
+
+**Vastus:** **EI!** On **8 erinevat meetodit**, aga see on **parim tootmiseks**:
+
+✅ **Portaabel** - Töötab igal masinal (developer, CI/CD, production, avalik võrk)
+✅ **Turvaline** - Proxy **EI LEKI** runtime'i (test: `docker run --rm todo-service:1.0 env | grep -i proxy` → tühi väljund)
+✅ **Lihtne CI/CD** - GitHub Actions `--build-arg` integreerub lihtsalt
+✅ **Töötab ilma proksita** - Avalikes võrkudes sama Dockerfile
+
+❌ **Alternatiivid (miks ei kasuta):**
+- **`daemon.json`** - Vajab admin õiguseid, pole portable, mõjutab kõiki projekte
+- **Hardcoded ENV** - Ei tööta developer masinal ega avalikus võrgus, proxy leak
+- **BuildKit secrets** - Liiga keeruline beginneritele (Docker 23.0+)
+
+👉 **Täielik võrdlus (8 meetodit):** [Peatükk 06A: Corporate Võrgu Piirangud](../../../resource/06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md#corporate-võrgu-piirangud-proxy-seadistamine-docker-buildis)
+
+---
+
 **📖 Põhjalik selgitus:**
 
 Kui vajad ARG, ENV, multi-stage build'i ja Gradle proxy konfiguratsioonide põhjalikku selgitust, loe:
