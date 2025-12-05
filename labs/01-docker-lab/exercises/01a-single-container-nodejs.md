@@ -194,9 +194,7 @@ README.md
 *.md
 ```
 
-**📖 Põhjalik selgitus:**
-
-- 👉 **[.dockerignore Selgitus](../../../resource/code-explanations/Dockerignore-Explained.md)**
+**📖 Põhjalik selgitus:** [.dockerignore Selgitus](../../../resource/code-explanations/Dockerignore-Explained.md)
 
 ---
 
