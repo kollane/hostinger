@@ -390,7 +390,7 @@ docker stats user-service
 4. **`COPY package.json` enne koodi** - Parem kihtide vahemälu (layer cache) kasutamine
 5. **Kasuta `EXPOSE`** - Dokumenteeri, millist porti rakendus kasutab
 
-**📖 Node.js konteineriseerimise parimad tavad:**Põhjalikum käsitlus `npm ci`, Alpine images, bcrypt native moodulid, ja teised Node.js spetsiifilised teemad leiad [Peatükk 06A: Java Spring Boot ja Node.js Konteineriseerimise Spetsiifika](../../../resource/06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md).
+**📖 Node.js konteineriseerimise parimad tavad:** [Peatükk 06A: Java Spring Boot ja Node.js Konteineriseerimise Spetsiifika](../../../resource/06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md).
 
 ---
 
