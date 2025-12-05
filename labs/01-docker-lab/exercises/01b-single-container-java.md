@@ -241,8 +241,12 @@ Kui vajad ARG, ENV, multi-stage build'i ja Gradle proxy konfiguratsioonide põhj
 - 👉 [Peatükk 06A: Java Spring Boot Spetsiifika](../../../resource/06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md)
 
 **💡 Näidislahendused:**
-- `solutions/backend-java-spring/Dockerfile.simple` - Variant B (2-stage Gradle containeris)
-- `solutions/backend-java-spring/Dockerfile.vps-simple` - Variant A (1-stage pre-built JAR)
+
+Lahendused asuvad `solutions/backend-java-spring/` kaustas:
+- [`Dockerfile.simple`](../solutions/backend-java-spring/Dockerfile.simple) - Variant B (2-stage Gradle containeris)
+- [`Dockerfile.vps-simple`](../solutions/backend-java-spring/Dockerfile.vps-simple) - Variant A (1-stage pre-built JAR)
+
+📂 Kõik lahendused: [`solutions/backend-java-spring/`](../solutions/backend-java-spring/)
 
 ---
 
@@ -257,7 +261,7 @@ vim .dockerignore
 ```
 
 **💡 Abi vajadusel:**
-Vaata näidislahendust: `~/labs/01-docker-lab/solutions/backend-java-spring/.dockerignore`
+Vaata näidislahendust: [`solutions/backend-java-spring/.dockerignore`](../solutions/backend-java-spring/.dockerignore)
 
 **Sisu:**
 ```
