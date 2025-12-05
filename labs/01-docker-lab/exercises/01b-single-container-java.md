@@ -2,18 +2,12 @@
 
 **🏗️ Arhitektuurne Lähenemine:**
 
-Selles harjutuses õpid looma **OCI-standardset** (Open Container Initiative) Docker tõmmist, mis sobib kasutamiseks nii Docker'iga kui ka **Kubernetes orkestratsioonisüsteemidega**.
+Nendes harjutuses õpid looma **OCI-standardset** (Open Container Initiative) Docker tõmmist, mis sobib kasutamiseks nii Docker'iga kui ka **Kubernetes orkestratsioonisüsteemidega**.
+ 
+ See harjutus keskendub Docker põhitõdedele. **Täielikult OCI-standardne** ja **production-ready** lahendus tuleb **[Harjutus 5: Tõmmise Optimeerimine](05-optimization.md)**.
 
-✅ **OCI Standard & Kubernetes Compatible:**
-- Multi-stage build (JDK builder → JRE runtime)
-- `CMD` JSON array formaat (Kubernetes nõue)
-- `EXPOSE` dokumenteerib porte (Service discovery)
-- Clean runtime (ei leki build-time saladusi, väiksem image)
-- Portaabel (töötab Docker, Kubernetes, Podman jne)
-
-📝 **Märkus turvalisuse kohta:** See harjutus keskendub Docker põhitõdedele. **Täielikult OCI-standardne** ja **production-ready** lahendus (sh non-root USER, Java rakenduste jaoks eraldi kasutaja) tuleb **[Harjutus 5: Tõmmise Optimeerimine](05-optimization.md)**, kus lisame Kubernetes Pod Security Standards'ile vastava turvalisuse.
-
----
+## 📋 Harjutuse ülevaade
+**Harjutuse eesmärk:** Selles harjutuses konteineriseerid Java Spring Boot Todo Service'i rakenduse. Õpid looma Dockerfile'i, ehitama Docker tõmmist ja käivitama konteinereid.
 
 **Todo Service'i rakenduse lühitutvustus:**
 - ✍️ Loob ja haldab todo ülesandeid (CRUD)
@@ -22,10 +16,6 @@ Selles harjutuses õpid looma **OCI-standardset** (Open Container Initiative) Do
 - 🔐 Valideerib JWT "token"-eid User Service'ilt
 
 **📖 Rakenduse funktsionaalsuse kohta lähemalt siit:** [Todo Service README](../../apps/backend-java-spring/README.md)
-
----
-## 📋 Harjutuse ülevaade
-**Harjutuse eesmärk:** Selles harjutuses konteineriseerid Java Spring Boot Todo Service'i rakenduse. Õpid looma Dockerfile'i, ehitama Docker tõmmist ja käivitama konteinereid.
 
 **Harjutuse Fookus:** See harjutus keskendub Docker põhitõdede õppimisele, MITTE töötavale rakendusele (application)!
 
@@ -41,43 +31,6 @@ Selles harjutuses õpid looma **OCI-standardset** (Open Container Initiative) Do
 - Konteiner käivitub, aga hangub kohe (see on **OODATUD**)
 - Töötava rakenduse saad **Harjutus 2**-s (mitme konteineri käivitamine)
 
----
-
-## 🖥️ Sinu Testimise Konfiguratsioon
-
-### SSH Ühendus VPS-iga
-```bash
-ssh labuser@93.127.213.242 -p [SINU-PORT]
-```
-
-| Õpilane | SSH Port | Password |
-|--------|----------|----------|
-| student1 | 2201 | student1 |
-| student2 | 2202 | student2 |
-| student3 | 2203 | student3 |
-
----
-
-## 🏗️ Arhitektuur
-
-```
-┌─────────────────────────────┐
-│   Docker Konteiner          │
-│                             │
-│  ┌───────────────────────┐  │
-│  │  Java Rakendus        │  │
-│  │  Todo Service         │  │
-│  │  Port: 8081           │  │
-│  └───────────────────────┘  │
-│                             │
-└─────────────────────────────┘
-          │
-          │ Portide vastendamine
-          │
-    localhost:8081
-```
-
----
 
 ## 📝 Sammud
 
@@ -127,7 +80,7 @@ EXPOSE 8081
 CMD ["java", "-jar", "app.jar"]
 ```
 
-**Ehita:**
+**Ehitamine:**
 ```bash
 # 1. Ehita JAR host'is
 ./gradlew clean bootJar
@@ -220,15 +173,6 @@ CMD ["java", "-jar", "app.jar"]
 
 ---
 
-**💡 Näidislahendused:**
-
-Lahendused asuvad `solutions/backend-java-spring/` kaustas:
-- [`Dockerfile.simple`](../solutions/backend-java-spring/Dockerfile.simple) - Variant B (2-stage Gradle containeris)
-- [`Dockerfile.vps-simple`](../solutions/backend-java-spring/Dockerfile.vps-simple) - Variant A (1-stage pre-built JAR)
-
-📂 Kõik lahendused: [`solutions/backend-java-spring/`](../solutions/backend-java-spring/)
-
----
 
 ### Samm 3: Loo .dockerignore
 
@@ -253,29 +197,13 @@ README.md
 gradlew
 gradlew.bat
 ```
-
-**📖 Põhjalik selgitus:**
-
-Kui vajad rea-haaval selgitust, mida iga rida teeb ja miks, loe:
-- 👉 **[.dockerignore Selgitus](../../../resource/code-explanations/Dockerignore-Explained.md)**
-
-**Selgitus käsitleb:**
-- ✅ Miks `.gradle` välistada? (cache võib olla 500MB!)
-- ✅ Miks `.env` on turvarisk? (paroole tõmmises!)
-- ✅ Mis on `!build/libs/todo-service.jar` negation pattern?
-- ✅ Võrdlus: Ilma vs koos `.dockerignore` (500MB → 230MB)
-- ✅ Iga rea täpne selgitus
+**📖 Põhjalik selgitus:** [.dockerignore Selgitus](../../../resource/code-explanations/Dockerignore-Explained.md)
 
 ---
 
 **💡 Abi vajadusel:**
 Vaata näidislahendust: [`solutions/backend-java-spring/.dockerignore`](../solutions/backend-java-spring/.dockerignore)
 
-**Miks see oluline on?**
-- Väiksem tõmmise suurus
-- Kiirem ehitamine
-- Turvalisem (ei kopeeri .env faile)
-- Ei kopeeri lähtekoodi (ainult JAR fail)
 
 ### Samm 4: Ehita Docker tõmmis
 
@@ -455,42 +383,6 @@ docker stats todo-service
 
 ---
 
-## 🎯 Oodatud Tulemus
-
-**Mida PEAKS saavutama:**
-
-✅ **Docker tõmmis on loodud:**
-```bash
-docker images | grep todo-service
-# todo-service   1.0    abc123   ~200-250MB
-```
-
-✅ **Konteiner käivitub (isegi kui hangub):**
-```bash
-docker ps -a | grep todo-service
-# STATUS: Exited (1) - See on OK!
-```
-
-✅ **Logid näitavad vea (error) sõnumit:**
-```bash
-docker logs todo-service
-# Error: Unable to connect to database...
-```
-
-✅ **Oskad Docker käske kasutada:**
-- `docker build` - tõmmise loomine
-- `docker run` - konteineri käivitamine
-- `docker ps` vs `docker ps -a` - töötavad vs kõik konteinerid
-- `docker logs` - logide vaatamine
-- `docker exec` - konteinerisse sisenemine
-
-**Mida EI PEAKS saavutama:**
-
-❌ Töötav rakendus (see tuleb Harjutus 2-s)
-❌ Edukad API testid (andmebaas puudub)
-❌ `docker ps` näitab töötavat konteinerit (hangub kohe)
-
----
 
 ## 💡 Parimad Praktikad (Best Practices)
 
@@ -502,6 +394,17 @@ docker logs todo-service
 6. **JWT_SECRET peab olema turvaline** - Min 32 tähemärki; testiks sobib lihtsalt string, tootmises kasuta `openssl rand -base64 32`
 
 **📖 Java konteineriseerimise parimad tavad:** Põhjalikum käsitlus JAR vs WAR, Spring Boot spetsiifikast, JVM memory tuning'ust ja teised Java spetsiifilised teemad leiad [Peatükk 06A: Java Spring Boot ja Node.js Konteineriseerimise Spetsiifika](../../../resource/06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md).
+
+---
+
+
+**💡 Näidislahendused:**
+
+Lahendused asuvad `solutions/backend-java-spring/` kaustas:
+- [`Dockerfile.simple`](../solutions/backend-java-spring/Dockerfile.simple) - Variant B (2-stage Gradle containeris)
+- [`Dockerfile.vps-simple`](../solutions/backend-java-spring/Dockerfile.vps-simple) - Variant A (1-stage pre-built JAR)
+
+📂 Kõik lahendused: [`solutions/backend-java-spring/`](../solutions/backend-java-spring/)
 
 ---
 
