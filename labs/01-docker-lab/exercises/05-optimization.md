@@ -50,106 +50,20 @@ docker images | grep -E 'user-service|todo-service'
 - ✅ Turvalisus (mitte-juurkasutajad: nodejs:1001, spring:1001)
 - ✅ Tervisekontrollid
 
+**📖 Põhjalik selgitus - Milleks Docker image optimeerimist kasutame?**
 
-## 📝 Sammud
-
-### Samm 1: Milleks kasutame Dockerfile optimeerimist?
-
-**Docker image optimeerimise 5 peamist eesmärki:**
-
-#### 1️⃣ **Kiire arendusprotsess - Layer Caching**
-
-```dockerfile
-# PROBLEEM: Aeglane rebuild
-COPY . .                    # ← Muudad üht faili → kogu npm install uuesti!
-RUN npm install             # ← 30-60 sekundit IGAL rebuild'il
-
-# LAHENDUS: Eraldi kiht sõltuvustele
-COPY package*.json ./       # ← Muutub harva
-RUN npm install             # ← Cached! Rebuild 5 sekundit
-COPY . .                    # ← Muutub tihti, aga kiire
-```
-
-**Tulemus:** Arendaja muudab koodi → rebuild **60-80% kiirem** (30s → 5s)
-
-#### 2️⃣ **Väiksem Image Suurus - Multi-stage Build**
-
-```dockerfile
-# Java näide:
-# Stage 1: BUILD (JDK + Gradle + source) → 800MB
-FROM gradle:8-jdk21 AS builder
-RUN gradle bootJar
-
-# Stage 2: RUNTIME (ainult JRE + JAR) → 250MB
-FROM eclipse-temurin:21-jre
-COPY --from=builder /app/app.jar .
-```
-
-**Tulemus:**
-- Image 70% väiksem (800MB → 250MB)
-- Kiirem deployment (vähem allalaadida)
-- Vähem kõvaketta kasutust
-
-#### 3️⃣ **Turvalisus - Non-root User + Health Checks**
-
-```dockerfile
-# Loo mitte-juurkasutaja
-RUN adduser -S spring -u 1001
-USER spring:spring
-
-# Tervisekontroll
-HEALTHCHECK --interval=30s \
-  CMD wget --spider http://localhost:8081/health || exit 1
-```
-
-**Tulemus:**
-- Rakendus ei tööta root'ina → vähem turvariski
-- Orkestreerijad (Docker Compose, Kubernetes) näevad konteineri tervist
-- Automaatne restart, kui konteiner ei vasta
-
-#### 4️⃣ **Portaabelsus - Corporate Proxy Tugi**
-
-```dockerfile
-# ARG-põhine proxy konfiguratsioon
-ARG HTTP_PROXY=""
-ENV HTTP_PROXY=${HTTP_PROXY}  # ← AINULT builder stage'is
-RUN npm install               # ← Kasutab proxy'd, kui määratud
-
-# Runtime stage
-FROM node:22-slim             # ← Proxy POLE siin (clean!)
-```
-
-**Tulemus:**
-- Sama Dockerfile töötab Intel võrgus JA AWS/GCP/Azure
-- Ei leki proxy info tootmisse
-- Production-ready
-
-#### 5️⃣ **CI/CD Kiirus - Reproducible Builds**
-
-```dockerfile
-# Deterministlik build
-RUN npm ci --only=production  # ← package-lock.json garanteerib sama tulemuse
-```
-
-**Tulemus:**
-- Sama image igal build'il (reproducible)
-- CI/CD pipeline kiirem (cache töötab)
-- Vähem ootamist deployment'il
+Kui soovid mõista optimeerimise 5 peamist eesmärki (layer caching, multi-stage, turvalisus, portaabelsus, CI/CD), loe:
+- 👉 **[Koodiselgitus: Docker Image Optimeerimise 5 Eesmärki](../../../resource/code-explanations/Docker-Image-Optimization-Explained.md)**
 
 ---
 
-**Selles harjutuses õpid:**
-- ✅ Multi-stage build Node.js ja Java rakendusele
-- ✅ Layer caching optimeerimine (sõltuvused eraldi kihis)
-- ✅ Non-root user turvaline seadistus
-- ✅ Health check lisamine
-- ✅ Proxy konfiguratsioon corporate keskkonnas
+## 📝 Sammud
 
-### Samm 2: Optimeeri mõlema rakenduse Dockerfaili
+### Samm 1: Optimeeri mõlema rakenduse Dockerfaili
 
 Loome optimeeritud Dockerfailid mõlemale teenusele.
 
-#### 2a. User Service (Node.js) optimeerimine
+#### 1a. User Service (Node.js) optimeerimine
 
 **⚠️ Oluline:** Dockerfile asub rakenduse juurkataloogis.
 
@@ -262,7 +176,7 @@ req.on('error', () => process.exit(1));
 req.end();
 ```
 
-#### 2b. Todo Service (Java) optimeerimine
+#### 1b. Todo Service (Java) optimeerimine
 
 **Rakenduse juurkataloog:** `~/labs/apps/backend-java-spring`
 
@@ -385,7 +299,7 @@ Multi-stage build koosneb kahest põhietapist:
 
 Tulemus: efektiivne, turvaline ja skaleeritav konteineripilt.
 
-### Samm 3: Ehita mõlemad optimeeritud Docker tõmmised
+### Samm 2: Ehita mõlemad optimeeritud Docker tõmmised
 
 **Rakenduse juurkataloog (User Service):** `~/labs/apps/backend-nodejs`
 
@@ -464,7 +378,7 @@ User Service tõmmis jääb samaks (~305MB), sest mõlemad versioonid kasutavad 
 ✅ Tervisekontroll (automaatne)
 ✅ -60% kiirem rebuild (sõltuvuste vahemälu)
 
-### Samm 4: Testi MÕLEMAD optimeeritud tõmmised
+### Samm 3: Testi MÕLEMAD optimeeritud tõmmised
 
 **ℹ️ Portide turvalisus:**
 
@@ -551,7 +465,7 @@ docker ps -a --format "table {{.Names}}\t{{.Image}}\t{{.Status}}"
 # user-service         user-service:1.0                Up
 ```
 
-### Samm 5: Testi End-to-End JWT töövoogu optimeeritud süsteemiga
+### Samm 4: Testi End-to-End JWT töövoogu optimeeritud süsteemiga
 
 **See on KÕIGE OLULISEM TEST - kinnitame, et optimeeritud süsteem töötab identselt!**
 
@@ -614,7 +528,7 @@ docker stats --no-stream --format "table {{.Name}}\t{{.MemUsage}}\t{{.CPUPerc}}"
 4. ✅ AGA: Väiksemad tõmmised (-25-33%), tervisekontrollid, mitte-juurkasutajad!
 5. ✅ TOOTMISEKS VALMIS mikroteenuste süsteem! 🚀
 
-### Samm 6: Turvaskannimine ja haavatavuse hindamine
+### Samm 5: Turvaskannimine ja haavatavuse hindamine
 
 **Tõmmise turvaaukude (vulnerabilities) skannimine on KRIITILINE tootmises!**
 
@@ -669,7 +583,7 @@ docker run --rm \
 2. Parandanud CRITICAL ja HIGH CVE'd enne toote keskkonda (production)
 3. Lisa automaatne skannimine CI/CD pipeline'i (juhised peatükis 06B)
 
-### Samm 7: Kihtide vahemälu test
+### Samm 6: Kihtide vahemälu test
 
 **Testime, kui hästi kihtide vahemälu töötab uuesti ehitamisel (rebuild):**
 
@@ -784,15 +698,15 @@ docker images | grep -E 'user-service|todo-service' | sort
 
 ---
 
-### Samm 8: Proxy Konfiguratsiooni Põhjalik Selgitus (10 min)
+### Samm 7: Proxy Konfiguratsiooni Põhjalik Selgitus (10 min)
 
 **Eesmärk:** Mõista, kuidas ARG-põhine proxy konfiguratsioon töötab ja miks see on parim praktika.
 
-**ℹ️ Märkus:** Selles sammus kasutatakse juba Sammudes 2-3 loodud `.proxy` variante. See selgitab põhjalikult, kuidas need töötavad.
+**ℹ️ Märkus:** Selles sammus kasutatakse juba Sammudes 1-2 loodud `.proxy` variante. See selgitab põhjalikult, kuidas need töötavad.
 
-#### 8.1 Kuidas ARG-põhine Proxy Töötab
+#### 7.1 Kuidas ARG-põhine Proxy Töötab
 
-**Sammudes 2-3 lõite juba `Dockerfile.optimized.proxy` failid. Vaatame, kuidas need töötavad:**
+**Sammudes 1-2 lõite juba `Dockerfile.optimized.proxy` failid. Vaatame, kuidas need töötavad:**
 
 **Node.js (User Service) proxy struktuur:**
 
@@ -821,7 +735,7 @@ FROM node:22-slim  # <-- Uus FROM nullib ENV muutujad!
 - ✅ Runtime stage EI OLE proxy keskkonda (turvalisem!)
 - ✅ Sama Dockerfile töötab Intel võrgus JA väljaspool
 
-#### 8.2 Verifitseeri: Proxy Ei Leki Runtime'i
+#### 7.2 Verifitseeri: Proxy Ei Leki Runtime'i
 
 **KRIITILINE TEST:** Kontrolli, et proxy muutujad EI OLE runtime konteineris!
 
@@ -843,7 +757,7 @@ docker run --rm todo-service:1.0-optimized env | grep -i gradle
 - ✅ Image on portaabel (töötab AWS, GCP, Azure, kodus)
 - ✅ Turvalisem (proxy info ei leki tootmisse)
 
-#### 8.3 Gradle vs npm Proxy Erinevus
+#### 7.3 Gradle vs npm Proxy Erinevus
 
 **TÄHTIS ERINEVUS:** Gradle ja npm käituvad erinevalt!
 
@@ -873,7 +787,7 @@ RUN if [ -n "$HTTP_PROXY" ]; then \
 - ⚠️ Gradle: keeruline (vajab parsing'ut ja GRADLE_OPTS)
 - 📖 Täielik selgitus: Vaata `Dockerfile.optimized.proxy` kommentaare
 
-#### 8.4 Parimad Praktikad (Best Practices)
+#### 7.4 Parimad Praktikad (Best Practices)
 
 **✅ DO (KASUTA):**
 1. **ARG-põhine proxy** (see Dockerfile) - portaabel, turvaline
