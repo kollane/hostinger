@@ -101,6 +101,7 @@ CMD ["node", "server.js"]
 ⚠️ **Märkus:** See on NÄIDIS VPS avaliku võrgu jaoks. Laboris kasuta järgmist näidist (corporate keskkond)!
 
 **📖 Dockerfile põhitõed:** Kui vajad abi Dockerfile instruktsioonide (FROM, WORKDIR, COPY, RUN, CMD, ARG, multi-stage) mõistmisega, loe [Peatükk 06: Dockerfile - Rakenduste Konteineriseerimise Detailid](../../../resource/06-Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md).
+
 **📖 ARG-põhine Proxy Best Practices** Kui soovid mõista, miks ettevõtetes (nt Intel võrk) on vaja proxy serverit ja kuidas ARG-põhine proxy konfiguratsioon töötab, loe: [Docker ARG-põhine Proxy Best Practices](../../../resource/code-explanations/Docker-ARG-Proxy-Best-Practices.md).
 
 ---
