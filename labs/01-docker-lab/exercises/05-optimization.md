@@ -65,28 +65,15 @@ Loome optimeeritud Dockerfailid mõlemale teenusele.
 
 #### 1a. User Service (Node.js) optimeerimine
 
-**⚠️ Oluline:** Dockerfile asub rakenduse juurkataloogis.
-
-**Rakenduse juurkataloog:** `~/labs/apps/backend-nodejs`
 
 ```bash
 cd ~/labs/apps/backend-nodejs
 ```
-
-Loo uus `Dockerfile.optimized.proxy`:
-
 ```bash
 vim Dockerfile.optimized.proxy
 ```
 
-**💡 Abi vajadusel:**
-Vaata täielikku näidislahendust: `~/labs/01-docker-lab/solutions/backend-nodejs/Dockerfile.optimized.proxy`
-
-**📖 Mitmeastmelised ehitused ja Node.js optimeerimine:**
-- [Peatükk 06: Dockerfile - Multi-stage Builds](../../../resource/06-Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md) selgitab mitmeastmeliste ehituste põhitõed
-- [Peatükk 06A: Node.js Konteineriseerimise Spetsiifika](../../../resource/06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md) selgitab `npm ci`, sõltuvuste vahemälu, mitte-juurkasutajad, ARG-põhine proxy
-
-**Lühendatud näidis (põhistruktuur):**
+**Dockerfile loomine:**
 
 ```dockerfile
 # syntax=docker/dockerfile:1.4
@@ -178,26 +165,15 @@ req.end();
 
 #### 1b. Todo Service (Java) optimeerimine
 
-**Rakenduse juurkataloog:** `~/labs/apps/backend-java-spring`
-
 ```bash
 cd ~/labs/apps/backend-java-spring
 ```
-
-Loo uus `Dockerfile.optimized.proxy`:
 
 ```bash
 vim Dockerfile.optimized.proxy
 ```
 
-**💡 Abi vajadusel:**
-Vaata täielikku näidislahendust: `~/labs/01-docker-lab/solutions/backend-java-spring/Dockerfile.optimized.proxy`
-
-**📖 Mitmeastmelised ehitused ja Java optimeerimine:**
-- [Peatükk 06: Dockerfile - Multi-stage Builds](../../../resource/06-Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md) selgitab mitmeastmeliste ehituste põhitõed (JDK → JRE)
-- [Peatükk 06A: Java Spring Boot Konteineriseerimise Spetsiifika](../../../resource/06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md) selgitab Gradle sõltuvuste vahemälu, JVM mäluhaldust, mitte-juurkasutajaid, Gradle proxy konfiguratsioon
-
-**Lühendatud näidis (põhistruktuur):**
+**Dockerfile loomine:**
 
 ```dockerfile
 # syntax=docker/dockerfile:1.4
