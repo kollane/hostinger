@@ -126,6 +126,13 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=10s \
 CMD ["node", "server.js"]
 ```
 
+**📖 Põhjalik koodi selgitus:**
+
+Kui vajad koodi täpset rea-haaval selgitust (BuildKit syntax, ARG vs ENV, stage'd, non-root kasutaja, HEALTHCHECK), loe:
+- 👉 **[Koodiselgitus: Node.js Mitmeastmeline Dockerfile](../../../resource/code-explanations/Node.js-Multi-Stage-Dockerfile-Explained.md)**
+
+---
+
 **ℹ️ Märkus proksi kohta:**
 - ARG väärtused on AINULT build-time'il (määratakse `--build-arg` kaudu)
 - ENV on AINULT dependencies stage'is (runtime on "clean" - proxy ei leki!)
