@@ -113,6 +113,9 @@ Vaata täielikku näidislahendust: `~/labs/01-docker-lab/solutions/backend-nodej
 **Lühendatud näidis (põhistruktuur):**
 
 ```dockerfile
+# syntax=docker/dockerfile:1.4
+# ☝️ BuildKit syntax versiooni määrang - vähendab UndefinedVar hoiatusi
+
 # ARG deklaratsioonid ENNE esimest FROM (proksi tugi)
 ARG HTTP_PROXY=""
 ARG HTTPS_PROXY=""
@@ -221,6 +224,9 @@ Vaata täielikku näidislahendust: `~/labs/01-docker-lab/solutions/backend-java-
 **Lühendatud näidis (põhistruktuur):**
 
 ```dockerfile
+# syntax=docker/dockerfile:1.4
+# ☝️ BuildKit syntax versiooni määrang - vähendab UndefinedVar hoiatusi
+
 # ARG deklaratsioonid ENNE esimest FROM (proksi tugi)
 ARG HTTP_PROXY=""
 ARG HTTPS_PROXY=""
@@ -374,15 +380,18 @@ docker images | grep -E 'user-service|todo-service'
 - Runtime konteinerid on "clean" (proxy ei leki!)
 - Sama image töötab Intel võrgus JA väljaspool (portaabel)
 
-**⚠️ Docker BuildKit hoiatused (normaalne!):**
-Võid näha 3 hoiatust:
+**✅ BuildKit hoiatused on lahendatud:**
+
+Dockerfile alguses on `# syntax=docker/dockerfile:1.4` - see **vähendab UndefinedVar hoiatusi**.
+
+**Kui ikka näed hoiatusi:**
 ```
 UndefinedVar: Usage of undefined variable '$HTTP_PROXY'
 ```
 
-**Miks need tulevad?** Docker BuildKit parsib Dockerfile'i ja näeb `ENV HTTP_PROXY=${HTTP_PROXY}`. Ta hoiatab: "muutuja võib olla undefined". Tegelikult on kõik korras - ARG vaikeväärtus on `""` (tühi string).
+**Miks?** BuildKit parsib `ENV HTTP_PROXY=${HTTP_PROXY}` ja hoiatab: "muutuja võib olla undefined". Tegelikult ARG vaikeväärtus on `""` (tühi string) - kõik on korras!
 
-**Lahendus:** Ignoreeri neid - build õnnestub ja proxy töötab! Kui tahad hoiatusi vältida, lisa Dockerfile'i esimesele reale: `# syntax=docker/dockerfile:1.4`
+**Lahendus:** Ignoreeri - build õnnestub ja proxy töötab!
 
 **ℹ️ Märkus User Service'i suuruse kohta:**
 User Service tõmmis jääb samaks (~305MB), sest mõlemad versioonid kasutavad `node:21-slim`.

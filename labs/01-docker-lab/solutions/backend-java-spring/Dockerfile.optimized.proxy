@@ -1,3 +1,6 @@
+# syntax=docker/dockerfile:1.4
+# ☝️ BuildKit syntax versiooni määrang - vähendab UndefinedVar hoiatusi
+#
 # ==========================================================================
 # Proxy-teadlik Optimeeritud Dockerfile Todo Teenuse (Service) jaoks
 # ==========================================================================
