@@ -54,7 +54,7 @@ docker images | grep -E 'user-service|todo-service'
 
 Kui soovid mõista optimeerimise 5 peamist eesmärki (layer caching, multi-stage, turvalisus, portaabelsus, CI/CD), loe:
 - 👉 **[Koodiselgitus: Docker Image Optimeerimise 5 Eesmärki](../../../resource/code-explanations/Docker-Image-Optimization-Explained.md)**
-
+  
 ---
 
 ## 📝 Sammud
