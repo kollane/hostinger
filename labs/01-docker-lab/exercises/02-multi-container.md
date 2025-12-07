@@ -367,21 +367,11 @@ TOKEN=$(curl -s -X POST http://localhost:3000/api/auth/login \
   | jq -r '.token')
 
 echo "JWT Token: $TOKEN"
+
+# Märka "pipe"-imist jq-le. JQ on kergekaaluline ja paindlik käsurea JSON-protsessor, mida kasutatakse JSON andmete lõikamiseks, filtreerimiseks, kaardistamiseks ja teisendamiseks sarnaselt sed, awk või grep tööriistadega tekstiga.
+
 ```
 
-**Kui `jq` ei ole installitud:**
-```bash
-# Ubuntu/Debian
-sudo apt install -y jq
-
-# Või salvesta manuaalselt
-curl -X POST http://localhost:3000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"test123"}'
-
-# Kopeeri "token" väärtus ja salvesta:
-TOKEN="eyJhbGci..."
-```
 
 **Dekodeeri token (vaata, mida sisaldab):**
 
