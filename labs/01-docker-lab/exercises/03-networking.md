@@ -23,38 +23,6 @@ Eelmises harjutuses kasutasime `--link` et ühendada konteinereid. See toimis, a
 - Kasutame korrektset võrgundust (mitte --link!)
 - Testime End-to-End JWT töövoogu kohandatud võrgus
 
----
-
-## 🎯 Õpieesmärgid
-
-Peale selle harjutuse läbimist oskad:
-
-- ✅ Luua kohandatud Docker **võrku (docker network)**
-- ✅ Käivitada 4 konteinerit samas võrgus
-- ✅ Kasutada **DNS hostinime (hostname)** lahendust (automaatne!)
-- ✅ Testida teenuste vahelist suhtlust (User Service ↔ Todo Service)
-- ✅ Testida End-to-End JWT töövoogu
-- ✅ Inspekteerida võrgu konfiguratsiooni
-- ✅ Isoleerida teenused võrkudega
-- ✅ Mõista, miks see on parem kui --link
-
----
-
-## 🖥️ Sinu Testimise Konfiguratsioon
-
-### SSH Ühendus VPS-iga
-```bash
-ssh labuser@93.127.213.242 -p [SINU-PORT]
-```
-
-| Õpilane | SSH Port | Password |
-|---------|----------|----------|
-| student1 | 2201 | student1 |
-| student2 | 2202 | student2 |
-| student3 | 2203 | student3 |
-
----
-
 ## 📝 Sammud
 
 ### Samm 1: Puhasta keskkond
@@ -184,7 +152,7 @@ echo "Kontroll: $JWT_SECRET"
 **ℹ️ Portide turvalisus:**
 
 Kasutame lihtsustatud portide vastendust (`-p 3000:3000`).
-- ✅ **Host'i tulemüür kaitseb:** VPS-is on UFW tulemüür, mis blokeerib pordid internetist
+- ✅ **Antud laboreid tehes turvatud sisevõrk kaitseb**
 - ✅ **PostgreSQL EI kasuta `-p`:** Ainult `todo-network` võrgus (võrgu isolatsioon - PARIM PRAKTIKA!)
 - 📚 **Tootmises oleks õige:** `-p 127.0.0.1:3000:3000` rakenduste jaoks
 - 🎯 **Lab 7 käsitleb:** Võrguturvalisust põhjalikumalt
