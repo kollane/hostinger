@@ -611,6 +611,39 @@ docker images | grep -E 'user-service|todo-service' | sort
 
 ---
 
+### Samm 7: Proxy Konfiguratsiooni Best Practices
+
+**📖 Põhjalik selgitus - ARG-põhine Proxy Konfiguratsioon:**
+
+Kui soovid mõista, kuidas ARG-põhine proxy konfiguratsioon töötab ja miks see on parim praktika, loe:
+- 👉 **[Koodiselgitus: Docker ARG-põhine Proxy Best Practices](../../../resource/code-explanations/Docker-ARG-Proxy-Best-Practices.md)**
+
+**See dokument selgitab:**
+- ✅ Kuidas ARG-põhine proxy töötab (ARG vs ENV, build-time vs runtime)
+- ✅ Proxy leakage verifitseerimine (test käsud)
+- ✅ Gradle vs npm proxy erinevus (GRADLE_OPTS parsing)
+- ✅ Best practices (DO ja DON'T)
+- ✅ Praktiline kasutamine (Intel võrk vs AWS/GCP/Azure)
+
+**Kiire test (valikuline):**
+
+```bash
+# Veendu, et proxy EI LEKI runtime'i
+docker run --rm user-service:1.0-optimized env | grep -i proxy
+docker run --rm todo-service:1.0-optimized env | grep -i gradle
+
+# Oodatud: tühi väljund (ei leia midagi) ✅
+```
+
+---
+
+**Kokkuvõte:** ARG-põhine proxy konfiguratsioon:
+- ✅ Töötab Intel võrgus JA väljaspool (portaabel)
+- ✅ Ei leki runtime'i (turvalisem)
+- ✅ Ei suurenda image suurust
+- ✅ Production-ready (sama Dockerfile mõlemas keskkonnas)
+
+---
 ## 🎓 Parimad tavad
 
 1. ✅ Mitmeastmelised ehitused (JDK → JRE, sõltuvused → runtime)
