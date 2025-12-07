@@ -254,38 +254,7 @@ CMD ["java", \
 
 Kui vajad koodi täpset rea-haaval selgitust (Gradle proxy parsing, GRADLE_OPTS, JDK→JRE multi-stage, JVM memory tuning), loe:
 - 👉 **[Koodiselgitus: Java Spring Boot Mitmeastmeline Dockerfile](../../../resource/code-explanations/Java-SpringBoot-Multi-Stage-Dockerfile-Explained.md)**
-
 ---
-
-**ℹ️ Märkus proksi kohta:**
-- ARG väärtused on AINULT build-time'il (määratakse `--build-arg` kaudu)
-- ENV on AINULT builder stage'is (runtime on "clean" - proxy ei leki!)
-- **ERINEVUS npm'ist:** Gradle EI kasuta HTTP_PROXY otse, vajab GRADLE_OPTS parsing'ut
-- Täielik selgitus kommentaaridega: Vaata `Dockerfile.optimized.proxy` faili
-
----
-
-## Ülevaade sammude järjestusest
-
-Multi-stage build koosneb kahest põhietapist:
-
-**Stage 1: Build (Gradle + JDK)**
-1. **Gradle base image** - Build-keskkond koos kõigi vajalike tööriistadega
-2. **COPY Gradle failid** - Dependency cache'i säilitamiseks (kiirema build'i jaoks)
-3. **RUN dependencies** - Sõltuvuste allalaadimine (cache'itakse eraldi kihina)
-4. **COPY src** - Lähtekoodi lisamine (muutub kõige sagedamini)
-5. **RUN bootJar** - JAR-faili ehitamine
-
-**Stage 2: Runtime (JRE ainult)**
-1. **Temurin base image** - Kompaktne JVM runtime ilma build-tööriistadeta
-2. **Non-root user** - Turvalisuse parendamine (`spring:spring` user)
-3. **COPY jar** - Ainult valmis JAR-fail builder stage'ist (väike pilt)
-4. **USER spring:spring** - Rakendus töötab non-root kasutajana
-5. **EXPOSE 8081** - Dokumenteeri kasutatav port
-6. **HEALTHCHECK** - Automaatne tervise kontroll orkestreerijale
-7. **CMD** - JAR-faili käivitamine
-
-Tulemus: efektiivne, turvaline ja skaleeritav konteineripilt.
 
 ### Samm 2: Ehita mõlemad optimeeritud Docker tõmmised
 
