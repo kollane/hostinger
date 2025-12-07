@@ -27,27 +27,13 @@ docker rm postgres-todo postgres-user
 
 ---
 
-## 🎯 Õpieesmärgid
-
-Peale selle harjutuse läbimist oskad:
-
-- ✅ Luua **nimega andmeköiteid (named docker volumes)** (2 köidet: User teenus + Todo teenus)
-- ✅ **Haakida (mount)** andmeköidet konteinerisse
-- ✅ Testida **andmete püsivust (data persistence)** (konteiner kustutatakse, andmed jäävad!)
-- ✅ Varundada ja taastada mitut andmeköidet
-- ✅ Inspekteerida andmeköiteid
-- ✅ Mõista, miks andmeköited on kriitilised tootmises
-- ✅ Testida **tõrkest taastumise (disaster recovery)** stsenaariumi
-
----
-
 ## 📝 Sammud
 
 **ℹ️ Portide turvalisus:**
 
 Selles harjutuses PostgreSQL **EI kasuta** `-p` (ainult `todo-network` võrgus).
 - ✅ **See on PARIM PRAKTIKA:** Andmebaasid peaksid olema isoleeritud sisevõrgus
-- ✅ **Host'i tulemüür kaitseb:** UFW blokeerib kõik pordid (lisaturvalisus)
+- ✅ **Antud laboreid tehes turvatud sisevõrk kaitseb**
 - 📚 **Kui vaja testida:** `docker exec -it postgres-user psql -U postgres -d user_service_db`
 - 🎯 **Lab 7 käsitleb:** Võrguturvalisust põhjalikumalt
 
