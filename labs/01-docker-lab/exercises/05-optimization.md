@@ -53,35 +53,47 @@ docker images | grep -E 'user-service|todo-service'
 
 ## 📝 Sammud
 
-### Samm 1: Uuri mõlema teenuse algset suurust
+### Samm 1: Mida oleme teinud ja mida nüüd optimeerime?
 
-```bash
-# Vaata mõlema Harjutus 1-st loodud tõmmise suurust
-docker images | grep -E 'user-service|todo-service'
+**Eelmistes harjutustes (Harjutus 1-4) lõime:**
 
-# Oodatud väljund:
-# REPOSITORY       TAG    IMAGE ID      CREATED        SIZE
-# user-service     1.0    abc123def     2 hours ago    180MB (Node.js)
-# todo-service     1.0    def456ghi     2 hours ago    230MB (Java)
+✅ **Harjutus 1:** Lihtne Dockerfile mõlemale teenusele
+- User Service (Node.js): `FROM node:22-slim` + COPY + RUN npm install
+- Todo Service (Java): JAR oli juba ehitatud, lihtsalt COPY + CMD
+
+✅ **Harjutus 2-4:** Käivitasime teenused võrgus, andmeköidetega
+- Kõik toimis, aga Dockerfailid olid **lihtsamad** (mitte optimeeritud)
+
+**Mida need "lihtsamad" Dockerfailid tegid VALESTI?**
+
+❌ **Probleem 1: Aeglane rebuild**
+```dockerfile
+# Harjutus 1 lähenemine
+COPY package*.json ./
+RUN npm install          # ← Käib ALATI uuesti, kui MIDAGI muutub!
+COPY . .                 # ← Muudad koodi → kogu npm install uuesti!
 ```
 
-**Uuri kummagi teenuse ajalugu:**
+❌ **Probleem 2: Ei kasuta multi-stage build'i**
+- Java: JAR ehitati käsitsi, siis Dockerfile'is COPY (2 sammu!)
+- Node.js: npm install hõlmab dev dependencies (suurem image)
 
-```bash
-# === USER SERVICE (Node.js) ===
-docker history user-service:1.0
-# Näed: FROM node:22-slim, WORKDIR, COPY package*.json, RUN npm install, COPY ., CMD
+❌ **Probleem 3: Turvalisus**
+- Konteiner töötab **root'ina** (turvaoht!)
+- Pole tervisekontrolli (health check)
 
-# === TODO SERVICE (Java) ===
-docker history todo-service:1.0
-# Näed: FROM eclipse-temurin:21-jre-alpine, WORKDIR, COPY JAR, CMD
-```
+❌ **Probleem 4: Proksi tugi puudub**
+- Ei tööta corporate võrgus (Intel proxy)
 
-**Küsimused:**
-- Kui suur on User Service tõmmis? 
-- Kui suur on Todo Service tõmmis? 
-- Mitu kihti (layer'it) on igal? (5-6 kihti)
-- Kui kiire on rebuild, kui muudad lähtekoodi? (Aeglane - kõik ehitatakse uuesti!)
+---
+
+**Selles harjutuses OPTIMEERIME:**
+
+✅ **Multi-stage build** - sõltuvused cached eraldi kihina
+✅ **Non-root user** - turvalisem (nodejs:1001, spring:1001)
+✅ **Health check** - automaatne tervise kontroll
+✅ **Proxy tugi** - ARG-põhine, portaabel
+✅ **Kiiremad rebuildid** - 60-80% kiirem!
 
 ### Samm 2: Optimeeri mõlema rakenduse Dockerfaili
 
