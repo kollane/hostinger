@@ -4,6 +4,100 @@ See dokument selgitab, kuidas ARG-põhine proxy konfiguratsioon töötab ja miks
 
 ---
 
+## Sissejuhatus: Miks ettevõtetes on vaja proxy serverit?
+
+### Mis on proxy server?
+
+**Proxy server (vahendaja server)** on vahendaja sinu arvuti ja Interneti vahel. Kõik väljuvad päringud (nt Docker image'ite allalaadimine, npm/Gradle sõltuvused) lähevad läbi proxy serveri.
+
+```
+┌──────────────┐                ┌──────────────┐                ┌──────────────┐
+│   Sinu       │  HTTP päringu  │    Proxy     │  HTTP päringu  │   Internet   │
+│   Arvuti     │───────────────>│    Server    │───────────────>│  (registry,  │
+│  (Docker)    │                │ (Intel võrk) │                │   npm, etc)  │
+└──────────────┘                └──────────────┘                └──────────────┘
+```
+
+### Miks ettevõtted (nt Intel) kasutavad proxy serverit?
+
+1. **🔒 Turvalisus:** Proxy server filtreerib ja monitoorib kogu liiklust (blokeerib pahatahtlikud saidid, viiruseid)
+2. **📊 Kontroll:** IT osakond näeb, millised ressursid on kasutuses (auditeerimine, compliance)
+3. **⚡ Kiirus:** Proxy vahemälu (cache) hoiab sageli kasutatud ressursse (nt Docker base image'id)
+4. **🌐 Võrgupoliitika:** Ettevõte kontrollib, milliseid väliseid ressursse töötajad saavad kasutada
+
+### Mis juhtub ilma proxy seadistusteta?
+
+**Intel võrgus (või sarnases corporate keskkonnas):**
+
+```bash
+# Proovid alla laadida Docker image'i
+docker pull node:22-slim
+
+# VIGA: "dial tcp: lookup registry-1.docker.io: no such host"
+# ❌ Ei saa Internetti otse - proxy on vajalik!
+```
+
+**npm sõltuvuste installimine:**
+
+```bash
+# Proovid npm pakette alla laadida
+npm install express
+
+# VIGA: "ETIMEDOUT" või "ECONNREFUSED"
+# ❌ npm registry ei ole otse kättesaadav!
+```
+
+**Gradle sõltuvuste allalaadimine:**
+
+```bash
+# Proovid Gradle dependencies alla laadida
+./gradlew build
+
+# VIGA: "Connection timed out"
+# ❌ Maven Central, Gradle Plugin Portal ei ole kättesaadav!
+```
+
+### Kuidas proxy töötab?
+
+**Intel proxy näide:**
+
+```bash
+# Intel võrk kasutab järgmisi proxy servereid:
+HTTP_PROXY=http://proxy-chain.intel.com:911   # HTTP liiklus
+HTTPS_PROXY=http://proxy-chain.intel.com:912  # HTTPS liiklus
+NO_PROXY=localhost,127.0.0.1,10.0.0.0/8       # Ei kasuta proxy'd (local/internal)
+```
+
+**Mis juhtub, kui seadistame proxy õigesti:**
+
+```bash
+# 1. Docker build kasutab proxy'd
+docker build --build-arg HTTP_PROXY=http://proxy-chain.intel.com:911 -t myapp .
+
+# 2. npm/Gradle saavad Internetti proxy kaudu ✅
+# 3. Docker base image'id tõmmatakse registry-st ✅
+# 4. Kõik välised sõltuvused laetakse alla ✅
+```
+
+### Miks ARG-põhine lähenemine on parim?
+
+**Probleem:** Proxy on vajalik AINULT build-time (ehitamise ajal), MITTE runtime (käitamise ajal)!
+
+- ✅ **Build-time:** npm/Gradle peavad alla laadima sõltuvused → vajab proxy'd
+- ❌ **Runtime:** Rakendus jookseb ja vastab HTTP päringutele → EI VAJA proxy'd
+
+**Lahendus:** ARG-põhine konfiguratsioon
+- ARG määratakse ainult `docker build` ajal (`--build-arg HTTP_PROXY=...`)
+- ENV seadistatakse ainult builder stage'is (dependencies allalaadimine)
+- Runtime stage on "clean" - proxy muutujaid EI OLE (portaabel, turvaline)
+
+**Tulemus:**
+- ✅ Sama Dockerfile töötab Intel võrgus (koos proxy'ga)
+- ✅ Sama Dockerfile töötab AWS/GCP/Azure (ilma proxy'ta)
+- ✅ Image on portaabel (ei sõltu proxy seadistustest)
+
+---
+
 ## 1. Kuidas ARG-põhine Proxy Töötab
 
 **Põhimõte:** Dockerfile kasutab ARG'e build-time proxy seadistusteks ja ENV'e ainult builder stage'is. Runtime stage on "clean" - proxy ei leki!
@@ -214,5 +308,5 @@ ARG-põhine proxy konfiguratsioon:
 
 **Tüüp:** Koodiselgitus (KOODISELGITUS)
 **Kasutatakse:** Lab 1 (Harjutused 01a, 01b, 05)
-**Viimane uuendus:** 2025-01-25
-**Allikas:** Ekstrakteeritud Lab 1 Exercise 05 Samm 7
+**Viimane uuendus:** 2025-12-07
+**Allikas:** Ekstrakteeritud Lab 1 Exercise 05 Samm 7, laiendatud Sissejuhatusega

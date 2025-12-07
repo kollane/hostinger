@@ -97,6 +97,17 @@ Kui vajad ARG, ENV, multi-stage build'i ja Gradle proxy konfiguratsioonide põhj
 - 👉 [Peatükk 06: Dockerfile Detailid](../../../resource/06-Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md)
 - 👉 [Peatükk 06A: Java Spring Boot Spetsiifika](../../../resource/06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md)
 
+**🔍 Lisaselgitus: ARG-põhine Proxy Best Practices**
+
+Kui soovid mõista, miks ettevõtetes (nt Intel võrk) on vaja proxy serverit ja kuidas Gradle GRADLE_OPTS parsing töötab, loe:
+- 👉 **[Docker ARG-põhine Proxy Best Practices](../../../resource/code-explanations/Docker-ARG-Proxy-Best-Practices.md)**
+
+**See dokument selgitab:**
+- ❓ Mis on proxy server ja miks ettevõtted seda kasutavad?
+- 🔧 Gradle vs npm proxy erinevus (GRADLE_OPTS parsing vs HTTP_PROXY otse)
+- ✅ Best practices (DO ja DON'T)
+- 🌐 Sama Dockerfile töötab Intel võrgus JA cloud keskkonnas (AWS/GCP/Azure)
+
 ---
 
 ####  Dockerfile loomine Corporate Keskkond (PRIMAARNE) ⭐

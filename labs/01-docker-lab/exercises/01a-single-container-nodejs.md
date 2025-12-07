@@ -166,10 +166,16 @@ CMD ["node", "server.js"]
 Kui vajad ülaloleva Dockerfile'i täpset rea-haaval selgitust (mida teevad ARG, ENV, mitmeastmeline build jne), loe:
 - 👉 **[Node.js Dockerfile Proxy Pattern](../../../resource/code-explanations/Node.js-Dockerfile-Proxy-Explained.md)**
 
-**🔍 Lisaselgitus: Proksi Build-time vs Runtime**
+**🔍 Lisaselgitus: ARG-põhine Proxy Best Practices**
 
-Kui soovid mõista, kuidas proksi töötab Docker build'i ajal vs runtime'il, loe:
-- 👉 **[Docker Proxy: Build-time vs Runtime Selgitus](../../../resource/Docker-Proxy-Build-vs-Runtime-Selgitus.md)**
+Kui soovid mõista, miks ettevõtetes (nt Intel võrk) on vaja proxy serverit ja kuidas ARG-põhine proxy konfiguratsioon töötab, loe:
+- 👉 **[Docker ARG-põhine Proxy Best Practices](../../../resource/code-explanations/Docker-ARG-Proxy-Best-Practices.md)**
+
+**See dokument selgitab:**
+- ❓ Mis on proxy server ja miks ettevõtted seda kasutavad?
+- 🔧 Kuidas ARG-põhine proxy töötab (build-time vs runtime)
+- ✅ Best practices (DO ja DON'T)
+- 🌐 Sama Dockerfile töötab Intel võrgus JA cloud keskkonnas (AWS/GCP/Azure)
 
 ---
 
