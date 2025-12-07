@@ -62,55 +62,15 @@ cat build.gradle
 - Kas rakendus vajab andmebaasi? (Jah, PostgreSQL)
 
 ### Samm 2: Dockerfile loomine
+---
 
-Lihtne 1-stage Dockerfile VPS'i jaoks (eeldab pre-built JAR'i):
-
-```dockerfile
-FROM eclipse-temurin:21-jre-alpine
-
-WORKDIR /app
-
-# Kopeeri JAR fail (eeldab host'is ehitatud JAR'i!)
-COPY build/libs/todo-service.jar app.jar
-
-# Avalda port
-EXPOSE 8081
-
-# Käivita
-CMD ["java", "-jar", "app.jar"]
-```
-
-**Ehitamine:**
-```bash
-# 1. Ehita JAR host'is
-./gradlew clean bootJar
-
-# 2. Ehita Docker tõmmis
-docker build -t todo-service:1.0 .
-```
-
-⚠️ **Märkus:** See on NÄIDIS VPS testimiseks. Praktikas kasuta Variant B (Gradle build containeris)!
-
-**📖 Dockerfile põhitõed:**
-
-Kui vajad ARG, ENV, multi-stage build'i ja Gradle proxy konfiguratsioonide põhjalikku selgitust, loe:
-- 👉 [Peatükk 06: Dockerfile Detailid](../../../resource/06-Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md)
-- 👉 [Peatükk 06A: Java Spring Boot Spetsiifika](../../../resource/06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md)
-
-**🔍 Lisaselgitus: ARG-põhine Proxy Best Practices**
-
-Kui soovid mõista, miks ettevõtetes (nt Intel võrk) on vaja proxy serverit ja kuidas Gradle GRADLE_OPTS parsing töötab, loe:
-- 👉 **[Docker ARG-põhine Proxy Best Practices](../../../resource/code-explanations/Docker-ARG-Proxy-Best-Practices.md)**
-
-**See dokument selgitab:**
-- ❓ Mis on proxy server ja miks ettevõtted seda kasutavad?
-- 🔧 Gradle vs npm proxy erinevus (GRADLE_OPTS parsing vs HTTP_PROXY otse)
-- ✅ Best practices (DO ja DON'T)
-- 🌐 Sama Dockerfile töötab Intel võrgus JA cloud keskkonnas (AWS/GCP/Azure)
+- **📖 Dockerfile põhitõed:** Kui vajad abi Dockerfile instruktsioonide (FROM, WORKDIR, COPY, RUN, CMD, ARG, multi-stage) mõistmisega, loe [Peatükk 06: Dockerfile - Rakenduste Konteineriseerimise Detailid](../../../resource/06-Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md).
+- **📖 ARG-põhine Proxy Best Practices:** Kui soovid mõista, miks ettevõtetes (nt Intel võrk) on vaja proxy serverit ja kuidas ARG-põhine proxy konfiguratsioon töötab, loe: [Docker ARG-põhine Proxy Best Practices](../../../resource/code-explanations/Docker-ARG-Proxy-Best-Practices.md).
+- **📖 Gradle proxy konfiguratsioonide põhjalikku selgitust:** [Peatükk 06A: Java Spring Boot Spetsiifika](../../../resource/06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md)
 
 ---
 
-####  Dockerfile loomine Corporate Keskkond (PRIMAARNE) ⭐
+####  Dockerfile loomine
 
 **⚠️ Oluline:** Dockerfail tuleb luua rakenduse juurkataloogi `~/labs/apps/backend-java-spring`.
 
