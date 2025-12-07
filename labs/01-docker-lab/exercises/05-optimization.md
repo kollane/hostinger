@@ -133,11 +133,6 @@ Kui vajad koodi täpset rea-haaval selgitust (BuildKit syntax, ARG vs ENV, stage
 
 ---
 
-**ℹ️ Märkus proksi kohta:**
-- ARG väärtused on AINULT build-time'il (määratakse `--build-arg` kaudu)
-- ENV on AINULT dependencies stage'is (runtime on "clean" - proxy ei leki!)
-- Täielik selgitus kommentaaridega: Vaata `Dockerfile.optimized.proxy` faili
-
 **⚠️ OLULINE: Lisa `healthcheck.js` fail rakenduse juurkataloogi**
 
 See fail on vajalik HEALTHCHECK käsu jaoks Dockerfile'is. Ilma selleta ei käivitu container korralikult.
