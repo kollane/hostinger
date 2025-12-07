@@ -456,22 +456,38 @@ docker stats --no-stream --format "table {{.Name}}\t{{.MemUsage}}\t{{.CPUPerc}}"
 
 #### Trivy (vulnerability scanner)
 
-```bash
-# Variant A: Lokaalne binaar (kui installitud)
-trivy image --severity HIGH,CRITICAL user-service:1.0-optimized
-trivy image --severity HIGH,CRITICAL todo-service:1.0-optimized
+**ℹ️ Märkus:** Trivy lokaalne binaar (`trivy`) ei ole paigaldatud. Kasutame Docker konteinerit.
 
-# Variant B: Docker konteiner (pole installi vaja!)
+```bash
+# Seadista proksi (Intel võrk)
+export HTTP_PROXY=http://proxy-chain.intel.com:911
+export HTTPS_PROXY=http://proxy-chain.intel.com:912
+export NO_PROXY=localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16
+
+# Skanni User Service (Node.js)
 docker run --rm \
+  -e HTTP_PROXY=$HTTP_PROXY \
+  -e HTTPS_PROXY=$HTTPS_PROXY \
+  -e NO_PROXY=$NO_PROXY \
   -v /var/run/docker.sock:/var/run/docker.sock \
   aquasec/trivy:latest image \
   --severity HIGH,CRITICAL user-service:1.0-optimized
 
+# Skanni Todo Service (Java)
 docker run --rm \
+  -e HTTP_PROXY=$HTTP_PROXY \
+  -e HTTPS_PROXY=$HTTPS_PROXY \
+  -e NO_PROXY=$NO_PROXY \
   -v /var/run/docker.sock:/var/run/docker.sock \
   aquasec/trivy:latest image \
   --severity HIGH,CRITICAL todo-service:1.0-optimized
 ```
+
+**Mida need käsud teevad:**
+- `-e HTTP_PROXY=$HTTP_PROXY` - edastab proksi seadistused Trivy konteinerile
+- `-v /var/run/docker.sock` - lubab Trivy-l pääseda Docker image'itele
+- `--severity HIGH,CRITICAL` - näitab ainult kriitilisi haavatavusi
+- Trivy laadib alla vulnerability DB läbi proksi (mirror.gcr.io)
 
 **Oodatud tulemused:**
 - ✅ Optimeeritud tõmmised võivad sisaldada vähem haavatavusi (sõltub baastõmmise versioonist)
