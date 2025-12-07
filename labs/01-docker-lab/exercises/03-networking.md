@@ -234,6 +234,10 @@ docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 # Sisene Todo Service'i konteinerisse
 docker exec -it todo-service sh
 
+# Kuna konteineri sisse vaja internetti, seadista konteineris sees proksi
+export HTTP_PROXY=http://proxy-chain.intel.com:911
+export HTTPS_PROXY=http://proxy-chain.intel.com:912
+
 # Konteineri sees - testi DNS lahendust
 # Installi võrgu tööriistad
 apk add --no-cache bind-tools curl
@@ -253,30 +257,6 @@ curl http://user-service:3000/health
 # Vaata DNS konfiguratsiooni
 cat /etc/resolv.conf
 # nameserver peaks olema Docker'i DNS server (127.0.0.11)
-
-exit
-```
-
-#### 8b. Testi DNS User Service'ist
-
-```bash
-# Sisene User Service'i konteinerisse
-docker exec -it user-service sh
-
-# Installi võrgu tööriistad
-apk add --no-cache bind-tools curl
-
-# Test 1: Kas näeme oma PostgreSQL'i?
-nslookup postgres-user
-# Peaks näitama: Name: postgres-user, Address: 172.18.0.X
-
-# Test 2: Kas näeme Todo Service'it?
-nslookup todo-service
-# Peaks näitama: Name: todo-service, Address: 172.18.0.Z
-
-# Test 3: Testi ühendust Todo Service'iga
-curl http://todo-service:8081/health
-# Oodatud: {"status":"UP"}
 
 exit
 ```
