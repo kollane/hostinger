@@ -97,24 +97,35 @@ Loome optimeeritud Dockerfailid mõlemale teenusele.
 cd ~/labs/apps/backend-nodejs
 ```
 
-Loo uus `Dockerfile.optimized`:
+Loo uus `Dockerfile.optimized.proxy`:
 
 ```bash
-vim Dockerfile.optimized
+vim Dockerfile.optimized.proxy
 ```
 
 **💡 Abi vajadusel:**
-Vaata näidislahendust: `~/labs/01-docker-lab/solutions/backend-nodejs/Dockerfile.optimized`
+Vaata täielikku näidislahendust: `~/labs/01-docker-lab/solutions/backend-nodejs/Dockerfile.optimized.proxy`
 
 **📖 Mitmeastmelised ehitused ja Node.js optimeerimine:**
 - [Peatükk 06: Dockerfile - Multi-stage Builds](../../../resource/06-Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md) selgitab mitmeastmeliste ehituste põhitõed
-- [Peatükk 06A: Node.js Konteineriseerimise Spetsiifika](../../../resource/06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md) selgitab `npm ci`, sõltuvuste vahemälu, mitte-juurkasutajad
+- [Peatükk 06A: Node.js Konteineriseerimise Spetsiifika](../../../resource/06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md) selgitab `npm ci`, sõltuvuste vahemälu, mitte-juurkasutajad, ARG-põhine proxy
 
-**Näidis:**
+**Lühendatud näidis (põhistruktuur):**
 
 ```dockerfile
+# ARG deklaratsioonid ENNE esimest FROM (proksi tugi)
+ARG HTTP_PROXY=""
+ARG HTTPS_PROXY=""
+ARG NO_PROXY=""
+
 # Stage 1: Dependencies
 FROM node:22-slim AS dependencies
+
+# ENV ainult selles stage'is - npm ci kasutab neid
+ENV HTTP_PROXY=${HTTP_PROXY} \
+    HTTPS_PROXY=${HTTPS_PROXY} \
+    NO_PROXY=${NO_PROXY}
+
 WORKDIR /app
 
 # Kopeeri dependency files (caching jaoks)
@@ -148,6 +159,11 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=10s \
 
 CMD ["node", "server.js"]
 ```
+
+**ℹ️ Märkus proksi kohta:**
+- ARG väärtused on AINULT build-time'il (määratakse `--build-arg` kaudu)
+- ENV on AINULT dependencies stage'is (runtime on "clean" - proxy ei leki!)
+- Täielik selgitus kommentaaridega: Vaata `Dockerfile.optimized.proxy` faili
 
 **⚠️ OLULINE: Lisa `healthcheck.js` fail rakenduse juurkataloogi**
 
@@ -189,28 +205,34 @@ req.end();
 cd ~/labs/apps/backend-java-spring
 ```
 
-Loo uus `Dockerfile.optimized`:
+Loo uus `Dockerfile.optimized.proxy`:
 
 ```bash
-vim Dockerfile.optimized
+vim Dockerfile.optimized.proxy
 ```
 
 **💡 Abi vajadusel:**
-Vaata näidislahendust: `~/labs/01-docker-lab/solutions/backend-java-spring/Dockerfile.optimized`
+Vaata täielikku näidislahendust: `~/labs/01-docker-lab/solutions/backend-java-spring/Dockerfile.optimized.proxy`
 
 **📖 Mitmeastmelised ehitused ja Java optimeerimine:**
 - [Peatükk 06: Dockerfile - Multi-stage Builds](../../../resource/06-Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md) selgitab mitmeastmeliste ehituste põhitõed (JDK → JRE)
-- [Peatükk 06A: Java Spring Boot Konteineriseerimise Spetsiifika](../../../resource/06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md) selgitab Gradle sõltuvuste vahemälu, JVM mäluhaldust, mitte-juurkasutajaid
+- [Peatükk 06A: Java Spring Boot Konteineriseerimise Spetsiifika](../../../resource/06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md) selgitab Gradle sõltuvuste vahemälu, JVM mäluhaldust, mitte-juurkasutajaid, Gradle proxy konfiguratsioon
 
-**Näidis:**
+**Lühendatud näidis (põhistruktuur):**
 
 ```dockerfile
-# Optimeeritud Dockerfile Todo Service jaoks (Harjutus 5)
-# Multi-stage build: Gradle build → JRE runtime
-# Eelised: väiksem image, layer caching, non-root user, health check
+# ARG deklaratsioonid ENNE esimest FROM (proksi tugi)
+ARG HTTP_PROXY=""
+ARG HTTPS_PROXY=""
+ARG NO_PROXY=""
 
 # Stage 1: Build
 FROM gradle:8.11-jdk21-alpine AS builder
+
+# ENV ainult selles stage'is
+ENV HTTP_PROXY=${HTTP_PROXY} \
+    HTTPS_PROXY=${HTTPS_PROXY} \
+    NO_PROXY=${NO_PROXY}
 
 WORKDIR /app
 
@@ -218,12 +240,26 @@ WORKDIR /app
 COPY build.gradle settings.gradle ./
 COPY gradle ./gradle
 
-# Download dependencies (cached kui build.gradle ei muutu)
-RUN gradle dependencies --no-daemon
+# Download dependencies (Gradle vajab GRADLE_OPTS proxy jaoks!)
+RUN if [ -n "$HTTP_PROXY" ]; then \
+        PROXY_HOST=$(echo "$HTTP_PROXY" | sed -e 's|http://||' -e 's|https://||' -e 's|:[0-9]*$||'); \
+        PROXY_PORT=$(echo "$HTTP_PROXY" | grep -oE '[0-9]+$'); \
+        export GRADLE_OPTS="-Dhttp.proxyHost=$PROXY_HOST -Dhttp.proxyPort=$PROXY_PORT -Dhttps.proxyHost=$PROXY_HOST -Dhttps.proxyPort=$PROXY_PORT"; \
+        gradle dependencies --no-daemon; \
+    else \
+        gradle dependencies --no-daemon; \
+    fi
 
 # Kopeeri source code ja build JAR
 COPY src ./src
-RUN gradle bootJar --no-daemon
+RUN if [ -n "$HTTP_PROXY" ]; then \
+        PROXY_HOST=$(echo "$HTTP_PROXY" | sed -e 's|http://||' -e 's|https://||' -e 's|:[0-9]*$||'); \
+        PROXY_PORT=$(echo "$HTTP_PROXY" | grep -oE '[0-9]+$'); \
+        export GRADLE_OPTS="-Dhttp.proxyHost=$PROXY_HOST -Dhttp.proxyPort=$PROXY_PORT -Dhttps.proxyHost=$PROXY_HOST -Dhttps.proxyPort=$PROXY_PORT"; \
+        gradle bootJar --no-daemon; \
+    else \
+        gradle bootJar --no-daemon; \
+    fi
 
 # Stage 2: Runtime
 FROM eclipse-temurin:21-jre-alpine
@@ -253,6 +289,12 @@ CMD ["java", \
     "-jar", \
     "app.jar"]
 ```
+
+**ℹ️ Märkus proksi kohta:**
+- ARG väärtused on AINULT build-time'il (määratakse `--build-arg` kaudu)
+- ENV on AINULT builder stage'is (runtime on "clean" - proxy ei leki!)
+- **ERINEVUS npm'ist:** Gradle EI kasuta HTTP_PROXY otse, vajab GRADLE_OPTS parsing'ut
+- Täielik selgitus kommentaaridega: Vaata `Dockerfile.optimized.proxy` faili
 ## Ülevaade sammude järjestusest
 
 Multi-stage build koosneb kahest põhietapist:
@@ -282,18 +324,38 @@ Tulemus: efektiivne, turvaline ja skaleeritav konteineripilt.
 **⚠️ Oluline:** Docker tõmmise ehitamiseks pead olema rakenduse juurkataloogis (kus asub `Dockerfile.optimized`).
 
 ```bash
+# === Seadista proksi väärtused (Intel võrk) ===
+export HTTP_PROXY=http://proxy-chain.intel.com:911
+export HTTPS_PROXY=http://proxy-chain.intel.com:912
+export NO_PROXY=localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16
+
+# Kontrolli
+echo "HTTP_PROXY=$HTTP_PROXY"
+echo "HTTPS_PROXY=$HTTPS_PROXY"
+
 # === BUILD User Service (Node.js) ===
 cd ~/labs/apps/backend-nodejs
 
-# Build optimeeritud tõmmis
-docker build -f Dockerfile.optimized -t user-service:1.0-optimized .
+# Build optimeeritud tõmmis PROKSIGA
+docker build \
+  --build-arg HTTP_PROXY=$HTTP_PROXY \
+  --build-arg HTTPS_PROXY=$HTTPS_PROXY \
+  --build-arg NO_PROXY=$NO_PROXY \
+  -f Dockerfile.optimized.proxy \
+  -t user-service:1.0-optimized \
+  .
 
 # === BUILD Todo Service (Java) ===
-# Asukoht: ~/labs/apps/backend-java-spring
 cd ~/labs/apps/backend-java-spring
 
-# Build optimeeritud tõmmis (mitmeastmeline ehitus teeb ka JAR'i)
-docker build -f Dockerfile.optimized -t todo-service:1.0-optimized .
+# Build optimeeritud tõmmis PROKSIGA (mitmeastmeline ehitus teeb ka JAR'i)
+docker build \
+  --build-arg HTTP_PROXY=$HTTP_PROXY \
+  --build-arg HTTPS_PROXY=$HTTPS_PROXY \
+  --build-arg NO_PROXY=$NO_PROXY \
+  -f Dockerfile.optimized.proxy \
+  -t todo-service:1.0-optimized \
+  .
 
 # === VÕRDLE SUURUSI ===
 docker images | grep -E 'user-service|todo-service'
@@ -301,10 +363,26 @@ docker images | grep -E 'user-service|todo-service'
 # Oodatud väljund:
 # REPOSITORY       TAG             SIZE
 # user-service     1.0             ~305MB (vana, slim, single-stage)
-# user-service     1.0-optimized   ~305MB (uus, slim, multi-stage)
+# user-service     1.0-optimized   ~305MB (uus, slim, multi-stage + proxy)
 # todo-service     1.0             ~230MB (vana)
-# todo-service     1.0-optimized   ~180MB (uus) 📉 -22%
+# todo-service     1.0-optimized   ~180MB (uus + proxy) 📉 -22%
 ```
+
+**ℹ️ Märkused proksi kohta:**
+- `--build-arg` määrab ARG väärtused build-time'il
+- Proxy on AINULT builder stage'is (npm/gradle download'id)
+- Runtime konteinerid on "clean" (proxy ei leki!)
+- Sama image töötab Intel võrgus JA väljaspool (portaabel)
+
+**⚠️ Docker BuildKit hoiatused (normaalne!):**
+Võid näha 3 hoiatust:
+```
+UndefinedVar: Usage of undefined variable '$HTTP_PROXY'
+```
+
+**Miks need tulevad?** Docker BuildKit parsib Dockerfile'i ja näeb `ENV HTTP_PROXY=${HTTP_PROXY}`. Ta hoiatab: "muutuja võib olla undefined". Tegelikult on kõik korras - ARG vaikeväärtus on `""` (tühi string).
+
+**Lahendus:** Ignoreeri neid - build õnnestub ja proxy töötab! Kui tahad hoiatusi vältida, lisa Dockerfile'i esimesele reale: `# syntax=docker/dockerfile:1.4`
 
 **ℹ️ Märkus User Service'i suuruse kohta:**
 User Service tõmmis jääb samaks (~305MB), sest mõlemad versioonid kasutavad `node:21-slim`.
@@ -635,108 +713,120 @@ docker images | grep -E 'user-service|todo-service' | sort
 
 ---
 
-### Samm 8: Proxy Variant Comparison (10 min, Valikuline)
+### Samm 8: Proxy Konfiguratsiooni Põhjalik Selgitus (10 min)
 
-**Eesmärk:** Veendu, et proksi konfiguratsioon ei suurenda image suurust ja ei leki runtime'i.
+**Eesmärk:** Mõista, kuidas ARG-põhine proxy konfiguratsioon töötab ja miks see on parim praktika.
 
-**ℹ️ See samm on VALIKULINE** - vajalik ainult kui ehitad Docker image'eid corporate proksi keskkonnas (nt. cache1.sss:3128).
+**ℹ️ Märkus:** Selles sammus kasutatakse juba Sammudes 2-3 loodud `.proxy` variante. See selgitab põhjalikult, kuidas need töötavad.
 
-#### 8.1 Ehita Proxy Variant (Node.js)
+#### 8.1 Kuidas ARG-põhine Proxy Töötab
 
-**ℹ️ Märkus:** Harjutus 01a-s õppisid juba 2-stage build'i ARG proksiga. See samm katsetab optimeeritud versiooni (täiendavad parandused).
+**Sammudes 2-3 lõite juba `Dockerfile.optimized.proxy` failid. Vaatame, kuidas need töötavad:**
 
-```bash
-cd /home/janek/projects/hostinger/labs/01-docker-lab/solutions/backend-nodejs
+**Node.js (User Service) proxy struktuur:**
 
-# Ehita proksiga (või ilma - sama Dockerfile!)
-docker build \
-  --build-arg HTTP_PROXY=http://cache1.sss:3128 \
-  --build-arg HTTPS_PROXY=http://cache1.sss:3128 \
-  -f Dockerfile.optimized.proxy \
-  -t user-service:1.0-proxy \
-  ../../../apps/backend-nodejs
+```dockerfile
+# ARG ENNE esimest FROM - nähtav kõigis stage'ides
+ARG HTTP_PROXY=""
+ARG HTTPS_PROXY=""
 
-# EXPECTED: Build õnnestub mõlemas keskkonnas (proksi ja ilma)
+# Stage 1: Dependencies
+FROM node:22-slim AS dependencies
+
+# ENV AINULT selles stage'is - npm kasutab neid
+ENV HTTP_PROXY=${HTTP_PROXY} \
+    HTTPS_PROXY=${HTTPS_PROXY}
+
+RUN npm ci --only=production  # npm kasutab HTTP_PROXY automaatselt
+
+# Stage 2: Runtime
+FROM node:22-slim  # <-- Uus FROM nullib ENV muutujad!
+# Proxy ei ole siin - runtime on "clean"!
 ```
 
-#### 8.2 Võrdle Image Suurusi
+**Mida õppisid:**
+- ✅ ARG on build-time (määratakse `--build-arg` kaudu)
+- ✅ ENV on AINULT dependencies stage'is
+- ✅ Runtime stage EI OLE proxy keskkonda (turvalisem!)
+- ✅ Sama Dockerfile töötab Intel võrgus JA väljaspool
 
-```bash
-docker images | grep user-service
+#### 8.2 Verifitseeri: Proxy Ei Leki Runtime'i
 
-# EXPECTED:
-# user-service:1.0-optimized   ~305MB
-# user-service:1.0-proxy       ~305MB  ← SAMA suurus! ✅
-```
-
-**Järeldus:** Proxy konfiguratsioon ei suurenda image suurust!
-
-#### 8.3 Veendu, et Proxy Ei Leki Runtime'i
+**KRIITILINE TEST:** Kontrolli, et proxy muutujad EI OLE runtime konteineris!
 
 ```bash
 # Test: runtime konteineris EI TOHI olla proksi muutujaid
-docker run --rm user-service:1.0-proxy env | grep -i proxy
+docker run --rm user-service:1.0-optimized env | grep -i proxy
 
-# EXPECTED: Tühi väljund (ei leia midagi) ✅
-# Kui näed HTTP_PROXY=..., siis proxy leak'is! ⚠️
+# OODATUD: Tühi väljund (ei leia midagi) ✅
+# Kui näed HTTP_PROXY=..., siis proxy leak'is! ⚠️ VIGA!
+
+# Test Gradle muutujate jaoks (Java)
+docker run --rm todo-service:1.0-optimized env | grep -i gradle
+
+# OODATUD: Tühi väljund (GRADLE_OPTS ei ole runtime'is) ✅
 ```
 
 **Miks see on oluline?**
-- ✅ Proxy on AINULT build-time ajal (npm/gradle download'id)
 - ✅ Runtime konteiner on "clean" (ei sõltu proksist)
 - ✅ Image on portaabel (töötab AWS, GCP, Azure, kodus)
+- ✅ Turvalisem (proxy info ei leki tootmisse)
 
-#### 8.4 Ehita Java Proxy Variant (valikuline)
+#### 8.3 Gradle vs npm Proxy Erinevus
 
-**ℹ️ Märkus:** Harjutus 01b-s õppisid juba 2-stage build'i Gradle proksiga. See samm katsetab optimeeritud versiooni (täiendavad parandused).
+**TÄHTIS ERINEVUS:** Gradle ja npm käituvad erinevalt!
 
+**npm (Node.js):**
 ```bash
-cd /home/janek/projects/hostinger/labs/01-docker-lab/solutions/backend-java-spring
-
-docker build \
-  --build-arg HTTP_PROXY=http://cache1.sss:3128 \
-  --build-arg HTTPS_PROXY=http://cache1.sss:3128 \
-  -f Dockerfile.optimized.proxy \
-  -t todo-service:1.0-proxy \
-  ../../../apps/backend-java-spring
-
-# Võrdle suurusi
-docker images | grep todo-service
-
-# EXPECTED:
-# todo-service:1.0-optimized   ~250MB
-# todo-service:1.0-proxy       ~250MB  ← SAMA suurus! ✅
-
-# Verifitseeri runtime (peaks olema clean)
-docker run --rm todo-service:1.0-proxy env | grep -i proxy
-# EXPECTED: Tühi väljund ✅
-
-docker run --rm todo-service:1.0-proxy env | grep -i gradle
-# EXPECTED: Tühi väljund (GRADLE_OPTS ei ole runtime'is) ✅
+# npm kasutab HTTP_PROXY keskkonna muutujat OTSE
+ENV HTTP_PROXY=http://proxy-chain.intel.com:911
+RUN npm ci --only=production  # ✅ Töötab automaatselt!
 ```
 
-#### 8.5 Test Application Functionality
-
+**Gradle (Java):**
 ```bash
-# Testi, et proxy variant töötab nagu optimeeritud variant
-docker run --rm -d --name test-proxy -p 3000:3000 user-service:1.0-proxy
-curl http://localhost:3000/health  # Peaks tagastama: {"status":"healthy"}
-docker stop test-proxy
+# Gradle EI KASUTA HTTP_PROXY otse! ❌
+# Vajab: -Dhttp.proxyHost=HOST -Dhttp.proxyPort=PORT
 
-# EXPECTED: Töötab identeselt optimeeritud variandiga! ✅
+# Seega parsime HTTP_PROXY stringi:
+RUN if [ -n "$HTTP_PROXY" ]; then \
+        PROXY_HOST=$(echo "$HTTP_PROXY" | sed -e 's|http://||' -e 's|:[0-9]*$||'); \
+        PROXY_PORT=$(echo "$HTTP_PROXY" | grep -oE '[0-9]+$'); \
+        export GRADLE_OPTS="-Dhttp.proxyHost=$PROXY_HOST -Dhttp.proxyPort=$PROXY_PORT"; \
+        gradle dependencies --no-daemon; \
+    fi
 ```
 
-**📖 Põhjalik selgitus:**
+**Miks see on oluline?**
+- ✅ npm: lihtne (kasutab HTTP_PROXY otse)
+- ⚠️ Gradle: keeruline (vajab parsing'ut ja GRADLE_OPTS)
+- 📖 Täielik selgitus: Vaata `Dockerfile.optimized.proxy` kommentaare
+
+#### 8.4 Parimad Praktikad (Best Practices)
+
+**✅ DO (KASUTA):**
+1. **ARG-põhine proxy** (see Dockerfile) - portaabel, turvaline
+2. **ENV ainult builder stage'is** - runtime on "clean"
+3. **Vaikeväärtused tühjad** (`ARG HTTP_PROXY=""`) - töötab ilma proksita
+4. **Test runtime leakage** - `docker run --rm ... env | grep -i proxy`
+
+**❌ DON'T (ÄRA KASUTA):**
+1. **Hardcoded ENV** - ei ole portaabel, ei tööta väljaspool Intel võrku
+2. **ENV runtime stage'is** - proxy leak'ib tootmisse!
+3. **Proxy ilma vaikeväärtuseta** - ei tööta ilma `--build-arg`
+
+**📖 Põhjalik dokumentatsioon:**
 - Node.js: [README-PROXY.md](../../solutions/backend-nodejs/README-PROXY.md)
 - Java/Gradle: [README-PROXY.md](../../solutions/backend-java-spring/README-PROXY.md)
+- Teooria: [Peatükk 06A](../../../resource/06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md)
 
 ---
 
-**Järeldus (Samm 8):** ARG-põhine proxy konfiguratsioon:
+**Kokkuvõte (Samm 8):** ARG-põhine proxy konfiguratsioon:
+- ✅ Töötab Intel võrgus JA väljaspool (portaabel)
+- ✅ Ei leki runtime'i (turvalisem)
 - ✅ Ei suurenda image suurust
-- ✅ Ei leki runtime'i
-- ✅ Töötab nii proksi kui ilma
-- ✅ Production-ready (portaabel, turvaline)
+- ✅ Production-ready (sama Dockerfile mõlemas keskkonnas)
 
 ---
 
