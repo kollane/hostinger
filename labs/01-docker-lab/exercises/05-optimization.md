@@ -509,7 +509,7 @@ cd ~/labs/apps/backend-nodejs
 pwd  # Veendu, et oled õiges kataloogis
 
 # Rebuild User Service (peaks olema VÄGA kiire!)
-time docker build -f Dockerfile.optimized -t user-service:1.0-optimized .
+time docker build -f Dockerfile.optimized.proxy -t user-service:1.0-optimized .
 # Oodatud: "CACHED" iga kihi jaoks, build ~2-5s
 
 # Asukoht: ~/labs/apps/backend-java-spring
@@ -517,7 +517,7 @@ cd ~/labs/apps/backend-java-spring
 pwd  # Veendu, et oled õiges kataloogis
 
 # Rebuild Todo Service (peaks olema VÄGA kiire!)
-time docker build -f Dockerfile.optimized -t todo-service:1.0-optimized .
+time docker build -f Dockerfile.optimized.proxy -t todo-service:1.0-optimized .
 # Oodatud: "CACHED" enamuse kihtide jaoks, build ~10-20s
 
 # === TEST 2: Rebuild KUI lähtekood muutub ===
@@ -529,7 +529,7 @@ pwd  # Veendu, et oled õiges kataloogis
 echo "// test comment" >> server.js
 
 # Rebuild
-time docker build -f Dockerfile.optimized -t user-service:1.0-optimized .
+time docker build -f Dockerfile.optimized.proxy -t user-service:1.0-optimized .
 # Oodatud: Sõltuvuste kiht CACHED, ainult COPY . ja pärast rebuilditakse (~10-15s)
 
 # Todo Service - muuda source code
@@ -539,7 +539,7 @@ pwd  # Veendu, et oled õiges kataloogis
 echo "// test comment" >> src/main/java/com/hostinger/todoapp/TodoApplication.java
 
 # Rebuild
-time docker build -f Dockerfile.optimized -t todo-service:1.0-optimized .
+time docker build -f Dockerfile.optimized.proxy -t todo-service:1.0-optimized .
 # Oodatud: Gradle sõltuvuste kiht CACHED, ainult COPY src ja pärast rebuilditakse (~30-40s)
 ```
 
