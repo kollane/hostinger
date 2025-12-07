@@ -53,47 +53,97 @@ docker images | grep -E 'user-service|todo-service'
 
 ## 📝 Sammud
 
-### Samm 1: Mida oleme teinud ja mida nüüd optimeerime?
+### Samm 1: Milleks kasutame Dockerfile optimeerimist?
 
-**Eelmistes harjutustes (Harjutus 1-4) lõime:**
+**Docker image optimeerimise 5 peamist eesmärki:**
 
-✅ **Harjutus 1:** Lihtne Dockerfile mõlemale teenusele
-- User Service (Node.js): `FROM node:22-slim` + COPY + RUN npm install
-- Todo Service (Java): JAR oli juba ehitatud, lihtsalt COPY + CMD
+#### 1️⃣ **Kiire arendusprotsess - Layer Caching**
 
-✅ **Harjutus 2-4:** Käivitasime teenused võrgus, andmeköidetega
-- Kõik toimis, aga Dockerfailid olid **lihtsamad** (mitte optimeeritud)
-
-**Mida need "lihtsamad" Dockerfailid tegid VALESTI?**
-
-❌ **Probleem 1: Aeglane rebuild**
 ```dockerfile
-# Harjutus 1 lähenemine
-COPY package*.json ./
-RUN npm install          # ← Käib ALATI uuesti, kui MIDAGI muutub!
-COPY . .                 # ← Muudad koodi → kogu npm install uuesti!
+# PROBLEEM: Aeglane rebuild
+COPY . .                    # ← Muudad üht faili → kogu npm install uuesti!
+RUN npm install             # ← 30-60 sekundit IGAL rebuild'il
+
+# LAHENDUS: Eraldi kiht sõltuvustele
+COPY package*.json ./       # ← Muutub harva
+RUN npm install             # ← Cached! Rebuild 5 sekundit
+COPY . .                    # ← Muutub tihti, aga kiire
 ```
 
-❌ **Probleem 2: Ei kasuta multi-stage build'i**
-- Java: JAR ehitati käsitsi, siis Dockerfile'is COPY (2 sammu!)
-- Node.js: npm install hõlmab dev dependencies (suurem image)
+**Tulemus:** Arendaja muudab koodi → rebuild **60-80% kiirem** (30s → 5s)
 
-❌ **Probleem 3: Turvalisus**
-- Konteiner töötab **root'ina** (turvaoht!)
-- Pole tervisekontrolli (health check)
+#### 2️⃣ **Väiksem Image Suurus - Multi-stage Build**
 
-❌ **Probleem 4: Proksi tugi puudub**
-- Ei tööta corporate võrgus (Intel proxy)
+```dockerfile
+# Java näide:
+# Stage 1: BUILD (JDK + Gradle + source) → 800MB
+FROM gradle:8-jdk21 AS builder
+RUN gradle bootJar
+
+# Stage 2: RUNTIME (ainult JRE + JAR) → 250MB
+FROM eclipse-temurin:21-jre
+COPY --from=builder /app/app.jar .
+```
+
+**Tulemus:**
+- Image 70% väiksem (800MB → 250MB)
+- Kiirem deployment (vähem allalaadida)
+- Vähem kõvaketta kasutust
+
+#### 3️⃣ **Turvalisus - Non-root User + Health Checks**
+
+```dockerfile
+# Loo mitte-juurkasutaja
+RUN adduser -S spring -u 1001
+USER spring:spring
+
+# Tervisekontroll
+HEALTHCHECK --interval=30s \
+  CMD wget --spider http://localhost:8081/health || exit 1
+```
+
+**Tulemus:**
+- Rakendus ei tööta root'ina → vähem turvariski
+- Orkestreerijad (Docker Compose, Kubernetes) näevad konteineri tervist
+- Automaatne restart, kui konteiner ei vasta
+
+#### 4️⃣ **Portaabelsus - Corporate Proxy Tugi**
+
+```dockerfile
+# ARG-põhine proxy konfiguratsioon
+ARG HTTP_PROXY=""
+ENV HTTP_PROXY=${HTTP_PROXY}  # ← AINULT builder stage'is
+RUN npm install               # ← Kasutab proxy'd, kui määratud
+
+# Runtime stage
+FROM node:22-slim             # ← Proxy POLE siin (clean!)
+```
+
+**Tulemus:**
+- Sama Dockerfile töötab Intel võrgus JA AWS/GCP/Azure
+- Ei leki proxy info tootmisse
+- Production-ready
+
+#### 5️⃣ **CI/CD Kiirus - Reproducible Builds**
+
+```dockerfile
+# Deterministlik build
+RUN npm ci --only=production  # ← package-lock.json garanteerib sama tulemuse
+```
+
+**Tulemus:**
+- Sama image igal build'il (reproducible)
+- CI/CD pipeline kiirem (cache töötab)
+- Vähem ootamist deployment'il
 
 ---
 
-**Selles harjutuses OPTIMEERIME:**
-
-✅ **Multi-stage build** - sõltuvused cached eraldi kihina
-✅ **Non-root user** - turvalisem (nodejs:1001, spring:1001)
-✅ **Health check** - automaatne tervise kontroll
-✅ **Proxy tugi** - ARG-põhine, portaabel
-✅ **Kiiremad rebuildid** - 60-80% kiirem!
+**Selles harjutuses õpid:**
+- ✅ Multi-stage build Node.js ja Java rakendusele
+- ✅ Layer caching optimeerimine (sõltuvused eraldi kihis)
+- ✅ Non-root user turvaline seadistus
+- ✅ Health check lisamine
+- ✅ Proxy konfiguratsioon corporate keskkonnas
 
 ### Samm 2: Optimeeri mõlema rakenduse Dockerfaili
 
