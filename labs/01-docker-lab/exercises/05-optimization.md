@@ -307,50 +307,7 @@ docker images | grep -E 'user-service|todo-service'
 # todo-service     1.0-optimized   ~180MB (uus + proxy) 📉 -22%
 ```
 
-**ℹ️ Märkused proksi kohta:**
-- `--build-arg` määrab ARG väärtused build-time'il
-- Proxy on AINULT builder stage'is (npm/gradle download'id)
-- Runtime konteinerid on "clean" (proxy ei leki!)
-- Sama image töötab Intel võrgus JA väljaspool (portaabel)
-
-**✅ BuildKit hoiatused on lahendatud:**
-
-Dockerfile alguses on `# syntax=docker/dockerfile:1.4` - see **vähendab UndefinedVar hoiatusi**.
-
-**Kui ikka näed hoiatusi:**
-```
-UndefinedVar: Usage of undefined variable '$HTTP_PROXY'
-```
-
-**Miks?** BuildKit parsib `ENV HTTP_PROXY=${HTTP_PROXY}` ja hoiatab: "muutuja võib olla undefined". Tegelikult ARG vaikeväärtus on `""` (tühi string) - kõik on korras!
-
-**Lahendus:** Ignoreeri - build õnnestub ja proxy töötab!
-
-**ℹ️ Märkus User Service'i suuruse kohta:**
-User Service tõmmis jääb samaks (~305MB), sest mõlemad versioonid kasutavad `node:21-slim`.
-
-**Mida võitsime optimeeritud versiooniga:**
-✅ Mitmeastmeline ehitus (sõltuvused cached eraldi kihina)
-✅ Mitte-juurkasutaja (security parandus)
-✅ Tervisekontroll (automaatne)
-✅ -60% kiirem rebuild (sõltuvuste vahemälu)
-
 ### Samm 3: Testi MÕLEMAD optimeeritud tõmmised
-
-**ℹ️ Portide turvalisus:**
-
-Kasutame lihtsustatud portide vastendust (koos erinevate portidega, sest vanad on kasutusel).
-- ✅ **Host'i tulemüür kaitseb:** VPS-is on UFW tulemüür, mis blokeerib pordid internetist
-- 📚 **Tootmises oleks õige:** `-p 127.0.0.1:3001:3000` jne
-- 🎯 **Lab 7 käsitleb:** Võrguturvalisust põhjalikumalt
-
-**Portide valik:**
-- User Service: `3001:3000` (port 3001 host'is, sest 3000 on juba kasutusel vanast)
-- Todo Service: `8082:8081` (port 8082 host'is, sest 8081 on juba kasutusel vanast)
-
-**Hetkel keskendume optimeerimisele!**
-
----
 
 ```bash
 # Genereeri JWT_SECRET (kui pole veel)
