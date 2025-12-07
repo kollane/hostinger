@@ -250,11 +250,21 @@ CMD ["java", \
     "app.jar"]
 ```
 
+**📖 Põhjalik koodi selgitus:**
+
+Kui vajad koodi täpset rea-haaval selgitust (Gradle proxy parsing, GRADLE_OPTS, JDK→JRE multi-stage, JVM memory tuning), loe:
+- 👉 **[Koodiselgitus: Java Spring Boot Mitmeastmeline Dockerfile](../../../resource/code-explanations/Java-SpringBoot-Multi-Stage-Dockerfile-Explained.md)**
+
+---
+
 **ℹ️ Märkus proksi kohta:**
 - ARG väärtused on AINULT build-time'il (määratakse `--build-arg` kaudu)
 - ENV on AINULT builder stage'is (runtime on "clean" - proxy ei leki!)
 - **ERINEVUS npm'ist:** Gradle EI kasuta HTTP_PROXY otse, vajab GRADLE_OPTS parsing'ut
 - Täielik selgitus kommentaaridega: Vaata `Dockerfile.optimized.proxy` faili
+
+---
+
 ## Ülevaade sammude järjestusest
 
 Multi-stage build koosneb kahest põhietapist:
