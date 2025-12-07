@@ -102,6 +102,16 @@ CMD ["node", "server.js"]
 
 **📖 Dockerfile põhitõed:** Kui vajad abi Dockerfile instruktsioonide (FROM, WORKDIR, COPY, RUN, CMD, ARG, multi-stage) mõistmisega, loe [Peatükk 06: Dockerfile - Rakenduste Konteineriseerimise Detailid](../../../resource/06-Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md).
 
+**🔍 Lisaselgitus: ARG-põhine Proxy Best Practices**
+
+Kui soovid mõista, miks ettevõtetes (nt Intel võrk) on vaja proxy serverit ja kuidas ARG-põhine proxy konfiguratsioon töötab, loe:
+- 👉 **[Docker ARG-põhine Proxy Best Practices](../../../resource/code-explanations/Docker-ARG-Proxy-Best-Practices.md)**
+
+**See dokument selgitab:**
+- ❓ Mis on proxy server ja miks ettevõtted seda kasutavad?
+- 🔧 Kuidas ARG-põhine proxy töötab (build-time vs runtime)
+- ✅ Best practices (DO ja DON'T)
+- 🌐 Sama Dockerfile töötab Intel võrgus JA cloud keskkonnas (AWS/GCP/Azure)
 ---
 
 #### Dockerfile loomine Corporate Keskkond (PRIMAARNE) ⭐
@@ -165,17 +175,6 @@ CMD ["node", "server.js"]
 
 Kui vajad ülaloleva Dockerfile'i täpset rea-haaval selgitust (mida teevad ARG, ENV, mitmeastmeline build jne), loe:
 - 👉 **[Node.js Dockerfile Proxy Pattern](../../../resource/code-explanations/Node.js-Dockerfile-Proxy-Explained.md)**
-
-**🔍 Lisaselgitus: ARG-põhine Proxy Best Practices**
-
-Kui soovid mõista, miks ettevõtetes (nt Intel võrk) on vaja proxy serverit ja kuidas ARG-põhine proxy konfiguratsioon töötab, loe:
-- 👉 **[Docker ARG-põhine Proxy Best Practices](../../../resource/code-explanations/Docker-ARG-Proxy-Best-Practices.md)**
-
-**See dokument selgitab:**
-- ❓ Mis on proxy server ja miks ettevõtted seda kasutavad?
-- 🔧 Kuidas ARG-põhine proxy töötab (build-time vs runtime)
-- ✅ Best practices (DO ja DON'T)
-- 🌐 Sama Dockerfile töötab Intel võrgus JA cloud keskkonnas (AWS/GCP/Azure)
 
 ---
 
