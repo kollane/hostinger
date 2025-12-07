@@ -37,7 +37,7 @@ docker images | grep -E 'user-service|todo-service'
 **Mäletad Harjutus 1-st?** Lõime lihtsa Dockerfile'i, mis toimis. Aga nüüd õpime, kuidas teha seda **paremaks**!
 
 **Praegune Dockerfile (Harjutus 1) probleemid - MÕLEMAS teenuses:**
-- ❌ Liiga suur tõmmis (docker image) (~200-230MB)
+- ❌ Liiga suur tõmmis (docker image)
 - ❌ Ehitus on aeglane (rebuild iga source muudatuse korral)
 - ❌ Ei kasuta kihtide vahemälu efektiivselt
 - ❌ Töötab root'ina (turvarisk!)
@@ -50,34 +50,6 @@ docker images | grep -E 'user-service|todo-service'
 - ✅ Turvalisus (mitte-juurkasutajad: nodejs:1001, spring:1001)
 - ✅ Tervisekontrollid
 
----
-
-## 🎯 Õpieesmärgid
-
-- ✅ Implementeerida **mitmeastmelised ehitused (multi-stage builds)**
-- ✅ Optimeerida **kihtide vahemälu (layer caching)**
-- ✅ Parandada .dockerignore faile
-- ✅ Lisada **tervisekontrollid (health checks)**
-- ✅ Kasutada **mitte-juurkasutajaid (non-root users)**
-- ✅ Võrrelda Node.js vs Java optimeerimise tulemusi
-- ✅ Testida End-to-End töövoogu optimeeritud süsteemiga
-
----
-
-## 🖥️ Sinu Testimise Konfiguratsioon
-
-### SSH Ühendus VPS-iga
-```bash
-ssh labuser@93.127.213.242 -p [SINU-PORT]
-```
-
-| Õpilane | SSH Port | Password |
-|---------|----------|----------|
-| student1 | 2201 | student1 |
-| student2 | 2202 | student2 |
-| student3 | 2203 | student3 |
-
----
 
 ## 📝 Sammud
 
