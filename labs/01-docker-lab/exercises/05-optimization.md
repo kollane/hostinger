@@ -448,27 +448,13 @@ docker stats --no-stream --format "table {{.Name}}\t{{.MemUsage}}\t{{.CPUPerc}}"
 
 **📖 Põhjalik käsitlus:** [Peatükk 06B: Docker Image Security ja Vulnerability Scanning](../../../resource/06B-Docker-Image-Security-ja-Vulnerability-Scanning.md) selgitab:
 - CVE ja CVSS skoorid (mis on turvaaugud, kuidas neid hinnata)
-- Docker Scout ja Trivy kasutamine (installimise juhised, kõik käsud, raportid)
+- Trivy kasutamine (installimise juhised, kõik käsud, raportid)
 - Turvalisuse parimad praktikad (mitte-juurkasutajad, minimaalsed baastõmmised, tervisekontrollid, baastõmmise uuendamise strateegia)
 - CI/CD integratsioon (GitHub Actions, GitLab CI näited)
 
 **Siin on kiired käsud testimiseks:**
 
-#### Docker Scout (sisseehitatud, kiire)
-
-```bash
-# Skanni mõlemat optimeeritud tõmmist
-docker scout cves user-service:1.0-optimized
-docker scout cves todo-service:1.0-optimized
-
-# Võrdle vana vs uus
-docker scout compare user-service:1.0 --to user-service:1.0-optimized
-
-# Soovitused
-docker scout recommendations user-service:1.0-optimized
-```
-
-#### Trivy (põhjalikum, CI/CD jaoks)
+#### Trivy (vulnerability scanner)
 
 ```bash
 # Variant A: Lokaalne binaar (kui installitud)
