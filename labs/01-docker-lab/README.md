@@ -106,12 +106,12 @@ chmod +x setup.sh
 
 **Script pakub:**
 - 💡 Automaatset baastõmmiste (base images) ehitamist (`user-service:1.0`, `todo-service:1.0`)
-- 💡 Võimalust vahele jätta Harjutus 1 ja alustada otse Harjutus 2'st
+- 💡 Võimalust vahele jätta eelnevad harjutusest ja jätkata Harjutus 5'st
 
 **Kuidas kasutada:**
 
 ```bash
-./setup.sh
+lab1-setup
 
 # Kui küsitakse: "Kas soovid ehitada baastõmmiseid (base images) KOHE?"
 # Vali Y → Ehitab image'id automaatselt (~2-5 min), alusta Harjutus 2'st
@@ -196,52 +196,7 @@ Script küsib, kas kustutada ka Docker image'id:
 ```
 
 ---
-
-## ✅ Oodatavad Tulemused
-
-Peale labori läbimist pead omama:
-
-**Docker image'id:**
-- `user-service:1.0` (~200MB) + `user-service:1.0-optimized` (~50MB)
-- `todo-service:1.0` (~370MB) + `todo-service:1.0-optimized` (~180MB)
-
-**Töötavad konteinerid:** 4 konteinerit (2 teenust + 2 PostgreSQL)
-**Andmeköited:** 2 volume'it (postgres-user-data, postgres-todo-data)
-**Võrk:** 1 kohandatud bridge võrk (todo-network)
-
-**End-to-End JWT workflow töötab:**
-- User Service genereerib JWT token
-- Todo Service valideerib sama JWT tokeniga
-- Mikroteenuste suhtlus toimib
-
----
-
-## 🆘 Troubleshooting
-
-**Konteiner ei käivitu?**
-```bash
-docker logs <container-name>
-docker inspect <container-name>
-```
-
-**Port on juba kasutusel?**
-```bash
-sudo lsof -i :3000  # Vaata, mis kasutab porti
-docker run -p 3001:3000 ...  # Kasuta teist porti
-```
-
-**Image'i ehitus ebaõnnestub?**
-```bash
-docker build --no-cache -t test .  # Kontrolli syntax
-docker build -t test . 2>&1 | tee build.log  # Salvesta logid
-```
-
-**Proxy keskkonnas npm/gradle allalaadimine ebaõnnestub?**
-- Vaata `solutions/backend-nodejs/README-PROXY.md` (Node.js)
-- Vaata `solutions/backend-java-spring/README-PROXY.md` (Java/Gradle)
-
 **Detailsed lahendused:** Iga harjutuse failis on "Levinud Probleemid ja Lahendused" sektsioon.
-
 ---
 
 ## 📚 Viited
