@@ -94,8 +94,7 @@ Peale selle labori läbimist oskad:
 Käivita seadistusskript, mis kontrollib kõik eeldused:
 
 ```bash
-chmod +x setup.sh
-./setup.sh
+lab1-setup
 ```
 
 **Script kontrollib:**
@@ -107,17 +106,6 @@ chmod +x setup.sh
 **Script pakub:**
 - 💡 Automaatset baastõmmiste (base images) ehitamist (`user-service:1.0`, `todo-service:1.0`)
 - 💡 Võimalust vahele jätta eelnevad harjutusest ja jätkata Harjutus 5'st
-
-**Kuidas kasutada:**
-
-```bash
-lab1-setup
-
-# Kui küsitakse: "Kas soovid ehitada baastõmmiseid (base images) KOHE?"
-# Vali Y → Ehitab image'id automaatselt (~2-5 min), alusta Harjutus 2'st
-# Vali N → Alusta Harjutus 1'st (soovitatud õppimiseks)
-```
-
 ---
 
 ## 🔧 Eeldused
