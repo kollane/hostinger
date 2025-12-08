@@ -119,9 +119,6 @@ lab1-setup
 - [Peatükk 5: Docker Põhimõtted](../../resource/05-Docker-Pohimotted.md)
 - [Peatükk 6: Dockerfile Detailid](../../resource/06-Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md)
 - Bash/terminal põhikäsud
-
-**Docker paigaldus puudub?** → [Docker docs: Install Engine](https://docs.docker.com/engine/install/)
-
 ---
 
 ## 🌐 Proxy Tugi (Korporatiivne Võrk)
