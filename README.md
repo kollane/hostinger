@@ -83,10 +83,10 @@ See on **kahetasandiline õppeprogramm**, mis ühendab:
 
 | # | Peatükk | Staatus | Teemad |
 |---|---------|---------|--------|
-| 1 | **[DevOps Sissejuhatus](01-DevOps-Sissejuhatus.md)** | ✅ **Valmis** | DevOps filosoofia, CALMS, CI/CD, IaC, DevSecOps, SRE, Observability, DORA metrics |
-| 2 | [Linux Põhitõed DevOps Kontekstis](02-Linux-Pohitoed-DevOps-Kontekstis.md) | ⏳ Planeeritud | Bash käsud, õigused, kasutajad, protsessid, systemctl, package management |
-| 3 | [Git DevOps Töövoos](03-Git-DevOps-Toovoos.md) | ⏳ Planeeritud | Git alused, branching strategies, pull requests, versioning |
-| 4 | [Võrgutehnoloogia Alused](04-Vorgutehnoloogia-Alused.md) | ⏳ Planeeritud | IP, portid, DNS, load balancing, reverse proxy, firewall |
+| 1 | **[DevOps Sissejuhatus](resource/01-DevOps-Sissejuhatus.md)** | ✅ **Valmis** | DevOps filosoofia, CALMS, CI/CD, IaC, DevSecOps, SRE, Observability, DORA metrics |
+| 2 | [Linux Põhitõed DevOps Kontekstis](resource/02-Linux-Pohitoed-DevOps-Kontekstis.md) | ⏳ Planeeritud | Bash käsud, õigused, kasutajad, protsessid, systemctl, package management |
+| 3 | [Git DevOps Töövoos](resource/03-Git-DevOps-Toovoos.md) | ⏳ Planeeritud | Git alused, branching strategies, pull requests, versioning |
+| 4 | [Võrgutehnoloogia Alused](resource/04-Vorgutehnoloogia-Alused.md) | ⏳ Planeeritud | IP, portid, DNS, load balancing, reverse proxy, firewall |
 
 **FAAS 1 Progress:** 1 / 4 peatükki valmis (25%)
 
@@ -332,23 +332,24 @@ git --version            # Versioonikontroll
 ├── DEVOPS-KOOLITUSKAVA-PLAAN-2025.md           ← Master plan (detail)
 ├── TERMINOLOOGIA.md                             ← Eesti-inglise terminid
 │
-├── resource/
+├── resource/                                      ← KÕIK theory peatükid
+│   ├── 01-DevOps-Sissejuhatus.md                    ✅ VALMIS
+│   ├── 02-Linux-Pohitoed-DevOps-Kontekstis.md      ⏳
+│   ├── 03-Git-DevOps-Toovoos.md                     ⏳
+│   ├── 04-Vorgutehnoloogia-Alused.md                ⏳
 │   ├── 05-Docker-Pohimotted.md                      ✅ VALMIS
 │   ├── 06-Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md  ✅ VALMIS
 │   ├── 06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md  ✅ VALMIS
+│   ├── 07-Docker-Imagite-Haldamine-Optimeerimine.md  ⏳
+│   ├── 08-Docker-Compose.md                          ⏳
+│   ├── 08A-Docker-Compose-Production-Development-Seadistused.md  ✅ VALMIS
+│   ├── 08B-Nginx-Reverse-Proxy-Docker-Keskkonnas.md  ✅ VALMIS
+│   ├── 09-PostgreSQL-Konteinerites.md                ⏳
+│   ├── 10-Kubernetes-Sissejuhatus.md                 ⏳
+│   ├── ...
+│   ├── 30-Terraform-Infrastructure-as-Code.md        ⏳
 │   └── code-explanations/                          ← Koodiselgitused
 │       └── Node.js-Dockerfile-Proxy-Explained.md   ✅ VALMIS
-│
-├── 01-DevOps-Sissejuhatus-VPS-Setup.md         ⏳
-├── 02-Linux-Pohitoed-DevOps-Kontekstis.md      ⏳
-├── 03-Git-DevOps-Toovoos.md                     ⏳
-├── 04-Vorgutehnoloogia-Alused.md                ⏳
-├── 07-Docker-Imagite-Haldamine-Optimeerimine.md  ⏳
-├── 08-Docker-Compose.md                          ⏳
-├── 09-PostgreSQL-Konteinerites.md                ⏳
-├── 10-Kubernetes-Sissejuhatus.md                 ⏳
-├── ...
-├── 30-Terraform-Infrastructure-as-Code.md        ⏳
 │
 └── labs/
     ├── README.md                                 ← Laborite detailne ülevaade
