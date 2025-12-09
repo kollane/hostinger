@@ -73,20 +73,22 @@ See on **kahetasandiline õppeprogramm**, mis ühendab:
 
 ## 📖 Koolituskava Sisukord
 
-**Progressi ülevaade:** 5 / 31 peatükki valmis (16.1%)
+**Progressi ülevaade:** 6 / 31 peatükki valmis (19.4%)
 
 ```
-[█████░░░░░░░░░░░░░░░░░░░░░░░░░] 16.1%
+[█████░░░░░░░░░░░░░░░░░░░░░░░░░] 19.4%
 ```
 
 ### FAAS 1: Põhitõed ja Sissejuhatus (Peatükid 1-4)
 
 | # | Peatükk | Staatus | Teemad |
 |---|---------|---------|--------|
-| 1 | [DevOps Sissejuhatus ja VPS Setup](01-DevOps-Sissejuhatus-VPS-Setup.md) | ⏳ Planeeritud | DevOps põhimõisted, CI/CD, IaC, VPS setup, SSH, firewall |
+| 1 | **[DevOps Sissejuhatus](01-DevOps-Sissejuhatus.md)** | ✅ **Valmis** | DevOps filosoofia, CALMS, CI/CD, IaC, DevSecOps, SRE, Observability, DORA metrics |
 | 2 | [Linux Põhitõed DevOps Kontekstis](02-Linux-Pohitoed-DevOps-Kontekstis.md) | ⏳ Planeeritud | Bash käsud, õigused, kasutajad, protsessid, systemctl, package management |
 | 3 | [Git DevOps Töövoos](03-Git-DevOps-Toovoos.md) | ⏳ Planeeritud | Git alused, branching strategies, pull requests, versioning |
 | 4 | [Võrgutehnoloogia Alused](04-Vorgutehnoloogia-Alused.md) | ⏳ Planeeritud | IP, portid, DNS, load balancing, reverse proxy, firewall |
+
+**FAAS 1 Progress:** 1 / 4 peatükki valmis (25%)
 
 ---
 
