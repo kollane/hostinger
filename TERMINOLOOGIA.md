@@ -123,8 +123,53 @@ Teatud ingliskeelsed terminid jäävad tõlkimata, kuid neid kasutatakse jutumä
 
 ---
 
+## Koodiselgitused (Code Explanations)
+
+### KOODISELGITUS Pattern
+
+**Kasutamine:**
+Kui kasutan märksõna **KOODISELGITUS** ja viitan failile, siis:
+1. Fail paigutatakse `resource/code-explanations/` kataloogi
+2. Faili nimi valitakse automaatselt sobiva konventsiooni järgi (`Descriptive-Name-Explained.md`)
+3. Sisu on lühike, koodikeskne selgitus (MITTE täielik peatükk)
+4. Fail dokumenteeritakse koolituskavas (`DEVOPS-KOOLITUSKAVA-PLAAN-2025.md`)
+5. `README.md` sisukord uuendatakse
+
+**Eristus peatükkidest:**
+- **Peatükid (05, 06, 06A, ...):** Põhjalikud teoreetilised käsitlused, järgivad standardset struktuuri (Õpieesmärgid, Põhimõisted, Teooria, Best Practices)
+- **Koodiselgitused:** Lühikesed, konkreetse koodi seletused, AI-genereeritud stiil OK, ei järgi peatüki struktuuri
+
+**Nimetamise konventsioon:**
+- Format: `Technology-Topic-Explained.md`
+- Examples:
+  - `Node.js-Dockerfile-Proxy-Explained.md`
+  - `Java-Gradle-Dependency-Cache-Explained.md`
+  - `PostgreSQL-Init-Script-Explained.md`
+  - `Kubernetes-HPA-Manifest-Explained.md`
+- Ilma numbrita (ei ole osa põhipeatükkidest 1-30)
+
+**Minimaalne struktuur:**
+- Pealkiri (või selle puudumine - võib alustada kohe selgitusega)
+- Selgitus (code-focused, võib olla AI-genereeritud)
+- Jalus: Viimane uuendus, Tüüp: Koodiselgitus, Kasutatakse: [viited laboritele]
+
+**Viitamine labori harjutusest:**
+```markdown
+**📖 Põhjalik koodi selgitus:**
+
+Kui vajad koodi täpset rea-haaval selgitust, loe:
+- 👉 **[Koodiselgitus: Descriptive Title](../../../resource/code-explanations/File-Name-Explained.md)**
+```
+
+**Näide:**
+- Lab 1, Exercise 01a viitab: `resource/code-explanations/Node.js-Dockerfile-Proxy-Explained.md`
+- Selgitus on lühike (4 lehte), AI-genereeritud, koodikeskne
+- Sisaldab rea-haaval Dockerfile analüüsi ja portatiivsuse selgitust
+
+---
+
 ## Versioon
 
 - **Loodud:** 2025-01-20
-- **Viimati uuendatud:** 2025-11-28 (Terminite täpsustamine ja laiendamine)
+- **Viimati uuendatud:** 2025-01-25 (Koodiselgituste (KOODISELGITUS) pattern lisatud)
 - **Kehtib:** Kõik laborid ja õppematerjalid

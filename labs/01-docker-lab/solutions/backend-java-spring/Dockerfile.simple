@@ -1,0 +1,58 @@
+# Lihtne 2-Stage Dockerfile Todo Teenuse (Service) jaoks (Harjutus 1 - Proxy Variant)
+# See on PRIMAARNE lahendus corporate proxy keskkonnas
+
+# ====================================
+# 1. etapp: Builder (JAR'i ehitamine)
+# ====================================
+FROM gradle:8.11-jdk21-alpine AS builder
+
+# ARG võimaldab anda proxy build-time'is (portaabel!)
+ARG HTTP_PROXY
+ARG HTTPS_PROXY
+
+WORKDIR /app
+
+# Kopeeri Gradle konfiguratsiooni failid
+COPY build.gradle settings.gradle ./
+COPY gradle ./gradle
+
+# Lae alla sõltuvused (cached kui build.gradle ei muutu)
+# OLULINE: export GRADLE_OPTS ja gradle käsk peavad olema SAMAS RUN blokis!
+RUN if [ -n "$HTTP_PROXY" ]; then \
+      PROXY_HOST=$(echo "$HTTP_PROXY" | sed 's|^.*://||; s|:.*$||'); \
+      PROXY_PORT=$(echo "$HTTP_PROXY" | grep -oE '[0-9]+$'); \
+      export GRADLE_OPTS="-Dhttp.proxyHost=$PROXY_HOST -Dhttp.proxyPort=$PROXY_PORT -Dhttps.proxyHost=$PROXY_HOST -Dhttps.proxyPort=$PROXY_PORT"; \
+      gradle dependencies --no-daemon; \
+    else \
+      gradle dependencies --no-daemon; \
+    fi
+
+# Kopeeri lähtekood (source code)
+COPY src ./src
+
+# Ehita JAR fail
+# OLULINE: Proxy seadistus tuleb korrata iga RUN käsu jaoks!
+RUN if [ -n "$HTTP_PROXY" ]; then \
+      PROXY_HOST=$(echo "$HTTP_PROXY" | sed 's|^.*://||; s|:.*$||'); \
+      PROXY_PORT=$(echo "$HTTP_PROXY" | grep -oE '[0-9]+$'); \
+      export GRADLE_OPTS="-Dhttp.proxyHost=$PROXY_HOST -Dhttp.proxyPort=$PROXY_PORT -Dhttps.proxyHost=$PROXY_HOST -Dhttps.proxyPort=$PROXY_PORT"; \
+      gradle bootJar --no-daemon; \
+    else \
+      gradle bootJar --no-daemon; \
+    fi
+
+# ====================================
+# 2. etapp: Runtime (clean JRE, ilma proksita)
+# ====================================
+FROM eclipse-temurin:21-jre-alpine AS runtime
+
+WORKDIR /app
+
+# Kopeeri ainult JAR builder'ist
+COPY --from=builder /app/build/libs/todo-service.jar app.jar
+
+# Avalda port
+EXPOSE 8081
+
+# Käivita rakendus
+CMD ["java", "-jar", "app.jar"]

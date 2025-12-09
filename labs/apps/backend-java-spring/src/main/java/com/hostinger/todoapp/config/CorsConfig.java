@@ -26,6 +26,7 @@ public class CorsConfig {
 		// Allowed origins
 		config.setAllowedOrigins(Arrays.asList(
 				"http://localhost:8080",           // Local frontend
+				"http://172.22.222.222:8080",      // LAN IP frontend
 				"http://93.127.213.242:8080",      // VPS IP (student1)
 				"http://93.127.213.242:8180",      // VPS IP (student2)
 				"http://93.127.213.242:8280"       // VPS IP (student3)

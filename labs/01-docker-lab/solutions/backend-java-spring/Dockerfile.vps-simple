@@ -1,0 +1,16 @@
+# Lihtne 1-Stage Dockerfile (ainult VPS testimiseks!)
+# ⚠️ See on NÄIDIS - praktikas kasuta Dockerfile.simple (2-stage Gradle containeris)
+# ⚠️ Eeldab, et JAR on juba ehitatud host'is: ./gradlew clean bootJar
+
+FROM eclipse-temurin:21-jre-alpine
+
+WORKDIR /app
+
+# Kopeeri JAR fail (eeldab pre-built JAR'i host'is!)
+COPY build/libs/todo-service.jar app.jar
+
+# Avalda port
+EXPOSE 8081
+
+# Käivita
+CMD ["java", "-jar", "app.jar"]

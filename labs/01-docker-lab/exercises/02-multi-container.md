@@ -7,46 +7,27 @@
 ---
 
 ## 📋 Harjutuse ülevaade
-
-**Mäletad Harjutus 1-st?**
-- User Service hangus (puudus PostgreSQL)
-- Todo Service hangus (puudus PostgreSQL)
-- JWT "token" ei töötanud (teenused ei suhelnud)
-
 **Harjutus 2 lahendab:**
 - ✅ Käivitame KAKS PostgreSQL konteinerit (üks User Service'ile, teine Todo Service'ile)
 - ✅ User Service genereerib JWT "token"-eid
 - ✅ Todo Service valideerib JWT "token"-eid
 - ✅ Saame TÖÖTAVA mikroteenuste süsteemi!
 
----
+## 📊 Võrdlus: Harjutus 1 vs Harjutus 2
 
-## 🎯 Õpieesmärgid
+| Aspekt | Harjutus 1 | Harjutus 2 |
+|--------|-----------|-----------|
+| **Konteinerid** | 1 (hangub) | 4 (töötavad) |
+| **PostgreSQL** | ❌ Puudub | ✅ 2 DB konteinerit |
+| **Võrgundus** | ❌ Puudub | ✅ --link |
+| **JWT autentimine** | ❌ Ei tööta | ✅ Täielik voog |
+| **Staatus** | ❌ Hangub | ✅ Töötab |
+| **Õpitav** | Dockeri põhitõed | Mikroteenused |
+| **User Service** | ❌ Hangub | ✅ Genereerib JWT |
+| **Todo Service** | ❌ Hangub | ✅ Valideerib JWT |
+| **API testid** | ❌ Ei tööta | ✅ Töötavad |
 
-Peale selle harjutuse läbimist oskad:
 
-- ✅ Käivitada mitut **konteinerit** koos
-- ✅ Mõista **mikroteenuste (microservices)** arhitektuuri
-- ✅ Õppida JWT-põhist autentimist **teenuste (services)** vahel
-- ✅ Kasutada Docker staatilist linkimist --link
-- ✅ Teostada **veatuvastust (debug)** mitme konteineri süsteemis
-
----
-
-## 🖥️ Sinu Testimise Konfiguratsioon
-
-### SSH Ühendus VPS-iga
-```bash
-ssh labuser@93.127.213.242 -p [SINU-PORT]
-```
-
-| Õpilane | SSH Port | Password |
-|---------|----------|----------|
-| student1 | 2201 | student1 |
-| student2 | 2202 | student2 |
-| student3 | 2203 | student3 |
-
----
 
 ## 🏗️ Arhitektuur
 
@@ -67,14 +48,19 @@ User (browser/cURL)
 
 **Tähtis:** Mõlemad teenused kasutavad SAMA `JWT_SECRET` väärtust!
 
----
+**📖 Täielik JWT ja JWT_SECRET selgitus:** [User Service README](../../apps/backend-nodejs/README.md) selgitab:
+- Mis on JWT "token" (digitaalne visiitkaart)
+- Miks kõik teenused peavad kasutama SAMA JWT_SECRET võtit
+- Kuidas JWT töötab mikroteenuste arhitektuuris
+
+
 
 ## 📝 Sammud
 
 **ℹ️ Portide turvalisus:**
 
 Selles harjutuses kasutame lihtsustatud portide vastendust (`-p 3000:3000`).
-- ✅ **Host'i tulemüür kaitseb:** VPS-is on UFW tulemüür, mis blokeerib pordid internetist
+- ✅ **Antud laborite tehes turvatud sisevõrk kaitseb**
 - 📚 **Tootmises oleks õige:** PostgreSQL ILMA `-p` (ainult sisevõrgus), rakendused `-p 127.0.0.1:...:...`
 - 🎯 **Lab 2 ja Lab 7 käsitlevad:** Võrguturvalisust põhjalikumalt
 
@@ -381,21 +367,11 @@ TOKEN=$(curl -s -X POST http://localhost:3000/api/auth/login \
   | jq -r '.token')
 
 echo "JWT Token: $TOKEN"
+
+# Märka "pipe"-imist jq-le. JQ on kergekaaluline ja paindlik käsurea JSON-protsessor, mida kasutatakse JSON andmete lõikamiseks, filtreerimiseks, kaardistamiseks ja teisendamiseks sarnaselt sed, awk või grep tööriistadega tekstiga.
+
 ```
 
-**Kui `jq` ei ole installitud:**
-```bash
-# Ubuntu/Debian
-sudo apt install -y jq
-
-# Või salvesta manuaalselt
-curl -X POST http://localhost:3000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"test123"}'
-
-# Kopeeri "token" väärtus ja salvesta:
-TOKEN="eyJhbGci..."
-```
 
 **Dekodeeri token (vaata, mida sisaldab):**
 
@@ -721,59 +697,9 @@ docker run -p 3001:3000 ...  # Kasuta host porti 3001
 - **Konteineri DNS** - `--link` loob DNS aliase → Kasuta `--link` või konteineri IP-d
 - **Skeemi valideerimise vead** - Andmebaasi veergude tüübid peavad vastama JPA Entity tüüpidele
 
-### Järgmine samm:
-
-Harjutus 3 õpetab **korralikku võrgundust** Docker võrkude (networks) kasutades (mitte aegunud `--link`)!
-
----
-
-## 📊 Võrdlus: Harjutus 1 vs Harjutus 2
-
-| Aspekt | Harjutus 1 | Harjutus 2 |
-|--------|-----------|-----------|
-| **Konteinerid** | 1 (hangub) | 4 (töötavad) |
-| **PostgreSQL** | ❌ Puudub | ✅ 2 DB konteinerit |
-| **Võrgundus** | ❌ Puudub | ✅ --link |
-| **JWT autentimine** | ❌ Ei tööta | ✅ Täielik voog |
-| **Staatus** | ❌ Hangub | ✅ Töötab |
-| **Õpitav** | Dockeri põhitõed | Mikroteenused |
-| **User Service** | ❌ Hangub | ✅ Genereerib JWT |
-| **Todo Service** | ❌ Hangub | ✅ Valideerib JWT |
-| **API testid** | ❌ Ei tööta | ✅ Töötavad |
-
----
-
-## 💡 Parimad Praktikad (Best Practices)
-
-### Mikroteenuste arhitektuur:
-
-1. **Andmebaas teenuse kohta** - Iga teenus oma andmebaasiga
-2. **Tsentraliseeritud autentimine** - Üks teenus genereerib JWT "token"-eid (User Service)
-3. **Jagatud saladuse haldus** - Kõik teenused usaldavad sama JWT_SECRET'i
-4. **"Token"-i aegumine** - "Token"-id aeguvad (turvalisuse jaoks)
-5. **Tervisekontrollid** - Iga teenus pakub /health lõpp-punkti
-
-### Docker mitme konteineriga:
-
-1. **Kasuta --link'i säästlikult** - `--link` on aegunud, kasuta Harjutus 3-s kohandatud võrke
-2. **Keskkonnamuutujad** - Konfiguratsioon läbi keskkonnamuutujate, mitte kõvakodeeritud
-3. **Pordivastendus** - Kasuta erinevaid host porte konflikti vältimiseks
-4. **Konteinerite nimed** - Anna konteineritele selged nimed (user-service, postgres-user)
-5. **Logimine** - Kasuta `docker logs` veatuvastuseks
-
-### JWT Autentimine:
-
-1. **Turvalised saladused** - Genereeri JWT_SECRET `openssl rand -base64 32`
-2. **"Token"-i aegumine** - Määra mõistlik aegumisaeg (24h arenduskeskkonnas, 1h toote keskkonnas)
-3. **Valideeri "token"-eid** - Kontrolli alati "token"-i signatuuri
-4. **Kaasa kasutaja info** - "Token" peaks sisaldama userId, email, role
-5. **Bearer autentimine** - Kasuta standardset `Authorization: Bearer <token>` päist
-
----
-
 ## 🔗 Järgmine Samm
 
-Järgmises harjutuses õpid **korralikku võrgundust** Docker võrkude kasutades!
+Järgmises harjutuses õpid **korralikku võrgundust** Docker võrke kasutades!
 
 **Miks kohandatud võrgud on paremad kui --link?**
 - ✅ Pole aegunud (deprecated)
@@ -784,7 +710,7 @@ Järgmises harjutuses õpid **korralikku võrgundust** Docker võrkude kasutades
 
 **Jätka:** [Harjutus 3: Docker võrgundus (Networking)](03-networking.md) - õpi kohandatud võrke!
 
----
+
 
 ## 📚 Viited
 
@@ -799,14 +725,3 @@ Järgmises harjutuses õpid **korralikku võrgundust** Docker võrkude kasutades
 
 **Õnnitleme! Oled ehitanud oma esimese mikroteenuste süsteemi! 🎉**
 
-**Mida saavutasid:**
-- ✅ 4 konteinerit töötavad koos
-- ✅ 2 mikroteenust suhtlevad JWT kaudu
-- ✅ 2 andmebaasi haldavad eraldi andmeid
-- ✅ Täielik autentimise ja autoriseerimise voog
-- ✅ Mõistad mikroteenuste arhitektuuri põhimõtteid
-
-**Järgmises harjutuses:**
-- Õpid kohandatud Docker võrke
-- Loobud aegunud --link'ist
-- Ehitad parema võrgunduse lahenduse

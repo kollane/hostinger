@@ -309,14 +309,63 @@ else
         echo -e "${YELLOW}📦 Ehitan baaspilte (base images)...${NC}"
         echo ""
 
+        # Seadista vaikimisi proxy (kui ei ole juba seadistatud)
+        # MÄRKUS: See on näidis-proxy corporate keskkonnas
+        # Kui sul pole proxy't vaja, seadista: export HTTP_PROXY="" enne setup.sh käivitamist
+        if [ -z "$HTTP_PROXY" ]; then
+            HTTP_PROXY="http://proxy.example.com:8080"
+        fi
+        if [ -z "$HTTPS_PROXY" ]; then
+            HTTPS_PROXY="http://proxy.example.com:8080"
+        fi
+
+        echo -e "${GREEN}✓ Proxy seadistused build'i jaoks:${NC}"
+        echo "   HTTP_PROXY=$HTTP_PROXY"
+        echo "   HTTPS_PROXY=$HTTPS_PROXY"
+        echo ""
+
+        # Kontrolli proxy ühenduvust (kui proxy on seadistatud)
+        if [ -n "$HTTP_PROXY" ]; then
+            echo "🔍 Kontrollin proxy ühenduvust..."
+            if curl -x "$HTTP_PROXY" -s --max-time 5 -I https://registry.npmjs.org > /dev/null 2>&1; then
+                echo -e "${GREEN}✓ Proxy töötab (npm registry on kättesaadav)${NC}"
+            else
+                warn "Proxy ei tööta! npm registry ei ole kättesaadav läbi $HTTP_PROXY"
+                echo ""
+                echo "Kas soovid jätkata ilma proxy'ta?"
+                echo "  [Y] Jah, proovi ilma proxy'ta (HTTP_PROXY ja HTTPS_PROXY tühjendatakse)"
+                echo "  [N] Ei, katkesta (saad proxy'd ise seadistada)"
+                echo ""
+                read -p "Vali [y/N]: " -n 1 -r CONTINUE_WITHOUT_PROXY
+                echo ""
+                echo ""
+
+                if [[ $CONTINUE_WITHOUT_PROXY =~ ^[Yy]$ ]]; then
+                    HTTP_PROXY=""
+                    HTTPS_PROXY=""
+                    echo -e "${GREEN}✓ Jätkan ilma proxy'ta${NC}"
+                else
+                    echo -e "${RED}❌ Seadista proxy käsitsi:${NC}"
+                    echo "   export HTTP_PROXY=\"http://sinu-proxy:port\""
+                    echo "   export HTTPS_PROXY=\"http://sinu-proxy:port\""
+                    echo "   ./setup.sh"
+                    exit 1
+                fi
+            fi
+            echo ""
+        fi
+
         # Ehita (build) User Teenuse (Service) pilt (image)
         echo "1/2: Ehitan user-service:1.0..."
-        if [ -f "solutions/backend-nodejs/Dockerfile" ]; then
+        if [ -f "solutions/backend-nodejs/Dockerfile.simple" ]; then
             cd ../apps/backend-nodejs
-            cp ../../01-docker-lab/solutions/backend-nodejs/Dockerfile .
+            cp ../../01-docker-lab/solutions/backend-nodejs/Dockerfile.simple ./Dockerfile
             cp ../../01-docker-lab/solutions/backend-nodejs/.dockerignore .
 
-            if docker build -t user-service:1.0 . > "$LOGDIR/user-service-build.log" 2>&1; then
+            # Koosta build käsk koos proxy argumentidega
+            BUILD_CMD="docker build -t user-service:1.0 --build-arg HTTP_PROXY=$HTTP_PROXY --build-arg HTTPS_PROXY=$HTTPS_PROXY ."
+
+            if eval "$BUILD_CMD" > "$LOGDIR/user-service-build.log" 2>&1; then
                 echo -e "${GREEN}   ✓ user-service:1.0 ehitatud edukalt!${NC}"
             else
                 echo -e "${RED}   ✗ user-service:1.0 ehitamine (build) ebaõnnestus${NC}"
@@ -327,39 +376,32 @@ else
             rm -f Dockerfile .dockerignore
             cd ../../01-docker-lab
         else
-            echo -e "${RED}   ✗ Dockerfile lahendust ei leitud${NC}"
+            echo -e "${RED}   ✗ Dockerfile.simple lahendust ei leitud${NC}"
         fi
         echo ""
 
         # Ehita (build) Todo Teenuse (Service) pilt (image)
         echo "2/2: Ehitan todo-service:1.0..."
-        if [ -f "solutions/backend-java-spring/Dockerfile" ]; then
+        if [ -f "solutions/backend-java-spring/Dockerfile.simple" ]; then
             cd ../apps/backend-java-spring
-            cp ../../01-docker-lab/solutions/backend-java-spring/Dockerfile .
+            cp ../../01-docker-lab/solutions/backend-java-spring/Dockerfile.simple ./Dockerfile
             cp ../../01-docker-lab/solutions/backend-java-spring/.dockerignore .
 
-            # Esmalt ehita (build) JAR fail
-            echo "   Building JAR file..."
-            if ./gradlew clean bootJar > "$LOGDIR/todo-gradle-build.log" 2>&1; then
-                echo -e "${GREEN}   ✓ JAR file ehitatud${NC}"
+            # Koosta build käsk koos proxy argumentidega
+            BUILD_CMD="docker build -t todo-service:1.0 --build-arg HTTP_PROXY=$HTTP_PROXY --build-arg HTTPS_PROXY=$HTTPS_PROXY ."
 
-                if docker build -t todo-service:1.0 . > "$LOGDIR/todo-service-build.log" 2>&1; then
-                    echo -e "${GREEN}   ✓ todo-service:1.0 ehitatud edukalt!${NC}"
-                else
-                    echo -e "${RED}   ✗ todo-service:1.0 ehitamine (build) ebaõnnestus${NC}"
-                    echo "   Logi: cat $LOGDIR/todo-service-build.log"
-                    CLEANUP_LOGS=false
-                fi
+            if eval "$BUILD_CMD" > "$LOGDIR/todo-service-build.log" 2>&1; then
+                echo -e "${GREEN}   ✓ todo-service:1.0 ehitatud edukalt!${NC}"
             else
-                echo -e "${RED}   ✗ JAR ehitamine (build) ebaõnnestus${NC}"
-                echo "   Logi: cat $LOGDIR/todo-gradle-build.log"
+                echo -e "${RED}   ✗ todo-service:1.0 ehitamine (build) ebaõnnestus${NC}"
+                echo "   Logi: cat $LOGDIR/todo-service-build.log"
                 CLEANUP_LOGS=false
             fi
 
             rm -f Dockerfile .dockerignore
             cd ../../01-docker-lab
         else
-            echo -e "${RED}   ✗ Dockerfile lahendust ei leitud${NC}"
+            echo -e "${RED}   ✗ Dockerfile.simple lahendust ei leitud${NC}"
         fi
         echo ""
 

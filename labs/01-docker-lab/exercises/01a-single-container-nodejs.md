@@ -1,5 +1,23 @@
 # Harjutus 1: Üksiku konteineri loomine (User Service)
 
+**🏗️ Arhitektuurne Lähenemine:**
+
+Selles harjutuses õpid looma **OCI-standardset** (Open Container Initiative) Docker tõmmist, mis sobib kasutamiseks nii Docker'iga kui ka **Kubernetes orkestratsioonisüsteemidega**.
+
+✅ **OCI Standard & Kubernetes Compatible:**
+- Multi-stage build (väiksem runtime image)
+- `CMD` JSON array formaat (Kubernetes nõue)
+- `EXPOSE` dokumenteerib porte (Service discovery)
+- Clean runtime (ei leki build-time saladusi)
+- Portaabel (töötab Docker, Kubernetes, Podman jne)
+
+📝 **Märkus turvalisuse kohta:** See harjutus keskendub Docker põhitõdedele. **Täielikult OCI-standardne** ja **production-ready** lahendus (sh non-root USER, HEALTHCHECK) tuleb **[Harjutus 5: Tõmmise Optimeerimine](05-optimization.md)**, kus lisame Kubernetes Pod Security Standards'ile vastava turvalisuse.
+
+---
+## 📋 Harjutuse ülevaade
+
+**Harjutuse eesmärk:** Node.js kasutajahalduse rakenduse (User Service) konteineriseerimine ja Dockerfile'i loomine
+
 **User Service'i rakenduse lühitutvustus:**
 - 🔐 Registreerib uusi kasutajaid
 - 🎫 Loob JWT "token"-eid (digitaalsed tõendid)
@@ -7,11 +25,6 @@
 - 💾 Salvestab kasutajate andmed PostgreSQL andmebaasi
   
 **📖 Rakenduse funktsionaalsuse kohta lähemalt siit:** [User Service README](../../apps/backend-nodejs/README.md)
-
----
-## 📋 Harjutuse ülevaade
-
-**Harjutuse eesmärk:** Node.js kasutajahalduse rakenduse (User Service) konteineriseerimine ja Dockerfile'i loomine
 
 **Harjutuse Fookus:** See harjutus keskendub Docker põhitõdede õppimisele, MITTE töötavale rakendusele!
 
@@ -29,42 +42,6 @@
 
 ---
 
-## 🖥️ Sinu Testimise Konfiguratsioon
-
-### SSH Ühendus VPS-iga
-```bash
-ssh labuser@93.127.213.242 -p [SINU-PORT]
-```
-
-| Õpilane | SSH Port | Password |
-|---------|----------|----------|
-| student1 | 2201 | student1 |
-| student2 | 2202 | student2 |
-| student3 | 2203 | student3 |
-
----
-
-## 🏗️ Arhitektuur
-
-```
-┌─────────────────────────────┐
-│   Docker Konteiner          │
-│                             │
-│  ┌───────────────────────┐  │
-│  │  Node.js Rakendus     │  │
-│  │  User Service         │  │
-│  │  Port: 3000           │  │
-│  └───────────────────────┘  │
-│                             │
-└─────────────────────────────┘
-          │
-          │ Portide vastendamine
-          │ (Port mapping)
-    localhost:3000
-```
-
----
-
 ## 📝 Sammud
 
 ### Samm 1: Tutvu rakenduse koodiga
@@ -75,13 +52,16 @@ Vaata "User Service" koodi:
 
 ```bash
 cd ~/labs/apps/backend-nodejs
-
+```
+```bash
 # Vaata faile
 ls -la
-
+```
+```bash
 # Loe README
 cat README.md
-
+```
+```bash
 # Vaata server.js
 head -50 server.js
 ```
@@ -91,41 +71,56 @@ head -50 server.js
 - Millised sõltuvused (dependencies) on vajalikud? (vaata package.json)
 - Kas rakendus vajab andmebaasi? (Jah, PostgreSQL)
 
-### Samm 2: Loo Dockerfile
+### Samm 2: Dockerfile loomine
 
-Loo fail nimega `Dockerfile`:
+---
 
-**⚠️ Oluline:** Dockerfail tuleb luua rakenduse juurkataloogi `~/labs/apps/backend-nodejs`. 
+- **📖 Dockerfile põhitõed:** Kui vajad abi Dockerfile instruktsioonide (FROM, WORKDIR, COPY, RUN, CMD, ARG, multi-stage) mõistmisega, loe [Peatükk 06: Dockerfile - Rakenduste Konteineriseerimise Detailid](../../../resource/06-Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md).
+- **📖 ARG-põhine Proxy Best Practices** Kui soovid mõista, miks ettevõtetes (nt Intel võrk) on vaja proxy serverit ja kuidas ARG-põhine proxy konfiguratsioon töötab, loe: [Docker ARG-põhine Proxy Best Practices](../../../resource/code-explanations/Docker-ARG-Proxy-Best-Practices.md).
 
+---
+
+**⚠️ Oluline:** Dockerfail tuleb luua rakenduse juurkataloogi `~/labs/apps/backend-nodejs`.
+```bash
+cd ~/labs/apps/backend-nodejs
+```
+
+**Kasutame laboris** 2-stage ehitus ARG proksiga:
 ```bash
 vim Dockerfile
 ```
 
-**📖 Dockerfile põhitõed:** Kui vajad abi Dockerfile instruktsioonide (FROM, WORKDIR, COPY, RUN, CMD) mõistmisega, loe [Peatükk 06: Dockerfile - Rakenduste Konteineriseerimise Detailid](../../../resource/06-Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md).
-
-**Ülesanne:** Kirjuta Dockerfile, mis:
-1. Kasutab Node.js 22 slim baastõmmist (base image)
-2. Seadistab töökataloogiks `/app`
-3. Kopeerib `package*.json` failid
-4. Installib sõltuvused
-5. Kopeerib rakenduse koodi
-6. Avaldab pordi 3000
-7. Käivitab rakenduse
-
-**Vihje:** Vaata Docker dokumentatsiooni või solutions/ kausta!
-
-**Näidis:**
-
 ```dockerfile
-FROM node:22-slim
+# ====================================
+# 1. etapp: Builder (sõltuvuste installimine)
+# ====================================
+FROM node:22-slim AS builder
+
+# ARG võimaldab anda proxy build-time'is (portaabel!)
+ARG HTTP_PROXY
+ARG HTTPS_PROXY
+
+# ENV ainult builder etapis (ei leki runtime'i!)
+ENV HTTP_PROXY=${HTTP_PROXY} \
+    HTTPS_PROXY=${HTTPS_PROXY}
 
 WORKDIR /app
 
 # Kopeeri sõltuvuste failid
 COPY package*.json ./
 
-# Paigalda sõltuvused
+# Installi sõltuvused (kasutab proxy't, kui antud)
 RUN npm install --production
+
+# ====================================
+# 2. etapp: Runtime (clean, ilma proksita)
+# ====================================
+FROM node:22-slim AS runtime
+
+WORKDIR /app
+
+# Kopeeri node_modules builder'ist
+COPY --from=builder /app/node_modules ./node_modules
 
 # Kopeeri rakenduse kood
 COPY . .
@@ -133,15 +128,25 @@ COPY . .
 # Avalda port
 EXPOSE 3000
 
-# Käivita
+# Keskkond
+ENV NODE_ENV=production
+
+# Käivita rakendus
 CMD ["node", "server.js"]
 ```
+
+**📖 Põhjalik koodi selgitus:**
+
+Kui vajad ülaloleva Dockerfile'i täpset rea-haaval selgitust (mida teevad ARG, ENV, mitmeastmeline build jne), loe:
+- 👉 **[Node.js Dockerfile Proxy Pattern](../../../resource/code-explanations/Node.js-Dockerfile-Proxy-Explained.md)**
+
+---
 
 ### Samm 3: Loo .dockerignore
 
 Loo `.dockerignore` fail, et vältida tarbetute failide kopeerimist:
 
-**⚠️ Oluline:** .dockerignore tuleb luua rakenduse juurkataloogi `~/labs/apps/backend-nodejs`. 
+**⚠️ Oluline:** .dockerignore tuleb luua rakenduse juurkataloogi `~/labs/apps/backend-nodejs`.
 
 ```bash
 vim .dockerignore
@@ -158,6 +163,10 @@ README.md
 *.md
 ```
 
+**📖 Põhjalik selgitus:** [.dockerignore Selgitus](../../../resource/code-explanations/Dockerignore-Explained.md)
+
+---
+
 **Miks see oluline on?**
 - Väiksem tõmmise suurus
 - Kiirem ehitamine
@@ -165,18 +174,36 @@ README.md
 
 ### Samm 4: Ehita Docker tõmmis
 
-**Asukoht:** `~/labs/apps/backend-nodejs`
-
-Ehita oma esimene Docker tõmmis:
 
 **⚠️ Oluline:** Docker tõmmise ehitamiseks pead olema rakenduse juurkataloogis (kus asub `Dockerfile`).
 
 ```bash
-# Ehita tõmmis sildiga (tag)
-docker build -t user-service:1.0 .
+cd ~/labs/apps/backend-nodejs
+```
+
+**Ehita proksiga (corporate võrk):**
+```bash
+# Asenda oma proxy aadress!
+docker build \
+  --build-arg HTTP_PROXY=http://cache1.sss:3128 \
+  --build-arg HTTPS_PROXY=http://cache1.sss:3128 \
+  -t user-service:1.0 .
 
 # Vaata ehitamise protsessi
 # Märka: iga RUN käsk loob uue kihi (layer)
+```
+
+**Ehita ilma proksita (avalik võrk):**
+```bash
+docker build -t user-service:1.0 .
+# ARG-id jäävad tühjaks, npm install töötab avalikus võrgus
+```
+
+**Kontrolli: Kas proxy leak'ib runtime'i?**
+```bash
+docker run --rm user-service:1.0 env | grep -i proxy
+# Oodatud: TÜHI VÄLJUND! ✅
+# Proxy EI OLE runtime'is = clean, turvaline, portaabel!
 ```
 
 **Kontrolli tõmmist:**
@@ -199,12 +226,10 @@ docker images user-service:1.0
 
 ### Samm 5: Käivita Konteiner
 
-⚠️ OLULINE: Järgnevad käsud käivitavad konteineri, aga rakendus hangub, sest PostgreSQL puudub. See on OODATUD käitumine! Hetkel on fookus on õppida Docker käske, mitte saada töötav rakendus.
-
 **ℹ️ Portide turvalisus:**
 
 Selles harjutuses kasutame lihtsustatud portide vastendust (`-p 3000:3000`).
-- ✅ **Host'i tulemüür kaitseb:** VPS-is on UFW tulemüür, mis blokeerib pordi 3000 internetist
+- ✅ **Etteveõtte sisevõrk kaitseb**
 - 📚 **Tootmises oleks õige:** `-p 127.0.0.1:3000:3000` (avab pordi ainult localhost'il)
 - 🎯 **Lab 2 käsitleb:** Võrguturvalisust ja reverse proxy seadistust
 
@@ -338,7 +363,17 @@ docker stats user-service
 4. **`COPY package.json` enne koodi** - Parem kihtide vahemälu (layer cache) kasutamine
 5. **Kasuta `EXPOSE`** - Dokumenteeri, millist porti rakendus kasutab
 
-**📖 Node.js konteineriseerimise parimad tavad:**Põhjalikum käsitlus `npm ci`, Alpine images, bcrypt native moodulid, ja teised Node.js spetsiifilised teemad leiad [Peatükk 06A: Java Spring Boot ja Node.js Konteineriseerimise Spetsiifika](../../../resource/06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md).
+**📖 Node.js konteineriseerimise parimad tavad:** [Peatükk 06A: Java Spring Boot ja Node.js Konteineriseerimise Spetsiifika](../../../resource/06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md).
+
+---
+
+**💡 Näidislahendused:**
+
+Lahendused asuvad `solutions/backend-nodejs/` kaustas:
+- [`Dockerfile.simple`](../solutions/backend-nodejs/Dockerfile.simple) - 2-stage ARG proksiga (PRIMAARNE)
+- [`Dockerfile.vps-simple`](../solutions/backend-nodejs/Dockerfile.vps-simple) - 1-stage VPS (avalik võrk)
+
+📂 Kõik lahendused: [`solutions/backend-nodejs/`](../solutions/backend-nodejs/)
 
 ---
 

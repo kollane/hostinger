@@ -187,6 +187,176 @@ Peale selle labori läbimist oskad:
 - [x] YAML failivorming
 - [x] Keskkonnamuutujad
 
+### 🔧 Märkus Proxy Keskkonna Kohta
+
+Docker Compose keskendub orkestreerimisele, mitte image ehitamisele. Lab 2 eeldab, et Docker image'd on juba olemas. Siin on 4 stsenaariumit, kuidas hallata image'id proxy keskkonnas.
+
+---
+
+#### Stsenaarium A: Lab 1 Images On Juba Olemas (Tavaliselt)
+
+**See on KÕIGE TAVALISEM stsenaarium! 🎯**
+
+Kui läbisid Lab 1 ja ehitasid Docker image'd:
+- ✅ Image'd on juba valmis: `user-service:1.0-optimized`, `todo-service:1.0-optimized`
+- ✅ Lab 2 kasutab neid valmis pilte (`image:` direktiiv compose failides)
+- ℹ️ Proxy ei ole enam vajalik - see oli **build-time mure**, mitte **orchestration-time** mure
+
+**Mida teha:**
+```bash
+# Kontrolli, kas image'd on olemas
+docker images | grep -E "user-service|todo-service"
+
+# Kui näed:
+# user-service    1.0-optimized   ...
+# todo-service    1.0-optimized   ...
+# Siis LAB 2 ON VALMIS ALUSTAMISEKS! ✅
+```
+
+**Jätka harjutustega:**
+```bash
+cd compose-project
+docker compose up -d
+```
+
+---
+
+#### Stsenaarium B: setup.sh Ehitab Images Automaatselt (Mugav)
+
+**Kui Lab 1 image'd puuduvad, setup skript teeb kõik automaatselt! 🚀**
+
+Lab 2 setup skript (`./setup.sh` või `lab2-setup`):
+1. ✅ Kontrollib, kas Lab 1 image'd on olemas
+2. ✅ Kui puuduvad, pakub **automaatset ehitamist**
+3. ✅ Kasutab Lab 1 `Dockerfile.optimized.proxy` faile
+4. ✅ Seadistab **vaikimisi proxy väärtused**:
+   - `HTTP_PROXY=http://proxy-chain.intel.com:911`
+   - `HTTPS_PROXY=http://proxy-chain.intel.com:912`
+
+**Mida teha:**
+```bash
+cd labs/02-docker-compose-lab
+./setup.sh
+
+# Skript küsib:
+# "Kas soovid ehitada (build) baaspildid (base images) KOHE?"
+# Vali: [Y] Jah, ehita mõlemad pildid nüüd
+```
+
+**Tulemus:**
+- ✅ `user-service:1.0-optimized` ehitatud
+- ✅ `todo-service:1.0-optimized` ehitatud
+- ✅ PostgreSQL andmebaasid seadistatud
+- ✅ Valmis alustamiseks!
+
+---
+
+#### Stsenaarium C: Käsitsi Building Proxy Keskkonnas (Harva Vajalik)
+
+**Kui setup.sh ei tööta või soovid käsitsi kontrollida build protsessi. 🔧**
+
+##### 1. Node.js User Service
+
+```bash
+cd ../apps/backend-nodejs
+
+# Asenda oma proxy aadress!
+docker build \
+  --build-arg HTTP_PROXY=http://cache1.sss:3128 \
+  --build-arg HTTPS_PROXY=http://cache1.sss:3128 \
+  -f ../../01-docker-lab/solutions/backend-nodejs/Dockerfile.optimized.proxy \
+  -t user-service:1.0-optimized .
+
+# Kontrolli
+docker images | grep user-service
+```
+
+##### 2. Java Spring Boot Todo Service
+
+```bash
+cd ../backend-java-spring
+
+# Asenda oma proxy aadress!
+docker build \
+  --build-arg HTTP_PROXY=http://cache1.sss:3128 \
+  --build-arg HTTPS_PROXY=http://cache1.sss:3128 \
+  -f ../../01-docker-lab/solutions/backend-java-spring/Dockerfile.optimized.proxy \
+  -t todo-service:1.0-optimized .
+
+# Kontrolli
+docker images | grep todo-service
+```
+
+##### 3. Jätka Lab 2'ga
+
+```bash
+cd ../../02-docker-compose-lab/compose-project
+docker compose up -d
+```
+
+**📖 Põhjalikud juhendid:**
+- [Lab 1 Node.js Proxy README](../01-docker-lab/solutions/backend-nodejs/README-PROXY.md) - ARG, ENV, npm proxy konfiguratsioon
+- [Lab 1 Java Proxy README](../01-docker-lab/solutions/backend-java-spring/README-PROXY.md) - Gradle GRADLE_OPTS parsing, multi-stage build
+
+---
+
+#### Stsenaarium D: Compose build: Direktiiv (VALIKULINE - Harva Kasutatud)
+
+**Miks Lab 2 compose failid EI KASUTA `build:` direktiivi vaikimisi? 🤔**
+
+1. **Lab 2 eesmärk:** Õpetab orkestreerimist, MITTE image ehitamist
+   - Compose failid jäävad **lihtsamaks** ja **loetavamaks**
+   - Fookus on teenuste orkestreerimise õppimisel
+
+2. **Kiire startup:**
+   - Image'd on juba ehitatud (Lab 1 või setup.sh)
+   - `docker compose up` ei kuluta aega rebuild'imisele
+   - Ideaalne harjutuste jaoks
+
+3. **Selge vastutuste jaotus:**
+   - **Lab 1:** Docker image'ite ehitamine (building)
+   - **Lab 2:** Docker Compose orkestratsioon (orchestration)
+
+**Kui siiski vajad `build:` direktiivi** (näiteks arenduses):
+
+```yaml
+# docker-compose.yml (VALIKULINE - harva vajalik)
+services:
+  user-service:
+    build:
+      context: ../apps/backend-nodejs
+      dockerfile: ../../01-docker-lab/solutions/backend-nodejs/Dockerfile.optimized.proxy
+      args:
+        HTTP_PROXY: ${HTTP_PROXY:-http://proxy-chain.intel.com:911}
+        HTTPS_PROXY: ${HTTPS_PROXY:-http://proxy-chain.intel.com:912}
+    image: user-service:1.0-optimized
+    # ... ülejäänud konfiguratsioon
+
+  todo-service:
+    build:
+      context: ../apps/backend-java-spring
+      dockerfile: ../../01-docker-lab/solutions/backend-java-spring/Dockerfile.optimized.proxy
+      args:
+        HTTP_PROXY: ${HTTP_PROXY:-http://proxy-chain.intel.com:911}
+        HTTPS_PROXY: ${HTTPS_PROXY:-http://proxy-chain.intel.com:912}
+    image: todo-service:1.0-optimized
+    # ... ülejäänud konfiguratsioon
+```
+
+**Kasutamine:**
+```bash
+# Build ja käivita (rebuild'ib image'd iga kord)
+docker compose up -d --build
+
+# Ainult build
+docker compose build
+
+# Kasuta keskkonnamuutujaid
+HTTP_PROXY=http://custom-proxy:8080 docker compose build
+```
+
+**⚠️ Märkus:** See lähenemisviis on harva vajalik Lab 2's. **Soovituslik:** Kasuta **Stsenaarium B** (setup.sh) või **Stsenaarium C** (käsitsi).
+
 ---
 
 ## 🚀 Quick Start

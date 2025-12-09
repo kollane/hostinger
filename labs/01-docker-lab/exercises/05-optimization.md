@@ -23,10 +23,7 @@ docker images | grep -E 'user-service|todo-service'
 # Oodatud: user-service:1.0 ja todo-service:1.0
 ```
 
-**Kui midagi puudub:**
-- 🔗 Võrk `todo-network` → [Harjutus 3, Samm 2](03-networking.md)
-- 🔗 PostgreSQL seadistus (andmeköited + tabelid) → [Harjutus 4, Sammud 2-4](04-volumes.md)
-- 🔗 Baastõmmised → [Harjutus 1A](01a-single-container-nodejs.md) ja [Harjutus 1B](01b-single-container-java.md) või käivita `lab1-setup`
+**Kui midagi puudub: ** käivita `lab1-setup`
 
 **✅ Kui kõik ülalpool on OK, võid jätkata!**
 
@@ -37,7 +34,7 @@ docker images | grep -E 'user-service|todo-service'
 **Mäletad Harjutus 1-st?** Lõime lihtsa Dockerfile'i, mis toimis. Aga nüüd õpime, kuidas teha seda **paremaks**!
 
 **Praegune Dockerfile (Harjutus 1) probleemid - MÕLEMAS teenuses:**
-- ❌ Liiga suur tõmmis (docker image) (~200-230MB)
+- ❌ Liiga suur tõmmis (docker image)
 - ❌ Ehitus on aeglane (rebuild iga source muudatuse korral)
 - ❌ Ei kasuta kihtide vahemälu efektiivselt
 - ❌ Töötab root'ina (turvarisk!)
@@ -50,99 +47,48 @@ docker images | grep -E 'user-service|todo-service'
 - ✅ Turvalisus (mitte-juurkasutajad: nodejs:1001, spring:1001)
 - ✅ Tervisekontrollid
 
----
+**📖 Põhjalik selgitus - Milleks Docker image optimeerimist kasutame?**
 
-## 🎯 Õpieesmärgid
-
-- ✅ Implementeerida **mitmeastmelised ehitused (multi-stage builds)**
-- ✅ Optimeerida **kihtide vahemälu (layer caching)**
-- ✅ Parandada .dockerignore faile
-- ✅ Lisada **tervisekontrollid (health checks)**
-- ✅ Kasutada **mitte-juurkasutajaid (non-root users)**
-- ✅ Võrrelda Node.js vs Java optimeerimise tulemusi
-- ✅ Testida End-to-End töövoogu optimeeritud süsteemiga
-
----
-
-## 🖥️ Sinu Testimise Konfiguratsioon
-
-### SSH Ühendus VPS-iga
-```bash
-ssh labuser@93.127.213.242 -p [SINU-PORT]
-```
-
-| Õpilane | SSH Port | Password |
-|---------|----------|----------|
-| student1 | 2201 | student1 |
-| student2 | 2202 | student2 |
-| student3 | 2203 | student3 |
-
+Kui soovid mõista optimeerimise 5 peamist eesmärki (layer caching, multi-stage, turvalisus, portaabelsus, CI/CD), loe:
+- 👉 **[Koodiselgitus: Docker Image Optimeerimise 5 Eesmärki](../../../resource/code-explanations/Docker-Image-Optimization-Explained.md)**
+  
 ---
 
 ## 📝 Sammud
 
-### Samm 1: Uuri mõlema teenuse algset suurust
-
-```bash
-# Vaata mõlema Harjutus 1-st loodud tõmmise suurust
-docker images | grep -E 'user-service|todo-service'
-
-# Oodatud väljund:
-# REPOSITORY       TAG    IMAGE ID      CREATED        SIZE
-# user-service     1.0    abc123def     2 hours ago    180MB (Node.js)
-# todo-service     1.0    def456ghi     2 hours ago    230MB (Java)
-```
-
-**Uuri kummagi teenuse ajalugu:**
-
-```bash
-# === USER SERVICE (Node.js) ===
-docker history user-service:1.0
-# Näed: FROM node:22-slim, WORKDIR, COPY package*.json, RUN npm install, COPY ., CMD
-
-# === TODO SERVICE (Java) ===
-docker history todo-service:1.0
-# Näed: FROM eclipse-temurin:21-jre-alpine, WORKDIR, COPY JAR, CMD
-```
-
-**Küsimused:**
-- Kui suur on User Service tõmmis? 
-- Kui suur on Todo Service tõmmis? 
-- Mitu kihti (layer'it) on igal? (5-6 kihti)
-- Kui kiire on rebuild, kui muudad lähtekoodi? (Aeglane - kõik ehitatakse uuesti!)
-
-### Samm 2: Optimeeri mõlema rakenduse Dockerfaili
+### Samm 1: Optimeeri mõlema rakenduse Dockerfaili
 
 Loome optimeeritud Dockerfailid mõlemale teenusele.
 
-#### 2a. User Service (Node.js) optimeerimine
+#### 1a. User Service (Node.js) optimeerimine
 
-**⚠️ Oluline:** Dockerfile asub rakenduse juurkataloogis.
-
-**Rakenduse juurkataloog:** `~/labs/apps/backend-nodejs`
 
 ```bash
 cd ~/labs/apps/backend-nodejs
 ```
-
-Loo uus `Dockerfile.optimized`:
-
 ```bash
-vim Dockerfile.optimized
+vim Dockerfile.optimized.proxy
 ```
 
-**💡 Abi vajadusel:**
-Vaata näidislahendust: `~/labs/01-docker-lab/solutions/backend-nodejs/Dockerfile.optimized`
-
-**📖 Mitmeastmelised ehitused ja Node.js optimeerimine:**
-- [Peatükk 06: Dockerfile - Multi-stage Builds](../../../resource/06-Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md) selgitab mitmeastmeliste ehituste põhitõed
-- [Peatükk 06A: Node.js Konteineriseerimise Spetsiifika](../../../resource/06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md) selgitab `npm ci`, sõltuvuste vahemälu, mitte-juurkasutajad
-
-**Näidis:**
+**Dockerfile loomine:**
 
 ```dockerfile
+# syntax=docker/dockerfile:1.4
+# ☝️ BuildKit syntax versiooni määrang - vähendab UndefinedVar hoiatusi
+
+# ARG deklaratsioonid ENNE esimest FROM (proksi tugi)
+ARG HTTP_PROXY=""
+ARG HTTPS_PROXY=""
+ARG NO_PROXY=""
+
 # Stage 1: Dependencies
 FROM node:22-slim AS dependencies
+
+# ENV ainult selles stage'is - npm ci kasutab neid
+ENV HTTP_PROXY=${HTTP_PROXY} \
+    HTTPS_PROXY=${HTTPS_PROXY} \
+    NO_PROXY=${NO_PROXY}
+
 WORKDIR /app
 
 # Kopeeri dependency files (caching jaoks)
@@ -177,6 +123,13 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=10s \
 CMD ["node", "server.js"]
 ```
 
+**📖 Põhjalik koodi selgitus:**
+
+Kui vajad koodi täpset rea-haaval selgitust (BuildKit syntax, ARG vs ENV, stage'd, non-root kasutaja, HEALTHCHECK), loe:
+- 👉 **[Koodiselgitus: Node.js Mitmeastmeline Dockerfile](../../../resource/code-explanations/Node.js-Multi-Stage-Dockerfile-Explained.md)**
+
+---
+
 **⚠️ OLULINE: Lisa `healthcheck.js` fail rakenduse juurkataloogi**
 
 See fail on vajalik HEALTHCHECK käsu jaoks Dockerfile'is. Ilma selleta ei käivitu container korralikult.
@@ -209,36 +162,34 @@ req.on('error', () => process.exit(1));
 req.end();
 ```
 
-#### 2b. Todo Service (Java) optimeerimine
-
-**Rakenduse juurkataloog:** `~/labs/apps/backend-java-spring`
+#### 1b. Todo Service (Java) optimeerimine
 
 ```bash
 cd ~/labs/apps/backend-java-spring
 ```
 
-Loo uus `Dockerfile.optimized`:
-
 ```bash
-vim Dockerfile.optimized
+vim Dockerfile.optimized.proxy
 ```
 
-**💡 Abi vajadusel:**
-Vaata näidislahendust: `~/labs/01-docker-lab/solutions/backend-java-spring/Dockerfile.optimized`
-
-**📖 Mitmeastmelised ehitused ja Java optimeerimine:**
-- [Peatükk 06: Dockerfile - Multi-stage Builds](../../../resource/06-Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md) selgitab mitmeastmeliste ehituste põhitõed (JDK → JRE)
-- [Peatükk 06A: Java Spring Boot Konteineriseerimise Spetsiifika](../../../resource/06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md) selgitab Gradle sõltuvuste vahemälu, JVM mäluhaldust, mitte-juurkasutajaid
-
-**Näidis:**
+**Dockerfile loomine:**
 
 ```dockerfile
-# Optimeeritud Dockerfile Todo Service jaoks (Harjutus 5)
-# Multi-stage build: Gradle build → JRE runtime
-# Eelised: väiksem image, layer caching, non-root user, health check
+# syntax=docker/dockerfile:1.4
+# ☝️ BuildKit syntax versiooni määrang - vähendab UndefinedVar hoiatusi
+
+# ARG deklaratsioonid ENNE esimest FROM (proksi tugi)
+ARG HTTP_PROXY=""
+ARG HTTPS_PROXY=""
+ARG NO_PROXY=""
 
 # Stage 1: Build
 FROM gradle:8.11-jdk21-alpine AS builder
+
+# ENV ainult selles stage'is
+ENV HTTP_PROXY=${HTTP_PROXY} \
+    HTTPS_PROXY=${HTTPS_PROXY} \
+    NO_PROXY=${NO_PROXY}
 
 WORKDIR /app
 
@@ -246,12 +197,26 @@ WORKDIR /app
 COPY build.gradle settings.gradle ./
 COPY gradle ./gradle
 
-# Download dependencies (cached kui build.gradle ei muutu)
-RUN gradle dependencies --no-daemon
+# Download dependencies (Gradle vajab GRADLE_OPTS proxy jaoks!)
+RUN if [ -n "$HTTP_PROXY" ]; then \
+        PROXY_HOST=$(echo "$HTTP_PROXY" | sed -e 's|http://||' -e 's|https://||' -e 's|:[0-9]*$||'); \
+        PROXY_PORT=$(echo "$HTTP_PROXY" | grep -oE '[0-9]+$'); \
+        export GRADLE_OPTS="-Dhttp.proxyHost=$PROXY_HOST -Dhttp.proxyPort=$PROXY_PORT -Dhttps.proxyHost=$PROXY_HOST -Dhttps.proxyPort=$PROXY_PORT"; \
+        gradle dependencies --no-daemon; \
+    else \
+        gradle dependencies --no-daemon; \
+    fi
 
 # Kopeeri source code ja build JAR
 COPY src ./src
-RUN gradle bootJar --no-daemon
+RUN if [ -n "$HTTP_PROXY" ]; then \
+        PROXY_HOST=$(echo "$HTTP_PROXY" | sed -e 's|http://||' -e 's|https://||' -e 's|:[0-9]*$||'); \
+        PROXY_PORT=$(echo "$HTTP_PROXY" | grep -oE '[0-9]+$'); \
+        export GRADLE_OPTS="-Dhttp.proxyHost=$PROXY_HOST -Dhttp.proxyPort=$PROXY_PORT -Dhttps.proxyHost=$PROXY_HOST -Dhttps.proxyPort=$PROXY_PORT"; \
+        gradle bootJar --no-daemon; \
+    else \
+        gradle bootJar --no-daemon; \
+    fi
 
 # Stage 2: Runtime
 FROM eclipse-temurin:21-jre-alpine
@@ -281,47 +246,52 @@ CMD ["java", \
     "-jar", \
     "app.jar"]
 ```
-## Ülevaade sammude järjestusest
 
-Multi-stage build koosneb kahest põhietapist:
+**📖 Põhjalik koodi selgitus:**
 
-**Stage 1: Build (Gradle + JDK)**
-1. **Gradle base image** - Build-keskkond koos kõigi vajalike tööriistadega
-2. **COPY Gradle failid** - Dependency cache'i säilitamiseks (kiirema build'i jaoks)
-3. **RUN dependencies** - Sõltuvuste allalaadimine (cache'itakse eraldi kihina)
-4. **COPY src** - Lähtekoodi lisamine (muutub kõige sagedamini)
-5. **RUN bootJar** - JAR-faili ehitamine
+Kui vajad koodi täpset rea-haaval selgitust (Gradle proxy parsing, GRADLE_OPTS, JDK→JRE multi-stage, JVM memory tuning), loe:
+- 👉 **[Koodiselgitus: Java Spring Boot Mitmeastmeline Dockerfile](../../../resource/code-explanations/Java-SpringBoot-Multi-Stage-Dockerfile-Explained.md)**
+---
 
-**Stage 2: Runtime (JRE ainult)**
-1. **Temurin base image** - Kompaktne JVM runtime ilma build-tööriistadeta
-2. **Non-root user** - Turvalisuse parendamine (`spring:spring` user)
-3. **COPY jar** - Ainult valmis JAR-fail builder stage'ist (väike pilt)
-4. **USER spring:spring** - Rakendus töötab non-root kasutajana
-5. **EXPOSE 8081** - Dokumenteeri kasutatav port
-6. **HEALTHCHECK** - Automaatne tervise kontroll orkestreerijale
-7. **CMD** - JAR-faili käivitamine
-
-Tulemus: efektiivne, turvaline ja skaleeritav konteineripilt.
-
-### Samm 3: Ehita mõlemad optimeeritud Docker tõmmised
+### Samm 2: Ehita mõlemad optimeeritud Docker tõmmised
 
 **Rakenduse juurkataloog (User Service):** `~/labs/apps/backend-nodejs`
 
 **⚠️ Oluline:** Docker tõmmise ehitamiseks pead olema rakenduse juurkataloogis (kus asub `Dockerfile.optimized`).
 
 ```bash
+# === Seadista proksi väärtused (Intel võrk) ===
+export HTTP_PROXY=http://proxy-chain.intel.com:911
+export HTTPS_PROXY=http://proxy-chain.intel.com:912
+export NO_PROXY=localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16
+
+# Kontrolli
+echo "HTTP_PROXY=$HTTP_PROXY"
+echo "HTTPS_PROXY=$HTTPS_PROXY"
+
 # === BUILD User Service (Node.js) ===
 cd ~/labs/apps/backend-nodejs
 
-# Build optimeeritud tõmmis
-docker build -f Dockerfile.optimized -t user-service:1.0-optimized .
+# Build optimeeritud tõmmis PROKSIGA
+docker build \
+  --build-arg HTTP_PROXY=$HTTP_PROXY \
+  --build-arg HTTPS_PROXY=$HTTPS_PROXY \
+  --build-arg NO_PROXY=$NO_PROXY \
+  -f Dockerfile.optimized.proxy \
+  -t user-service:1.0-optimized \
+  .
 
 # === BUILD Todo Service (Java) ===
-# Asukoht: ~/labs/apps/backend-java-spring
 cd ~/labs/apps/backend-java-spring
 
-# Build optimeeritud tõmmis (mitmeastmeline ehitus teeb ka JAR'i)
-docker build -f Dockerfile.optimized -t todo-service:1.0-optimized .
+# Build optimeeritud tõmmis PROKSIGA (mitmeastmeline ehitus teeb ka JAR'i)
+docker build \
+  --build-arg HTTP_PROXY=$HTTP_PROXY \
+  --build-arg HTTPS_PROXY=$HTTPS_PROXY \
+  --build-arg NO_PROXY=$NO_PROXY \
+  -f Dockerfile.optimized.proxy \
+  -t todo-service:1.0-optimized \
+  .
 
 # === VÕRDLE SUURUSI ===
 docker images | grep -E 'user-service|todo-service'
@@ -329,36 +299,12 @@ docker images | grep -E 'user-service|todo-service'
 # Oodatud väljund:
 # REPOSITORY       TAG             SIZE
 # user-service     1.0             ~305MB (vana, slim, single-stage)
-# user-service     1.0-optimized   ~305MB (uus, slim, multi-stage)
+# user-service     1.0-optimized   ~305MB (uus, slim, multi-stage + proxy)
 # todo-service     1.0             ~230MB (vana)
-# todo-service     1.0-optimized   ~180MB (uus) 📉 -22%
+# todo-service     1.0-optimized   ~180MB (uus + proxy) 📉 -22%
 ```
 
-**ℹ️ Märkus User Service'i suuruse kohta:**
-User Service tõmmis jääb samaks (~305MB), sest mõlemad versioonid kasutavad `node:21-slim`.
-
-**Mida võitsime optimeeritud versiooniga:**
-✅ Mitmeastmeline ehitus (sõltuvused cached eraldi kihina)
-✅ Mitte-juurkasutaja (security parandus)
-✅ Tervisekontroll (automaatne)
-✅ -60% kiirem rebuild (sõltuvuste vahemälu)
-
-### Samm 4: Testi MÕLEMAD optimeeritud tõmmised
-
-**ℹ️ Portide turvalisus:**
-
-Kasutame lihtsustatud portide vastendust (koos erinevate portidega, sest vanad on kasutusel).
-- ✅ **Host'i tulemüür kaitseb:** VPS-is on UFW tulemüür, mis blokeerib pordid internetist
-- 📚 **Tootmises oleks õige:** `-p 127.0.0.1:3001:3000` jne
-- 🎯 **Lab 7 käsitleb:** Võrguturvalisust põhjalikumalt
-
-**Portide valik:**
-- User Service: `3001:3000` (port 3001 host'is, sest 3000 on juba kasutusel vanast)
-- Todo Service: `8082:8081` (port 8082 host'is, sest 8081 on juba kasutusel vanast)
-
-**Hetkel keskendume optimeerimisele!**
-
----
+### Samm 3: Testi MÕLEMAD optimeeritud tõmmised
 
 ```bash
 # Genereeri JWT_SECRET (kui pole veel)
@@ -430,7 +376,7 @@ docker ps -a --format "table {{.Names}}\t{{.Image}}\t{{.Status}}"
 # user-service         user-service:1.0                Up
 ```
 
-### Samm 5: Testi End-to-End JWT töövoogu optimeeritud süsteemiga
+### Samm 4: Testi End-to-End JWT töövoogu optimeeritud süsteemiga
 
 **See on KÕIGE OLULISEM TEST - kinnitame, et optimeeritud süsteem töötab identselt!**
 
@@ -493,50 +439,52 @@ docker stats --no-stream --format "table {{.Name}}\t{{.MemUsage}}\t{{.CPUPerc}}"
 4. ✅ AGA: Väiksemad tõmmised (-25-33%), tervisekontrollid, mitte-juurkasutajad!
 5. ✅ TOOTMISEKS VALMIS mikroteenuste süsteem! 🚀
 
-### Samm 6: Turvaskannimine ja haavatavuse hindamine
+### Samm 5: Turvaskannimine ja haavatavuse hindamine
 
 **Tõmmise turvaaukude (vulnerabilities) skannimine on KRIITILINE tootmises!**
 
 **📖 Põhjalik käsitlus:** [Peatükk 06B: Docker Image Security ja Vulnerability Scanning](../../../resource/06B-Docker-Image-Security-ja-Vulnerability-Scanning.md) selgitab:
 - CVE ja CVSS skoorid (mis on turvaaugud, kuidas neid hinnata)
-- Docker Scout ja Trivy kasutamine (installimise juhised, kõik käsud, raportid)
+- Trivy kasutamine (installimise juhised, kõik käsud, raportid)
 - Turvalisuse parimad praktikad (mitte-juurkasutajad, minimaalsed baastõmmised, tervisekontrollid, baastõmmise uuendamise strateegia)
 - CI/CD integratsioon (GitHub Actions, GitLab CI näited)
 
 **Siin on kiired käsud testimiseks:**
 
-#### Docker Scout (sisseehitatud, kiire)
+#### Trivy (vulnerability scanner)
+
+**ℹ️ Märkus:** Trivy lokaalne binaar (`trivy`) ei ole paigaldatud. Kasutame Docker konteinerit.
 
 ```bash
-# Skanni mõlemat optimeeritud tõmmist
-docker scout cves user-service:1.0-optimized
-docker scout cves todo-service:1.0-optimized
+# Seadista proksi (Intel võrk)
+export HTTP_PROXY=http://proxy-chain.intel.com:911
+export HTTPS_PROXY=http://proxy-chain.intel.com:912
+export NO_PROXY=localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16
 
-# Võrdle vana vs uus
-docker scout compare user-service:1.0 --to user-service:1.0-optimized
-
-# Soovitused
-docker scout recommendations user-service:1.0-optimized
-```
-
-#### Trivy (põhjalikum, CI/CD jaoks)
-
-```bash
-# Variant A: Lokaalne binaar (kui installitud)
-trivy image --severity HIGH,CRITICAL user-service:1.0-optimized
-trivy image --severity HIGH,CRITICAL todo-service:1.0-optimized
-
-# Variant B: Docker konteiner (pole installi vaja!)
+# Skanni User Service (Node.js)
 docker run --rm \
+  -e HTTP_PROXY=$HTTP_PROXY \
+  -e HTTPS_PROXY=$HTTPS_PROXY \
+  -e NO_PROXY=$NO_PROXY \
   -v /var/run/docker.sock:/var/run/docker.sock \
   aquasec/trivy:latest image \
   --severity HIGH,CRITICAL user-service:1.0-optimized
 
+# Skanni Todo Service (Java)
 docker run --rm \
+  -e HTTP_PROXY=$HTTP_PROXY \
+  -e HTTPS_PROXY=$HTTPS_PROXY \
+  -e NO_PROXY=$NO_PROXY \
   -v /var/run/docker.sock:/var/run/docker.sock \
   aquasec/trivy:latest image \
   --severity HIGH,CRITICAL todo-service:1.0-optimized
 ```
+
+**Mida need käsud teevad:**
+- `-e HTTP_PROXY=$HTTP_PROXY` - edastab proksi seadistused Trivy konteinerile
+- `-v /var/run/docker.sock` - lubab Trivy-l pääseda Docker image'itele
+- `--severity HIGH,CRITICAL` - näitab ainult kriitilisi haavatavusi
+- Trivy laadib alla vulnerability DB läbi proksi (mirror.gcr.io)
 
 **Oodatud tulemused:**
 - ✅ Optimeeritud tõmmised võivad sisaldada vähem haavatavusi (sõltub baastõmmise versioonist)
@@ -548,7 +496,7 @@ docker run --rm \
 2. Parandanud CRITICAL ja HIGH CVE'd enne toote keskkonda (production)
 3. Lisa automaatne skannimine CI/CD pipeline'i (juhised peatükis 06B)
 
-### Samm 7: Kihtide vahemälu test
+### Samm 6: Kihtide vahemälu test
 
 **Testime, kui hästi kihtide vahemälu töötab uuesti ehitamisel (rebuild):**
 
@@ -560,7 +508,7 @@ cd ~/labs/apps/backend-nodejs
 pwd  # Veendu, et oled õiges kataloogis
 
 # Rebuild User Service (peaks olema VÄGA kiire!)
-time docker build -f Dockerfile.optimized -t user-service:1.0-optimized .
+time docker build -f Dockerfile.optimized.proxy -t user-service:1.0-optimized .
 # Oodatud: "CACHED" iga kihi jaoks, build ~2-5s
 
 # Asukoht: ~/labs/apps/backend-java-spring
@@ -568,7 +516,7 @@ cd ~/labs/apps/backend-java-spring
 pwd  # Veendu, et oled õiges kataloogis
 
 # Rebuild Todo Service (peaks olema VÄGA kiire!)
-time docker build -f Dockerfile.optimized -t todo-service:1.0-optimized .
+time docker build -f Dockerfile.optimized.proxy -t todo-service:1.0-optimized .
 # Oodatud: "CACHED" enamuse kihtide jaoks, build ~10-20s
 
 # === TEST 2: Rebuild KUI lähtekood muutub ===
@@ -580,7 +528,7 @@ pwd  # Veendu, et oled õiges kataloogis
 echo "// test comment" >> server.js
 
 # Rebuild
-time docker build -f Dockerfile.optimized -t user-service:1.0-optimized .
+time docker build -f Dockerfile.optimized.proxy -t user-service:1.0-optimized .
 # Oodatud: Sõltuvuste kiht CACHED, ainult COPY . ja pärast rebuilditakse (~10-15s)
 
 # Todo Service - muuda source code
@@ -590,7 +538,7 @@ pwd  # Veendu, et oled õiges kataloogis
 echo "// test comment" >> src/main/java/com/hostinger/todoapp/TodoApplication.java
 
 # Rebuild
-time docker build -f Dockerfile.optimized -t todo-service:1.0-optimized .
+time docker build -f Dockerfile.optimized.proxy -t todo-service:1.0-optimized .
 # Oodatud: Gradle sõltuvuste kiht CACHED, ainult COPY src ja pärast rebuilditakse (~30-40s)
 ```
 
@@ -663,6 +611,40 @@ docker images | grep -E 'user-service|todo-service' | sort
 
 ---
 
+### Samm 7: Proxy Konfiguratsiooni Best Practices
+
+**📖 Põhjalik selgitus - ARG-põhine Proxy Konfiguratsioon:**
+
+Kui soovid mõista, miks ettevõtetes on vaja proxy serverit ja kuidas ARG-põhine proxy konfiguratsioon töötab, loe:
+- 👉 **[Koodiselgitus: Docker ARG-põhine Proxy Best Practices](../../../resource/code-explanations/Docker-ARG-Proxy-Best-Practices.md)**
+
+**See dokument selgitab:**
+- ❓ Mis on proxy server ja miks ettevõtted (nt Intel) seda kasutavad?
+- 🔧 Kuidas ARG-põhine proxy töötab (ARG vs ENV, build-time vs runtime)
+- ✅ Proxy leakage verifitseerimine (test käsud)
+- ⚙️ Gradle vs npm proxy erinevus (GRADLE_OPTS parsing)
+- 📋 Best practices (DO ja DON'T)
+- 🌐 Praktiline kasutamine (Intel võrk vs AWS/GCP/Azure)
+
+**Kiire test (valikuline):**
+
+```bash
+# Veendu, et proxy EI LEKI runtime'i
+docker run --rm user-service:1.0-optimized env | grep -i proxy
+docker run --rm todo-service:1.0-optimized env | grep -i gradle
+
+# Oodatud: tühi väljund (ei leia midagi) ✅
+```
+
+---
+
+**Kokkuvõte:** ARG-põhine proxy konfiguratsioon:
+- ✅ Töötab Intel võrgus JA väljaspool (portaabel)
+- ✅ Ei leki runtime'i (turvalisem)
+- ✅ Ei suurenda image suurust
+- ✅ Production-ready (sama Dockerfile mõlemas keskkonnas)
+
+---
 ## 🎓 Parimad tavad
 
 1. ✅ Mitmeastmelised ehitused (JDK → JRE, sõltuvused → runtime)
@@ -672,30 +654,6 @@ docker images | grep -E 'user-service|todo-service' | sort
 5. ✅ Tervisekontroll Dockerfile'is (monitooring)
 6. ✅ Gradle/npm --no-daemon (vähem mälu, kiirem ehitus)
 7. ✅ Testi optimeeritud tõmmiseid end-to-end töövooga
-
----
-
-**Harjutus 5: Optimeerimine (PRAEGU)**
-- ✅ Mitmeastmelised ehitused (mõlemas teenuses)
-- ✅ Kihtide vahemälu (-60-80% kiirem rebuild)
-- ✅ Turvalisus (mitte-juurkasutajad)
-- ✅ Tervisekontrollid
-- ⚠️ Mõlemad User Service versioonid kasutavad `node:21-slim`
-- ✅ Todo Service: -22% väiksem tõmmis
-- ⚠️ User Service: sama suurus, optimisatsioon annab kiiremad rebuild'id
-- ✅ End-to-End test optimeeritud süsteemiga
-
-### 🏆 LÕPPTULEMUS: Tootmiskõlbulik (Production-Ready) Docker seadistus!
-
-**Mis sul nüüd on:**
-- ✅ 2 optimeeritud mikroteenust (User Service + Todo Service)
-- ✅ 2 andmebaasi andmeköidetega (andmete püsivus)
-- ✅ Kohandatud võrk (korrektne DNS lahendus)
-- ✅ Tervise monitooring (terved konteinerid)
-- ✅ Turvalisus (mitte-juurkasutajad)
-- ✅ Kiired "uuesti ehitamised" (rebuilds) (kihtide vahemälu - 60-80% kiirem!)
-- ✅ End-to-End testitud (JWT töövoog töötab!)
-- 📚 **Õppetund:** Töökindlus > tõmmise suurus
 
 **See on TÄIELIK tootmiskõlbulik (production-ready) mikroteenuste süsteem!** 🎉🚀
 

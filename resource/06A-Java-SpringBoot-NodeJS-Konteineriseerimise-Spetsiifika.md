@@ -1200,6 +1200,763 @@ FROM node:18-slim
 - ✅ **Alpine base:** node:18-alpine (smaller)
 - ✅ **.dockerignore:** node_modules, .env, tests
 
+## Corporate Võrgu Piirangud: Proxy Seadistamine Docker Build'is
+
+### Probleem: Tulemüür Blokeerib Internetiühenduse
+
+Corporate võrkudes (ettevõtte sisevõrgud) on tavaline, et:
+- ✅ Docker build protsess vajab sõltuvusi internetist (npm packages, Maven/Gradle dependencies, base images)
+- ❌ Firewall/proxy server blokeerib otsese ühenduse välismaailma
+- ✅ Proxy server (nt `cache1.sss:3128`) võimaldab kontrollitud juurdepääsu
+
+**Küsimus:** Kuidas saada Gradle või npm käsud build time'is läbi proxy serveri?
+
+**Vastus:** On **8 erinevat meetodit**, millest igaühel on oma trade-off'id.
+
+### Lahendused: 8 Meetodit Proxy Seadistamiseks
+
+#### Tabel: Meetodite Võrdlus
+
+| Meetod | Portability | Security | CI/CD | Beginner | Production | Soovitus |
+|--------|:-----------:|:--------:|:-----:|:--------:|:----------:|----------|
+| **ARG Multi-Stage** | ✅ Parim | ✅ Clean runtime | ✅ Lihtne | ⚠️ Keskmine | ✅ Jah | **KASUTA** |
+| **ARG Single-Stage** | ✅ Hea | ⚠️ Runtime leak | ✅ Lihtne | ✅ Lihtne | ⚠️ Tinglik | Õpetamiseks |
+| **Hardcoded ENV** | ❌ Ei | ❌ Leak + fixed | ❌ Ei | ❌ Segane | ❌ Ei | **VÄLDI** |
+| **daemon.json** | ⚠️ Piiratud | ✅ Clean image | ⚠️ Keeruline | ❌ Admin | ⚠️ Infrastruktuur | Fallback |
+| **config.json** | ⚠️ Per-user | ✅ Clean image | ⚠️ Keeruline | ❌ Manuaalne | ⚠️ Piiratud | Harv |
+| **BuildKit Secrets** | ✅ Suurepärane | ✅✅ Parim | ✅ Advanced | ❌ Keeruline | ✅ Modern | Tulevik |
+| **--network host** | ❌ Ei | ❌ Ohtlik | ❌ Ei | ❌ Risk | ❌ Ei | **MITTE KUNAGI** |
+| **ENV Instruction** | ❌ Ei | ❌ Leak | ❌ Ei | ❌ Segane | ❌ Ei | **VÄLDI** |
+
+#### Meetod 1: ARG Multi-Stage Build (SOOVITATUD) ⭐
+
+**Põhimõte:** `ARG` võimaldab anda proxy build-time'is (Dockerfile build käsu ajal), aga see **EI LEKI runtime'i** (runtime container on puhas).
+
+**Dockerfile näide (Gradle + Java):**
+
+```dockerfile
+# ====================================
+# 1. etapp: Builder (JAR'i ehitamine)
+# ====================================
+FROM gradle:8.11-jdk21-alpine AS builder
+
+# ARG võimaldab anda proxy build-time'is (portaabel!)
+ARG HTTP_PROXY
+ARG HTTPS_PROXY
+
+WORKDIR /app
+
+# Kopeeri Gradle konfiguratsiooni failid
+COPY build.gradle settings.gradle ./
+COPY gradle ./gradle
+
+# Lae alla sõltuvused (cached kui build.gradle ei muutu)
+# OLULINE: export GRADLE_OPTS ja gradle käsk peavad olema SAMAS RUN blokis!
+RUN if [ -n "$HTTP_PROXY" ]; then \
+      PROXY_HOST=$(echo "$HTTP_PROXY" | sed 's|^.*://||; s|:.*$||'); \
+      PROXY_PORT=$(echo "$HTTP_PROXY" | grep -oE '[0-9]+$'); \
+      export GRADLE_OPTS="-Dhttp.proxyHost=$PROXY_HOST -Dhttp.proxyPort=$PROXY_PORT -Dhttps.proxyHost=$PROXY_HOST -Dhttps.proxyPort=$PROXY_PORT"; \
+      gradle dependencies --no-daemon; \
+    else \
+      gradle dependencies --no-daemon; \
+    fi
+
+# Kopeeri lähtekood
+COPY src ./src
+
+# Ehita JAR fail
+RUN if [ -n "$HTTP_PROXY" ]; then \
+      PROXY_HOST=$(echo "$HTTP_PROXY" | sed 's|^.*://||; s|:.*$||'); \
+      PROXY_PORT=$(echo "$HTTP_PROXY" | grep -oE '[0-9]+$'); \
+      export GRADLE_OPTS="-Dhttp.proxyHost=$PROXY_HOST -Dhttp.proxyPort=$PROXY_PORT -Dhttps.proxyHost=$PROXY_HOST -Dhttps.proxyPort=$PROXY_PORT"; \
+      gradle bootJar --no-daemon; \
+    else \
+      gradle bootJar --no-daemon; \
+    fi
+
+# ====================================
+# 2. etapp: Runtime (clean JRE, ilma proksita)
+# ====================================
+FROM eclipse-temurin:21-jre-alpine AS runtime
+
+WORKDIR /app
+
+# Kopeeri ainult JAR builder'ist
+COPY --from=builder /app/build/libs/todo-service.jar app.jar
+
+# Avalda port
+EXPOSE 8081
+
+# Käivita rakendus
+CMD ["java", "-jar", "app.jar"]
+```
+
+**Build proksiga (corporate võrk):**
+```bash
+# Asenda oma proxy aadress!
+docker build \
+  --build-arg HTTP_PROXY=http://cache1.sss:3128 \
+  --build-arg HTTPS_PROXY=http://cache1.sss:3128 \
+  -t todo-service:1.0 .
+```
+
+**Build ilma proksita (avalik võrk):**
+```bash
+docker build -t todo-service:1.0 .
+# Gradle download töötab avalikus võrgus
+```
+
+**Kontrolli: Kas proxy leak'ib runtime'i?**
+```bash
+docker run --rm todo-service:1.0 env | grep -i proxy
+# Oodatud: TÜHI väljund! ✅ Proxy EI OLE runtime'is
+```
+
+**Eelised:**
+- ✅ **Portaabel:** Töötab kõikjal (developer, CI/CD, production, avalik võrk)
+- ✅ **Turvaline:** Proxy ei leki runtime'i (multi-stage isolatsioon)
+- ✅ **CI/CD friendly:** `--build-arg` lihtne lisada GitHub Actions, GitLab CI
+- ✅ **Töötab ilma proksita:** Sama Dockerfile avalikus võrgus
+
+**Gradle vs npm erinevus:**
+
+| Tool | Proxy Handling |
+|------|---------------|
+| **npm (Node.js)** | Kasutab otse `HTTP_PROXY` environment variable → lihtne |
+| **Gradle (Java)** | Vajab `GRADLE_OPTS` parserimist → parsing script vajalik |
+
+**npm näide (lihtsam):**
+```dockerfile
+FROM node:18-alpine AS builder
+ARG HTTP_PROXY
+ARG HTTPS_PROXY
+
+# npm kasutab HTTP_PROXY automaatselt
+RUN npm ci
+```
+
+**Gradle näide (vajab parserimist):**
+```dockerfile
+FROM gradle:8-jdk17-alpine AS builder
+ARG HTTP_PROXY
+
+# Parse proxy URL → GRADLE_OPTS
+RUN if [ -n "$HTTP_PROXY" ]; then \
+      PROXY_HOST=$(echo "$HTTP_PROXY" | sed 's|^.*://||; s|:.*$||'); \
+      PROXY_PORT=$(echo "$HTTP_PROXY" | grep -oE '[0-9]+$'); \
+      export GRADLE_OPTS="-Dhttp.proxyHost=$PROXY_HOST -Dhttp.proxyPort=$PROXY_PORT"; \
+      gradle dependencies --no-daemon; \
+    fi
+```
+
+**Miks Gradle vajab parserimist?**
+- npm: `HTTP_PROXY=http://cache1.sss:3128` → töötab
+- Gradle: Vajab `-Dhttp.proxyHost=cache1.sss -Dhttp.proxyPort=3128` formaati
+
+#### Meetod 2: ARG Single-Stage Build (Õpetamiseks)
+
+Sama ARG lähenemine, aga ilma multi-stage'ita.
+
+**Probleem:** Proxy `ARG` võib konverteerida `ENV`'iks → leak'ib runtime'i.
+
+**Kasutamine:** Sobib õppimiseks Lab 1 (beginnerid), aga mitte production'i.
+
+#### Meetod 3: Hardcoded ENV (ANTI-PATTERN)
+
+**Dockerfile:**
+```dockerfile
+FROM gradle:8-jdk17-alpine
+ENV HTTP_PROXY=http://cache1.sss:3128  # Hardcoded!
+ENV HTTPS_PROXY=http://cache1.sss:3128
+
+# ... build steps
+```
+
+**Probleemid:**
+- ❌ Töötab AINULT corporate võrgus (developer või avalikus võrgus ei tööta)
+- ❌ Proxy leak'ib runtime'i (security risk)
+- ❌ Mitte portable (CI/CD erinev, production erinev)
+
+**Millal näed seda:**
+- Legacy codebases (technical debt)
+- "Quick and dirty" lahendused, mis unustati refactor'ida
+
+**Refactoring:** Asenda Meetod 1'ga (ARG multi-stage).
+
+#### Meetod 4: Docker Daemon Configuration (`/etc/docker/daemon.json`)
+
+**Kui kasutada:** Dockerfiles'e ei saa muuta (3rd-party images, read-only repos).
+
+**Setup:**
+```bash
+# /etc/docker/daemon.json
+sudo vi /etc/docker/daemon.json
+```
+
+```json
+{
+  "proxies": {
+    "http-proxy": "http://cache1.sss:3128",
+    "https-proxy": "http://cache1.sss:3128",
+    "no-proxy": "localhost,127.0.0.1,10.0.0.0/8"
+  }
+}
+```
+
+**Restart Docker daemon:**
+```bash
+sudo systemctl restart docker
+# HOIATUS: Kõik töötavad konteinerid peatuvad!
+```
+
+**Eelised:**
+- ✅ Ühekordselt setup (kõik build'id kasutavad)
+- ✅ Pole Dockerfile muudatusi vaja
+
+**Puudused:**
+- ❌ Vajab sudo/admin access (developer'id ei saa muuta)
+- ❌ Mõjutab KÕIKI projekte masinas (global setting)
+- ❌ Pole portable (iga masin vajab manuaalset setup'i)
+- ❌ CI/CD keeruline (Docker daemon config build container'is)
+
+**Soovitus:** Fallback, kui Dockerfile muutmine pole võimalik.
+
+#### Meetod 5: Docker CLI Config (`~/.docker/config.json`)
+
+Sarnane `daemon.json`'ile, aga per-user level.
+
+**Põhjus mitte kasutada:** Modern Docker prefereerib `daemon.json`. Haruldane use case.
+
+#### Meetod 6: BuildKit Secrets (Modern/Future)
+
+**Docker BuildKit:** Next-gen build engine (experimental → stable Docker 23.0+).
+
+**Põhimõte:** Secrets mount'itakse build time'is, aga **EI SALVESTU layer'itesse**.
+
+**Lühike preview:**
+```bash
+docker build \
+  --secret id=http_proxy,env=HTTP_PROXY \
+  --secret id=https_proxy,env=HTTPS_PROXY \
+  -t myapp .
+```
+
+```dockerfile
+RUN --mount=type=secret,id=http_proxy \
+    export HTTP_PROXY=$(cat /run/secrets/http_proxy) && \
+    npm install
+```
+
+**Eelised:**
+- ✅ Secrets **KUNAGI** ei leak'i image layer'itesse
+- ✅ Modern, secure approach
+
+**Puudused:**
+- ❌ Vajab Docker BuildKit enabled (`DOCKER_BUILDKIT=1`)
+- ❌ Nõuab Docker 23.0+ (relatively new)
+- ❌ Keeruline beginneritele
+
+**Soovitus:** Future-proof alternative, aga Lab 1 õppijatele liiga keeruline.
+
+**Loe edasi:** [Docker BuildKit Secrets Documentation](https://docs.docker.com/build/building/secrets/)
+
+#### Meetod 7: Network Mode Settings (ANTI-PATTERN)
+
+```bash
+docker build --network=host -t myapp .
+```
+
+**Miks see on halb:**
+- ❌ **Security risk:** Container'il on täielik juurdepääs host network'ile
+- ❌ Pole portable (network config võib olla erinev)
+- ❌ Mitte production-ready
+
+**Soovitus:** **MITTE KUNAGI** kasutada production'is.
+
+#### Meetod 8: ENV Instruction (Non-ARG)
+
+```dockerfile
+ENV HTTP_PROXY=http://cache1.sss:3128
+```
+
+**Probleem:** Sama kui hardcoded (Meetod 3) → leak'ib runtime'i, pole flexible.
+
+**Soovitus:** Asenda ARG'iga (Meetod 1).
+
+### Flowchart: Millal Kasutada Millist Meetodit?
+
+```
+Kas saad Dockerfile'i muuta?
+├─ JAH → Kas oled algaja?
+│   ├─ JAH → ARG Single-Stage (Lab 1 õppemeetod)
+│   │         └─> Lihtne mõista, aga proxy leak'ib runtime'i
+│   │
+│   └─ EI → ARG Multi-Stage ⭐ (PRODUCTION)
+│             └─> Turvaline, portable, best practice
+│
+└─ EI → Kas sul on admin access?
+    ├─ JAH → daemon.json
+    │         └─> Ühekordselt setup, global effect
+    │
+    └─ EI → config.json (või palun admin'ilt abi)
+              └─> Per-user, harv use case
+```
+
+### CI/CD Integratsioon
+
+**GitHub Actions, GitLab CI, Jenkins:** Proxy secrets integreeritavad läbi repository secrets.
+
+**Lühike vihje:**
+```yaml
+# GitHub Actions näide (vihje)
+- name: Build Docker image
+  run: |
+    docker build \
+      --build-arg HTTP_PROXY=${{ secrets.PROXY_URL }} \
+      --build-arg HTTPS_PROXY=${{ secrets.PROXY_URL }} \
+      -t myapp:${{ github.sha }} .
+```
+
+**Täpsem käsitlus:** Lab 5 (CI/CD Pipeline) käsitleb täielikku CI/CD workflow'i.
+
+### Troubleshooting: Proxy Probleemide Lahendamine
+
+#### Probleem 1: Build hangub "Downloading dependencies..."
+
+**Sümptom:**
+```
+Step 5/10 : RUN gradle dependencies --no-daemon
+ ---> Running in abc123...
+Downloading https://repo.maven.apache.org/...
+[hangs indefinitely]
+```
+
+**Põhjus:** Proxy pole seadistatud või on vale.
+
+**Lahendus:**
+```bash
+# 1. Kontrolli proxy environment variable
+echo $HTTP_PROXY
+# Oodatud: http://cache1.sss:3128
+
+# 2. Test proxy connectivity
+curl -x http://cache1.sss:3128 https://repo.maven.apache.org
+# Peaks tagastama HTML
+
+# 3. Kontrolli Dockerfile ARG
+docker build --build-arg HTTP_PROXY=http://cache1.sss:3128 -t myapp .
+
+# 4. Debug RUN käsu output
+RUN echo "GRADLE_OPTS: $GRADLE_OPTS" && gradle dependencies
+```
+
+#### Probleem 2: "Connection refused" viga
+
+**Sümptom:**
+```
+Failed to connect to cache1.sss port 3128: Connection refused
+```
+
+**Põhjus:** Proxy host/port parsing on vale VÕI proxy server ei ole kättesaadav.
+
+**Lahendus:**
+```bash
+# 1. Kontrolli proxy URL format
+HTTP_PROXY=http://cache1.sss:3128  # Correct
+HTTP_PROXY=cache1.sss:3128          # Incorrect (missing protocol)
+
+# 2. Test proxy host reachability
+ping cache1.sss
+telnet cache1.sss 3128
+
+# 3. Kontrolli GRADLE_OPTS parsing
+docker build --progress=plain -t myapp .
+# Näed RUN käskude output'i
+```
+
+#### Probleem 3: Proxy leak'ib runtime'i
+
+**Sümptom:**
+```bash
+docker run --rm myapp env | grep -i proxy
+HTTP_PROXY=http://cache1.sss:3128  # ❌ BAD! Runtime proxy leak
+```
+
+**Põhjus:** Kasutasid ENV asemel ARG VÕI single-stage build'i.
+
+**Lahendus:**
+```dockerfile
+# GOOD: ARG multi-stage (ei leki runtime'i)
+FROM gradle:8-jdk17 AS builder
+ARG HTTP_PROXY  # Build-time only
+...
+
+FROM eclipse-temurin:17-jre
+# NO HTTP_PROXY here → clean runtime
+```
+
+**Test:**
+```bash
+docker run --rm myapp env | grep -i proxy
+# Oodatud: TÜHI väljund ✅
+```
+
+### Best Practices
+
+1. ✅ **Kasuta ARG multi-stage** production'is
+   - Turvaline (runtime clean)
+   - Portable (works kõikjal)
+   - CI/CD friendly
+
+2. ✅ **Ära hardcode proxy** Dockerfile'is
+   - Kasuta `--build-arg` build time'is
+   - Võimalda sama Dockerfile kasutamist avalikus võrgus
+
+3. ✅ **Test runtime clean** (proxy ei leki)
+   - `docker run --rm myapp env | grep -i proxy`
+   - Oodatud: tühi väljund
+
+4. ✅ **Document CI/CD setup**
+   - Repository secrets configuration
+   - Build script näited
+
+5. ❌ **Ära kasuta `--network=host`**
+   - Security risk
+   - Mitte production-ready
+
+---
+
+### Lisastsenaarium: Private Repository Manager (Sonatype Nexus)
+
+**Mis on Nexus Repository Manager?**
+
+Nexus on **corporate artifact repository**, mis:
+- Cache'ib avalikud pakid (Maven Central, npmjs.org) → kiire, reliable
+- Hostib company internal packages → private sõltuvused
+- Pakub security scanning (Nexus IQ), access control (RBAC)
+- Asub corporate võrgus (nt `https://nexus.company.com`)
+
+**Erinevus HTTP Proxy vs Nexus:**
+
+| Aspekt | HTTP Proxy (cache1.sss:3128) | Nexus Repository Manager |
+|--------|------------------------------|--------------------------|
+| **Eesmärk** | Network-level proxy (CONNECT) | Package repository manager |
+| **Konfiguratsioon** | `HTTP_PROXY` env var | Build tool settings (settings.xml, .npmrc, build.gradle) |
+| **Cache** | Generic HTTP cache | Package-aware artifacts cache |
+| **Private packages** | ❌ Ei toeta | ✅ Toetab (hosted repos) |
+| **Security scanning** | ❌ Pole | ✅ Nexus IQ integration |
+| **Access control** | ⚠️ Basic auth (optional) | ✅ RBAC (required) |
+
+**Oluline:** Nexus **ei ole HTTP proxy** - see on **application-level package repository**.
+
+---
+
+#### Gradle + Nexus
+
+**build.gradle (repositories config):**
+
+```groovy
+repositories {
+    maven {
+        url = uri("https://nexus.company.com/repository/maven-public/")
+        credentials {
+            username = System.getenv("NEXUS_USERNAME") ?: project.findProperty("nexusUsername")
+            password = System.getenv("NEXUS_PASSWORD") ?: project.findProperty("nexusPassword")
+        }
+    }
+}
+```
+
+**Dockerfile (multi-stage):**
+
+```dockerfile
+FROM gradle:8.11-jdk21-alpine AS builder
+
+ARG NEXUS_USERNAME
+ARG NEXUS_PASSWORD
+
+WORKDIR /app
+
+COPY build.gradle settings.gradle ./
+RUN gradle dependencies --no-daemon
+
+COPY src ./src
+RUN gradle bootJar --no-daemon
+
+FROM eclipse-temurin:21-jre-alpine
+COPY --from=builder /app/build/libs/*.jar app.jar
+CMD ["java", "-jar", "app.jar"]
+```
+
+**Build:**
+```bash
+docker build \
+  --build-arg NEXUS_USERNAME=build-user \
+  --build-arg NEXUS_PASSWORD=secret123 \
+  -t todo-service:1.0 .
+```
+
+**Security check:**
+```bash
+docker run --rm todo-service:1.0 env | grep NEXUS
+# Oodatud: TÜHI ✅ (credentials ei leki runtime'i)
+```
+
+---
+
+#### Maven + Nexus
+
+**settings.xml (project root või ~/.m2/settings.xml):**
+
+```xml
+<settings>
+  <servers>
+    <server>
+      <id>nexus</id>
+      <username>${env.NEXUS_USERNAME}</username>
+      <password>${env.NEXUS_PASSWORD}</password>
+    </server>
+  </servers>
+
+  <mirrors>
+    <mirror>
+      <id>nexus</id>
+      <mirrorOf>*</mirrorOf>
+      <url>https://nexus.company.com/repository/maven-public/</url>
+    </mirror>
+  </mirrors>
+</settings>
+```
+
+**Dockerfile:**
+
+```dockerfile
+FROM maven:3.9-eclipse-temurin-17-alpine AS builder
+
+ARG NEXUS_USERNAME
+ARG NEXUS_PASSWORD
+
+WORKDIR /app
+
+COPY settings.xml /root/.m2/settings.xml
+COPY pom.xml ./
+RUN mvn dependency:go-offline -B
+
+COPY src ./src
+RUN mvn package -DskipTests -B
+
+FROM eclipse-temurin:17-jre-alpine
+COPY --from=builder /app/target/*.jar app.jar
+CMD ["java", "-jar", "app.jar"]
+```
+
+---
+
+#### npm + Nexus
+
+**.npmrc (project root):**
+
+```ini
+registry=https://nexus.company.com/repository/npm-public/
+always-auth=true
+_auth=${NPM_AUTH_TOKEN}
+```
+
+**Dockerfile:**
+
+```dockerfile
+FROM node:18-alpine AS builder
+
+ARG NPM_AUTH_TOKEN
+
+WORKDIR /app
+
+COPY package.json package-lock.json .npmrc ./
+RUN echo "_auth=${NPM_AUTH_TOKEN}" >> .npmrc
+RUN npm ci
+
+COPY . .
+RUN npm run build
+
+FROM node:18-alpine
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --only=production && npm cache clean --force
+COPY --from=builder /app/dist ./dist
+CMD ["node", "dist/server.js"]
+```
+
+**Build:**
+```bash
+# Generate token: echo -n "username:password" | base64
+docker build \
+  --build-arg NPM_AUTH_TOKEN=dXNlcm5hbWU6cGFzc3dvcmQ= \
+  -t user-service:1.0 .
+```
+
+---
+
+#### Nexus + HTTP Proxy (kombineeritud)
+
+Kui Nexus on HTTP proxy taga (maksimum security setup):
+
+**Dockerfile:**
+
+```dockerfile
+FROM gradle:8.11-jdk21-alpine AS builder
+
+ARG HTTP_PROXY
+ARG HTTPS_PROXY
+ARG NO_PROXY=nexus.company.com,*.company.com
+ARG NEXUS_USERNAME
+ARG NEXUS_PASSWORD
+
+WORKDIR /app
+
+# Seadista proxy (kui Nexus proxy taga)
+RUN if [ -n "$HTTP_PROXY" ]; then \
+      PROXY_HOST=$(echo "$HTTP_PROXY" | sed 's|^.*://||; s|:.*$||'); \
+      PROXY_PORT=$(echo "$HTTP_PROXY" | grep -oE '[0-9]+$'); \
+      export GRADLE_OPTS="-Dhttp.proxyHost=$PROXY_HOST -Dhttp.proxyPort=$PROXY_PORT -Dhttps.proxyHost=$PROXY_HOST -Dhttps.proxyPort=$PROXY_PORT -Dhttp.nonProxyHosts=${NO_PROXY}"; \
+    fi
+
+COPY build.gradle settings.gradle ./
+RUN gradle dependencies --no-daemon
+
+COPY src ./src
+RUN gradle bootJar --no-daemon
+
+FROM eclipse-temurin:21-jre-alpine
+COPY --from=builder /app/build/libs/*.jar app.jar
+CMD ["java", "-jar", "app.jar"]
+```
+
+**Build:**
+```bash
+docker build \
+  --build-arg HTTP_PROXY=http://cache1.sss:3128 \
+  --build-arg HTTPS_PROXY=http://cache1.sss:3128 \
+  --build-arg NEXUS_USERNAME=build-user \
+  --build-arg NEXUS_PASSWORD=secret123 \
+  -t todo-service:1.0 .
+```
+
+**Märkus:** `NO_PROXY` exception on kritiline - Nexus domain peab olema proxy exclusion'is.
+
+---
+
+#### Credentials Management
+
+**❌ MITTE KUNAGI:**
+
+```dockerfile
+ENV NEXUS_USERNAME=admin  # ❌ Leak runtime'i!
+ENV NEXUS_PASSWORD=admin123
+```
+
+```groovy
+// build.gradle
+credentials {
+    username = "admin"  // ❌ Git history'sse!
+    password = "admin123"
+}
+```
+
+**✅ ÕIGE VIIS:**
+
+```dockerfile
+# ARG (build-time only)
+ARG NEXUS_USERNAME
+ARG NEXUS_PASSWORD
+# Runtime stage: NO CREDENTIALS ✅
+```
+
+**CI/CD integratsioon:**
+
+```yaml
+# GitHub Actions
+- name: Build Docker image
+  run: |
+    docker build \
+      --build-arg NEXUS_USERNAME=${{ secrets.NEXUS_USERNAME }} \
+      --build-arg NEXUS_PASSWORD=${{ secrets.NEXUS_PASSWORD }} \
+      -t myapp:${{ github.sha }} .
+```
+
+---
+
+#### Troubleshooting: Nexus Probleemid
+
+**Probleem 1: "Unauthorized" (401)**
+
+```
+Received status code 401 from server: Unauthorized
+```
+
+**Lahendus:**
+```bash
+# Test credentials
+curl -u username:password https://nexus.company.com/repository/maven-public/
+
+# Debug build
+docker build --progress=plain \
+  --build-arg NEXUS_USERNAME=test \
+  --build-arg NEXUS_PASSWORD=test \
+  -t myapp .
+```
+
+**Probleem 2: SSL Certificate Error**
+
+```
+PKIX path building failed: unable to find valid certification path
+```
+
+**Lahendus (DEV ONLY):**
+```dockerfile
+COPY nexus-cert.pem /usr/local/share/ca-certificates/nexus.crt
+RUN update-ca-certificates
+```
+
+**Production:** Kasuta proper CA-signed certificate.
+
+**Probleem 3: Proxy blokeerib Nexus'i**
+
+```
+Connection refused: https://nexus.company.com
+```
+
+**Lahendus:**
+```dockerfile
+ARG NO_PROXY=nexus.company.com,*.company.com
+
+RUN export http_proxy=$HTTP_PROXY && \
+    export https_proxy=$HTTP_PROXY && \
+    export no_proxy=$NO_PROXY && \
+    gradle dependencies --no-daemon
+```
+
+---
+
+#### Best Practices
+
+1. ✅ **ARG credentials** (mitte ENV) - build-time only, ei leki runtime'i
+2. ✅ **Mirror all repositories** läbi Nexus - Maven `<mirrorOf>*</mirrorOf>`, npm `registry=`
+3. ✅ **CI/CD secrets** - GitHub Secrets, GitLab CI Variables
+4. ✅ **Multi-stage build** - credentials builder stage'is, runtime clean
+5. ✅ **NO_PROXY exception** - Nexus domain proxy exclusion'is
+6. ✅ **Test credential leak** - `docker run --rm myapp env | grep -i nexus` → tühi
+
+---
+
+### Viited
+
+- **Docker daemon proxy config:** https://docs.docker.com/config/daemon/systemd/#httphttps-proxy
+- **BuildKit secrets:** https://docs.docker.com/build/building/secrets/
+- **Praktiline näide:** `labs/01-docker-lab/solutions/backend-java-spring/README-PROXY.md`
+- **Node.js näide:** `labs/01-docker-lab/solutions/backend-nodejs/README-PROXY.md`
+
+---
+
 ## Kokkuvõte
 
 **Java/Spring Boot konteineriseerimise peamised punktid:**
@@ -1274,7 +2031,7 @@ FROM node:18-slim
 
 ---
 
-**Viimane uuendus:** 2025-11-23
-**Seos laboritega:** Lab 1 (Dockerize User Service + Todo Service)
+**Viimane uuendus:** 2025-01-25
+**Seos laboritega:** Lab 1 (Dockerize User Service + Todo Service, corporate proxy käsitlus)
 **Eelmine peatükk:** 06-Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md
 **Järgmine peatükk:** 07-Docker-Imagite-Haldamine-Optimeerimine.md

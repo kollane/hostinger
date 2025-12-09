@@ -1,0 +1,188 @@
+# ==========================================================================
+# ⚠️⚠️⚠️ ANTI-PATTERN DEMONSTRATION (GRADLE VARIANT) ⚠️⚠️⚠️
+# ==========================================================================
+#
+# See Dockerfile demonstreerib, mida MITTE TEHA Gradle projektides!
+#
+# PROBLEEMID:
+# -----------
+# ❌ EI OLE porteeritav (töötab ainult cache1.sss võrgus)
+# ❌ Proxy LEAK'ib runtime konteineri (turvaviga)
+# ❌ GRADLE_OPTS on runtime'is (ei ole vaja, confusion)
+# ❌ Tekitab technical debt (tuleb refaktorida)
+# ❌ Arendaja masinas ei tööta (ei saa testida)
+# ❌ CI/CD pipeline'is ebaõnnestub (kui ei ole cache1.sss)
+# ❌ Image ei ole taaskasutatav teistes keskkondades
+#
+# MIKS selline kood eksisteerib corporate keskkonnas?
+# ----------------------------------------------------
+# - Quick fix surve all (deadline'id)
+# - Arendaja ei tea Gradle proxy konfiguratsiooni (complex)
+# - Copy-paste StackOverflow'st (ilma mõistmata)
+# - "It works, don't touch it" kultuur
+# - Legacy code, mida keegi ei julge puutuda
+# - Gradle dokumentatsioon ei ole selge (systemProp vs GRADLE_OPTS)
+#
+# ÕIGE LAHENDUS:
+# --------------
+# ✅ Kasuta Dockerfile.optimized.proxy (ARG-põhine + parsing)
+# ✅ Proxy seadistamine build arg'idega
+# ✅ Runtime konteiner clean (ei leki proksi)
+# ✅ Portaabel (töötab proksi ja ilma)
+#
+# KASUTUS (AINULT DEMONSTRATSIOONIKS):
+# -------------------------------------
+# docker build \
+#   -f Dockerfile.proxy-hardcoded \
+#   -t todo-service:1.0-hardcoded \
+#   ../../../apps/backend-java-spring
+#
+# ⚠️ See töötab AINULT cache1.sss võrgus!
+# ⚠️ Arendaja masinas ebaõnnestub!
+#
+# ==========================================================================
+
+FROM gradle:8.11-jdk21-alpine
+
+# ⚠️ HARDCODED GRADLE PROXY - EI TÖÖTA arendaja masinas!
+# Gradle vajab spetsiifilist formaati (mitte HTTP_PROXY)
+ENV GRADLE_OPTS="-Dhttp.proxyHost=cache1.sss -Dhttp.proxyPort=3128 -Dhttps.proxyHost=cache1.sss -Dhttps.proxyPort=3128 -Dhttp.nonProxyHosts=localhost|127.0.0.1"
+
+# ⚠️ Lisaks ka HTTP_PROXY (mõned tool'id kasutavad seda)
+ENV HTTP_PROXY=http://cache1.sss:3128 \
+    HTTPS_PROXY=http://cache1.sss:3128 \
+    NO_PROXY=localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16
+
+# ⚠️ Probleem: Proxy info on nüüd KOGU image'is!
+# See on põhjus #1, miks see on halb:
+# - Kui kolleeg kloonib repo ja ehitab: ❌ Timeout (ei ole cache1.sss võrgus)
+# - Kui deploy'id AWS'i: ❌ Runtime proovib kasutada cache1.sss:3128
+# - Kui testi lokaalselt: ❌ Connection refused
+
+WORKDIR /app
+
+# Kopeeri Gradle failid
+COPY build.gradle settings.gradle ./
+COPY gradle ./gradle
+
+# gradle dependencies kasutab hardcoded GRADLE_OPTS
+RUN gradle dependencies --no-daemon
+
+# Kopeeri lähtekood ja ehita
+COPY src ./src
+RUN gradle bootJar --no-daemon
+
+# Kopeeri JAR
+RUN cp /app/build/libs/todo-service.jar /app/app.jar
+
+EXPOSE 8081
+
+# ⚠️ GRADLE_OPTS on runtime'is ALLES (leak!)
+# Testi: docker run --rm todo-service:1.0-hardcoded env | grep GRADLE
+# Näed: GRADLE_OPTS=-Dhttp.proxyHost=cache1.sss ...
+# See EI PEAKS olema runtime'is - Java rakendus ei vaja Gradle'i!
+
+CMD ["java", \
+    "-XX:InitialRAMPercentage=80", \
+    "-XX:MaxRAMPercentage=80", \
+    "-jar", \
+    "app.jar"]
+
+# ==========================================================================
+# GRADLE PROXY CONFUSION:
+# ==========================================================================
+#
+# Gradle proxy konfiguratsiooni on KOLM meetodit, mis tekitab segadust:
+#
+# MEETOD 1: GRADLE_OPTS (see fail)
+# --------------------------------
+# ENV GRADLE_OPTS="-Dhttp.proxyHost=cache1.sss -Dhttp.proxyPort=3128"
+#
+# Probleemid:
+# - ❌ Hardcoded (ei ole portaabel)
+# - ❌ Leak'ib runtime'i (ei ole vaja)
+# - ❌ Verbose (pikk string)
+#
+# MEETOD 2: gradle.properties fail
+# ---------------------------------
+# COPY gradle.properties $GRADLE_USER_HOME/gradle.properties
+#
+# gradle.properties:
+#   systemProp.http.proxyHost=cache1.sss
+#   systemProp.http.proxyPort=3128
+#
+# Probleemid:
+# - ❌ Hardcoded fail (ei ole portaabel)
+# - ❌ Lisafail (maintenance overhead)
+# - ❌ Võib leakida repo'sse (.gitignore?)
+#
+# MEETOD 3: ARG + parsing (ÕIGE, vt. Dockerfile.optimized.proxy)
+# ----------------------------------------------------------------
+# ARG HTTP_PROXY=""
+# RUN if [ -n "$HTTP_PROXY" ]; then
+#       PROXY_HOST=$(echo $HTTP_PROXY | sed ...);
+#       PROXY_PORT=$(echo $HTTP_PROXY | grep -oE ...);
+#       export GRADLE_OPTS="...";
+#     fi
+#
+# Eelised:
+# - ✅ Portaabel (töötab proksi ja ilma)
+# - ✅ Ei leki runtime'i (ainult builder stage'is)
+# - ✅ Standard HTTP_PROXY formaat (nagu npm)
+#
+# ==========================================================================
+#
+# REFAKTORIMISE JUHEND:
+# ==========================================================================
+#
+# Kui sa leiad corporate codebase'ist sellise Dockerfile'i:
+#
+# SAMM 1: Liigu multi-stage build'ile
+# ------------------------------------
+# - Builder stage: Gradle + JDK (proxy siin)
+# - Runtime stage: JRE ainult (proxy EI OLE)
+#
+# SAMM 2: Asenda hardcoded GRADLE_OPTS ARG'idega
+# -----------------------------------------------
+# Eemalda:  ENV GRADLE_OPTS="-Dhttp.proxyHost=..."
+# Lisa:     ARG HTTP_PROXY=""
+#           RUN if [ -n "$HTTP_PROXY" ]; then ... fi
+#
+# SAMM 3: Uuenda build käsud
+# ---------------------------
+# Build proksiga:
+#   docker build --build-arg HTTP_PROXY=http://cache1.sss:3128 ...
+#
+# Build ilma:
+#   docker build ...
+#
+# SAMM 4: Verifitseeri runtime
+# -----------------------------
+# docker run --rm todo-service:1.0 env | grep -i proxy
+# Tulemus peaks olema TÜHI ✅
+#
+# ==========================================================================
+#
+# CORPORATE SURVIVAL TIP (GRADLE VARIANT):
+# -----------------------------------------
+# Gradle proxy on keeruline - kolleegid võivad karta refaktoorida.
+#
+# Strateegia:
+# 1. Loo working prototype: Dockerfile.optimized.proxy
+# 2. Näita diff'i: du -sh <images> (600MB → 250MB)
+# 3. Demonstreeri portability: ehita mõlemas keskkonnas
+# 4. Paku migreerimisplaani: deprecated vana → uus
+# 5. Paku abi: "Ma testi sinu branch'i koos"
+# 6. Dokumenteeri: README-PROXY.md
+#
+# Gradle proxy'ga on palju technical debt'i - ole kannatlik! 💪
+#
+# ==========================================================================
+#
+# LINGID:
+# -------
+# 📖 Õige lahendus: Dockerfile.optimized.proxy
+# 📖 Dokumentatsioon: README-PROXY.md
+# 📖 Gradle spetsiifika: ../../../../resource/06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md
+#
+# ==========================================================================

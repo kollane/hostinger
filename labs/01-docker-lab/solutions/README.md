@@ -8,16 +8,24 @@ See kaust sisaldab näidis-lahendusi Labor 1 harjutustele **mõlema teenuse (ser
 
 ```
 solutions/
-├── README.md                    # See fail
-├── backend-nodejs/              # User Teenus (Service) (Node.js)
-│   ├── Dockerfile               # Lihtne Dockerfile (Harjutus 1)
-│   ├── Dockerfile.optimized     # Optimeeritud (Harjutus 5)
+├── README.md                        # See fail
+├── backend-nodejs/                  # User Teenus (Service) (Node.js)
+│   ├── Dockerfile                   # Lihtne 1-stage (VPS) (Harjutus 1 - HARVA)
+│   ├── Dockerfile.simple            # 2-stage ARG proksiga (Harjutus 1 - PRIMAARNE)
+│   ├── Dockerfile.vps-simple        # 1-stage VPS näidis
+│   ├── Dockerfile.optimized         # Optimeeritud (Harjutus 5)
+│   ├── Dockerfile.optimized.proxy   # Optimeeritud + proxy (Harjutus 5)
 │   ├── .dockerignore
-│   └── healthcheck.js           # Seisukorra kontrolli (health check) skript
-└── backend-java-spring/         # Todo Teenus (Service) (Java)
-    ├── Dockerfile               # Lihtne Dockerfile (Harjutus 1)
-    ├── Dockerfile.optimized     # Optimeeritud (Harjutus 5)
-    └── .dockerignore
+│   ├── healthcheck.js               # Seisukorra kontrolli (health check) skript
+│   └── README-PROXY.md              # Põhjalik proxy juhend
+└── backend-java-spring/             # Todo Teenus (Service) (Java)
+    ├── Dockerfile                   # Lihtne 1-stage pre-built JAR (Harjutus 1 - HARVA)
+    ├── Dockerfile.simple            # 2-stage Gradle containeris (Harjutus 1 - PRIMAARNE)
+    ├── Dockerfile.vps-simple        # 1-stage VPS näidis
+    ├── Dockerfile.optimized         # Optimeeritud (Harjutus 5)
+    ├── Dockerfile.optimized.proxy   # Optimeeritud + proxy (Harjutus 5)
+    ├── .dockerignore
+    └── README-PROXY.md              # Põhjalik Gradle proxy juhend
 ```
 
 ---
@@ -26,18 +34,50 @@ solutions/
 
 ### User Teenus (Service) (Node.js)
 
-#### Lihtne Dockerfile (Harjutus 1)
+#### Variant A: VPS Lihtne (HARVA KASUTATAV)
 
 ```bash
 # Mine apps/backend-nodejs kausta
 cd ~/labs/apps/backend-nodejs
 
-# Kopeeri Dockerfile
-cp ../../01-docker-lab/solutions/backend-nodejs/Dockerfile .
+# Kopeeri VPS versioon
+cp ../../01-docker-lab/solutions/backend-nodejs/Dockerfile.vps-simple Dockerfile
 cp ../../01-docker-lab/solutions/backend-nodejs/.dockerignore .
 
-# Ehita (build) Docker pilt (image)
+# Ehita (build) Docker pilt (image) - AINULT AVALIKUS VÕRGUS!
 docker build -t user-service:1.0 .
+
+# Käivita
+docker run -d --name user-service -p 3000:3000 \
+  -e DB_HOST=postgres-user \
+  -e JWT_SECRET=test-secret \
+  user-service:1.0
+```
+
+#### Variant B: Corporate Keskkond (PRIMAARNE) ⭐
+
+**Enamik õpilasi kasutab seda!**
+
+```bash
+# Mine apps/backend-nodejs kausta
+cd ~/labs/apps/backend-nodejs
+
+# Kopeeri 2-stage ARG proksiga versioon
+cp ../../01-docker-lab/solutions/backend-nodejs/Dockerfile.simple Dockerfile
+cp ../../01-docker-lab/solutions/backend-nodejs/.dockerignore .
+
+# Ehita PROKSIGA (corporate võrk)
+docker build \
+  --build-arg HTTP_PROXY=http://cache1.sss:3128 \
+  --build-arg HTTPS_PROXY=http://cache1.sss:3128 \
+  -t user-service:1.0 .
+
+# VÕI ehita ILMA proksita (avalik võrk)
+docker build -t user-service:1.0 .
+
+# Kontrolli: Kas proxy leak'ib?
+docker run --rm user-service:1.0 env | grep -i proxy
+# Oodatud: TÜHI! ✅
 
 # Käivita
 docker run -d --name user-service -p 3000:3000 \
@@ -64,21 +104,55 @@ docker images | grep user-service
 
 ### Todo Teenus (Service) (Java)
 
-#### Lihtne Dockerfile (Harjutus 1)
+#### Variant A: VPS Lihtne (HARVA KASUTATAV)
+
+**Eeldab pre-built JAR'i host'is!**
 
 ```bash
 # Mine apps/backend-java-spring kausta
 cd ~/labs/apps/backend-java-spring
 
-# Kopeeri Dockerfile
-cp ../../01-docker-lab/solutions/backend-java-spring/Dockerfile .
+# Kopeeri VPS versioon
+cp ../../01-docker-lab/solutions/backend-java-spring/Dockerfile.vps-simple Dockerfile
 cp ../../01-docker-lab/solutions/backend-java-spring/.dockerignore .
 
-# Ehita (build) JAR
+# Ehita JAR HOST'IS
 ./gradlew clean bootJar
 
-# Ehita (build) Docker pilt (image)
+# Ehita Docker pilt (image) - AINULT AVALIKUS VÕRGUS!
 docker build -t todo-service:1.0 .
+
+# Käivita
+docker run -d --name todo-service -p 8081:8081 \
+  -e DB_HOST=postgres-todo \
+  -e JWT_SECRET=test-secret \
+  todo-service:1.0
+```
+
+#### Variant B: Corporate Keskkond (PRIMAARNE) ⭐
+
+**Enamik õpilasi kasutab seda! Gradle build containeris.**
+
+```bash
+# Mine apps/backend-java-spring kausta
+cd ~/labs/apps/backend-java-spring
+
+# Kopeeri 2-stage Gradle containeris versioon
+cp ../../01-docker-lab/solutions/backend-java-spring/Dockerfile.simple Dockerfile
+cp ../../01-docker-lab/solutions/backend-java-spring/.dockerignore .
+
+# Ehita PROKSIGA (corporate võrk) - Gradle build containeris!
+docker build \
+  --build-arg HTTP_PROXY=http://cache1.sss:3128 \
+  --build-arg HTTPS_PROXY=http://cache1.sss:3128 \
+  -t todo-service:1.0 .
+
+# VÕI ehita ILMA proksita (avalik võrk)
+docker build -t todo-service:1.0 .
+
+# Kontrolli: Kas proxy leak'ib?
+docker run --rm todo-service:1.0 env | grep -i proxy
+# Oodatud: TÜHI! ✅
 
 # Käivita
 docker run -d --name todo-service -p 8081:8081 \
