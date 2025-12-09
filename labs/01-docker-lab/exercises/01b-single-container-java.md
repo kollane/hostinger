@@ -1,4 +1,8 @@
 # Harjutus 1: Üksiku konteineri loomine (Todo Service)
+---
+## 📋 Harjutuse ülevaade
+
+**Harjutuse eesmärk:** Selles harjutuses konteineriseerid Java Spring Boot Todo Service'i rakenduse. Õpid looma Dockerfile'i, ehitama Docker tõmmist ja käivitama konteinereid.
 
 **🏗️ Arhitektuurne Lähenemine:**
 
@@ -30,7 +34,6 @@ Nendes harjutuses õpid looma **OCI-standardset** (Open Container Initiative) Do
 - Todo Service vajab PostgreSQL andmebaasi
 - Konteiner käivitub, aga hangub kohe (see on **OODATUD**)
 - Töötava rakenduse saad **Harjutus 2**-s (mitme konteineri käivitamine)
-
 
 ## 📝 Sammud
 
