@@ -12,6 +12,8 @@
 
 ### Riistvara ja OS
 
+#### Docker Laboritele (Lab 1-2)
+
 ```yaml
 Operating System: Ubuntu 24.04 LTS
 Kernel: Linux 6.8.0-87-generic
@@ -20,6 +22,19 @@ CPU: 2 cores (AMD with SVM virtualization)
 RAM: 7.8GB physical
 Swap: 4GB (file-based, /swapfile)
 Disk: 96GB total
+Network: 1 external IPv4 address
+```
+
+#### Kubernetes Laboritele (Lab 3-10)
+
+```yaml
+Operating System: Ubuntu 24.04 LTS
+Kernel: Linux 6.8.0-87-generic
+Architecture: x86_64
+CPU: 6+ cores (AMD with SVM virtualization)
+RAM: 24GB physical (soovitatav)
+Swap: 8GB (file-based, /swapfile)
+Disk: 120GB+ total (SSD soovitatav)
 Network: 1 external IPv4 address
 ```
 
@@ -143,7 +158,7 @@ devices:
     type: disk
 ```
 
-**Profile: devops-lab** (custom)
+**Profile: devops-lab** (Docker laboritele)
 ```yaml
 name: devops-lab
 config:
@@ -166,11 +181,55 @@ used_by:
   - devops-student3
 ```
 
-**Security settings explained:**
+**Security settings explained (Docker profile):**
 - `security.nesting: true` - Allows running containers inside containers (needed for Docker)
 - `security.privileged: false` - Container runs as unprivileged (more secure)
 - `security.syscalls.intercept.mknod: true` - Allows device creation in container
 - `security.syscalls.intercept.setxattr: true` - Allows extended attributes (needed for Docker overlay2)
+
+**Profile: devops-lab-k8s** (Kubernetes laboritele)
+```yaml
+name: devops-lab-k8s
+config:
+  limits.cpu: "2"
+  limits.memory: 5120MiB
+  limits.memory.enforce: soft
+  security.nesting: "true"
+  security.privileged: "false"
+  security.syscalls.intercept.mknod: "true"
+  security.syscalls.intercept.setxattr: "true"
+  linux.kernel_modules: ip_tables,ip6_tables,nf_nat,overlay,br_netfilter
+  raw.lxc: |
+    lxc.apparmor.profile=unconfined
+    lxc.cap.drop=
+    lxc.cgroup.devices.allow=a
+    lxc.mount.auto=proc:rw sys:rw cgroup:rw
+description: DevOps Lab K8s Profile - 5GB RAM, 2 CPU, Kubernetes support
+devices:
+  root:
+    path: /
+    pool: default
+    type: disk
+  kmsg:
+    path: /dev/kmsg
+    source: /dev/kmsg
+    type: unix-char
+used_by:
+  - devops-k8s-student1
+  - devops-k8s-student2
+  - devops-k8s-student3
+```
+
+**Security settings explained (Kubernetes profile):**
+- `limits.cpu: 2` - 2 CPU cores for Kubernetes components
+- `limits.memory: 5120MiB` - 5GB RAM for kubelet, kube-proxy, and pods
+- `linux.kernel_modules` - Required Kubernetes network modules (iptables, overlay, br_netfilter)
+- `raw.lxc: lxc.apparmor.profile=unconfined` - Less restrictive AppArmor (K8s requires more access)
+- `raw.lxc: lxc.cap.drop=` - Empty (keeps all capabilities for K8s)
+- `raw.lxc: lxc.mount.auto=proc:rw sys:rw cgroup:rw` - K8s needs write access to /proc and /sys
+- `kmsg device` - Kubernetes needs access to kernel messages for logging
+
+**Turvalisuse kompromiss:** Kubernetes profil on vähem piiratud kui Docker profil, kuna Kubernetes vajab rohkem süsteemitaseme juurdepääsu. Siiski on see turvalisem kui täielikult privileged konteiner.
 
 ---
 
@@ -521,11 +580,97 @@ User credentials:
   Password: student3
 ```
 
+### devops-k8s-student1 (Kubernetes konteiner)
+
+```yaml
+Name: devops-k8s-student1
+Status: RUNNING
+IPv4: 10.67.86.XXX
+Profile: devops-lab-k8s
+
+Processes: ~80 (Kubernetes komponendid töötavad)
+CPU usage: 2 cores allocated
+Memory usage: ~1.5GB idle, ~3-4GB under load (max 5GB)
+
+Proxy devices (port forwarding):
+  ssh-proxy:
+    type: proxy
+    listen: tcp:0.0.0.0:2211
+    connect: tcp:127.0.0.1:22
+    nat: true
+
+  k8s-api-proxy:
+    type: proxy
+    listen: tcp:0.0.0.0:6443
+    connect: tcp:127.0.0.1:6443
+    nat: true
+
+  ingress-http-proxy:
+    type: proxy
+    listen: tcp:0.0.0.0:30080
+    connect: tcp:127.0.0.1:30080
+    nat: true
+
+  ingress-https-proxy:
+    type: proxy
+    listen: tcp:0.0.0.0:30443
+    connect: tcp:127.0.0.1:30443
+    nat: true
+
+User credentials:
+  Username: labuser
+  Password: student1
+```
+
+### devops-k8s-student2 (Kubernetes konteiner)
+
+```yaml
+Name: devops-k8s-student2
+Status: RUNNING
+IPv4: 10.67.86.XXX
+Profile: devops-lab-k8s
+
+Processes: ~80
+Memory usage: ~1.5GB idle, ~3-4GB under load (max 5GB)
+
+Proxy devices (port forwarding):
+  ssh-proxy: 2212 → 22
+  k8s-api-proxy: 6444 → 6443
+  ingress-http-proxy: 30180 → 30080
+  ingress-https-proxy: 30543 → 30443
+
+User credentials:
+  Username: labuser
+  Password: student2
+```
+
+### devops-k8s-student3 (Kubernetes konteiner)
+
+```yaml
+Name: devops-k8s-student3
+Status: RUNNING
+IPv4: 10.67.86.XXX
+Profile: devops-lab-k8s
+
+Processes: ~80
+Memory usage: ~1.5GB idle, ~3-4GB under load (max 5GB)
+
+Proxy devices (port forwarding):
+  ssh-proxy: 2213 → 22
+  k8s-api-proxy: 6445 → 6443
+  ingress-http-proxy: 30280 → 30080
+  ingress-https-proxy: 30643 → 30443
+
+User credentials:
+  Username: labuser
+  Password: student3
+```
+
 ---
 
 ## Network Architecture
 
-### Port Mapping Table
+### Port Mapping Table (Docker Mode)
 
 | Service | Internal Port | Student 1 | Student 2 | Student 3 |
 |---------|--------------|-----------|-----------|-----------|
@@ -533,6 +678,17 @@ User credentials:
 | Frontend | 8080 | 8080 | 8180 | 8280 |
 | User Service API | 3000 | 3000 | 3100 | 3200 |
 | Todo Service API | 8081 | 8081 | 8181 | 8281 |
+
+### Port Mapping Table (Kubernetes Mode)
+
+| Service | Internal Port | Student 1 | Student 2 | Student 3 |
+|---------|--------------|-----------|-----------|-----------|
+| SSH | 22 | 2211 | 2212 | 2213 |
+| K8s API Server | 6443 | 6443 | 6444 | 6445 |
+| Ingress HTTP | 30080 | 30080 | 30180 | 30280 |
+| Ingress HTTPS | 30443 | 30443 | 30543 | 30643 |
+
+**Märkus:** Kubernetes režiimis kasutatakse NodePort vahemikku 30000-32767 teenuste avaldamiseks.
 
 ### Network Flow
 
@@ -620,7 +776,7 @@ sudo ufw default allow routed
 
 ## Resource Limits and Quotas
 
-### Memory Limits
+### Memory Limits (Docker Mode)
 
 ```yaml
 Per container:
@@ -629,7 +785,7 @@ Per container:
   OOM killer: enabled if hard limit exceeded
   Swap: shared host swap (4GB)
 
-Total theoretical:
+Total theoretical (3 containers):
   3 containers × 2.5GB = 7.5GB
   Host available: 7.8GB + 4GB swap = 11.8GB
   Safety margin: 4.3GB
@@ -640,7 +796,35 @@ Total theoretical:
 - Hard limit: Container is OOM-killed if exceeds hard limit
 - Cgroup v2 memory controller used
 
-### CPU Limits
+### Memory Limits (Kubernetes Mode)
+
+```yaml
+Per container:
+  Hard limit: 5120MiB (5GB)
+  Enforcement: soft
+  OOM killer: enabled if hard limit exceeded
+  Swap: shared host swap (8GB recommended)
+
+Total theoretical (3 containers):
+  3 containers × 5GB = 15GB
+  Host required: 15GB + 2GB host = 17GB minimum
+  Host recommended: 24GB + 8GB swap = 32GB
+
+Memory breakdown per Kubernetes container:
+  - Kubernetes components (kubelet, kube-proxy): ~500MB
+  - Docker daemon: ~200MB
+  - Control plane (single-node): ~1-1.5GB
+  - Workload pods (apps, monitoring): ~2-3GB
+  - OS + cache: ~500MB
+  TOTAL: ~4.5-6GB under load
+```
+
+**Kubernetes memory requirements:**
+- Higher memory needed for Kubernetes system components
+- Additional memory for monitoring (Prometheus, Grafana)
+- Swap recommended to handle temporary spikes
+
+### CPU Limits (Docker Mode)
 
 ```yaml
 Per container:
@@ -648,7 +832,7 @@ Per container:
   CPU shares: 1024 (default)
   Scheduler: CFS (Completely Fair Scheduler)
 
-Total:
+Total (3 containers):
   3 containers × 1 core = 3 cores requested
   Host available: 2 cores
   Result: Time-sliced (each gets fair share)
@@ -658,6 +842,27 @@ Total:
 - Uses cgroup v2 CPU controller
 - Fair scheduling across all containers
 - Burst allowed if other containers idle
+
+### CPU Limits (Kubernetes Mode)
+
+```yaml
+Per container:
+  CPU quota: 2 cores
+  CPU shares: 2048
+  Scheduler: CFS (Completely Fair Scheduler)
+
+Total (3 containers):
+  3 containers × 2 cores = 6 cores requested
+  Host minimum: 4 cores (heavily time-sliced)
+  Host recommended: 6-8 cores
+  Result: Fair scheduling with potential CPU pressure
+```
+
+**Kubernetes CPU requirements:**
+- 2 cores needed for Kubernetes components + workloads
+- kubelet and kube-proxy consume ~0.5-1 core combined
+- Remaining cores for application pods
+- More cores recommended for monitoring workloads
 
 ### Disk Quotas
 
@@ -954,7 +1159,7 @@ sysctl -p
 **Viimane uuendus:** 2025-12-01
 **Versioon:** 1.2
 **Vastutav:** VPS Admin
-**Järgmine ülevaatus:** 2025-12-25
+**Järgmine ülevaatus:** 2025-12-28
 **Muudatuste logi:**
 - 2025-12-01: Lisatud lab2-setup alias dokumentatsioon
 - 2025-11-26: Lisa containerd.io 1.7.28 downgrade info ja sysctl bug workaround
