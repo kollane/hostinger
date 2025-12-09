@@ -1,0 +1,110 @@
+# ==========================================================================
+# Proxy-teadlik LIHTNE Dockerfile User Teenuse (Service) jaoks
+# ==========================================================================
+#
+# See on LIHTNE (single-stage) variant proksi toega.
+# Võrdle optimeeritud variandiga: Dockerfile.optimized.proxy
+#
+# ERINEVUSED optimized'ist:
+# --------------------------
+# ❌ Single-stage (kõik ühes stage'is, ei ole eraldi dependencies stage'i)
+# ❌ Dev dependencies ka kaasas (suurem image)
+# ✅ ARG-põhine proxy (töötab proksi ja ilma)
+# ✅ Non-root user
+# ✅ Health check
+#
+# KASUTUS:
+# --------
+#
+# 1. PROXY KESKKOND:
+#    docker build \
+#      --build-arg HTTP_PROXY=http://cache1.sss:3128 \
+#      --build-arg HTTPS_PROXY=http://cache1.sss:3128 \
+#      --build-arg NO_PROXY=localhost,127.0.0.1 \
+#      -f Dockerfile.proxy \
+#      -t user-service:1.0-simple \
+#      ../../../apps/backend-nodejs
+#
+# 2. ILMA PROXY'TA:
+#    docker build \
+#      -f Dockerfile.proxy \
+#      -t user-service:1.0-simple \
+#      ../../../apps/backend-nodejs
+#
+# SOOVITUS:
+# ---------
+# 📖 Tootmiseks kasuta: Dockerfile.optimized.proxy
+# 📖 Õppimiseks/testimiseks: See fail (Dockerfile.proxy)
+#
+# ==========================================================================
+
+# ARG deklaratsioonid ENNE FROM
+ARG HTTP_PROXY=""
+ARG HTTPS_PROXY=""
+ARG NO_PROXY=""
+
+# Single-stage: kõik toimub ühes stage'is
+FROM node:22-slim
+
+# Seadista proxy keskkonna muutujad
+# ⚠️ Need on KOGU image'is (ka runtime'is) - ei ole ideaalne!
+# Optimeeritud variant (Dockerfile.optimized.proxy) hoiab need ainult builder stage'is.
+ENV HTTP_PROXY=${HTTP_PROXY} \
+    HTTPS_PROXY=${HTTPS_PROXY} \
+    NO_PROXY=${NO_PROXY}
+
+WORKDIR /app
+
+# Loo mitte-juurkasutaja (non-root user)
+RUN groupadd -g 1001 nodejs && \
+    useradd -r -u 1001 -g nodejs nodejs
+
+# Kopeeri package files ja installi sõltuvused
+COPY package*.json ./
+
+# npm ci kasutab HTTP_PROXY/HTTPS_PROXY keskkonna muutujaid
+RUN npm ci --only=production
+
+# Kopeeri rakenduse kood
+COPY . .
+
+# Määra omanikuks nodejs kasutaja
+RUN chown -R nodejs:nodejs /app
+
+# Kasuta mitte-juurkasutajat
+USER nodejs:nodejs
+
+EXPOSE 3000
+
+# Seisukorra kontroll (Health check)
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s \
+  CMD node healthcheck.js || exit 1
+
+CMD ["node", "server.js"]
+
+# ==========================================================================
+# ÕPPEPUNKT: Miks optimeeritud variant on parem?
+# ==========================================================================
+#
+# LIHTNE (see fail):
+# ------------------
+# ✅ Lihtne mõista (kõik ühes stage'is)
+# ✅ Kiire ehitada (ei pea stage'ide vahel kopeerima)
+# ❌ Suurem image (~305MB, sisaldab npm cache'i jm)
+# ❌ Proxy muutujad runtime'is (ei ole ideaalne)
+# ❌ Ei kasuta kihtide vahemälu (layer caching) optimaalselt
+#
+# OPTIMEERITUD (Dockerfile.optimized.proxy):
+# -------------------------------------------
+# ✅ Väiksem image (~305MB, optimeeritud)
+# ✅ Proxy muutujad AINULT builder stage'is (turvalisem)
+# ✅ Parem kihtide vahemälu (dependencies eraldi)
+# ✅ Production-ready
+# ❌ Keerulisem mõista (kaks stage'i)
+#
+# JÄRELDUS:
+# ---------
+# Õppimiseks/testimiseks: ✅ See fail
+# Tootmiseks:             ✅ Dockerfile.optimized.proxy
+#
+# ==========================================================================

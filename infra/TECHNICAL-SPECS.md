@@ -431,6 +431,10 @@ alias check-resources="echo === RAM === && free -h && echo && echo === DISK === 
 
 # Laborite täielik reset skript
 alias labs-reset="~/labs/labs-reset.sh"
+
+# Lab setup aliased
+alias lab1-setup="cd ~/labs/01-docker-lab && ./setup.sh"
+alias lab2-setup="cd ~/labs/02-docker-compose-lab && ./setup.sh"
 ```
 
 **labs-reset skript** (`~/labs/labs-reset.sh`):
@@ -1152,11 +1156,11 @@ sysctl -p
 
 ---
 
-**Viimane uuendus:** 2025-11-28
-**Versioon:** 2.0
+**Viimane uuendus:** 2025-12-01
+**Versioon:** 1.2
 **Vastutav:** VPS Admin
 **Järgmine ülevaatus:** 2025-12-28
 **Muudatuste logi:**
-- 2025-11-28: Lisa Kubernetes režiimi tugi (24GB+ serveritele, devops-lab-k8s profil, 5GB RAM, 2 CPU)
+- 2025-12-01: Lisatud lab2-setup alias dokumentatsioon
 - 2025-11-26: Lisa containerd.io 1.7.28 downgrade info ja sysctl bug workaround
 - 2025-11-25: Esialgne versioon

@@ -2,19 +2,21 @@
 
 **Kestus:** 5.25 tundi
 **Eeldused:** Labor 1 läbitud (4 optimeeritud konteinerit), Peatükk 13 (Docker Compose)
-**Eesmärk:** Õppida multi-container rakenduste orkestreerimist Docker Compose'iga ning turvalise võrgu segmenteerimise (network segmentation) põhitõdesid
+**Eesmärk:** Õppida multi-container rakenduste orkestreerimist Docker Compose'iga ning turvalise võrgu segmenteerimise põhitõdesid
 
 **📖 Kasutatavad rakendused:**
-- [User Service](../apps/backend-nodejs/README.md) - Autentimisteenus, mis haldab kasutajaid ja annab välja JWT tokeneid
+
+- [User Service](../apps/backend-nodejs/README.md) - Autentimisteenus, mis haldab kasutajaid ja annab välja JWT "token"-eid
 - [Todo Service](../apps/backend-java-spring/README.md) - Todo ülesannete rakendus (to-do list), kus kasutajad saavad hallata oma ülesandeid
 
 ---
 
 ## 📋 Ülevaade
 
-Selles laboris õpid hallama mitut konteinerit korraga Docker Compose'i abil. **Lähtud Labor 1 lõpuseisust** (4 töötavat optimeeritud konteinerit) ja konverteerid need docker-compose.yml failiks, lisad Frontend teenuse (service) ning õpid parimaid praktikaid production-ready konfiguratsioonide loomiseks.
+Selles laboris õpid hallama mitut konteinerit korraga Docker Compose'i abil. **Lähtud Labor 1 lõpuseisust** (4 töötavat optimeeritud konteinerit) ja konverteerid need docker-compose.yml failiks, lisad "frontend" teenuse ning õpid parimaid praktikaid tootmiskõlbulike (production-ready) konfiguratsioonide loomiseks.
 
 **Labor 1 vs Labor 2:**
+
 - **Labor 1:** Käivitasid iga konteineri eraldi käsuga (`docker run`)
 - **Labor 2:** Käivitad kogu süsteemi ühe käsuga (`docker compose up`)
 
@@ -23,6 +25,7 @@ Lab 2 lõpuks on sul valmis terve süsteem docker-compose.yml failiga, mida saad
 **⚠️ MÄRKUS: Docker Compose v2 (2025 Best Practice)**
 
 See labor kasutab **Docker Compose v2** (`docker compose` käsku, mitte `docker-compose`):
+
 - ✅ Käsk: `docker compose up` (v2) - SOOVITATAV 2025+
 - ❌ Käsk: `docker-compose up` (v1, aegunud)
 - ℹ️ `version:` väli YAML failis on valikuline (optional) Compose v2's
@@ -60,10 +63,11 @@ Lab 1 lõpus oli sul töötamas **4 konteinerit** (manuaalsete `docker run` käs
 └────────────────────────────────────────────────────────────┘
 ```
 
-**Lab 1'st said:**
-- ✅ 2 optimeeritud backend pilti (images) (multi-stage builds)
-- ✅ 2 PostgreSQL andmebaasi (eraldi volumes)
-- ✅ Kohandatud võrk (custom network) (todo-network)
+**Lab 1-st said:**
+
+- ✅ 2 optimeeritud "backend" tõmmist (mitmeastmelised ehitused)
+- ✅ 2 PostgreSQL andmebaasi (eraldi andmeköidetega)
+- ✅ Kohandatud võrk (todo-network)
 - ✅ Manuaalsed `docker run` käsud iga konteineri jaoks
 
 ### Lab 2 Sihtolek (5 Teenust)
@@ -97,16 +101,18 @@ Lab 2 lõpus on sul töötamas **5 teenust (services)** Docker Compose'iga:
 ```
 
 **Lab 2'st saad:**
-- ✅ Kogu süsteemi haldamine ühe docker-compose.yml failiga
-- ✅ Frontend teenus (service) (5. komponent)
-- ✅ .env failid salajaste haldamiseks
-- ✅ Database migration'id Liquibase'iga
-- ✅ Production-ready konfiguratsioonid
 
-**Teenused (services):**
-- **Frontend**: Nginx staatiliste failidega (static files) → Suhtleb mõlema backend'iga
-- **User Service**: Node.js + Express → Autentimine, kasutajate haldus
-- **Todo Service**: Java Spring Boot → Todo CRUD operatsioonid (Lab 1'st)
+- ✅ Kogu süsteemi haldamine ühe docker-compose.yml failiga
+- ✅ "frontend" teenus (5. komponent)
+- ✅ .env failid salajaste haldamiseks
+- ✅ Andmebaasi migratsioonid Liquibase'iga
+- ✅ Tootmiskõlbulikud konfiguratsioonid
+
+**Teenused:**
+
+- **"Frontend"**: Nginx staatiliste failidega → Suhtleb mõlema "backendiga"
+- **"User Service"**: Node.js + Express → Autentimine, kasutajate haldus
+- **"Todo Service"**: Java Spring Boot → Todo CRUD operatsioonid (Lab 1-st)
 - **PostgreSQL x2**: Eraldi andmebaasid users ja todos jaoks
 
 ---
@@ -115,16 +121,16 @@ Lab 2 lõpus on sul töötamas **5 teenust (services)** Docker Compose'iga:
 
 Peale selle labori läbimist oskad:
 
-✅ Konverteerida mitme-konteineri (multi-container) seadistust Docker Compose failiks
-✅ Kirjutada docker-compose.yml faile järgides parimaid praktikaid
-✅ Implementeerida võrgu segmenteerimist (network segmentation) ja turvalisi portide konfiguratsioone
-✅ Vähendada rünnaku pinda (attack surface) 96% (5 avalikku porti → 1 avalik port)
-✅ Mõista 3-taseme arhitektuuri (DMZ → Backend → Database)
-✅ Hallata keskkonna muutujaid (environment variables) .env failidega
-✅ Kasutada docker-compose.override.yml pattern'i
-✅ Implementeerida database migration'eid Liquibase'iga
-✅ Konfigureerida production patterns (scaling, resource limits, health checks)
-✅ Debuggida multi-container rakendusi
+- ✅ Konverteerida **mitme konteineri** seadistust Docker Compose failiks
+- ✅ Kirjutada `docker-compose.yml` faile järgides parimaid praktikaid
+- ✅ Implementeerida **võrgu segmenteerimist** ja turvalisi portide konfiguratsioone
+- ✅ Vähendada **rünnaku pinda** 96% (5 avalikku porti → 1 avalik port)
+- ✅ Mõista **3-kihilist arhitektuuri** (DMZ → Backend → Database)
+- ✅ Hallata **keskkonnamuutujaid** `.env` failidega
+- ✅ Kasutada `docker-compose.override.yml` **mustrit**
+- ✅ Implementeerida **andmebaasi migratsioone** Liquibase'iga
+- ✅ Konfigureerida **tootmiskeskkonna mustreid** (skaleerimine, ressursilimiidid, tervisekontrollid)
+- ✅ **Teostada veatuvastust** mitme konteineri rakendusi
 
 ---
 
@@ -133,7 +139,7 @@ Peale selle labori läbimist oskad:
 ```
 02-docker-compose-lab/
 ├── README.md                  # See fail
-├── setup.sh                   # Automaatne seadistus
+├── setup.sh                   # Automaatne seadistus (kasuta aliast: lab2-setup)
 ├── exercises/                 # Harjutused (7 harjutust)
 │   ├── 01-compose-basics.md           # Lab 1 → docker-compose.yml (4 teenust)
 │   ├── 02-add-frontend.md             # Lisa Frontend (5. teenus)
@@ -157,26 +163,199 @@ Peale selle labori läbimist oskad:
 ## 🔧 Eeldused
 
 ### Eelnevad labid:
+
 - [x] **Labor 1: Docker Põhitõed** - KOHUSTUSLIK
   - **PEAB olema Lab 1'st:**
-    - ✅ `user-service:1.0-optimized` pilt (image) (~50MB, Node.js multi-stage build)
-    - ✅ `todo-service:1.0-optimized` pilt (image) (~180MB, Java multi-stage build)
-    - ✅ `postgres-user-data` andmehoidla (volume) (sisaldab users tabelit)
-    - ✅ `postgres-todo-data` andmehoidla (volume) (sisaldab todos tabelit)
+    - ✅ `user-service:1.0-optimized` **tõmmis** (~50MB, Node.js multi-stage build)
+    - ✅ `todo-service:1.0-optimized` **tõmmis** (~180MB, Java multi-stage build)
+    - ✅ `postgres-user-data` andmeköide (sisaldab users tabelit)
+    - ✅ `postgres-todo-data` andmeköide (sisaldab todos tabelit)
     - ✅ `todo-network` kohandatud võrk (custom bridge network)
     - ✅ 4 töötavat konteinerit (user-service, todo-service, 2x postgres)
 
 ### Tööriistad:
+
 - [x] Docker Compose paigaldatud (`docker compose version` - v2.x)
 - [x] Docker daemon töötab (`docker ps`)
 - [x] Vähemalt 4GB vaba RAM
 - [x] vim või muu text editor
 
 ### Teadmised:
-- [x] **Labor 1:** Docker põhitõed (pildid (images), konteinerid, võrgud (networks), andmehoidlad (volumes))
+
+- [x] **Labor 1:** Docker põhitõed (tõmmised, konteinerid, võrgud, andmeköited)
 - [x] **Peatükk 13:** Docker Compose põhimõtted
 - [x] YAML failivorming
-- [x] Keskkonna muutujad (environment variables)
+- [x] Keskkonnamuutujad
+
+### 🔧 Märkus Proxy Keskkonna Kohta
+
+Docker Compose keskendub orkestreerimisele, mitte image ehitamisele. Lab 2 eeldab, et Docker image'd on juba olemas. Siin on 4 stsenaariumit, kuidas hallata image'id proxy keskkonnas.
+
+---
+
+#### Stsenaarium A: Lab 1 Images On Juba Olemas (Tavaliselt)
+
+**See on KÕIGE TAVALISEM stsenaarium! 🎯**
+
+Kui läbisid Lab 1 ja ehitasid Docker image'd:
+- ✅ Image'd on juba valmis: `user-service:1.0-optimized`, `todo-service:1.0-optimized`
+- ✅ Lab 2 kasutab neid valmis pilte (`image:` direktiiv compose failides)
+- ℹ️ Proxy ei ole enam vajalik - see oli **build-time mure**, mitte **orchestration-time** mure
+
+**Mida teha:**
+```bash
+# Kontrolli, kas image'd on olemas
+docker images | grep -E "user-service|todo-service"
+
+# Kui näed:
+# user-service    1.0-optimized   ...
+# todo-service    1.0-optimized   ...
+# Siis LAB 2 ON VALMIS ALUSTAMISEKS! ✅
+```
+
+**Jätka harjutustega:**
+```bash
+cd compose-project
+docker compose up -d
+```
+
+---
+
+#### Stsenaarium B: setup.sh Ehitab Images Automaatselt (Mugav)
+
+**Kui Lab 1 image'd puuduvad, setup skript teeb kõik automaatselt! 🚀**
+
+Lab 2 setup skript (`./setup.sh` või `lab2-setup`):
+1. ✅ Kontrollib, kas Lab 1 image'd on olemas
+2. ✅ Kui puuduvad, pakub **automaatset ehitamist**
+3. ✅ Kasutab Lab 1 `Dockerfile.optimized.proxy` faile
+4. ✅ Seadistab **vaikimisi proxy väärtused**:
+   - `HTTP_PROXY=http://proxy-chain.intel.com:911`
+   - `HTTPS_PROXY=http://proxy-chain.intel.com:912`
+
+**Mida teha:**
+```bash
+cd labs/02-docker-compose-lab
+./setup.sh
+
+# Skript küsib:
+# "Kas soovid ehitada (build) baaspildid (base images) KOHE?"
+# Vali: [Y] Jah, ehita mõlemad pildid nüüd
+```
+
+**Tulemus:**
+- ✅ `user-service:1.0-optimized` ehitatud
+- ✅ `todo-service:1.0-optimized` ehitatud
+- ✅ PostgreSQL andmebaasid seadistatud
+- ✅ Valmis alustamiseks!
+
+---
+
+#### Stsenaarium C: Käsitsi Building Proxy Keskkonnas (Harva Vajalik)
+
+**Kui setup.sh ei tööta või soovid käsitsi kontrollida build protsessi. 🔧**
+
+##### 1. Node.js User Service
+
+```bash
+cd ../apps/backend-nodejs
+
+# Asenda oma proxy aadress!
+docker build \
+  --build-arg HTTP_PROXY=http://cache1.sss:3128 \
+  --build-arg HTTPS_PROXY=http://cache1.sss:3128 \
+  -f ../../01-docker-lab/solutions/backend-nodejs/Dockerfile.optimized.proxy \
+  -t user-service:1.0-optimized .
+
+# Kontrolli
+docker images | grep user-service
+```
+
+##### 2. Java Spring Boot Todo Service
+
+```bash
+cd ../backend-java-spring
+
+# Asenda oma proxy aadress!
+docker build \
+  --build-arg HTTP_PROXY=http://cache1.sss:3128 \
+  --build-arg HTTPS_PROXY=http://cache1.sss:3128 \
+  -f ../../01-docker-lab/solutions/backend-java-spring/Dockerfile.optimized.proxy \
+  -t todo-service:1.0-optimized .
+
+# Kontrolli
+docker images | grep todo-service
+```
+
+##### 3. Jätka Lab 2'ga
+
+```bash
+cd ../../02-docker-compose-lab/compose-project
+docker compose up -d
+```
+
+**📖 Põhjalikud juhendid:**
+- [Lab 1 Node.js Proxy README](../01-docker-lab/solutions/backend-nodejs/README-PROXY.md) - ARG, ENV, npm proxy konfiguratsioon
+- [Lab 1 Java Proxy README](../01-docker-lab/solutions/backend-java-spring/README-PROXY.md) - Gradle GRADLE_OPTS parsing, multi-stage build
+
+---
+
+#### Stsenaarium D: Compose build: Direktiiv (VALIKULINE - Harva Kasutatud)
+
+**Miks Lab 2 compose failid EI KASUTA `build:` direktiivi vaikimisi? 🤔**
+
+1. **Lab 2 eesmärk:** Õpetab orkestreerimist, MITTE image ehitamist
+   - Compose failid jäävad **lihtsamaks** ja **loetavamaks**
+   - Fookus on teenuste orkestreerimise õppimisel
+
+2. **Kiire startup:**
+   - Image'd on juba ehitatud (Lab 1 või setup.sh)
+   - `docker compose up` ei kuluta aega rebuild'imisele
+   - Ideaalne harjutuste jaoks
+
+3. **Selge vastutuste jaotus:**
+   - **Lab 1:** Docker image'ite ehitamine (building)
+   - **Lab 2:** Docker Compose orkestratsioon (orchestration)
+
+**Kui siiski vajad `build:` direktiivi** (näiteks arenduses):
+
+```yaml
+# docker-compose.yml (VALIKULINE - harva vajalik)
+services:
+  user-service:
+    build:
+      context: ../apps/backend-nodejs
+      dockerfile: ../../01-docker-lab/solutions/backend-nodejs/Dockerfile.optimized.proxy
+      args:
+        HTTP_PROXY: ${HTTP_PROXY:-http://proxy-chain.intel.com:911}
+        HTTPS_PROXY: ${HTTPS_PROXY:-http://proxy-chain.intel.com:912}
+    image: user-service:1.0-optimized
+    # ... ülejäänud konfiguratsioon
+
+  todo-service:
+    build:
+      context: ../apps/backend-java-spring
+      dockerfile: ../../01-docker-lab/solutions/backend-java-spring/Dockerfile.optimized.proxy
+      args:
+        HTTP_PROXY: ${HTTP_PROXY:-http://proxy-chain.intel.com:911}
+        HTTPS_PROXY: ${HTTPS_PROXY:-http://proxy-chain.intel.com:912}
+    image: todo-service:1.0-optimized
+    # ... ülejäänud konfiguratsioon
+```
+
+**Kasutamine:**
+```bash
+# Build ja käivita (rebuild'ib image'd iga kord)
+docker compose up -d --build
+
+# Ainult build
+docker compose build
+
+# Kasuta keskkonnamuutujaid
+HTTP_PROXY=http://custom-proxy:8080 docker compose build
+```
+
+**⚠️ Märkus:** See lähenemisviis on harva vajalik Lab 2's. **Soovituslik:** Kasuta **Stsenaarium B** (setup.sh) või **Stsenaarium C** (käsitsi).
 
 ---
 
@@ -187,11 +366,16 @@ Lab 2'l on kaks alustamise viisi:
 ### Variant A: Setup Skript (Soovitatav algajatele ja kiireks testimiseks)
 
 ```bash
+# Variant 1: Käivita igalt poolt (alias)
+lab2-setup
+
+# Variant 2: Käivita labori kataloogist
 cd 02-docker-compose-lab
-./setup.sh
+./setup.sh  # Või lihtsalt: lab2-setup
 ```
 
-**Setup skript teeb:**
+**Seadistusskript teeb:**
+
 - ✅ Kontrollib Lab 1 eeldusi (images, volumes, network)
 - ✅ Loob puuduvad ressursid (võrk, volumes)
 - ✅ Võimaldab valida andmebaasi automaatset initsialiseermist
@@ -200,6 +384,7 @@ cd 02-docker-compose-lab
 - ✅ Käivitab teenused
 
 **Sobib, kui:**
+
 - Soovid kiiresti alustada ilma Lab 1 ressursside loomiseta
 - Soovid testimisandmetega andmebaasi (4 kasutajat, 8 todo'd)
 - Soovid keskenduda Docker Compose'i õppimisele, mitte DB seadistusele
@@ -207,6 +392,7 @@ cd 02-docker-compose-lab
 ### Variant B: Käsitsi (Pedagoogiline - Õpid kõik sammud)
 
 Järgi harjutuste juhiseid järjest:
+
 1. **Harjutus 1**: Compose Basics - Lab 1 → docker-compose.yml konversioon
 2. **Harjutus 2**: Add Frontend - 5. teenuse lisamine
 3. **Harjutus 3**: Network Segmentation - Turvaline arhitektuur
@@ -217,32 +403,18 @@ cat 01-compose-basics.md
 ```
 
 **Sobib, kui:**
+
 - Läbisid Lab 1 ja soovid progressive learning'ut
 - Soovid õppida Docker Compose'i samm-sammult
 - Soovid mõista MIKS iga konfiguratsioon on vajalik
 
 **⚠️ PEDAGOOGILINE MÄRKUS:**
+
 - **Harjutused õpetavad käsitsi** (docker exec, SQL, võrgud, volumes) - see on õppimise osa!
-- **setup.sh on mugavuse huvides** - kasuta, kui vajad kiiret starti või testimisandmeid
+- **lab2-setup on mugavuse huvides** - kasuta, kui vajad kiiret starti või testimisandmeid
 - **Soovitame esimest korda teha käsitsi**, et õppida Docker põhitõdesid
 
----
 
-## 📚 Progressiivne Õppetee
-
-```
-Labor 1 (Docker)
-  ↓ 4 optimeeritud konteinerit →
-Labor 2 (Compose) ← Oled siin
-  ↓ docker-compose.yml + 5 teenust →
-Labor 3 (K8s Basics)
-  ↓ K8s manifests →
-Labor 4 (K8s Advanced)
-  ↓ Ingress + Helm →
-Labor 5 (CI/CD)
-  ↓ Automated deployments →
-Labor 6 (Monitoring)
-```
 
 ---
 
@@ -253,223 +425,92 @@ Labor 6 (Monitoring)
 **Fail:** [exercises/01-compose-basics.md](exercises/01-compose-basics.md)
 
 Konverteeri Lab 1 lõpuseisu docker-compose.yml failiks:
+
 - Loo services blokk 4 teenusele (2x postgres, 2x backend)
-- Defineeri andmehoidlad (volumes) ja võrgud (networks)
-- Kasuta olemasolevaid pilte (images) (user-service:1.0-optimized, todo-service:1.0-optimized)
+- Defineeri andmeköited ja võrgud
+- Kasuta olemasolevaid tõmmiseid (user-service:1.0-optimized, todo-service:1.0-optimized)
 - Testi End-to-End workflow
 
-### Harjutus 2: Lisa Frontend Teenus (45 min)
+### Harjutus 2: Lisa "frontend" teenus (45 min)
 **Fail:** [exercises/02-add-frontend.md](exercises/02-add-frontend.md)
 
-Lisa Frontend (5. teenus):
-- Loo frontend teenus (service) Nginx'iga
-- Mount staatilised failid (static files) (HTML/CSS/JS)
-- Konfigureeri portide vastendamine (port mapping) (8080:80)
+Lisa "frontend" (5. teenus):
+
+- Loo "frontend" teenus Nginx'iga
+- Mount staatilised failid (HTML/CSS/JS)
+- Konfigureeri pordivastendus (8080:80)
 - Testi brauseris
 
-### Harjutus 3: Võrgu Segmenteerimine ja Portide Turvalisus (60 min)
+### Harjutus 3: Võrgu segmenteerimine ja portide turvalisus (60 min)
 **Fail:** [exercises/03-network-segmentation.md](exercises/03-network-segmentation.md)
 
 Implementeeri turvaline võrgu arhitektuur:
-- Loo 3-taseme võrgu arhitektuur (DMZ → Backend → Database)
-- Eemalda avalikud pordid backend ja database teenustelt
-- Kasuta localhost-only binding (127.0.0.1) development debug'imiseks
-- Vähenda rünnaku pinda (attack surface) 96%
-- Mõista võrgu segmenteerimise (network segmentation) põhimõtteid
 
-### Harjutus 4: Environment Management (45 min)
+- Loo 3-kihiline võrgu arhitektuur (DMZ → "Backend" → Andmebaas)
+- Eemalda avalikud pordid "backend" ja andmebaasi teenustelt
+- Kasuta localhost-only binding (127.0.0.1) development debug'imiseks
+- Vähenda rünnaku pinda 96%
+- Mõista võrgu segmenteerimise põhimõtteid
+
+### Harjutus 4: Keskkonnahaldus (45 min)
 **Fail:** [exercises/04-environment-management.md](exercises/04-environment-management.md)
 
-Halda keskkonna muutujaid (environment variables):
+Halda keskkonnamuutujaid:
+
 - Loo .env fail salajastele (JWT_SECRET, DB_PASSWORD)
 - Kasuta docker-compose.override.yml pattern'i
 - Loo eraldi dev ja prod konfiguratsioonid
 
-### Harjutus 5: Database Migrations Liquibase'iga (60 min)
+### Harjutus 5: Andmebaasi migratsioonid Liquibase'iga (60 min)
 **Fail:** [exercises/05-database-migrations.md](exercises/05-database-migrations.md)
 
-Automatiseeri database schema:
+Automatiseeri andmebaasi skeem:
+
 - Loo Liquibase changelog failid
 - Implementeeri init container pattern
-- Käivita migration'id enne backend'i
+- Käivita migratsioonid enne "backendi"
 - Rollback testimine
 
-### Harjutus 6: Production Patterns (45 min)
+### Harjutus 6: Toote mustrid (45 min)
 **Fail:** [exercises/06-production-patterns.md](exercises/06-production-patterns.md)
 
 Production-ready konfiguratsioon:
+
 - Scaling (replicas)
 - Resource limits (CPU, memory)
 - Restart policies
-- Seisukorra kontrollid (health checks) ja dependency management
-- Logging konfiguratsioon
+- Tervisekontrollid ja dependency management
+- Logimise konfiguratsioon
 
-### Harjutus 7: Advanced Patterns (vajadusel)
+### Harjutus 7: Edasijõudnute mustrid (vajadusel)
 **Fail:** [exercises/07-advanced-patterns.md](exercises/07-advanced-patterns.md)
 
-Täiustatud mustrid (advanced patterns):
-- Vaata faili detailide jaoks
+Täiustatud mustrid:
 
----
 
-## ⚡ Kiirstart Seadistus
 
-### Automaatne Seadistus
 
-Käivita setup script, mis kontrollib Lab 1 eeldusi:
 
-```bash
-# Käivita seadistus script
-chmod +x setup.sh
-./setup.sh
-```
 
-**Script kontrollib:**
-- ✅ Docker Compose paigaldust
-- ✅ Lab 1 piltide (images) olemasolu (user-service:1.0-optimized, todo-service:1.0-optimized)
-- ✅ Lab 1 andmehoidlate (volumes) olemasolu (postgres-user-data, postgres-todo-data)
-- ✅ Lab 1 võrgu (network) olemasolu (todo-network)
 
-**Kui midagi puudub:**
-- 💡 Script suunab sind tagasi Lab 1 juurde
-- 💡 Või pakub võimalust luua puuduvad ressursid
-
----
-
-### ⚡ Kiirkontroll: Kas Oled Valmis?
-
-Enne labori alustamist veendu, et kõik Lab 1 ressursid on olemas:
-
-```bash
-# Kiirkontroll (kõik peaksid tagastama 0 või rohkem ridu)
-echo "=== Docker Compose ==="
-docker compose version
-
-echo -e "\n=== Lab 1 Pildid (Images) ==="
-docker images | grep -E "user-service.*optimized|todo-service.*optimized"
-
-echo -e "\n=== Lab 1 Andmehoidlad (Volumes) ==="
-docker volume ls | grep -E "postgres-user-data|postgres-todo-data"
-
-echo -e "\n=== Lab 1 Võrk (Network) ==="
-docker network ls | grep todo-network
-
-echo -e "\n✅ Kui kõik on olemas, oled valmis!"
-```
----
-
-## ✅ Kontrolli Tulemusi
-
-Peale labori läbimist pead omama:
-
-### Docker Compose Failid:
-
-- [ ] `docker-compose.yml` (4 teenust: 2x postgres, 2x backend)
-- [ ] `docker-compose-full.yml` (5 teenust: + frontend)
-- [ ] `docker-compose.prod.yml` (production variant)
-- [ ] `.env` fail (salajased)
-- [ ] `docker-compose.override.yml` (dev overrides)
-
-### Töötavad Teenused (Harjutus 5 lõpus):
-
-- [ ] Frontend (port 8080) - Nginx
-- [ ] User Service (port 3000) - Node.js
-- [ ] Todo Service (port 8081) - Java Spring
-- [ ] PostgreSQL User DB (port 5432)
-- [ ] PostgreSQL Todo DB (port 5433)
-
-### Testimine:
-
-**Frontend:**
-- [ ] `http://93.127.213.242:[SINU-PORT]` - avab login lehte (student1: 8080, student2: 8180, student3: 8280)
-- [ ] Login toimib (suhtleb User Service'iga)
-- [ ] Todo list kuvatakse (suhtleb Todo Service'iga)
-
-**Backend API'd:**
-- [ ] `curl http://localhost:3000/health` - User Service OK
-- [ ] `curl http://localhost:8081/health` - Todo Service OK
-- [ ] End-to-End JWT workflow toimib
-
-**Docker Compose:**
-- [ ] `docker compose ps` - kõik teenused UP ja HEALTHY
-- [ ] `docker compose logs` - logid kättesaadavad
-- [ ] Andmed püsivad peale `docker compose down && docker compose up`
-
----
-
-## 📊 Progressi Jälgimine
-
-- [ ] Harjutus 1: Docker Compose Alused (4 teenust)
-- [ ] Harjutus 2: Lisa Frontend (5 teenust)
-- [ ] Harjutus 3: Võrgu Segmenteerimine ja Portide Turvalisus
-- [ ] Harjutus 4: Environment Management (.env failid)
-- [ ] Harjutus 5: Database Migrations (Liquibase)
-- [ ] Harjutus 6: Production Patterns (scaling, limits)
-- [ ] Harjutus 7: Advanced Patterns (vajadusel)
-
----
-
-## 🆘 Troubleshooting
-
-### Probleem 1: "Lab 1 pildid (images) puuduvad"
-
-```bash
-# Kontrolli pilte (images)
-docker images | grep optimized
-
-# Kui puuduvad, mine Lab 1 juurde
-cd ../01-docker-lab
-cat exercises/05-optimization.md
-```
-
-### Probleem 2: "Andmehoidlad (volumes) puuduvad või on tühjad"
-
-```bash
-# Kontrolli andmehoidlaid (volumes)
-docker volume ls | grep postgres
-
-# Kui puuduvad, loo need Lab 1's
-cd ../01-docker-lab
-cat exercises/04-volumes.md
-```
-
-### Probleem 3: "docker compose up ebaõnnestub"
-
-```bash
-# Kontrolli YAML syntax'it
-docker compose config
-
-# Vaata detailseid vigu (errors)
-docker compose up --verbose
-```
-
-### Probleem 4: "Port juba kasutusel"
-
-```bash
-# Vaata, mis kasutab porti
-sudo lsof -i :3000
-sudo lsof -i :8081
-sudo lsof -i :8080
-
-# Peata konfliktis olevad konteinerid
-docker ps -a | grep -E "3000|8081|8080"
-docker stop <container-id>
-```
 
 ---
 
 ## 📚 Viited
 
 ### Koolituskava:
+
 - **Peatükk 13:** Docker Compose
 
 ### Docker Dokumentatsioon:
+
 - [Compose file reference](https://docs.docker.com/compose/compose-file/)
 - [Environment variables](https://docs.docker.com/compose/environment-variables/)
 - [Networking in Compose](https://docs.docker.com/compose/networking/)
 - [Best practices](https://docs.docker.com/compose/production/)
 
 ### Labori Materjalid:
+
 - [TERMINOLOOGIA.md](../TERMINOLOOGIA.md) - Eesti-inglise sõnastik
 - [Labor 1 README](../01-docker-lab/README.md) - Eelduslabor
 
@@ -478,6 +519,7 @@ docker stop <container-id>
 ## 🎯 Järgmine Labor
 
 Peale selle labori edukat läbimist, jätka:
+
 - **Labor 3:** Kubernetes Põhitõed
 
 ---
@@ -485,12 +527,13 @@ Peale selle labori edukat läbimist, jätka:
 ## 🎓 Kokkuvõte
 
 Peale selle labori läbimist oled:
+
 - ✅ Konverteerinud Lab 1 manuaalsed käsud docker-compose.yml failiks
-- ✅ Lisanud Frontend teenuse (service) ja loonud täieliku 5-tier süsteemi
-- ✅ Õppinud hallama keskkonna muutujaid (environment variables) turvaliselt
-- ✅ Implementeerinud database migration'id Liquibase'iga
+- ✅ Lisanud Frontend teenuse ja loonud täieliku 5-tier süsteemi
+- ✅ Õppinud hallama keskkonnamuutujaid turvaliselt
+- ✅ Implementeerinud andmebaasi migratsioonid Liquibase'iga
 - ✅ Konfigureerinud production-ready Compose seadistused
-- ✅ Debugginud multi-container rakendusi
+- ✅ Teostanud veatuvastust mitme konteineri rakendustel
 - ✅ Valmis Kubernetes'e migreerumiseks (Lab 3)
 
 **Edu laboriga! 🚀**

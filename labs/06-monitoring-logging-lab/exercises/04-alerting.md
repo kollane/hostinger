@@ -26,14 +26,14 @@ Selles harjutuses seadistame **alerting** - automaatse monitooringu, mis teavita
 
 Peale selle harjutuse läbimist oskad:
 
-✅ Luua PrometheusRule CRD alert rules jaoks
-✅ Määrata alert severity levels (critical, warning, info)
-✅ Konfigureerida AlertManager
-✅ Seadistada Slack webhook notifications
-✅ Testida alerts (trigger ja resolve)
-✅ Mõista alert states (Pending, Firing, Resolved)
-✅ Kasutada alert labels ja annotations
-✅ Silencing alerts (maintenance windows)
+- ✅ Luua PrometheusRule CRD alert rules jaoks
+- ✅ Määrata alert severity levels (critical, warning, info)
+- ✅ Konfigureerida AlertManager
+- ✅ Seadistada Slack webhook notifications
+- ✅ Testida alerts (trigger ja resolve)
+- ✅ Mõista alert states (Pending, Firing, Resolved)
+- ✅ Kasutada alert labels ja annotations
+- ✅ Silencing alerts (maintenance windows)
 
 ---
 

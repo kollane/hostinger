@@ -24,13 +24,13 @@ Selles harjutuses konfigureerime **RBAC (Role-Based Access Control)** - Kubernet
 
 Peale selle harjutuse läbimist oskad:
 
-✅ Mõista RBAC komponente (Role, RoleBinding, ClusterRole, ClusterRoleBinding)
-✅ Luua Roles erinevate kasutajate jaoks
-✅ Luua ServiceAccounts rakendustele
-✅ Bindida Roles kasutajate ja ServiceAccounts'iga
-✅ Testida permissions (`kubectl auth can-i`)
-✅ Debuggida RBAC issues
-✅ Implementeerida least privilege principle
+- ✅ Mõista RBAC komponente (Role, RoleBinding, ClusterRole, ClusterRoleBinding)
+- ✅ Luua Roles erinevate kasutajate jaoks
+- ✅ Luua ServiceAccounts rakendustele
+- ✅ Bindida Roles kasutajate ja ServiceAccounts'iga
+- ✅ Testida permissions (`kubectl auth can-i`)
+- ✅ Debuggida RBAC issues
+- ✅ Implementeerida least privilege principle
 
 ---
 

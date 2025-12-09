@@ -1,0 +1,152 @@
+# ==========================================================================
+# Proxy-teadlik LIHTNE Dockerfile Todo Teenuse (Service) jaoks
+# ==========================================================================
+#
+# See on LIHTNE (single-stage) variant proksi toega.
+# Võrdle optimeeritud variandiga: Dockerfile.optimized.proxy
+#
+# ERINEVUSED optimized'ist:
+# --------------------------
+# ❌ Single-stage (kõik ühes stage'is, JDK jääb runtime'i)
+# ❌ Suurem image (~600MB vs ~250MB optimeeritud variant)
+# ✅ ARG-põhine proxy (töötab proksi ja ilma)
+# ✅ Gradle GRADLE_OPTS konfiguratsioon
+# ✅ Non-root user
+# ✅ Health check
+#
+# KASUTUS:
+# --------
+#
+# 1. PROXY KESKKOND:
+#    docker build \
+#      --build-arg HTTP_PROXY=http://cache1.sss:3128 \
+#      --build-arg HTTPS_PROXY=http://cache1.sss:3128 \
+#      --build-arg NO_PROXY=localhost,127.0.0.1 \
+#      -f Dockerfile.proxy \
+#      -t todo-service:1.0-simple \
+#      ../../../apps/backend-java-spring
+#
+# 2. ILMA PROXY'TA:
+#    docker build \
+#      -f Dockerfile.proxy \
+#      -t todo-service:1.0-simple \
+#      ../../../apps/backend-java-spring
+#
+# SOOVITUS:
+# ---------
+# 📖 Tootmiseks kasuta: Dockerfile.optimized.proxy
+# 📖 Õppimiseks/testimiseks: See fail (Dockerfile.proxy)
+#
+# ==========================================================================
+
+# ARG deklaratsioonid ENNE FROM
+ARG HTTP_PROXY=""
+ARG HTTPS_PROXY=""
+ARG NO_PROXY=""
+
+# Single-stage: kasutame JDK image'i (sisaldab nii JDK kui JRE)
+# ⚠️ See jääb runtime'i (suurem image) - optimeeritud variant kasutab ainult JRE'i
+FROM gradle:8.11-jdk21-alpine
+
+# Seadista proxy keskkonna muutujad
+# ⚠️ Need on KOGU image'is (ka runtime'is) - ei ole ideaalne!
+ENV HTTP_PROXY=${HTTP_PROXY} \
+    HTTPS_PROXY=${HTTPS_PROXY} \
+    NO_PROXY=${NO_PROXY}
+
+WORKDIR /app
+
+# Loo mitte-juurkasutaja (non-root user)
+RUN addgroup -g 1001 -S spring && \
+    adduser -S spring -u 1001 -G spring
+
+# Kopeeri Gradle failid
+COPY build.gradle settings.gradle ./
+COPY gradle ./gradle
+
+# ==========================================================================
+# GRADLE PROXY KONFIGURATSIOON (sama nagu optimized variants)
+# ==========================================================================
+
+# Lae alla sõltuvused koos proxy konfiguratsiooniga
+RUN if [ -n "$HTTP_PROXY" ]; then \
+        echo "🔧 Seadistan Gradle proxy..."; \
+        PROXY_HOST=$(echo "$HTTP_PROXY" | sed -e 's|http://||' -e 's|https://||' -e 's|:[0-9]*$||'); \
+        PROXY_PORT=$(echo "$HTTP_PROXY" | grep -oE '[0-9]+$'); \
+        echo "   Host: $PROXY_HOST, Port: $PROXY_PORT"; \
+        export GRADLE_OPTS="-Dhttp.proxyHost=$PROXY_HOST -Dhttp.proxyPort=$PROXY_PORT -Dhttps.proxyHost=$PROXY_HOST -Dhttps.proxyPort=$PROXY_PORT"; \
+        gradle dependencies --no-daemon; \
+    else \
+        echo "ℹ️  Ilma proksita"; \
+        gradle dependencies --no-daemon; \
+    fi
+
+# Kopeeri lähtekood ja ehita JAR
+COPY src ./src
+
+RUN if [ -n "$HTTP_PROXY" ]; then \
+        PROXY_HOST=$(echo "$HTTP_PROXY" | sed -e 's|http://||' -e 's|https://||' -e 's|:[0-9]*$||'); \
+        PROXY_PORT=$(echo "$HTTP_PROXY" | grep -oE '[0-9]+$'); \
+        export GRADLE_OPTS="-Dhttp.proxyHost=$PROXY_HOST -Dhttp.proxyPort=$PROXY_PORT -Dhttps.proxyHost=$PROXY_HOST -Dhttps.proxyPort=$PROXY_PORT"; \
+        gradle bootJar --no-daemon; \
+    else \
+        gradle bootJar --no-daemon; \
+    fi
+
+# Kopeeri JAR mugavamasse kohta
+RUN cp /app/build/libs/todo-service.jar /app/app.jar
+
+# Määra omanikuks spring kasutaja
+RUN chown -R spring:spring /app
+
+# Kasuta mitte-juurkasutajat
+USER spring:spring
+
+EXPOSE 8081
+
+# Seisukorra kontroll (Health check)
+HEALTHCHECK --interval=30s --timeout=3s --start-period=40s \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:8081/health || exit 1
+
+# Käivita rakendus
+CMD ["java", \
+    "-XX:InitialRAMPercentage=80", \
+    "-XX:MaxRAMPercentage=80", \
+    "-jar", \
+    "app.jar"]
+
+# ==========================================================================
+# ÕPPEPUNKT: Miks optimeeritud variant on parem?
+# ==========================================================================
+#
+# LIHTNE (see fail):
+# ------------------
+# ✅ Lihtne mõista (kõik ühes stage'is)
+# ✅ Kiire ehitada (ei pea stage'ide vahel kopeerima)
+# ✅ Debug lihtsam (JDK tools on runtime'is)
+# ❌ VÄGA suur image (~600MB vs ~250MB optimeeritud)
+# ❌ JDK jääb runtime'i (ei ole vajalik, turvaviga)
+# ❌ Proxy muutujad runtime'is (ei ole ideaalne)
+# ❌ Gradle daemon ja cache jäävad image'i
+#
+# OPTIMEERITUD (Dockerfile.optimized.proxy):
+# -------------------------------------------
+# ✅ Väiksem image (~250MB - ainult JRE + JAR)
+# ✅ Proxy muutujad AINULT builder stage'is
+# ✅ JDK ei ole runtime'is (turvalisem)
+# ✅ Production-ready
+# ✅ Parem kihtide vahemälu (layer caching)
+# ❌ Keerulisem mõista (kaks stage'i)
+#
+# IMAGE SUURUS VÕRDLUS:
+# ---------------------
+# Dockerfile.proxy:           ~600MB (JDK + Gradle + JAR)
+# Dockerfile.optimized.proxy: ~250MB (JRE + JAR)
+# ERINEVUS:                   ~350MB säästetud! 💾
+#
+# JÄRELDUS:
+# ---------
+# Õppimiseks/testimiseks: ✅ See fail
+# Tootmiseks:             ✅ Dockerfile.optimized.proxy
+#
+# ==========================================================================

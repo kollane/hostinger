@@ -13,11 +13,11 @@ Modules võimaldavad korduvkasutada Terraform koodi (DRY - Don't Repeat Yourself
 
 ## 🎯 Õpieesmärgid
 
-✅ Create reusable module
-✅ Module inputs (variables)
-✅ Module outputs
-✅ Use module multiple times
-✅ Nested modules
+- ✅ Create reusable module
+- ✅ Module inputs (variables)
+- ✅ Module outputs
+- ✅ Use module multiple times
+- ✅ Nested modules
 
 ---
 

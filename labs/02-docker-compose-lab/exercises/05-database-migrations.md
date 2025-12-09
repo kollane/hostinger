@@ -1,25 +1,26 @@
-# Harjutus 4: Database Migrations Liquibase'iga
+# Harjutus 5: Andmebaasi migratsioonid (Liquibase)
 
-**Kestus:** 60 minutit
-**Eesmärk:** Automatiseeri database schema haldamist Liquibase migration'itega
+**Eesmärk:** Automatiseeri andmebaasi skeemi haldamist Liquibase migratsioonidega
 
 ---
 
-## 📋 Ülevaade
+## 📋 Harjutuse ülevaade
 
-Selles harjutuses õpid automatiseerima database schema loomist ja uuendamist Liquibase'iga. See on **oluline DevOps skill** ja valmistab ette **Kubernetes InitContainer pattern'i**, mida õpid Lab 3's.
+Selles harjutuses õpid automatiseerima andmebaasi skeemi loomist ja uuendamist Liquibase'iga. See on **oluline DevOps oskus** ja valmistab ette **Kubernetes Init-konteineri mustrit**, mida õpid Lab 3-s.
 
 **Probleem praegu:**
-- ❌ Database schema luuakse manuaalselt (database-setup.sql)
-- ❌ Raske jälgida schema muudatusi
-- ❌ Rollback on keeruline
-- ❌ Ei ole versioonihaldust database schema'le
+
+- ❌ Andmebaasi skeem luuakse manuaalselt (database-setup.sql)
+- ❌ Raske jälgida skeemi muudatusi
+- ❌ Tagasi keeramine on keeruline
+- ❌ Ei ole versioonihaldust andmebaasi skeemile
 
 **Lahendus:**
-- ✅ Liquibase migration'id (versioonihaldus)
-- ✅ Automaatne schema loomine
-- ✅ Init container pattern (käivitub enne rakendust)
-- ✅ Rollback võimalus
+
+- ✅ Liquibase migratsioonid (versioonihaldus)
+- ✅ Automaatne skeemi loomine
+- ✅ Init-konteineri muster (käivitub enne rakendust)
+- ✅ Tagasivõtmise võimalus
 
 ---
 
@@ -27,12 +28,12 @@ Selles harjutuses õpid automatiseerima database schema loomist ja uuendamist Li
 
 Peale selle harjutuse läbimist oskad:
 
-- ✅ Mõista, mis on database migration
+- ✅ Mõista, mis on **andmebaasi migratsioon (database migration)**
 - ✅ Seadistada Liquibase konteinerit
-- ✅ Kirjutada changelog faile (XML/YAML)
-- ✅ Implementeerida init container pattern
-- ✅ Käivitada migration'eid enne rakendust
-- ✅ Teha rollback'e
+- ✅ Kirjutada **changelog** faile (XML/YAML)
+- ✅ Implementeerida **init-konteineri (init container)** mustrit
+- ✅ Käivitada migratsioone enne rakendust
+- ✅ Teha **tagasi keeramisi (rollback)**
 - ✅ Valmistuda Kubernetes Job/InitContainer'iteks (Lab 3)
 
 ---
@@ -61,19 +62,21 @@ ssh labuser@93.127.213.242 -p [SINU-PORT]
 | student3 | http://93.127.213.242:8280 |
 
 💡 **API'd on kättesaadavad läbi frontend reverse proxy:**
+
 - `/api/auth/*` → user-service:3000
 - `/api/users*` → user-service:3000
 - `/api/todos*` → todo-service:8081
 
-**SSH Sessioonis (debugging):**
+**SSH sessioonis (veatuvastus):**
+
 - `curl http://localhost:3000/health`
 - `curl http://localhost:8081/health`
 
 ---
 
-## 🧠 Mis on Database Migration?
+## 🧠 Mis on andmebaasi migratsioon?
 
-### Traditsiooniline Lähenemine (Halb):
+### Traditsiooniline lähenemine (Halb):
 
 ```sql
 -- database-setup.sql
@@ -82,12 +85,13 @@ INSERT INTO users VALUES (...);
 ```
 
 **Probleemid:**
-- Kui tabel on juba olemas, saad vea (error)
+
+- Kui tabel on juba olemas, saad vea
 - Pole ajalugu, mis muutus ja millal
-- Raske teha rollback'i
+- Raske teha tagasivõtmist
 - Pole versioonihaldust
 
-### Database Migration Lähenemine (Hea):
+### Migratsiooni lähenemine (Hea):
 
 ```
 Version 1: Create users table
@@ -98,14 +102,15 @@ Version 4: Create todos table
 ```
 
 **Eelised:**
+
 - ✅ Iga muudatus on versioonihalduses
-- ✅ Automaatne rollback
-- ✅ Saad käivitada mitu korda (idempotent)
-- ✅ Database ja kood on sünkroonis
+- ✅ Automaatne tagasi keeramine
+- ✅ Saad käivitada mitu korda (idempotentne)
+- ✅ Andmebaas ja kood on sünkroonis
 
 ---
 
-## 🏗️ Liquibase Init Container Pattern
+## 🏗️ Liquibase Init-konteineri muster
 
 ### Praegu (Ilma Liquibase'ita):
 
@@ -113,7 +118,7 @@ Version 4: Create todos table
 Backend konteiner käivitub
   → Proovib ühenduda andmebaasiga
   → Eeldab, et tabelid on olemas
-  → Kui tabeleid pole, crashib
+  → Kui tabeleid pole, krahhib
 ```
 
 ### Peale (Liquibase'iga):
@@ -122,23 +127,23 @@ Backend konteiner käivitub
 1. PostgreSQL konteiner käivitub
 2. Liquibase konteiner käivitub (init)
      → Loob/uuendab tabeleid
-     → Käivitab migration'id
+     → Käivitab migratsioonid
      → Lõpetab (exit 0)
 3. Backend konteiner käivitub
      → Tabelid on juba olemas
      → Rakendus töötab
 ```
 
-**See on täpselt sama pattern, mida kasutad Kubernetes'es Lab 3's!**
+**See on täpselt sama muster, mida kasutad Kubernetes'es Lab 3's!**
 
 ---
 
 ## ⚠️ Enne Alustamist: Kontrolli Eeldusi
 
-**Veendu, et Harjutus 3 on läbitud:**
+**Veendu, et Harjutus 4 on läbitud:**
 
 ```bash
-# 1. Kas 5 teenust (services) töötavad?
+# 1. Kas 5 teenust töötavad?
 cd compose-project
 docker compose ps
 
@@ -147,7 +152,8 @@ ls -la .env
 ```
 
 **Kui midagi puudub:**
-- 🔗 Mine tagasi [Harjutus 3](03-environment-management.md)
+
+- 🔗 Mine tagasi [Harjutus 4](04-environment-management.md)
 
 **✅ Kui kõik ülalpool on OK, võid jätkata!**
 
@@ -155,9 +161,9 @@ ls -la .env
 
 ## 📝 Sammud
 
-### Samm 1: Loo Liquibase Changelog Kataloog (5 min)
+### Samm 1: Loo Liquibase Changelog kataloog
 
-Loo kataloog Liquibase migration failide jaoks:
+Loo kataloog Liquibase migratsioonifailide jaoks:
 
 ```bash
 cd compose-project
@@ -167,7 +173,7 @@ cd liquibase
 
 ---
 
-### Samm 2: Kirjuta Master Changelog Fail (5 min)
+### Samm 2: Kirjuta Master Changelog fail
 
 Loo `changelog-master.xml`:
 
@@ -196,7 +202,7 @@ Salvesta: `Esc`, siis `:wq`, `Enter`
 
 ---
 
-### Samm 3: Kirjuta Changesets (15 min)
+### Samm 3: Kirjuta Changesets
 
 #### Changeset 1: Loo users tabel
 
@@ -333,7 +339,7 @@ tree liquibase/
 
 ---
 
-### Samm 4: Lisa Liquibase Teenused docker-compose.yml'i (20 min)
+### Samm 4: Lisa Liquibase teenused docker-compose.yml'i
 
 Mine tagasi compose-project kausta:
 
@@ -342,7 +348,7 @@ cd ..
 vim docker-compose.yml
 ```
 
-Lisa **kaks Liquibase teenust (service)** (peale PostgreSQL teenuste, enne backend'e):
+Lisa **kaks Liquibase teenust** (peale PostgreSQL teenuste, enne backend'e):
 
 ```yaml
   # ==========================================================================
@@ -388,7 +394,7 @@ Lisa **kaks Liquibase teenust (service)** (peale PostgreSQL teenuste, enne backe
     restart: "no"  # Käivitub ainult üks kord
 ```
 
-**TÄHTIS:** Nüüd muuda backend teenused (services) sõltuma Liquibase'ist:
+**TÄHTIS:** Nüüd muuda backend teenused sõltuma Liquibase'ist:
 
 ```yaml
   user-service:
@@ -412,18 +418,18 @@ Salvesta.
 
 ---
 
-### Samm 5: Kustuta Vanad Andmebaasid ja Testi (10 min)
+### Samm 5: Kustuta vanad andmebaasid ja testi
 
-**Kustuta vanad andmehoidlad (volumes), et testida Liquibase'i:**
+**Kustuta vanad andmeköited, et testida Liquibase'i:**
 
 ```bash
 # HOIATUS: See kustutab kõik andmed!
 docker compose down
 
-# Kustuta vanad volumes
+# Kustuta vanad andmeköited
 docker volume rm postgres-user-data postgres-todo-data
 
-# Loo uued tühjad volumes
+# Loo uued tühjad andmeköited
 docker volume create postgres-user-data
 docker volume create postgres-todo-data
 
@@ -463,10 +469,10 @@ docker compose exec postgres-todo psql -U postgres -d todo_service_db -c "\dt"
 
 ---
 
-### Samm 6: Testi End-to-End (5 min)
+### Samm 6: Testi End-to-End
 
 ```bash
-# Kontrolli, et kõik teenused (services) töötavad
+# Kontrolli, et kõik teenused töötavad
 docker compose ps
 
 # Backend'id peaksid olema UP (Liquibase EXIT 0)
@@ -486,9 +492,9 @@ curl -X POST http://localhost:3000/api/auth/register \
 
 ---
 
-### Samm 7: Lisa Uus Migration (Bonus) (10 min)
+### Samm 7: Lisa uus migratsioon (Bonus)
 
-Simuleerime schema muudatust:
+Simuleerime skeemi muudatust:
 
 ```bash
 cd liquibase
@@ -552,18 +558,18 @@ docker compose exec postgres-user psql -U postgres -d user_service_db -c "\d use
 
 ---
 
-## ✅ Kontrolli Tulemusi
+## ✅ Kontrolli tulemusi
 
 Peale selle harjutuse läbimist peaksid omama:
 
 - [ ] **liquibase/** kataloog changelog failidega
 - [ ] **changelog-master.xml** master fail
 - [ ] **2 changeset'i** (users, todos tabelid)
-- [ ] **Liquibase teenused** docker-compose.yml's
-- [ ] **Init container pattern** - backend sõltub Liquibase'ist
+- [ ] **Liquibase teenused** docker-compose.yml'is
+- [ ] **Init-konteineri muster** - backend sõltub Liquibase'ist
 - [ ] **Tabelid loodud** Liquibase'i poolt
-- [ ] **Migration history** databasechangelog tabelis
-- [ ] **End-to-End workflow** toimib
+- [ ] **Migratsiooni ajalugu** databasechangelog tabelis
+- [ ] **End-to-End töövoog** toimib
 
 ---
 
@@ -587,17 +593,17 @@ docker compose exec postgres-user psql -U postgres -d user_service_db -c "SELECT
 
 ---
 
-## 🎓 Õpitud Mõisted
+## 🎓 Õpitud mõisted
 
-### Liquibase Mõisted:
+### Liquibase mõisted:
 
 - **changeSet:** Üks muudatus andmebaasis (DDL)
 - **changelog:** Fail, mis sisaldab changesets'e
 - **master changelog:** Fail, mis include'ib kõik changesets
-- **rollback:** Tagasivõtmine (undo changeset)
-- **databasechangelog:** Liquibase'i tabel migration history jaoks
+- **rollback:** Tagasi keeramine
+- **databasechangelog:** Liquibase'i tabel migratsiooni ajaloo jaoks
 
-### Init Container Pattern:
+### Init-konteineri muster:
 
 ```
 1. PostgreSQL konteiner käivitub (healthy)
@@ -606,34 +612,35 @@ docker compose exec postgres-user psql -U postgres -d user_service_db -c "SELECT
 ```
 
 **Kubernetes'es Lab 3:**
+
 - Liquibase = InitContainer
 - Backend = Main Container
 
-### Changesets Best Practices:
+### Changesets parimad tavad:
 
-1. **Üksi muudatus per changeset** - Lihtne rollback
-2. **Nunber changesets järjekorras** - 001, 002, 003...
+1. **Üksi muudatus per changeset** - Lihtne tagasivõtmine
+2. **Nummerda changesets järjekorras** - 001, 002, 003...
 3. **Kirjelda kommentaarides** - Mis muutus tehti
 4. **Määra author** - Kes tegi
 5. **Kirjuta rollback** - Kuidas tagasi võtta
 
 ---
 
-## 💡 Parimad Tavad
+## 💡 Parimad tavad
 
 1. **Ära muuda vanu changesets'e** - Loo alati uus
 2. **Versioonihälda changelog'e** - Git commit iga muudatuse kohta
-3. **Testi rollback'e** - Veendu, et rollback töötab
-4. **Kasuta descriptive ID-sid** - 001-create-users-table
+3. **Testi rollback'e** - Veendu, et tagasivõtmine töötab
+4. **Kasuta kirjeldavaid ID-sid** - 001-create-users-table
 5. **Lisa kommentaare** - Selgita, miks muudatus tehti
 
-### Rollback Testimine:
+### Tagasivõtmise testimine:
 
 ```bash
 # Vaata, mis changesets on rakendatud
 docker compose exec liquibase-user liquibase --changeLogFile=changelog-master.xml history
 
-# Rollback viimane changeset
+# Võta tagasi (rollback) viimane changeset
 docker compose exec liquibase-user liquibase --changeLogFile=changelog-master.xml rollbackCount 1
 
 # Kontrolli
@@ -685,15 +692,16 @@ depends_on:
 
 ## 🔗 Järgmine Samm
 
-Suurepärane! Nüüd automatiseerid database schema Liquibase'iga.
+Suurepärane! Nüüd automatiseerid andmebaasi skeemi Liquibase'iga.
 
 **Mis edasi?**
-- ✅ Database migration'id töötavad
-- ✅ Init container pattern implementeeritud
-- ✅ Valmis Kubernetes InitContainer'iteks (Lab 3)
-- ⏭️ **Järgmine:** Production Patterns
 
-**Jätka:** [Harjutus 5: Production Patterns](05-production-patterns.md)
+- ✅ Andmebaasi migratsioonid töötavad
+- ✅ Init-konteineri muster implementeeritud
+- ✅ Valmis Kubernetes InitContainer'iteks (Lab 3)
+- ⏭️ **Järgmine:** Tootmiskeskkonna mustrid
+
+**Jätka:** [Harjutus 6: Tootmiskeskkonna mustrid](06-production-patterns.md)
 
 ---
 
@@ -706,4 +714,4 @@ Suurepärane! Nüüd automatiseerid database schema Liquibase'iga.
 
 ---
 
-**Õnnitleme! Oled õppinud database migration'eid! 🎉**
+**Õnnitleme! Oled õppinud andmebaasi migratsioone! 🎉**

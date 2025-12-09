@@ -1,7 +1,6 @@
-# Harjutus 6: Advanced Patterns (VALIKULINE)
+# Harjutus 7: Edasijõudnute mustrid (Advanced Patterns) (VALIKULINE)
 
-**Kestus:** 30 minutit
-**Eesmärk:** Õppida täiendavaid Docker Compose pattern'e ja troubleshooting oskusi
+**Eesmärk:** Õppida täiendavaid Docker Compose mustreid ja tõrkeotsingu oskusi
 
 ---
 
@@ -12,21 +11,22 @@ See harjutus on **valikuline** ja **sõltumatu** Harjutustest 3-5.
 **Eeldused:** Harjutus 1 või 2 läbitud (töötav docker-compose.yml)
 
 **Õpid:**
-- Docker Compose profiles (erinevad teenuste komplektid)
-- Volume backup & restore (disaster recovery)
-- Network troubleshooting (debug tööriistad)
-- Compose Watch mode (auto-rebuild development - VALIKULINE)
+
+- Docker Compose profiilid (erinevad teenuste komplektid)
+- Andmeköite varundamine ja taastamine (tõrkest taastumine)
+- Võrgu tõrkeotsing
+- Compose Watch režiim (auto-rebuild arenduses - VALIKULINE)
 
 ---
 
-## 📋 Ülevaade
+## 📋 Harjutuse ülevaade
 
-Selles harjutuses õpid nelja **täiendavat DevOps pattern'i**, mis on kasulikud real-world projektides:
+Selles harjutuses õpid nelja **täiendavat DevOps mustrit**, mis on kasulikud reaalsetes projektides:
 
-1. **Profiles** - Käivita erinevaid teenuste komplekte (dev, prod, debug)
-2. **Backup/Restore** - Andmete kaitse ja disaster recovery
-3. **Network Troubleshooting** - Debug network probleeme
-4. **Compose Watch** - Auto-rebuild development (2025 best practice, valikuline)
+1. **Profiilid (Profiles)** - Käivita erinevaid teenuste komplekte (dev, prod, debug)
+2. **Varundamine/Taastamine (Backup/Restore)** - Andmete kaitse ja tõrkest taastumine
+3. **Võrgu tõrkeotsing (Network Troubleshooting)** - Debugi võrguprobleeme
+4. **Compose Watch** - Automaatne uuesti ehitamine arenduses (2025 parim praktika, valikuline)
 
 ---
 
@@ -34,11 +34,11 @@ Selles harjutuses õpid nelja **täiendavat DevOps pattern'i**, mis on kasulikud
 
 Peale selle harjutuse läbimist oskad:
 
-- ✅ Kasutada Docker Compose profile'e
-- ✅ Backup'ida ja restore'ida volume andmeid
-- ✅ Debuggida network probleeme
-- ✅ Kasutada debug containereid
-- ✅ Analüüsida Docker network'e
+- ✅ Kasutada Docker Compose **profiile (profiles)**
+- ✅ Varundada ja taastada **andmeköite (docker volume)** andmeid
+- ✅ Teostada **veatuvastust (debug)** võrguprobleemide korral
+- ✅ Kasutada **silumiskonteinereid (debug containers)**
+- ✅ Analüüsida Docker võrke
 
 ---
 
@@ -57,6 +57,7 @@ docker compose ps
 ```
 
 **Kui midagi puudub:**
+
 - 🔗 Mine tagasi [Harjutus 1](01-compose-basics.md)
 
 **✅ Kui kõik ülalpool on OK, võid jätkata!**
@@ -65,25 +66,26 @@ docker compose ps
 
 ## 📝 Sammud
 
-### Osa 1: Docker Compose Profiles (10 min)
+### Osa 1: Docker Compose profiilid (Profiles)
 
-#### Samm 1: Mõista Profiles Kontseptsiooni (2 min)
+#### Samm 1: Mõista profiilide kontseptsiooni
 
 **Probleem:**
-- Tihti tahad development'is käivitada debug tools'e
-- Production'is ei vaja debug tools'e
-- Praegu pead käsitsi kommenteerima teenuseid (services)
 
-**Lahendus: Profiles**
+- Tihti tahad development'is käivitada silumistööriistu
+- Production'is ei vaja silumistööriistu
+- Praegu pead käsitsi kommenteerima teenuseid
+
+**Lahendus: Profiilid**
 ```bash
 # Käivita ainult põhiteenused
 docker compose up -d
 
-# Käivita koos debug tools'ega
+# Käivita koos silumistööriistadega
 docker compose --profile debug up -d
 ```
 
-#### Samm 2: Lisa Debug Teenus (3 min)
+#### Samm 2: Lisa silumisteenus
 
 Ava docker-compose.yml:
 
@@ -91,7 +93,7 @@ Ava docker-compose.yml:
 vim docker-compose.yml
 ```
 
-Lisa **debug teenus** (peale frontend'i, enne volumes:):
+Lisa **silumisteenus** (peale frontend'i, enne volumes:):
 
 ```yaml
   # ==========================================================================
@@ -109,23 +111,23 @@ Lisa **debug teenus** (peale frontend'i, enne volumes:):
 
 Salvesta.
 
-#### Samm 3: Testi Profile'e (5 min)
+#### Samm 3: Testi profiile
 
 ```bash
-# Käivita ilma profile'ita (debug-tools EI käivitu)
+# Käivita ilma profiilita (debug-tools EI käivitu)
 docker compose up -d
 docker compose ps
 # Ei näe debug-tools
 
-# Käivita debug profile'iga
+# Käivita debug profiiliga
 docker compose --profile debug up -d
 docker compose ps
 # Näed debug-tools
 
-# Sisene debug containerisse
+# Sisene silumiskonteinerisse
 docker compose exec debug-tools bash
 
-# Debug container sees:
+# Silumiskonteineri sees:
 # 1. Ping teisi teenuseid
 ping -c 3 postgres-user
 ping -c 3 user-service
@@ -134,11 +136,11 @@ ping -c 3 user-service
 curl http://user-service:3000/health
 curl http://todo-service:8081/health
 
-# 3. DNS resolution
+# 3. DNS lahendus
 nslookup postgres-user
 nslookup user-service
 
-# 4. Network connectivity
+# 4. Võrguühenduvus
 nc -zv postgres-user 5432
 nc -zv user-service 3000
 
@@ -148,24 +150,24 @@ exit
 
 ---
 
-### Osa 2: Volume Backup & Restore (10 min)
+### Osa 2: Andmeköite varundamine ja taastamine (Volume Backup & Restore)
 
-#### Samm 4: Backup PostgreSQL Volume (5 min)
+#### Samm 4: Varunda PostgreSQL andmeköide (docker volume)
 
-**Stsenaarium:** Soovid backup'ida postgres-user-data volume'i.
+**Stsenaarium:** Soovid varundada postgres-user-data andmeköidet.
 
 ```bash
 # 1. Peata user-service (et andmebaas oleks konsistentne)
 docker compose stop user-service
 
-# 2. Backup volume kasutades Alpine containerit
+# 2. Varunda andmeköide kasutades Alpine konteinerit
 docker run --rm \
   -v postgres-user-data:/data \
   -v $(pwd):/backup \
   alpine \
   tar czf /backup/postgres-user-backup-$(date +%Y%m%d-%H%M%S).tar.gz -C /data .
 
-# 3. Kontrolli backup faili
+# 3. Kontrolli varukoopia faili
 ls -lh postgres-user-backup-*.tar.gz
 
 # Peaks nägema faili (nt 10-20MB)
@@ -175,12 +177,13 @@ docker compose start user-service
 ```
 
 **Mida juhtus:**
-- `-v postgres-user-data:/data` - Mount'is volume /data'sse
-- `-v $(pwd):/backup` - Mount'is praegune kaust /backup'i
-- `tar czf` - Lõi compressed archive
-- `-C /data .` - Archive'is kõik /data alt
 
-#### Samm 5: Restore Backup (Testimiseks) (5 min)
+- `-v postgres-user-data:/data` - Haakis andmeköite /data'sse
+- `-v $(pwd):/backup` - Haakis praeguse kausta /backup'i
+- `tar czf` - Lõi kokkusurutud arhiivi
+- `-C /data .` - Arhiveeris kõik /data alt
+
+#### Samm 5: Taasta varukoopia (Testimiseks)
 
 **HOIATUS:** See kustutab praegused andmed! Test ainult arenduses!
 
@@ -188,13 +191,13 @@ docker compose start user-service
 # 1. Peata user-service
 docker compose stop user-service
 
-# 2. Kustuta volume andmed (TESTING ONLY!)
+# 2. Kustuta andmeköite andmed (TESTING ONLY!)
 docker run --rm \
   -v postgres-user-data:/data \
   alpine \
   sh -c "rm -rf /data/*"
 
-# 3. Restore backup'ist
+# 3. Taasta varukoopiast
 docker run --rm \
   -v postgres-user-data:/data \
   -v $(pwd):/backup \
@@ -212,47 +215,47 @@ curl -X POST http://localhost:3000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"test@example.com","password":"test123"}'
 
-# Kui see töötab, restore oli edukas!
+# Kui see töötab, taastamine oli edukas!
 ```
 
 ---
 
-### Osa 3: Network Troubleshooting (10 min)
+### Osa 3: Võrgu tõrkeotsing (Network Troubleshooting)
 
-#### Samm 6: Inspect Network (5 min)
+#### Samm 6: Inspekteeri võrku
 
 ```bash
-# 1. Vaata network detaile
+# 1. Vaata võrgu (docker network) detaile
 docker network inspect todo-network
 
 # Analüüsi väljundit:
 # - Containers: Kõik ühendatud konteinerid
 # - IPv4Address: Iga konteineri IP
-# - Gateway: Network gateway IP
+# - Gateway: Võrgu gateway IP
 
-# 2. Vaata konkreetse konteineri network info
+# 2. Vaata konkreetse konteineri võrguinfot
 docker inspect user-service | grep -A 20 "Networks"
 
 # Näed:
-# - IP address
+# - IP aadress
 # - Gateway
-# - Network name
+# - Võrgu nimi
 ```
 
-#### Samm 7: Test Network Connectivity (5 min)
+#### Samm 7: Testi võrguühenduvust
 
-Kasuta debug-tools containerit:
+Kasuta debug-tools konteinerit:
 
 ```bash
-# Käivita debug container (kui ei ole juba)
+# Käivita silumiskonteiner (kui ei ole juba)
 docker compose --profile debug up -d debug-tools
 
-# Sisene debug containerisse
+# Sisene silumiskonteinerisse
 docker compose exec debug-tools bash
 
 # Testimine:
 
-# 1. Vaata DNS resolution'i
+# 1. Vaata DNS lahendust
 dig postgres-user
 dig user-service
 
@@ -264,11 +267,11 @@ nmap -p 5432 postgres-user
 nmap -p 3000 user-service
 nmap -p 8081 todo-service
 
-# 4. HTTP requests
+# 4. HTTP päringud
 curl -v http://user-service:3000/health
 curl -v http://todo-service:8081/health
 
-# 5. PostgreSQL connectivity
+# 5. PostgreSQL ühenduvus
 nc -zv postgres-user 5432
 nc -zv postgres-todo 5432
 
@@ -280,25 +283,27 @@ exit
 ```
 
 **Analüüs:**
-- Kui `ping` töötab, network on ühendatud
-- Kui `curl` töötab, service on valmis
+
+- Kui `ping` töötab, võrk on ühendatud
+- Kui `curl` töötab, teenus on valmis
 - Kui `nc -zv` töötab, port on avatud
 
 ---
 
-### Osa 4: Compose Watch - Auto-Rebuild Development (VALIKULINE - 10 min)
+### Osa 4: Compose Watch - Automaatne ehitus arenduses (VALIKULINE)
 
-**2025 Best Practice: Kasuta Compose Watch'i kiireks arenduseks!**
+**2025 Parim praktika: Kasuta Compose Watch'i kiireks arenduseks!**
 
-Docker Compose Watch (lisatud Compose v2.22+) võimaldab automaatset rebuild'i või faili sync'i, kui source code muutub. See on **super kasulik development'is!**
+Docker Compose Watch (lisatud Compose v2.22+) võimaldab automaatset uuesti ehitamist (rebuild) või failide sünkroonimist, kui lähtekood muutub. See on **super kasulik arenduses!**
 
-#### Samm 8: Mõista Watch Mode'i (2 min)
+#### Samm 8: Mõista Watch režiimi
 
-**Probleem Development'is:**
-- Muudad source code'i
-- Pead manuaalselt rebuild'ima image'i: `docker compose build`
-- Pead restart'ima service'i: `docker compose up -d`
-- **Aeglane feedback loop!**
+**Probleem arenduses:**
+
+- Muudad lähtekoodi
+- Pead manuaalselt tõmmise uuesti ehitama: `docker compose build`
+- Pead teenuse taaskäivitama: `docker compose up -d`
+- **Aeglane tagasisideahel!**
 
 **Lahendus: Compose Watch**
 ```bash
@@ -306,20 +311,21 @@ docker compose watch
 ```
 
 **Automaatselt:**
-- Jälgib (watch) source code muudatusi
-- Rebuild'ib image'i automaatselt
-- Restart'ib service'i automaatselt
-- **Kiire feedback loop!**
 
-#### Samm 9: Konfigureeri Watch Mode (5 min)
+- Jälgib (watch) lähtekoodi muudatusi
+- Ehitab tõmmise uuesti automaatselt
+- Taaskäivitab teenuse automaatselt
+- **Kiire tagasisideahel!**
 
-Ava docker-compose.yml ja lisa watch konfiguratsioon User Service'le:
+#### Samm 9: Konfigureeri Watch režiim
+
+Ava docker-compose.yml ja lisa watch konfiguratsioon User Service'ile:
 
 ```bash
 vim docker-compose.yml
 ```
 
-Lisa `develop` sektsoon user-service'le (peale `healthcheck:` sektsiooni):
+Lisa `develop` sektsioon user-service'le (peale `healthcheck:` sektsiooni):
 
 ```yaml
   user-service:
@@ -337,7 +343,7 @@ Lisa `develop` sektsoon user-service'le (peale `healthcheck:` sektsiooni):
     # === WATCH MODE (Development) ===
     develop:
       watch:
-        # Variant 1: Rebuild kui source code muutub
+        # Variant 1: Rebuild kui lähtekood muutub
         - action: rebuild
           path: ../../apps/backend-nodejs
           ignore:
@@ -355,33 +361,33 @@ Lisa `develop` sektsoon user-service'le (peale `healthcheck:` sektsiooni):
         #   target: /app/src
 ```
 
-**Watch Actions:**
+**Watch toimingud:**
 
-1. **rebuild** - Full rebuild (aeglane, aga kindel)
-   - Rebuilds image kui mis tahes fail muutub
-   - Restart'ib container automaatselt
-   - Sobib production-like testing'uks
+1. **rebuild** - Täielik uuesti ehitamine (aeglane, aga kindel)
+   - Rebuildib tõmmise kui mis tahes fail muutub
+   - Taaskäivitab konteineri automaatselt
+   - Sobib production-laadseks testimiseks
 
-2. **sync** - Sync files ilma rebuild'ita (kiire!)
-   - Copy'ib muudetud failid containerisse
-   - EI rebuild'i image'i
+2. **sync** - Sünkrooni failid ilma ehituseta (kiire!)
+   - Kopeerib muudetud failid konteinerisse
+   - EI ehita tõmmist uuesti
    - Sobib interpreteeritud keeltele (Node.js, Python)
 
-3. **sync+restart** - Sync + restart (keskmine kiirus)
-   - Sync'ib failid + restart'ib container
-   - Sobib kui application peab restart'ima (config muutused)
+3. **sync+restart** - Sünkroonimine + restart (keskmine kiirus)
+   - Sünkroonib failid + taaskäivitab konteineri
+   - Sobib kui rakendus peab restart'ima (konfi muutused)
 
-#### Samm 10: Testi Watch Mode (3 min)
+#### Samm 10: Testi Watch režiimi
 
 ```bash
-# Käivita watch mode
+# Käivita watch režiim
 docker compose watch
 
 # Oodatud väljund:
 # ⦿ watch enabled
 # ...watching 1 service
 
-# Nüüd tee muudatus source code'is (TEISES TERMINALIS):
+# Nüüd tee muudatus lähtekoodis (TEISES TERMINALIS):
 cd ~/labs/apps/backend-nodejs
 echo "// Test comment" >> server.js
 
@@ -390,35 +396,37 @@ echo "// Test comment" >> server.js
 # [user-service] rebuilding...
 # [user-service] restarting...
 
-# Lõpeta watch mode: Ctrl+C
+# Lõpeta watch režiim: Ctrl+C
 ```
 
 **Tulemus:**
-- ✅ Source code muudatus → auto rebuild
+
+- ✅ Lähtekoodi muudatus → automaatne rebuild
 - ✅ Ei pea manuaalselt käivitama `docker compose build`
-- ✅ Kiire development feedback loop
+- ✅ Kiire arenduse tagasisideahel
 
-#### Bonus: Watch Mode Production vs Development
+#### Bonus: Watch režiim Toote keskkond (Production) vs Arenduskeskkond (Development)
 
-**Development (watch mode):**
+**Arenduskeskkond (Development) (watch režiim):**
 ```yaml
 develop:
   watch:
-    - action: sync+restart  # Kiire feedback
+    - action: sync+restart  # Kiire tagasiside
       path: ./src
       target: /app/src
 ```
 
-**Production (NO watch):**
+**Toote keskkond (Production) (EI OLE watch'i):**
 ```yaml
-# Ära kasuta watch'i production'is!
-# develop: sektsiooni ei tohiks production config'is olla
+# Ära kasuta watch'i toote keskkonnas (production)!
+# develop: sektsiooni ei tohiks toote keskkonna konfis olla
 ```
 
-**Best Practice:**
-- ✅ Kasuta watch'i ainult development'is
-- ✅ Kasuta `docker-compose.override.yml` watch config'i jaoks
-- ❌ ÄRA kasuta watch'i production'is (turvalisus + resource kasutus)
+**Parim praktika:**
+
+- ✅ Kasuta watch'i ainult arenduses
+- ✅ Kasuta `docker-compose.override.yml` watch konfi jaoks
+- ❌ ÄRA kasuta watch'i toote keskkonnas (production) (turvalisus + ressursikasutus)
 
 **docker-compose.override.yml näide (dev watch):**
 ```yaml
@@ -436,26 +444,27 @@ services:
 ```
 
 **Mida õppisid:**
-- ✅ Compose Watch mode (auto-rebuild)
-- ✅ Watch actions: rebuild, sync, sync+restart
-- ✅ Fast development feedback loop
-- ✅ Development vs Production config separation
+
+- ✅ Compose Watch režiim (auto-rebuild)
+- ✅ Watch toimingud: rebuild, sync, sync+restart
+- ✅ Kiire arenduse tagasisideahel
+- ✅ Development vs Production konfi eraldamine
 
 ---
 
-## ✅ Kontrolli Tulemusi
+## ✅ Kontrolli tulemusi
 
 Peale selle harjutuse läbimist peaksid omama:
 
-- [ ] **debug-tools** teenus profile'iga
-- [ ] **Backup fail** postgres-user-data volume'ist
-- [ ] **Restore** testitud edukalt
-- [ ] **Network troubleshooting** oskused:
+- [ ] **debug-tools** teenus profiiliga
+- [ ] **Varukoopia fail** postgres-user-data andmeköitest
+- [ ] **Taastamine** testitud edukalt
+- [ ] **Võrgu tõrkeotsingu** oskused:
   - [ ] `docker network inspect`
-  - [ ] DNS resolution (`dig`, `nslookup`)
-  - [ ] Port connectivity (`nc`, `nmap`)
-  - [ ] HTTP requests (`curl`)
-- [ ] **Compose Watch** mode testitud (valikuline, Compose v2.22+)
+  - [ ] DNS lahendus (`dig`, `nslookup`)
+  - [ ] Pordi ühenduvus (`nc`, `nmap`)
+  - [ ] HTTP päringud (`curl`)
+- [ ] **Compose Watch** režiim testitud (valikuline)
 
 ---
 
@@ -467,10 +476,10 @@ Peale selle harjutuse läbimist peaksid omama:
 # 1. Kas debug-tools teenus on defineeritud?
 docker compose config | grep -A 5 "debug-tools"
 
-# 2. Kas backup fail on olemas?
+# 2. Kas varukoopia fail on olemas?
 ls -lh postgres-user-backup-*.tar.gz
 
-# 3. Kas network on ühendatud?
+# 3. Kas võrk on ühendatud?
 docker network inspect todo-network | grep "user-service"
 
 # 4. Kas debug-tools saab ühenduda teistega?
@@ -479,24 +488,24 @@ docker compose exec debug-tools ping -c 1 postgres-user
 
 ---
 
-## 🎓 Õpitud Mõisted
+## 🎓 Õpitud mõisted
 
-### Docker Compose Profiles:
+### Docker Compose profiilid (Profiles):
 
 ```yaml
 services:
   myservice:
-    profiles: ["dev", "debug"]  # Käivitub ainult need profile'idega
+    profiles: ["dev", "debug"]  # Käivitub ainult nende profiilidega
 ```
 
 **Kasutamine:**
 ```bash
 docker compose --profile dev up -d
 docker compose --profile debug up -d
-docker compose --profile dev --profile debug up -d  # Mitu profile'i
+docker compose --profile dev --profile debug up -d  # Mitu profiili
 ```
 
-### Volume Backup Pattern:
+### Andmeköite (docker volume) varundamise muster:
 
 ```bash
 # Backup
@@ -512,23 +521,23 @@ docker run --rm \
   alpine tar xzf /backup/backup.tar.gz -C /data
 ```
 
-### Network Troubleshooting Tools:
+### Võrgu tõrkeotsingu tööriistad:
 
-- **ping** - ICMP connectivity
-- **curl** - HTTP requests
-- **nc (netcat)** - TCP/UDP connectivity
-- **dig/nslookup** - DNS resolution
-- **nmap** - Port scanning
-- **traceroute** - Route tracing
+- **ping** - ICMP ühenduvus
+- **curl** - HTTP päringud
+- **nc (netcat)** - TCP/UDP ühenduvus
+- **dig/nslookup** - DNS lahendus
+- **nmap** - Portide skannimine
+- **traceroute** - Marsruudi jälitamine
 
 ---
 
-## 💡 Parimad Tavad
+## 💡 Parimad tavad
 
-### 1. Profiles:
+### 1. Profiilid:
 
 ```yaml
-# Hea praktika: Defineeri erinevad profile'd
+# Hea praktika: Defineeri erinevad profiilid
 services:
   app:
     profiles: ["prod"]
@@ -540,14 +549,14 @@ services:
     profiles: ["test"]
 ```
 
-### 2. Backup Schedule:
+### 2. Varundamise graafik:
 
 ```bash
-# Cron job automaatseks backup'iks
+# Cron job automaatseks varundamiseks
 0 2 * * * /path/to/backup-script.sh  # Iga päev kell 2:00
 ```
 
-**Backup script näide:**
+**Varundusskripti näide:**
 ```bash
 #!/bin/bash
 # backup-script.sh
@@ -555,48 +564,48 @@ services:
 DATE=$(date +%Y%m%d-%H%M%S)
 BACKUP_DIR="/backups"
 
-# Backup postgres-user-data
+# Varunda postgres-user-data
 docker run --rm \
   -v postgres-user-data:/data \
   -v $BACKUP_DIR:/backup \
   alpine tar czf /backup/postgres-user-$DATE.tar.gz -C /data .
 
-# Kustuta vanad backup'id (>7 päeva)
+# Kustuta vanad varukoopiad (>7 päeva)
 find $BACKUP_DIR -name "postgres-user-*.tar.gz" -mtime +7 -delete
 ```
 
-### 3. Network Debugging:
+### 3. Võrgu silumine:
 
 ```bash
 # Alati alusta lihtsamatest:
 1. docker compose ps     # Kas konteinerid töötavad?
 2. docker compose logs   # Kas on vigu?
-3. docker network ls     # Kas network on olemas?
+3. docker network ls     # Kas võrk on olemas?
 4. docker network inspect # Kas konteinerid on ühendatud?
 5. Debug container       # Teste ping, curl, nc
 ```
 
 ---
 
-## 🐛 Levinud Probleemid
+## 🐛 Levinud probleemid
 
 ### Probleem 1: "debug-tools ei käivitu"
 
 ```bash
-# Unustasid --profile flagi?
+# Unustasid --profile lipu?
 docker compose --profile debug up -d
 
-# Kontrolli, kas profile on defineeritud
+# Kontrolli, kas profiil on defineeritud
 docker compose config | grep -A 5 "debug-tools"
 ```
 
 ### Probleem 2: "Backup fail on 0 bytes"
 
 ```bash
-# Volume võib olla tühi
+# Andmeköide võib olla tühi
 docker volume inspect postgres-user-data
 
-# Või vale path
+# Või vale rada
 docker run --rm \
   -v postgres-user-data:/data \
   alpine ls -la /data  # Kontrolli sisu
@@ -605,10 +614,10 @@ docker run --rm \
 ### Probleem 3: "Cannot connect in debug-tools"
 
 ```bash
-# Kontrolli, kas teenus on samas network'is
+# Kontrolli, kas teenus on samas võrgus
 docker network inspect todo-network | grep debug-tools
 
-# Kui ei ole, lisa network docker-compose.yml'i:
+# Kui ei ole, lisa võrk docker-compose.yml'i:
 networks:
   - todo-network
 ```
@@ -620,12 +629,14 @@ networks:
 Õnnitleme! Oled läbinud kõik Labor 2 harjutused!
 
 **Mis saavutasid:**
+
 - ✅ Docker Compose põhitõed (5 harjutust)
-- ✅ Advanced patterns (6. harjutus - VALIKULINE)
-- ✅ Production-ready seadistused
-- ✅ Troubleshooting oskused
+- ✅ Edasijõudnute mustrid (6. harjutus - VALIKULINE)
+- ✅ Tootmisvalmis seadistused
+- ✅ Tõrkeotsingu oskused
 
 **Järgmine Labor:**
+
 - 🎯 **Labor 3:** Kubernetes Põhitõed
 
 ---
@@ -639,4 +650,4 @@ networks:
 
 ---
 
-**Õnnitleme! Oled õppinud advanced Docker Compose pattern'e! 🎉**
+**Õnnitleme! Oled õppinud edasijõudnute Docker Compose mustreid! 🎉**

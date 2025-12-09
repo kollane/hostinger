@@ -1,0 +1,155 @@
+# syntax=docker/dockerfile:1.4
+# ☝️ BuildKit syntax versiooni määrang - vähendab UndefinedVar hoiatusi
+#
+# ==========================================================================
+# Proxy-teadlik Optimeeritud Dockerfile User Teenuse (Service) jaoks
+# ==========================================================================
+#
+# See Dockerfile lahendab Docker build'ide probleeme proksi-piiratud
+# corporate keskkonnas (nt. cache1.sss:3128). Kasutab ARG-põhist lähenemist,
+# mis töötab MÕLEMAS keskkonnas - nii proksi kui ilma.
+#
+# KASUTUS:
+# --------
+#
+# 1. PROXY KESKKOND (corporate võrk, cache1.sss):
+#    docker build \
+#      --build-arg HTTP_PROXY=http://cache1.sss:3128 \
+#      --build-arg HTTPS_PROXY=http://cache1.sss:3128 \
+#      --build-arg NO_PROXY=localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16 \
+#      -f Dockerfile.optimized.proxy \
+#      -t user-service:1.0-optimized \
+#      ../../../apps/backend-nodejs
+#
+# 2. ILMA PROXY'TA (arendaja masinas, avatud võrk):
+#    docker build \
+#      -f Dockerfile.optimized.proxy \
+#      -t user-service:1.0-optimized \
+#      ../../../apps/backend-nodejs
+#
+# TÄHTIS:
+# -------
+# - ARG väärtused on AINULT ehitusajal (build-time) nähtavad
+# - ENV väärtused on AINULT builder stage'is (dependencies)
+# - Runtime konteiner EI OLE proxy's (turvalisem, portaabel)
+# - npm ci respekteerib HTTP_PROXY/HTTPS_PROXY keskkonna muutujaid automaatselt
+#
+# DOKUMENTATSIOON:
+# ----------------
+# 📖 Põhjalik juhend: README-PROXY.md
+# 📖 Teooria: ../../../../resource/06-Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md
+#
+# ==========================================================================
+
+# ARG deklaratsioonid ENNE esimest FROM (globaalsed, kõigis stage'ides)
+# Vaikeväärtused on tühjad stringid - töötab ilma proksita
+ARG HTTP_PROXY=""
+ARG HTTPS_PROXY=""
+ARG NO_PROXY=""
+
+# ==========================================================================
+# 1. ETAPP: Sõltuvused (Dependencies)
+# ==========================================================================
+# See stage laeb alla ja installib npm paketid.
+# Proksi konfiguratsioon on AINULT siin - runtime'is ei ole vaja.
+
+FROM node:22-slim AS dependencies
+
+# ENV ainult selles stage'is - npm ci kasutab neid
+# Märkus: ${ARG} süntaks võtab ARG väärtused, kui need on antud
+ENV HTTP_PROXY=${HTTP_PROXY} \
+    HTTPS_PROXY=${HTTPS_PROXY} \
+    NO_PROXY=${NO_PROXY}
+
+WORKDIR /app
+
+# Kopeeri sõltuvuste (dependency) failid (vahemälu (caching) jaoks)
+# Muutes ainult package*.json'i, triggerdab see npm install'i uuesti
+COPY package*.json ./
+
+# Installi AINULT tootmise sõltuvused (production dependencies)
+# npm ci respekteerib HTTP_PROXY/HTTPS_PROXY keskkonna muutujaid automaatselt
+# Kui proxy on seadistatud, npm kasutab seda registry.npmjs.org'i pöördumiseks
+RUN npm ci --only=production
+
+# ==========================================================================
+# 2. ETAPP: Runtime
+# ==========================================================================
+# See stage sisaldab ainult runtime'i vajalikku koodi ja sõltuvusi.
+# ⚠️ TÄHTIS: ENV muutujad EI OLE siin - runtime konteiner on "clean"!
+
+FROM node:22-slim
+
+# ⚠️ PROXY ENV MUUTUJAD EI OLE SIIN!
+# Iga FROM käsk nullib ENV muutujad - runtime on proksi-vaba.
+# See on ÕIGE käitumine:
+# - Runtime'is ei ole vaja proksi (konteinerid suhtlevad LXD sisevõrgus)
+# - Turvalisem (proxy info ei leki runtime konteineri)
+# - Portaabel (sama image töötab mõlemas keskkonnas)
+
+WORKDIR /app
+
+# Loo mitte-juurkasutaja (non-root user)
+# Turvalisuse best practice: ära käivita rakendust root'ina
+RUN groupadd -g 1001 nodejs && \
+    useradd -r -u 1001 -g nodejs nodejs
+
+# Kopeeri sõltuvused (dependencies) ehitaja (builder) etapist
+# --from=dependencies võtab node_modules eelmisest stage'ist
+# --chown=nodejs:nodejs määrab failide omanikuks nodejs kasutaja
+COPY --from=dependencies --chown=nodejs:nodejs /app/node_modules ./node_modules
+
+# Kopeeri rakenduse (application) kood
+COPY --chown=nodejs:nodejs . .
+
+# Kasuta mitte-juurkasutajat (non-root user)
+USER nodejs:nodejs
+
+EXPOSE 3000
+
+# Seisukorra kontroll (Health check)
+# Docker kasutab seda, et kontrollida konteineri tervist
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s \
+  CMD node healthcheck.js || exit 1
+
+CMD ["node", "server.js"]
+
+# ==========================================================================
+# MÄRKUSED:
+# ==========================================================================
+#
+# MÄRKUS 1: Miks node:22-slim (mitte Alpine)?
+# --------------------------------------------
+# - bcrypt natiivmoodulid ei tööta korrektselt Alpine'is
+# - Kompromiss: Pildi (image) suurus ~305MB (vs ~200MB Alpine)
+# - Aga bcrypt töötab stabiilselt ilma lisatööriistadeta
+#
+# MÄRKUS 2: Proxy vs. Firewall
+# -----------------------------
+# Corporate keskkonnas:
+# - Otseühendus internetti on blokeeritud (firewall)
+# - Kõik HTTP/HTTPS liiklus peab minema läbi proksi (cache1.sss:3128)
+# - npm install ebaõnnestub ilma proksi konfiguratsioonita
+#
+# MÄRKUS 3: Miks ARG, mitte hardcoded ENV?
+# -----------------------------------------
+# ✅ ARG-põhine (see Dockerfile):
+#    - Portaabel (töötab proksi ja ilma)
+#    - Turvaline (ei leki runtime'i)
+#    - Production-ready
+#
+# ❌ Hardcoded ENV (vt. Dockerfile.proxy-hardcoded):
+#    - Töötab ainult cache1.sss võrgus
+#    - Proxy leak'ib runtime'i (turvaviga)
+#    - Tekitab technical debt
+#
+# MÄRKUS 4: Testimine
+# -------------------
+# Veendu, et proxy ei leki runtime'i:
+#
+#   docker run --rm user-service:1.0-optimized env | grep -i proxy
+#
+# Tulemus peaks olema TÜHI (ei leia midagi). Kui näed HTTP_PROXY=...,
+# siis on proxy leakinud runtime'i - see on VIGA! ⚠️
+#
+# ==========================================================================

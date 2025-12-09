@@ -37,13 +37,13 @@ Developer → Git → ArgoCD watches Git → ArgoCD applies → K8s cluster
 
 Peale selle harjutuse läbimist oskad:
 
-✅ Mõista ArgoCD arhitektuuri ja komponente
-✅ Installida ArgoCD Helm'iga
-✅ Konfigureerida ArgoCD UI ja CLI access
-✅ Ühendada Git repository ArgoCD'ga
-✅ Mõista ArgoCD permissions model
-✅ Debuggida ArgoCD installation issues
-✅ Integreerida ArgoCD Lab 5, 6, 7'ga
+- ✅ Mõista ArgoCD arhitektuuri ja komponente
+- ✅ Installida ArgoCD Helm'iga
+- ✅ Konfigureerida ArgoCD UI ja CLI access
+- ✅ Ühendada Git repository ArgoCD'ga
+- ✅ Mõista ArgoCD permissions model
+- ✅ Debuggida ArgoCD installation issues
+- ✅ Integreerida ArgoCD Lab 5, 6, 7'ga
 
 ---
 

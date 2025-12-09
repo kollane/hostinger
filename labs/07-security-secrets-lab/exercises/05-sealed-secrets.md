@@ -26,13 +26,13 @@ Selles harjutuses implementeerime **Sealed Secrets** - Bitnami lahendus secrets'
 
 Peale selle harjutuse läbimist oskad:
 
-✅ Paigaldada Sealed Secrets Controller
-✅ Installida kubeseal CLI tool
-✅ Encryptida Kubernetes Secrets
-✅ Commit encrypted secrets Git'i
-✅ Manageda secret rotation
-✅ Backupida private key (disaster recovery)
-✅ Integreerida GitOps workflow'ga
+- ✅ Paigaldada Sealed Secrets Controller
+- ✅ Installida kubeseal CLI tool
+- ✅ Encryptida Kubernetes Secrets
+- ✅ Commit encrypted secrets Git'i
+- ✅ Manageda secret rotation
+- ✅ Backupida private key (disaster recovery)
+- ✅ Integreerida GitOps workflow'ga
 
 ---
 

@@ -234,9 +234,9 @@ Iga peatükk on eraldi Markdown fail järgmise nimetusstandardiga:
 ---
 
 #### Peatükk 6A: Java/Spring Boot ja Node.js Rakenduste Konteineriseerimise Spetsiifika
-**Staatus:** ✅ **VALMIS** (2025-11-23)
-**Maht:** 20 lk (~10,000 sõna)
-**Kestus:** 3h teooria + 2h näited
+**Staatus:** ✅ **VALMIS** (2025-01-25, uuendatud corporate proxy ja Nexus käsitlusega)
+**Maht:** 26 lk (~14,000 sõna)
+**Kestus:** 4h teooria + 2h näited
 
 **Põhiteemad:**
 - **Traditsiooniline Java deployment (WAR Tomcat'is):**
@@ -265,8 +265,26 @@ Iga peatükk on eraldi Markdown fail järgmise nimetusstandardiga:
   - Multi-stage builds (TypeScript compile → runtime)
   - NODE_ENV=production
   - Non-root user (node user)
+- **Corporate võrgu piirangud: Proxy seadistamine Docker build'is:**
+  - 8 meetodit võrdlustabeliga (portability, security, CI/CD)
+  - ARG multi-stage build (soovitatud production)
+  - Gradle vs npm proxy erinevused
+  - daemon.json vs Dockerfile trade-offs
+  - BuildKit secrets (modern alternative)
+  - CI/CD integratsioon (GitHub Actions vihje)
+  - Troubleshooting (3 levinud probleemi + lahendused)
+  - Flowchart: "Millist meetodit kasutada?"
+  - **Lisastsenaarium: Sonatype Nexus Repository Manager (UUS!):**
+    - Nexus vs HTTP proxy erinevus (tabel 6 aspektiga)
+    - Gradle + Nexus (build.gradle repositories + ARG credentials)
+    - Maven + Nexus (settings.xml mirror + ARG credentials)
+    - npm + Nexus (.npmrc registry + base64 token)
+    - Nexus + HTTP proxy kombinatsioon (NO_PROXY exception)
+    - Credentials management (ARG build-time, BuildKit secrets, CI/CD)
+    - Troubleshooting (401 unauthorized, SSL errors, proxy conflicts)
+    - Best practices (6 punkti)
 
-**Seos laboritega:** Lab 1 (User Service Node.js, Todo Service Java Spring Boot)
+**Seos laboritega:** Lab 1 (User Service Node.js, Todo Service Java Spring Boot, corporate proxy ja Nexus käsitlus)
 
 ---
 
@@ -972,6 +990,35 @@ Iga peatükk on eraldi Markdown fail järgmise nimetusstandardiga:
 | **Lab 8: GitOps ArgoCD** | 28 | GitOps principles, ArgoCD, Kustomize, sync policies, Canary deployments |
 | **Lab 9: Backup & DR** | 29 | Velero, backup strategies, restore workflows, cross-cluster migration |
 | **Lab 10: Terraform IaC** | 30 | Terraform basics, Kubernetes provider, state management, modules |
+
+---
+
+## Koodiselgitused (Code Explanations)
+
+**Asukoht:** `resource/code-explanations/`
+
+**Eesmärk:** Lühikesed, koodikesksed selgitused, mis ei ole täielikud peatükid, vaid spetsiifiliste koodilõikude analüüs.
+
+**Eristus peatükkidest:**
+- **Peatükid (05-30):** Põhjalikud teoreetilised käsitlused, standardne struktuur (Õpieesmärgid, Põhimõisted, Teooria 70%, Näited 30%, Best Practices)
+- **Koodiselgitused:** Lühikesed (3-5 lk), konkreetse koodi rea-haaval analüüs, AI-genereeritud stiil OK, ei järgi peatüki struktuuri
+
+**Olemasolevad koodiselgitused:**
+
+| Fail | Teema | Kasutatakse | Staatus |
+|------|-------|-------------|---------|
+| `Node.js-Dockerfile-Proxy-Explained.md` | 2-stage Node.js Dockerfile ARG proxy pattern | Lab 1, Exercise 01a | ✅ Valmis |
+
+**Tulevikus võimalikud:**
+- `Java-Gradle-Dependency-Cache-Explained.md` - Gradle dependencies cache in Docker
+- `PostgreSQL-Init-Script-Explained.md` - Database initialization patterns
+- `Kubernetes-HPA-Manifest-Explained.md` - HPA configuration breakdown
+- `Nginx-Config-Explained.md` - nginx.conf line-by-line analysis
+
+**Kasutamine:**
+- Labori harjutusest viidatakse: `[Koodiselgitus: Title](../../../resource/code-explanations/File-Explained.md)`
+- Koodiselgitus võib olla AI-genereeritud (Perplexity, ChatGPT), kui kvaliteet on hea
+- Lühike ja praktiline, fookus koodil, mitte üldistel kontseptsioonidel
 
 ---
 

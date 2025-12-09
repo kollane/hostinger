@@ -13,11 +13,11 @@ Terraform state management on production-critical. State file tracks infrastruct
 
 ## 🎯 Õpieesmärgid
 
-✅ Understand local state
-✅ Configure remote state (S3/MinIO)
-✅ State locking
-✅ Import existing resources
-✅ State manipulation
+- ✅ Understand local state
+- ✅ Configure remote state (S3/MinIO)
+- ✅ State locking
+- ✅ Import existing resources
+- ✅ State manipulation
 
 ---
 

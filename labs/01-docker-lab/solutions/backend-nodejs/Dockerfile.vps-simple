@@ -1,0 +1,21 @@
+# Lihtne 1-Stage Dockerfile (ainult VPS testimiseks!)
+# ⚠️ See on NÄIDIS - praktikas kasuta Dockerfile.simple (2-stage ARG proksiga)
+
+FROM node:22-slim
+
+WORKDIR /app
+
+# Kopeeri sõltuvuste (dependency) failid
+COPY package*.json ./
+
+# Installi sõltuvused
+RUN npm install --production
+
+# Kopeeri rakenduse kood
+COPY . .
+
+# Avalda port
+EXPOSE 3000
+
+# Käivita
+CMD ["node", "server.js"]

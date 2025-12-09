@@ -27,6 +27,7 @@ echo "  - KÕIK Docker võrgud (networks) (välja arvatud bridge, host, none)"
 echo "  - KÕIK andmehoidlad (volumes)"
 echo "  - Pildid (images): vastavalt valikule (küsime järgmisena)"
 echo "  - Apps failid: Dockerfile, Dockerfile.optimized, .dockerignore, healthcheck.js"
+echo "  - Lab 2 compose-project/ kataloog"
 echo ""
 echo -e "${RED}⚠️  NB! Kui Sul on teisi Docker projekte, need kaovad ka!${NC}"
 echo ""
@@ -151,6 +152,17 @@ else
 fi
 echo ""
 
+# 7. LAB 2 COMPOSE-PROJECT KATALOOG
+echo -e "${YELLOW}🗂️  Eemaldame Lab 2 compose-project/ kataloogi...${NC}"
+LAB2_COMPOSE="$HOME/labs/02-docker-compose-lab/compose-project"
+if [ -d "$LAB2_COMPOSE" ]; then
+    rm -rf "$LAB2_COMPOSE"
+    echo -e "${GREEN}  ✓ compose-project/ kataloog eemaldatud${NC}"
+else
+    echo -e "${GREEN}  ✓ compose-project/ kataloog puudub (juba puhas)${NC}"
+fi
+echo ""
+
 echo -e "${GREEN}✅ Laborid on täielikult resetitud!${NC}"
 echo ""
 
@@ -160,5 +172,10 @@ else
     echo -e "${YELLOW}💡 Lab 1 baaspildid säilitatud - saad jätkata harjutustest 2-6${NC}"
 fi
 echo ""
-echo "Asendab: Kõik Lab 1-10 reset.sh skriptid + nuclear-cleanup"
+
+echo -e "${YELLOW}💡 Kasulikud käsud:${NC}"
+echo "  check-resources    - Detailne ressursside ülevaade"
+echo "  lab1-setup         - Lab 1 seadistus (Docker images)"
+echo "  lab2-setup         - Lab 2 seadistus (Docker Compose)"
+echo "  labs-reset         - Täielik laborite reset (KÕIK Docker ressursid)"
 echo ""

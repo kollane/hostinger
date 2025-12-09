@@ -1,25 +1,26 @@
-# Harjutus 3: Võrgu Segmenteerimine ja Portide Turvalisus
+# Harjutus 3: Võrgu segmenteerimine ja portide turvalisus
 
-**Kestus:** 60 minutit
-**Eesmärk:** Implementeeri võrgu segmenteerimine (network segmentation) ja vähenda rünnaku pinda (attack surface)
+**Eesmärk:** Implementeeri võrgu segmenteerimine ja vähenda rünnaku pinda
 
 ---
 
-## 📋 Ülevaade
+## 📋 Harjutuse ülevaade
 
-Selles harjutuses õpid, kuidas muuta Harjutus 2 konfiguratsiooni turvaliseks, kasutades võrgu segmenteerimist (network segmentation) ja portide piiranguid. Õpid mõistma, miks avalikud andmebaasi ja backend pordid on turvarisk ning kuidas neid kaitsta.
+Selles harjutuses õpid, kuidas muuta Harjutus 2 konfiguratsiooni turvaliseks, kasutades võrgu segmenteerimist ja portide piiranguid. Õpid mõistma, miks avalikud andmebaasi ja backend pordid on turvarisk ning kuidas neid kaitsta.
 
 **Mis on probleem?**
-- Praegu on **KÕIK 5 teenust (services)** avalikult kättesaadavad internetist
+
+- Praegu on **KÕIK 5 teenust** avalikult kättesaadavad internetist
 - Andmebaasid (PostgreSQL) on otse internetist ligipääsetavad
 - Backend API'd on otse internetist ligipääsetavad
-- Üks võrk (network) - kui üks teenus (service) on kompromiteeritud, on kõik ohus
+- Üks võrk - kui üks teenus on kompromiteeritud, on kõik ohus
 
 **Mis on lahendus?**
+
 - **3-taseme arhitektuur:** Frontend (DMZ) → Backend → Database
 - **Ainult frontend avalik:** Port 8080 on ainus avalik port
-- **Võrgu segmenteerimine:** Eraldi võrgud (networks) igale tasemele
-- **Vähimate õiguste printsiip:** Iga teenus (service) näeb ainult seda, mida vaja
+- **Võrgu segmenteerimine:** Eraldi võrgud igale tasemele
+- **Vähimate õiguste printsiip:** Iga teenus näeb ainult seda, mida vaja
 
 ---
 
@@ -27,14 +28,14 @@ Selles harjutuses õpid, kuidas muuta Harjutus 2 konfiguratsiooni turvaliseks, k
 
 Peale selle harjutuse läbimist oskad:
 
-- ✅ Mõista turvariske ühe võrguga (single network) arhitektuuris
-- ✅ Designida 3-taseme võrgu arhitektuuri (DMZ → Backend → Database)
-- ✅ Luua ja konfigureerida mitut Docker võrku (network)
-- ✅ Määrata teenuseid (services) mitmesse võrku (multi-network assignment)
-- ✅ Piirata portide ligipääsetavust (localhost-only binding)
-- ✅ Testida võrgu segmenteerimise efektiivsust
-- ✅ Mõista vähimate õiguste printsiipi (principle of least privilege)
-- ✅ Vähendada rünnaku pinda (attack surface) 96%
+- ✅ Mõista turvariske ühe võrguga arhitektuuris
+- ✅ Disainida **3-taseme võrgu arhitektuuri (3-tier network architecture)** (DMZ → Backend → Database)
+- ✅ Luua ja konfigureerida mitut Docker **võrku (docker network)**
+- ✅ Määrata teenuseid mitmesse võrku
+- ✅ Piirata portide ligipääsetavust (**localhost-only binding**)
+- ✅ Võrgu segmenteerimine - 3-tier arhitektuur
+- ✅ Mõista **vähimate õiguste printsiipi (principle of least privilege)**
+- ✅ Vähendada **rünnaku pinda (attack surface)** 96%
 
 ---
 
@@ -52,7 +53,7 @@ ls -la docker-compose.yml nginx.conf
 
 # 3. Kas stack töötab?
 docker compose ps
-# Peaks nägema 5 teenust (services): frontend, user-service, todo-service, postgres-user, postgres-todo
+# Peaks nägema 5 teenust: frontend, user-service, todo-service, postgres-user, postgres-todo
 
 # 4. Kas frontend töötab?
 curl http://localhost:8080
@@ -70,7 +71,7 @@ docker compose exec postgres-todo psql -U postgres -d todo_service_db -c "\dt"
 ```bash
 # Variant A: Setup skript (kiire)
 cd ..  # Tagasi 02-docker-compose-lab/
-./setup.sh
+lab2-setup
 # Vali valik 2 (Automaatne initsialiseermine)
 
 # Variant B: Käsitsi
@@ -80,6 +81,7 @@ docker compose -f docker-compose.yml -f docker-compose.init.yml up -d
 ```
 
 **Harjutus 2 pole läbitud?**
+
 - 🔗 Mine tagasi [Harjutus 2](02-add-frontend.md)
 
 **✅ Kui kõik ülalpool on OK (eriti DB skeemid!), võid jätkata!**
@@ -88,7 +90,7 @@ docker compose -f docker-compose.yml -f docker-compose.init.yml up -d
 
 ## 🏗️ Arhitektuur: Enne vs Peale
 
-### ENNE (Harjutus 2): Üks Võrk, Kõik Pordid Avalikud
+### ENNE (Harjutus 2): Üks võrk, kõik pordid avalikud
 
 ```
                         INTERNET (0.0.0.0)
@@ -115,18 +117,18 @@ docker compose -f docker-compose.yml -f docker-compose.init.yml up -d
                               │
                     ┌─────────┴─────────┐
                     │   todo-network    │
-                    │  (single network) │
+                    │  (üks võrk)       │
                     └───────────────────┘
 
 ❌ PROBLEEM:
 - 5 avalikku porti: 8080, 3000, 8081, 5432, 5433
-- Kõik teenused (services) ühes võrgus (network)
+- Kõik teenused ühes võrgus
 - Andmebaasid otse internetist kättesaadavad
 - Backend API'd otse internetist kättesaadavad
 - Frontend saab otse andmebaasidega suhelda
 ```
 
-### PEALE (Harjutus 3): Kolm Võrku, Ainult Frontend Avalik
+### PEALE (Harjutus 3): Kolm võrku, ainult frontend avalik
 
 ```
                         INTERNET (0.0.0.0)
@@ -151,7 +153,7 @@ docker compose -f docker-compose.yml -f docker-compose.init.yml up -d
                              │
         ┌────────────────────┴──────────────────────┐
         │        BACKEND NETWORK                    │
-        │        (internal only - ei ole avalik)    │
+        │        (sisevõrk - ei ole avalik)         │
         │                                           │
         │   ┌──────────┐          ┌──────────┐     │
         │   │   User   │          │   Todo   │     │
@@ -174,7 +176,7 @@ docker compose -f docker-compose.yml -f docker-compose.init.yml up -d
 
 ✅ LAHENDUS:
 - 1 avalik port: 8080 (ainult frontend)
-- 3 võrku (networks): frontend, backend, database
+- 3 võrku: frontend, backend, database
 - Andmebaasid MITTE avalikud (ainult backend'idele kättesaadavad)
 - Backend API'd MITTE avalikud (ainult frontend proxy kaudu)
 - Frontend EI saa otse andmebaasidega suhelda
@@ -184,7 +186,7 @@ docker compose -f docker-compose.yml -f docker-compose.init.yml up -d
 
 ## 📊 Diagrammid
 
-### 1. Rünnaku Pinna Vähenemine (Attack Surface Reduction)
+### 1. Rünnaku pinna vähenemine
 
 ```
 ENNE (Harjutus 2):
@@ -196,7 +198,7 @@ ENNE (Harjutus 2):
 ║  │   ✅   │   ❌   │   ❌   │   ❌   │   ❌   │        ║
 ║  └────────┴────────┴────────┴────────┴────────┘        ║
 ║                                                         ║
-║  Rünnaku vektorid (attack vectors): 5                  ║
+║  Rünnaku vektorid: 5                                   ║
 ║  Turvarisk: ❌ KÕRGE                                    ║
 ╚════════════════════════════════════════════════════════╝
 
@@ -209,14 +211,14 @@ PEALE (Harjutus 3):
 ║  │   ✅   │                                            ║
 ║  └────────┘                                            ║
 ║                                                         ║
-║  Rünnaku vektorid (attack vectors): 1                  ║
+║  Rünnaku vektorid: 1                                   ║
 ║  Turvarisk: ✅ MADAL                                    ║
 ╚════════════════════════════════════════════════════════╝
 
 Paranemine: 96% rünnaku pinna vähenemine (5 → 1)
 ```
 
-### 2. Ligipääsu Kontroll Matrix (Access Control Matrix)
+### 2. Ligipääsu kontrolli maatriks
 
 ```
 ┌──────────────┬──────────┬──────────┬──────────┬────────────┬────────────┐
@@ -240,15 +242,15 @@ Paranemine: 96% rünnaku pinna vähenemine (5 → 1)
 └──────────────┴──────────┴──────────┴──────────┴────────────┴────────────┘
 
 Legend:
-  ✅ = Ligipääs lubatud (access allowed)
-  ❌ = Ligipääs keelatud (access denied)
-  -  = Ei rakendu (not applicable)
+  ✅ = Ligipääs lubatud
+  ❌ = Ligipääs keelatud
+  -  = Ei rakendu
 ```
 
-### 3. Võrgu Topologia (Network Topology)
+### 3. Võrgu topoloogia
 
 ```
-Services Võrkude (Networks) Kaart:
+Services Võrkude Kaart:
 
 ┌─────────────────────┐
 │ FRONTEND NETWORK    │────────┐
@@ -277,7 +279,7 @@ Services Võrkude (Networks) Kaart:
                                │        │        │
                                │        │        │
 ┌──────────────────────────────┴────────┴────────┴────┐
-│ MULTI-NETWORK SERVICE MAPPING                       │
+│ MITME VÕRGUGA TEENUSED                              │
 │                                                      │
 │ frontend:        [frontend-network, backend-network] │
 │ user-service:    [backend-network, database-network] │
@@ -286,7 +288,7 @@ Services Võrkude (Networks) Kaart:
 │ postgres-todo:   [database-network]                  │
 └──────────────────────────────────────────────────────┘
 
-Põhimõte (Principle):
+Põhimõte:
   - Frontend näeb backend'e, aga MITTE andmebaase
   - Backend'd näevad oma andmebaase, aga MITTE teiste backend'e andmebaase
   - Andmebaasid ei näe midagi peale oma backend'i
@@ -355,7 +357,7 @@ nc -zv localhost 5433
 
 ## 📝 Sammud
 
-### Samm 1: Analüüsi Praegust Turvariski (10 min)
+### Samm 1: Analüüsi praegust turvariski
 
 #### 1.1. Kontrolli, millised pordid on avalikud
 
@@ -413,28 +415,30 @@ nc -zv localhost 5433
 #### 1.4. Mõista turvariske
 
 **Mis võib juhtuda, kui andmebaasid on avalikud?**
+
 - ❌ Brute force rünnakud PostgreSQL paroolidele
 - ❌ SQL injection rünnakud
-- ❌ Andmete eksfiltratsioon (data exfiltration)
+- ❌ Andmete eksfiltratsioon
 - ❌ Andmebaasi kustutamine (DROP TABLE)
-- ❌ Compliance rikkumised (GDPR, PCI-DSS)
+- ❌ Vastavusnõuete rikkumised (GDPR, PCI-DSS)
 
 **Mis võib juhtuda, kui backend API'd on avalikud?**
-- ❌ Frontend turvakontrollide mööda minemine
-- ❌ API enumeration rünnakud
-- ❌ Rate limiting puudumine
-- ❌ Suurem rünnaku pind (attack surface)
 
-**Lahendus:** Võrgu segmenteerimine (network segmentation) + portide piirangud!
+- ❌ Frontend turvakontrollide mööda minemine
+- ❌ API enumeratsiooni rünnakud
+- ❌ Rate limiting puudumine
+- ❌ Suurem rünnaku pind
+
+**Lahendus:** Võrgu segmenteerimine + portide piirangud!
 
 ---
 
-### Samm 2: Loo 3 Võrku (Networks) (10 min)
+### Samm 2: Loo 3 võrku
 
 #### 2.1. Peata olemasolev stack
 
 ```bash
-# Peata kõik teenused (services)
+# Peata kõik teenused
 docker compose down
 
 # Kontrolli, et konteinerid on peatatud
@@ -452,29 +456,29 @@ cp docker-compose.yml docker-compose.backup.yml
 ls -la docker-compose*.yml
 ```
 
-#### 2.3. Loo uus docker-compose.yml võrkudega (networks)
+#### 2.3. Loo uus docker-compose.yml võrkudega
 
 Ava docker-compose.yml ja **lisa lõppu** (enne `volumes:` sektsiooni või peale `services:` sektsiooni):
 
 ```yaml
 # ==========================================================================
-# VÕRGU SEGMENTEERIMINE (Network Segmentation)
+# VÕRGU SEGMENTEERIMINE
 # ==========================================================================
 # 3-taseme arhitektuur: DMZ → Backend → Database
 # ==========================================================================
 networks:
   # FRONTEND NETWORK (DMZ - Demilitarized Zone)
-  # Avalik võrk (network), kus on frontend
+  # Avalik võrk, kus on frontend
   frontend-network:
     driver: bridge
 
   # BACKEND NETWORK (Application Layer)
-  # Sisevõrk (internal network) backend teenustele (services)
+  # Sisevõrk backend teenustele
   backend-network:
     driver: bridge
 
   # DATABASE NETWORK (Data Layer)
-  # Isoleeritud võrk (isolated network) andmebaasidele
+  # Isoleeritud võrk andmebaasidele
   # internal: true = Ei saa ühendust välismaailmaga
   database-network:
     driver: bridge
@@ -489,19 +493,19 @@ networks:
 # Kontrolli YAML syntax'it
 docker compose config --quiet
 
-# Kui viga (error), näed error message'i
+# Kui viga, näed veateadet
 # Kui OK, ei näe midagi (quiet mode)
 ```
 
 ---
 
-### Samm 3: Määra Teenused (Services) Võrkudesse (15 min)
+### Samm 3: Määra teenused võrkudesse
 
-Nüüd pead määrama iga teenuse (service) õigetesse võrkudesse (networks).
+Nüüd pead määrama iga teenuse õigetesse võrkudesse.
 
 #### 3.1. Frontend: Määra mõlemasse võrku (frontend + backend)
 
-Leia `frontend:` teenus (service) docker-compose.yml's ja **asenda** `networks:` sektsioon:
+Leia `frontend:` teenus docker-compose.yml's ja **asenda** `networks:` sektsioon:
 
 ```yaml
   frontend:
@@ -514,7 +518,7 @@ Leia `frontend:` teenus (service) docker-compose.yml's ja **asenda** `networks:`
       - ../../apps/frontend:/usr/share/nginx/html:ro
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
     networks:
-      - frontend-network    # Avalik ligipääs (public access)
+      - frontend-network    # Avalik ligipääs
       - backend-network     # Pääseb ligi backend'idele (proxy)
     depends_on:
       - user-service
@@ -549,7 +553,7 @@ Leia `user-service:` ja **asenda** `networks:` sektsioon:
     ports:
       - "3000:3000"    # ❌ Eemaldame Samm 4's
     networks:
-      - backend-network     # Võtab vastu frontend päringuid (requests)
+      - backend-network     # Võtab vastu frontend päringuid
       - database-network    # Pääseb ligi postgres-user'ile
     depends_on:
       postgres-user:
@@ -584,7 +588,7 @@ Leia `todo-service:` ja **asenda** `networks:` sektsioon:
     ports:
       - "8081:8081"    # ❌ Eemaldame Samm 4's
     networks:
-      - backend-network     # Võtab vastu frontend päringuid (requests)
+      - backend-network     # Võtab vastu frontend päringuid
       - database-network    # Pääseb ligi postgres-todo'le
     depends_on:
       postgres-todo:
@@ -616,7 +620,7 @@ Leia `postgres-user:` ja **asenda** `networks:` sektsioon:
     ports:
       - "5432:5432"    # ❌ Eemaldame Samm 4's
     networks:
-      - database-network    # ✅ Ainult database võrgus (network)
+      - database-network    # ✅ Ainult database võrgus
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -643,7 +647,7 @@ Leia `postgres-todo:` ja **asenda** `networks:` sektsioon:
     ports:
       - "5433:5432"    # ❌ Eemaldame Samm 4's
     networks:
-      - database-network    # ✅ Ainult database võrgus (network)
+      - database-network    # ✅ Ainult database võrgus
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -692,6 +696,7 @@ Enne kui jätkame sammudega 4 ja 5, on oluline mõista **kahte erinevat lähenem
 👉 **Loe enne jätkamist:** [Peatükk 08A: Docker Compose Production vs Development Seadistused](../../../resource/08A-Docker-Compose-Production-Development-Seadistused.md)
 
 **See peatükk käsitleb:**
+
 - ✅ Kolm port binding strateegiat (0.0.0.0, 127.0.0.1, pole porte)
 - ✅ Millal kasutada production vs development lähenemist
 - ✅ Turvalisuse parimad tavad (defense in depth, compliance, GDPR)
@@ -701,11 +706,11 @@ Enne kui jätkame sammudega 4 ja 5, on oluline mõista **kahte erinevat lähenem
 
 ---
 
-### Samm 4: Eemalda Avalikud Pordid (10 min)
+### Samm 4: Eemalda avalikud pordid
 
 **Eesmärk:** Loo production-ready konfiguratsioon (maksimaalne turvalisus).
 
-Nüüd eemaldame avalikud pordid backend ja database teenustelt (services).
+Nüüd eemaldame avalikud pordid backend ja database teenustelt.
 
 #### 4.1. Eemalda User Service port
 
@@ -728,6 +733,7 @@ Leia `user-service:` sektsioon ja **kustuta täielikult** `ports:` sektsioon:
 ```
 
 **Miks see on turvaline?**
+
 - Frontend pääseb ligi user-service'ile Docker DNS kaudu: `http://user-service:3000`
 - Väline maailm EI pääse ligi (port ei ole 0.0.0.0'ga seotud)
 
@@ -805,14 +811,14 @@ docker compose up -d
 # Kontrolli staatust
 docker compose ps
 
-# Peaksid nägema kõiki 5 teenust (services) UP ja healthy staatuses
+# Peaksid nägema kõiki 5 teenust UP ja healthy staatuses
 ```
 
 **Salvesta fail:** `Esc`, siis `:wq`, `Enter`
 
 ---
 
-### Samm 5: Lisa Development Override (127.0.0.1 Binding) (5 min)
+### Samm 5: Lisa Development Override (127.0.0.1 Binding)
 
 **Eesmärk:** Loo development-friendly konfiguratsioon (turvalisus + debug'imine).
 
@@ -905,6 +911,7 @@ curl http://localhost:3000/health
 ```
 
 **Kuidas see töötab?**
+
 - `127.0.0.1:3000:3000` seob porti **ainult localhost'ile**
 - SSH sessioonis saad debug'ida: `curl localhost:3000`
 - Väline maailm EI pääse ligi: `curl 93.127.213.242:3000` → Connection refused
@@ -912,7 +919,7 @@ curl http://localhost:3000/health
 
 ---
 
-### Samm 6: Testi Turvalisust (10 min)
+### Samm 6: Testi Turvalisust
 
 #### 6.1. Kontrolli avalikke porte
 
@@ -983,7 +990,7 @@ nc -zv localhost 5433
 # ✅ ÕIGE: Port ei ole avalikult kättesaadav
 ```
 
-#### 6.5. Testi võrgu segmenteerimist (network segmentation)
+#### 6.5. Testi võrgu segmenteerimist
 
 ```bash
 # Test 1: Kas frontend saab ligi backend'idele?
@@ -1012,47 +1019,50 @@ docker compose exec user-service nc -zv postgres-user 5432
 # Test 4: Kas user-service EI SAA ligi teise backend'i andmebaasile?
 docker compose exec user-service nc -zv postgres-todo 5432
 # Oodatud: Connection succeeded (mõlemad on samas database-network'is)
-# MÄRKUS: See on OK, kuna mõlemad andmebaasid on samas võrgus (network).
+# MÄRKUS: See on OK, kuna mõlemad andmebaasid on samas võrgus.
 # Täiendav turvalisus: PostgreSQL paroolid, firewall rules, Kubernetes Network Policies (Lab 7).
 ```
 
-#### 6.6. Testi, et andmebaasi võrk (network) on isoleeritud
+#### 6.6. Testi, et andmebaasi võrk on isoleeritud
 
 ```bash
 # Kontrolli, et database-network on internal: true
 docker network inspect database-network | grep Internal
 # Oodatud: "Internal": true
-# ✅ ÕIGE: Võrk (network) on isoleeritud
+# ✅ ÕIGE: Võrk on isoleeritud
 
 # Testi, et andmebaas EI SAA välja (no internet access)
 docker compose exec postgres-user ping -c 1 8.8.8.8
 # Oodatud: FAIL (network is unreachable)
-# ✅ ÕIGE: Isoleeritud võrk (network) ei saa ühendust välismaailmaga
+# ✅ ÕIGE: Isoleeritud võrk ei saa ühendust välismaailmaga
 ```
 
 ---
 
-### Samm 7: Mõista Arhitektuuri ja Turvalisust (5 min)
+### Samm 7: Mõista arhitektuuri ja turvalisust
 
 #### 7.1. Võrgu segmenteerimise printsiibid
 
-**1. Defense in Depth (Kaitse sügavuses):**
-- Mitu kaitsevahendit (defense layers):
-  - Layer 1: Võrgu segmenteerimine (network segmentation)
-  - Layer 2: Portide piirangud (port restrictions)
-  - Layer 3: Autentimine (authentication - JWT)
-  - Layer 4: Autorisatsioon (authorization - RBAC)
+**1. Kaitse sügavuses (Defense in Depth):**
 
-**2. Principle of Least Privilege (Vähimate õiguste printsiip):**
-- Iga teenus (service) näeb ainult seda, mida vaja:
+- Mitu kaitsevahendit:
+  - Kiht 1: Võrgu segmenteerimine
+  - Kiht 2: Portide piirangud
+  - Kiht 3: Autentimine (JWT)
+  - Kiht 4: Autorisatsioon (RBAC)
+
+**2. Vähimate õiguste printsiip (Principle of Least Privilege):**
+
+- Iga teenus näeb ainult seda, mida vaja:
   - Frontend näeb ainult backend'e (EI näe andmebaase)
   - Backend'd näevad ainult oma andmebaase
   - Andmebaasid ei näe midagi peale oma backend'i
 
-**3. Zero Trust (Nulltööduse mudel):**
-- Ükski teenus (service) ei usalda teist vaikimisi (by default)
-- Iga ligipääs peab olema selgelt lubatud (explicitly allowed)
-- Võrgu segmenteerimine (network segmentation) jõustab seda
+**3. Nullusalduse mudel (Zero Trust):**
+
+- Ükski teenus ei usalda teist vaikimisi
+- Iga ligipääs peab olema selgelt lubatud
+- Võrgu segmenteerimine jõustab seda
 
 #### 7.2. Mis saavutasime?
 
@@ -1062,28 +1072,28 @@ docker compose exec postgres-user ping -c 1 8.8.8.8
 | Võrkude arv | 1 (flat) | 3 (segmenteeritud) | 3× paranemine |
 | Frontend → DB ligipääs | ✅ (võimalik) | ❌ (blokeeritud) | ✅ Turvaline |
 | Rünnaku vektorid | 5 | 1 | 96% vähenemine |
-| Compliance | ❌ (nõrk) | ✅ (tugev) | ✅ Vastab standarditele |
+| Vastavus | ❌ (nõrk) | ✅ (tugev) | ✅ Vastab standarditele |
 
 #### 7.3. Mis ei muutunud?
 
 - Rakendus töötab täpselt samamoodi (brauserist)
 - Frontend proxy töötab samamoodi
 - JWT autentimine töötab samamoodi
-- Andmed on ikka püsivad (volumes)
+- Andmed on ikka püsivad (andmeköited)
 - **Ainult** turvalisus paranes!
 
 ---
 
-## ✅ Kontrolli Tulemusi
+## ✅ Kontrolli tulemusi
 
 Peale selle harjutuse läbimist peaksid omama:
 
-- [ ] **3 võrku (networks):** frontend-network, backend-network, database-network
+- [ ] **3 võrku:** frontend-network, backend-network, database-network
 - [ ] **Ainult 1 avalik port:** 8080 (frontend)
 - [ ] **Backend/DB pordid localhost-only:** 127.0.0.1 binding
 - [ ] **Frontend ei pääse ligi andmebaasidele**
 - [ ] **Võrgu segmenteerimine töötab:** `nc -zv` testid kinnitavad
-- [ ] **Rakendus töötab brauserist:** End-to-End workflow toimib
+- [ ] **Rakendus töötab brauserist:** End-to-End töövoog toimib
 - [ ] **docker-compose.override.yml olemas:** Dev debugging töötab
 - [ ] **Mõistad turvaarhitektuuri:** DMZ → Backend → Database
 
@@ -1094,7 +1104,7 @@ Peale selle harjutuse läbimist peaksid omama:
 ### Kontroll-käsud:
 
 ```bash
-# 1. Kas kõik 5 teenust (services) töötavad?
+# 1. Kas kõik 5 teenust töötavad?
 docker compose ps
 # Kõik peaksid olema UP ja HEALTHY
 
@@ -1117,55 +1127,55 @@ docker network inspect database-network | grep Internal
 
 ---
 
-## 🎓 Õpitud Mõisted
+## 🎓 Õpitud mõisted
 
 ### Docker Compose võrgu mõisted:
 
-- **networks:** Võrkude definitsioonid (network definitions)
-- **driver: bridge** - Bridge network driver (default)
-- **internal: true** - Isoleeritud võrk (isolated network), ei saa ühendust välismaailmaga
-- **Multi-network services** - Teenus (service), mis on mitmes võrgus (network)
+- **networks:** Võrkude definitsioonid
+- **driver: bridge** - Bridge võrgudraiver (vaikimisi)
+- **internal: true** - Isoleeritud võrk, ei saa ühendust välismaailmaga
+- **Multi-network services** - Teenus, mis on mitmes võrgus
 
 ### Turva mõisted:
 
-- **Network segmentation** - Võrgu segmenteerimine (network segmentation)
-- **DMZ (Demilitarized Zone)** - Avalik võrk (public network) frontend'idele
-- **Attack surface** - Rünnaku pind (attack surface)
-- **Defense in depth** - Kaitse sügavuses (defense in depth)
-- **Principle of least privilege** - Vähimate õiguste printsiip (principle of least privilege)
-- **Port binding** - Portide sidumine (port binding): 0.0.0.0 (avalik) vs 127.0.0.1 (localhost-only)
+- **Network segmentation** - Võrgu segmenteerimine
+- **DMZ (Demilitarized Zone)** - Avalik võrk frontend'idele
+- **Attack surface** - Rünnaku pind
+- **Defense in depth** - Kaitse sügavuses
+- **Principle of least privilege** - Vähimate õiguste printsiip
+- **Port binding** - Portide sidumine: 0.0.0.0 (avalik) vs 127.0.0.1 (localhost-only)
 
 ### Docker võrgu käsud:
 
 ```bash
-# Loo võrk (network)
+# Loo võrk
 docker network create <network-name>
 
-# Vaata võrke (networks)
+# Vaata võrke
 docker network ls
 
-# Inspekteeri võrku (network)
+# Inspekteeri võrku
 docker network inspect <network-name>
 
-# Kontrolli, millised konteinerid on võrgus (network)
+# Kontrolli, millised konteinerid on võrgus
 docker network inspect <network-name> | grep -A 10 Containers
 ```
 
 ---
 
-## 💡 Parimad Tavad
+## 💡 Parimad tavad
 
-1. **Kasuta võrgu segmenteerimist (network segmentation)** - Eralda teenused (services) tasemete kaupa (tier)
-2. **Piirata portide ligipääsetavust** - Kasuta 127.0.0.1 binding dev'is, ära avalda porte prod'is
-3. **Kasuta internal: true andmebaasi võrkudele (networks)** - Täielik isoleerimine
-4. **Määra teenuseid (services) mitmesse võrku** - Võimalda selektiivset suhtlust
-5. **Kommenteeri arhitektuuri** - Tee selgeks, miks iga teenus (service) on igas võrgus (network)
+1. **Kasuta võrgu segmenteerimist** - Eralda teenused tasemete kaupa (tier)
+2. **Piira portide ligipääsetavust** - Kasuta 127.0.0.1 binding dev'is, ära avalda porte prod'is
+3. **Kasuta internal: true andmebaasi võrkudele** - Täielik isoleerimine
+4. **Määra teenuseid mitmesse võrku** - Võimalda selektiivset suhtlust
+5. **Kommenteeri arhitektuuri** - Tee selgeks, miks iga teenus on igas võrgus
 6. **Testi võrgu segmenteerimist** - Kinnita, et isolatsioon töötab (nc -zv testid)
-7. **Dokumenteeri ligipääsu reeglid** - Kes saab kellega suhelda (access control matrix)
+7. **Dokumenteeri ligipääsu reeglid** - Kes saab kellega suhelda
 
 ---
 
-## 🐛 Levinud Probleemid
+## 🐛 Levinud probleemid
 
 ### Probleem 1: "frontend can't connect to user-service"
 
@@ -1174,7 +1184,7 @@ docker network inspect <network-name> | grep -A 10 Containers
 docker inspect frontend | grep -A 10 Networks
 
 # Peaks nägema "backend-network"
-# Kui puudub, lisa frontend teenusele (service):
+# Kui puudub, lisa frontend teenusele:
 networks:
   - frontend-network
   - backend-network    # ← Lisa see!
@@ -1187,7 +1197,7 @@ networks:
 docker inspect user-service | grep -A 10 Networks
 
 # Peaks nägema "database-network"
-# Kui puudub, lisa user-service teenusele (service):
+# Kui puudub, lisa user-service teenusele:
 networks:
   - backend-network
   - database-network    # ← Lisa see!
@@ -1235,7 +1245,7 @@ networks:
     driver: bridge
     internal: true    # ← Lisa see!
 
-# Taaskäivita võrgud (networks):
+# Taaskäivita võrgud:
 docker compose down
 docker network rm database-network
 docker compose up -d
@@ -1245,12 +1255,13 @@ docker compose up -d
 
 ## 🔗 Järgmised Sammud
 
-🎉 **Õnnitleme! Oled loonud turvalisuse Docker Compose arhitektuuri!**
+🎉 **Õnnitleme! Oled loonud turvalise Docker Compose arhitektuuri!**
 
 **Mis saavutasid:**
-- ✅ Võrgu segmenteerimine (network segmentation) implementeeritud
-- ✅ Rünnaku pind (attack surface) vähendatud 96%
-- ✅ Vähimate õiguste printsiip (principle of least privilege) rakendatud
+
+- ✅ Võrgu segmenteerimine implementeeritud
+- ✅ Rünnaku pind vähendatud 96%
+- ✅ Vähimate õiguste printsiip rakendatud
 - ✅ 3-taseme arhitektuur (DMZ → Backend → Database)
 - ✅ Ainult 1 avalik port (8080)
 
@@ -1265,6 +1276,7 @@ docker compose up -d
 → **[Lab 3: Kubernetes Basics](../../03-kubernetes-basics-lab/README.md)**
 
 **Lab 3's õpid:**
+
 - Kubernetes Network Policies (võrgu segmenteerimine K8s'is)
 - Service types: ClusterIP (internal) vs NodePort (external)
 - Ingress Controllers (nagu Nginx reverse proxy)
@@ -1273,21 +1285,22 @@ docker compose up -d
 
 ---
 
-#### **Variant B: Sügav Docker Võrgu Analüüs** (valikuline, advanced)
+#### **Variant B: Sügav Docker Võrgu Analüüs** (valikuline, edasijõudnutele)
 
 **Soovid süvendada Docker võrke?** Lab 2.5 õpetab professionaalset võrgu analüüsi!
 
 → **[Lab 2.5: Network Analysis & Testing](../../02.5-network-analysis-lab/README.md)** 🔷 *Valikuline*
 
 **Lab 2.5's õpid:**
-- Docker network inspection professionaalsete tööriistadega (`jq`, `tcpdump`)
-- Süstemaatiline connectivity testing (connectivity matrix)
-- Traffic analysis ja monitooring (`ss`, `netstat`, packet capture)
-- DNS resolution ja service discovery testimine
-- Automated testing scripts (bash, pass/fail reporting)
-- Security auditing (`nmap`, port scanning, Docker Scout)
-- Load testing ja performance analysis
-- CI/CD integration
+
+- Docker võrgu inspekteerimine (network inspection) professionaalsete tööriistadega (`jq`, `tcpdump`)
+- Süstemaatiline ühenduvuse testimine (connectivity testing)
+- Liikluse analüüs ja monitooring (`ss`, `netstat`, packet capture)
+- DNS lahenduse ja teenuse avastamise (service discovery) testimine
+- Automatiseeritud testimisskriptid (bash, pass/fail raportid)
+- Turvaaudit (`nmap`, port scanning, Docker Scout)
+- Koormustestimine ja jõudluse analüüs
+- CI/CD integratsioon
 
 **⚠️ MÄRKUS:** Lab 2.5 on **VALIKULINE**, mitte kohustuslik Lab 3 jaoks!
 
@@ -1295,12 +1308,14 @@ docker compose up -d
 **Kasutab:** Lab 2 olemasolevat docker-compose stack'i (ei loo uut keskkonda)
 
 **Sobib sulle, kui:**
+
 - Plaanid töötada DevOps/SRE rollis (network debugging oluline)
 - Huvi pakub professionaalne võrgu analüüs ja diagnostika
 - Soovid õppida automatiseeritud testimist
-- Oled huvitatud security auditing'ust
+- Oled huvitatud turvaauditist
 
 **Jäta vahele, kui:**
+
 - Soovid kiiresti Kubernetes'e jõuda
 - Docker põhitõed on piisavad
 - Aeg on piiratud
@@ -1311,7 +1326,7 @@ docker compose up -d
 
 **Uutele õppijatele:** → Jätka Lab 3'ga (Variant A)
 
-**Advanced õppijatele:** → Tee Lab 2.5, siis Lab 3 (Variant B → Lab 3)
+**Edasijõudnutele:** → Tee Lab 2.5, siis Lab 3 (Variant B → Lab 3)
 
 **Kiire tee:** → Lab 3 nüüd, tule Lab 2.5 juurde hiljem tagasi
 
@@ -1326,4 +1341,4 @@ docker compose up -d
 
 ---
 
-**Õnnitleme! Oled loonud turvalisuse Docker Compose arhitektuuri! 🎉🔒**
+**Õnnitleme! Oled loonud turvalise Docker Compose arhitektuuri! 🎉🔒**

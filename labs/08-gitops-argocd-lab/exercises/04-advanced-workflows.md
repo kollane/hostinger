@@ -56,14 +56,14 @@ spec:
 
 Peale selle harjutuse läbimist oskad:
 
-✅ Luua ApplicationSet template'e
-✅ Kasutada list, git, cluster generators
-✅ Installida Argo Rollouts controller
-✅ Luua Rollout (vs Deployment)
-✅ Implementeerida Canary deployment strategy
-✅ Kasutada Blue-Green deployment
-✅ Integreerida Prometheus metrics promotion'iks
-✅ Luua AnalysisTemplate automated testing'uks
+- ✅ Luua ApplicationSet template'e
+- ✅ Kasutada list, git, cluster generators
+- ✅ Installida Argo Rollouts controller
+- ✅ Luua Rollout (vs Deployment)
+- ✅ Implementeerida Canary deployment strategy
+- ✅ Kasutada Blue-Green deployment
+- ✅ Integreerida Prometheus metrics promotion'iks
+- ✅ Luua AnalysisTemplate automated testing'uks
 
 ---
 

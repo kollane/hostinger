@@ -1,84 +1,77 @@
-# Harjutus 2: Mitme-konteineri seadistus (Multi-Container Setup) - Mikroteenuste Arhitektuur
-
-**Kestus:** 90 minutit
-**Eesmärk:** Käivita User teenus (service) + Todo teenus (service) + PostgreSQL ja mõista mikroteenuste suhtlust
+# Harjutus 2: Mitme konteineri seadistus (Multi-Container Setup)
 
 **Eeldused:**
-- ✅ [Harjutus 1A: Üksik Konteiner (Single Container) (User Teenus (Service))](01a-single-container-nodejs.md) läbitud
-- ✅ [Harjutus 1B: Üksik Konteiner (Single Container) (Todo Teenus (Service))](01b-single-container-java.md) läbitud
-- 💡 **Alternatiiv:** Kui vahele jätsid, käivita `./setup.sh` ja vali `Y` - see ehitab (builds) vajalikud pildid (images) automaatselt
+- ✅ [Harjutus 1A: Üksiku konteineri loomine (User Service)](01a-single-container-nodejs.md) läbitud
+- ✅ [Harjutus 1B: Üksiku konteineri loomine (Todo Service)](01b-single-container-java.md) läbitud
 
 ---
 
-## 📋 Ülevaade
-
-**Mäletad Harjutus 1-st?**
-- User teenus (service) hangus (crashed) (PostgreSQL puudub)
-- Todo teenus (service) hangus (crashed) (PostgreSQL puudub)
-- JWT token ei töötanud (teenused (services) ei suhtle)
-
+## 📋 Harjutuse ülevaade
 **Harjutus 2 lahendab:**
-- ✅ Käivitame KAKS PostgreSQL konteinerit (üks User teenusele (service), teine Todo teenusele (service))
-- ✅ User teenus (service) genereerib JWT tokeneid
-- ✅ Todo teenus (service) valideerib JWT tokeneid
-- ✅ Saame TÖÖTAVA mikroteenuste (microservices) süsteemi!
+- ✅ Käivitame KAKS PostgreSQL konteinerit (üks User Service'ile, teine Todo Service'ile)
+- ✅ User Service genereerib JWT "token"-eid
+- ✅ Todo Service valideerib JWT "token"-eid
+- ✅ Saame TÖÖTAVA mikroteenuste süsteemi!
 
----
+## 📊 Võrdlus: Harjutus 1 vs Harjutus 2
 
-## 🎯 Õpieesmärgid
+| Aspekt | Harjutus 1 | Harjutus 2 |
+|--------|-----------|-----------|
+| **Konteinerid** | 1 (hangub) | 4 (töötavad) |
+| **PostgreSQL** | ❌ Puudub | ✅ 2 DB konteinerit |
+| **Võrgundus** | ❌ Puudub | ✅ --link |
+| **JWT autentimine** | ❌ Ei tööta | ✅ Täielik voog |
+| **Staatus** | ❌ Hangub | ✅ Töötab |
+| **Õpitav** | Dockeri põhitõed | Mikroteenused |
+| **User Service** | ❌ Hangub | ✅ Genereerib JWT |
+| **Todo Service** | ❌ Hangub | ✅ Valideerib JWT |
+| **API testid** | ❌ Ei tööta | ✅ Töötavad |
 
-Peale selle harjutuse läbimist oskad:
 
-- ✅ Käivitada mitut konteinerit koos
-- ✅ Mõista mikroteenuste (microservices) arhitektuuri
-- ✅ Õppida JWT-põhist autentimist teenuste (services) vahel
-- ✅ Kasutada konteinerite võrgundust (container networking)
-- ✅ Debugida mitme-konteineri (multi-container) süsteemi
-
----
-
-## 🖥️ Sinu Testimise Konfiguratsioon
-
-### SSH Ühendus VPS-iga
-```bash
-ssh labuser@93.127.213.242 -p [SINU-PORT]
-```
-
-| Õpilane | SSH Port | Password |
-|---------|----------|----------|
-| student1 | 2201 | student1 |
-| student2 | 2202 | student2 |
-| student3 | 2203 | student3 |
-
----
 
 ## 🏗️ Arhitektuur
 
 ```
 User (browser/cURL)
     │
-    ├──> User teenus (service) (3000) ──> PostgreSQL (5432: user_service_db)
+    ├──> User Service (3000) ──> PostgreSQL (5432: user_service_db)
     │         │
-    │         └─> Genereerib JWT tokeni
+    │         └─> Genereerib JWT "token"-i
     │
-    │    (JWT token)
+    │    (JWT "token")
     │         │
     │         ▼
-    └──> Todo teenus (service) (8081) ──> PostgreSQL (5433: todo_service_db)
+    └──> Todo Service (8081) ──> PostgreSQL (5433: todo_service_db)
               │
-              └─> Valideerib JWT tokenit
+              └─> Valideerib JWT "token"-it
 ```
 
-**Tähtis:** Mõlemad teenused (services) kasutavad SAMA `JWT_SECRET` väärtust!
+**Tähtis:** Mõlemad teenused kasutavad SAMA `JWT_SECRET` väärtust!
 
----
+**📖 Täielik JWT ja JWT_SECRET selgitus:** [User Service README](../../apps/backend-nodejs/README.md) selgitab:
+- Mis on JWT "token" (digitaalne visiitkaart)
+- Miks kõik teenused peavad kasutama SAMA JWT_SECRET võtit
+- Kuidas JWT töötab mikroteenuste arhitektuuris
+
+
 
 ## 📝 Sammud
 
-### Samm 1: Käivita PostgreSQL Konteinerid
+**ℹ️ Portide turvalisus:**
+
+Selles harjutuses kasutame lihtsustatud portide vastendust (`-p 3000:3000`).
+- ✅ **Antud laborite tehes turvatud sisevõrk kaitseb**
+- 📚 **Tootmises oleks õige:** PostgreSQL ILMA `-p` (ainult sisevõrgus), rakendused `-p 127.0.0.1:...:...`
+- 🎯 **Lab 2 ja Lab 7 käsitlevad:** Võrguturvalisust põhjalikumalt
+
+**Hetkel keskendume mitme konteineri seadistusele!**
+
+---
+
+### Samm 1: Käivita PostgreSQL konteinerid
 
 ```bash
-# PostgreSQL User teenusele (service)
+# PostgreSQL User teenusele
 docker run -d \
   --name postgres-user \
   -e POSTGRES_USER=postgres \
@@ -87,7 +80,7 @@ docker run -d \
   -p 5432:5432 \
   postgres:16-alpine
 
-# PostgreSQL Todo teenusele (service)
+# PostgreSQL Todo teenusele
 docker run -d \
   --name postgres-todo \
   -e POSTGRES_USER=postgres \
@@ -103,25 +96,25 @@ docker ps | grep postgres
 **Kontrolli logisid:**
 
 ```bash
-# User Teenuse (Service) PostgreSQL
+# User Service'i PostgreSQL
 docker logs postgres-user
 # Peaks nägema: "database system is ready to accept connections"
 
-# Todo Teenuse (Service) PostgreSQL
+# Todo Service'i PostgreSQL
 docker logs postgres-todo
 # Peaks nägema: "database system is ready to accept connections"
 ```
 
 **Miks kaks PostgreSQL konteinerit?**
-- ✅ Igal mikroteenusel (microservice) oma andmebaas (mikroteenuste (microservices) parim praktika (best practice))
+- ✅ Igal mikroteenusel oma andmebaas (mikroteenuste parim praktika)
 - ✅ Sõltumatu andmete haldamine
 - ✅ Õpid mitme andmebaasi seadistust (multi-database setup)
 
-**Märkus:** Kasutame erinevaid porte host'is:
-- `5432` → User teenuse (service) PostgreSQL
-- `5433` → Todo teenuse (service) PostgreSQL
+**Märkus:** Kasutame erinevaid porte hostis:
+- `5432` → User Service'i PostgreSQL
+- `5433` → Todo Service'i PostgreSQL
 
-### Samm 2: Seadista User teenuse (service) Andmebaas
+### Samm 2: Seadista User Service'i andmebaas
 
 ```bash
 # Loo users tabel
@@ -152,7 +145,7 @@ docker exec postgres-user psql -U postgres -d user_service_db -c "\d users"
 - `password` - `bcrypt` hashitud parool
 - `role` - kasutaja roll (user/admin)
 
-### Samm 3: Seadista Todo teenuse (service) Andmebaas
+### Samm 3: Seadista Todo Service'i andmebaas
 
 ```bash
 # Loo todos tabel
@@ -180,23 +173,16 @@ docker exec postgres-todo psql -U postgres -d todo_service_db -c "\dt"
 docker exec postgres-todo psql -U postgres -d todo_service_db -c "\d todos"
 ```
 
-**Miks BIGSERIAL ja BIGINT?**
-- ❌ `SERIAL` = INTEGER (32-bit) → Spring Boot ootab `Long`
-- ✅ `BIGSERIAL` = BIGINT (64-bit) → Sobib Spring Boot `Long`'iga
-- ❌ Kui kasutad `SERIAL`, saad vea (error): "wrong column type encountered"
-
-**📖 Java/Spring Boot JPA ja PostgreSQL:** Põhjalikum selgitus Spring Boot JPA Entity tüüpide ja PostgreSQL andmetüüpide vastavuse kohta (Long vs BIGINT, Integer vs INT) leiad [Peatükk 06A: Java Spring Boot ja Node.js Konteineriseerimise Spetsiifika](../../../resource/06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md).
-
-### Samm 4: Genereeri Jagatud JWT Saladus (Shared Secret)
+### Samm 4: Genereeri jagatud JWT (Shared Secret)
 
 **📖 Täielik JWT ja JWT_SECRET selgitus:** [User Service README](../../apps/backend-nodejs/README.md) selgitab:
-- Mis on JWT token (digitaalne visiitkaart)
+- Mis on JWT "token" (digitaalne visiitkaart)
 - Miks kõik teenused peavad kasutama SAMA JWT_SECRET võtit
 - Kuidas JWT töötab mikroteenuste arhitektuuris
 
 ---
 
-**OLULINE:** Mõlemad teenused (services) peavad kasutama SAMA `JWT_SECRET`'i!
+**OLULINE:** Mõlemad teenused peavad kasutama SAMA `JWT_SECRET`'i!
 
 ```bash
 # Genereeri turvaline 256-bitine võti
@@ -213,32 +199,32 @@ echo "Kontroll: $JWT_SECRET"
 **Miks sama JWT_SECRET?**
 
 ```
-User teenus (service) (genereerib JWT)
+User Service (genereerib JWT)
     │
-    ├─> Allkirjastab tokeni JWT_SECRET'iga
-    │
-    ▼
-JWT Token (sisaldab userId, email, role)
+    ├─> Allkirjastab "token"-i JWT_SECRET'iga
     │
     ▼
-Todo teenus (service) (valideerib JWT)
+JWT "token" (sisaldab userId, email, role)
+    │
+    ▼
+Todo Service (valideerib JWT)
     │
     └─> Kontrollib allkirja sama JWT_SECRET'iga
 ```
 
 **Kui JWT_SECRET on erinev:**
-- ❌ User teenus (service) genereerib tokeni ühega võtmega
-- ❌ Todo teenus (service) proovib valideerida teise võtmega
+- ❌ User Service genereerib "token"-i ühega võtmega
+- ❌ Todo Service proovib valideerida teise võtmega
 - ❌ Tulemus: "Invalid signature" viga (error)
 
-### Samm 5: Käivita User teenus (service)
+### Samm 5: Käivita User Service
 
 ```bash
 # Puhasta varasemad konteinerid Harjutus 1-st
 docker stop user-service 2>/dev/null || true
 docker rm user-service 2>/dev/null || true
 
-# Käivita User teenus (service) --link'iga
+# Käivita User Service --link'iga
 docker run -d \
   --name user-service \
   --link postgres-user:postgres \
@@ -261,8 +247,10 @@ docker logs -f user-service
 
 **Mida `--link postgres-user:postgres` teeb?**
 - Loob DNS aliase: `postgres` → `postgres-user` konteineri IP
-- User teenus (service) saab ühenduda `postgres:5432` kaudu
-- **Aegunud (deprecated)** (Harjutus 3 õpetab kohandatud võrke (custom networks)!)
+- User Service saab ühenduda `postgres:5432` kaudu
+- **Aegunud (deprecated)** Link on staatiline: kui lingitud konteiner maha kukub ja uue IP-ga uuesti käima läheb, võivad lingid katki minna või käituda ebaloogiliselt. Seetõttu seda meetodit ei soovitata kasutada.
+- Järgmine harjutus (Harjutus 3) õpetab kohandatud docker võrke, mis on eelistatud meetod.
+  
 
 **Kontrolli, et konteiner töötab:**
 
@@ -271,7 +259,7 @@ docker ps | grep user-service
 # STATUS peaks olema: Up X seconds
 ```
 
-**Kui konteiner hangub (crashes):**
+**Kui konteiner krahhib:**
 ```bash
 # Vaata logisid
 docker logs user-service
@@ -282,14 +270,14 @@ docker logs user-service
 # - JWT_SECRET puudub → kontrolli echo $JWT_SECRET
 ```
 
-### Samm 6: Käivita Todo teenus (service)
+### Samm 6: Käivita Todo Service
 
 ```bash
 # Puhasta varasemad konteinerid Harjutus 1-st
 docker stop todo-service 2>/dev/null || true
 docker rm todo-service 2>/dev/null || true
 
-# Käivita Todo teenus (service) --link'iga
+# Käivita Todo Service --link'iga
 docker run -d \
   --name todo-service \
   --link postgres-todo:postgres \
@@ -325,14 +313,14 @@ docker ps
 # Vaata kõiki konteinereid (ka peatatud)
 docker ps -a
 
-# Vaata hangunud (crashed) konteineri logisid
+# Vaata hangunud konteineri logisid
 docker logs <container-name>
 ```
 
-### Samm 7: Testi Autentimist (User teenus (service))
+### Samm 7: Testi autentimist (User Service)
 
 ```bash
-# Seisukorra kontroll (health check)
+# Tervisekontroll (health check)
 curl http://localhost:3000/health
 # Oodatud: {"status":"OK","database":"connected"}
 
@@ -369,31 +357,21 @@ docker ps | grep postgres-user
 docker logs user-service
 ```
 
-**Nüüd login ja salvesta JWT token:**
+**Nüüd login ja salvesta JWT "token":**
 
 ```bash
-# Login ja salvesta JWT token muutujasse
+# Login ja salvesta JWT "token" muutujasse
 TOKEN=$(curl -s -X POST http://localhost:3000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"test@example.com","password":"test123"}' \
   | jq -r '.token')
 
 echo "JWT Token: $TOKEN"
+
+# Märka "pipe"-imist jq-le. JQ on kergekaaluline ja paindlik käsurea JSON-protsessor, mida kasutatakse JSON andmete lõikamiseks, filtreerimiseks, kaardistamiseks ja teisendamiseks sarnaselt sed, awk või grep tööriistadega tekstiga.
+
 ```
 
-**Kui `jq` ei ole installitud:**
-```bash
-# Ubuntu/Debian
-sudo apt install -y jq
-
-# Või salvesta manuaalselt
-curl -X POST http://localhost:3000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"test123"}'
-
-# Kopeeri "token" väärtus ja salvesta:
-TOKEN="eyJhbGci..."
-```
 
 **Dekodeeri token (vaata, mida sisaldab):**
 
@@ -413,19 +391,19 @@ echo $TOKEN | cut -d'.' -f2 | base64 -d 2>/dev/null | jq
 ```
 
 **Mida õppisid?**
-- ✅ User teenus (service) genereerib JWT tokenit
-- ✅ Token sisaldab kasutaja andmeid (id, email, role)
-- ✅ Token on allkirjastatud JWT_SECRET'iga
-- ✅ Token aegub pärast 24h (JWT_EXPIRES_IN)
+- ✅ User Service genereerib JWT "token"-it
+- ✅ "Token" sisaldab kasutaja andmeid (id, email, role)
+- ✅ "Token" on allkirjastatud JWT_SECRET'iga
+- ✅ "Token" aegub pärast 24h (JWT_EXPIRES_IN)
 
-### Samm 8: Testi Todo teenust (service) JWT Tokeniga
+### Samm 8: Testi Todo Service'it JWT "token"-iga
 
 ```bash
-# Seisukorra kontroll (health check)
+# Tervisekontroll (health check)
 curl http://localhost:8081/health
 # Oodatud: {"status":"UP"}
 
-# Loo todo (kasutades User teenuse (service) JWT tokenit!)
+# Loo todo (kasutades User Service'i JWT "token"-it!)
 curl -X POST http://localhost:8081/api/todos \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
@@ -450,7 +428,7 @@ curl -X POST http://localhost:8081/api/todos \
 # }
 ```
 
-**Märka:** `userId: 1` tuli JWT tokenist!
+**Märka:** `userId: 1` tuli JWT "token"-ist!
 
 **Loe kõik todos:**
 
@@ -492,27 +470,21 @@ curl -X POST http://localhost:8081/api/todos \
 docker exec postgres-todo psql -U postgres -d todo_service_db -c "SELECT * FROM todos;"
 ```
 
-**Mida õppisid?**
-- ✅ Todo teenus (service) aktsepteerib User teenuse (service) JWT tokenit
-- ✅ Todo teenus (service) ekstraktis `userId` tokenist (userId: 1)
-- ✅ CRUD operatsioonid töötavad mikroteenuste (microservices) vahel
-- ✅ Mõlemad teenused (services) usaldavad sama JWT_SECRET'i
-
-### Samm 9: Mõista Mikroteenuste (Microservices) Suhtlust
+### Samm 9: Mõista mikroteenuste suhtlust
 
 **Mis toimus?**
 
-1. **User teenus (service)** võttis vastu registreerimise ja login'i päringu
-2. **User teenus (service)** genereris JWT tokeni (sisaldab userId, email, role)
-3. **Sina** saatsid JWT tokeni Todo teenusele (service)
-4. **Todo teenus (service)** valideeris JWT tokenit (sama JWT_SECRET!)
-5. **Todo teenus (service)** ekstraktis `userId` tokenist ja salvestas todo andmebaasi
+1. **User Service** võttis vastu registreerimise ja login'i päringu
+2. **User Service** genereris JWT "token"-i (sisaldab userId, email, role)
+3. **Sina** saatsid JWT "token"-i Todo Service'ile
+4. **Todo Service** valideeris JWT "token"-it (sama JWT_SECRET!)
+5. **Todo Service** ekstraktis `userId` "token"-ist ja salvestas todo andmebaasi
 
 **Tähtis mõiste:**
-- User teenus (service) on **autentimise keskus (authentication hub)**
-- Todo teenus (service) on **ressursi teenus (resource service)**
-- JWT token on **autentimise tõend (authentication proof)**
-- Mõlemad teenused (services) usaldavad sama JWT_SECRET'i
+- User Service on **autentimise keskus (authentication hub)**
+- Todo Service on **ressursi teenus (resource service)**
+- JWT "token" on **autentimise tõend (authentication proof)**
+- Mõlemad teenused usaldavad sama JWT_SECRET'i
 
 **Diagramm:**
 
@@ -520,12 +492,12 @@ docker exec postgres-todo psql -U postgres -d todo_service_db -c "SELECT * FROM 
 1. User registreerib/logib sisse
    │
    ▼
-User teenus (service) (genereerib JWT token)
+User Service (genereerib JWT "token")
    │
    └─> Allkirjastab JWT_SECRET'iga
    │
    ▼
-JWT Token
+JWT "token"
 {
   "id": 1,
   "email": "test@example.com",
@@ -535,47 +507,46 @@ JWT Token
 }
    │
    ▼
-2. User saadab tokeni Todo teenusele (service)
+2. User saadab "token"-i Todo Service'ile
    │
    ▼
-Todo teenus (service)
+Todo Service
    │
-   ├─> Valideerib tokenit (JWT_SECRET)
+   ├─> Valideerib "token"-it (JWT_SECRET)
    ├─> Ekstraktib userId: 1
    └─> Salvestab todo (user_id=1)
 ```
 
-**Mikroteenuste (microservices) arhitektuuri eelised:**
-- ✅ **Sõltumatus** - Igal teenusel (service) oma andmebaas
-- ✅ **Skaleeritavus** - Saab skaleerida teenuseid (services) eraldi
+**Mikroteenuste arhitektuuri eelised:**
+- ✅ **Sõltumatus** - Igal teenusel oma andmebaas
+- ✅ **Skaleeritavus** - Saab skaleerida teenuseid eraldi
 - ✅ **Turvalisus** - Tsentraliseeritud autentimine
 - ✅ **Paindlikkus** - Erinevad tehnoloogiad (Node.js + Java)
 
-**Kuidas see töötab tootmises?**
+**Kuidas see töötab toote keskkonnas?**
 
 ```
 API Gateway (Nginx/Kong)
     │
-    ├──> User teenus (service) (3 replicas)
+    ├──> User Service (3 replicas)
     │       └──> PostgreSQL (master-slave)
     │
-    └──> Todo teenus (service) (5 replicas)
-            └──> PostgreSQL (master-slave)
+    └──> Todo Service (5 replicas)            └──> PostgreSQL (master-slave)
 ```
 
 ### Samm 10: Tõrkeotsing (Troubleshooting)
 
-**1. JWT token ei tööta Todo teenuses (service):**
+**1. JWT "token" ei tööta Todo Service'is:**
 
 ```bash
 # Viga (error): 401 Unauthorized
 
-# Kontrolli, et mõlemad teenused (services) kasutavad SAMA JWT_SECRET
+# Kontrolli, et mõlemad teenused kasutavad SAMA JWT_SECRET
 docker exec user-service env | grep JWT_SECRET
 docker exec todo-service env | grep JWT_SECRET
 # Peavad olema IDENTSED!
 
-# Kui erinevad, taaskäivita (restart) teenused (services) õige JWT_SECRET'iga
+# Kui erinevad, taaskäivita teenused õige JWT_SECRET'iga
 docker stop user-service todo-service
 docker rm user-service todo-service
 
@@ -585,12 +556,12 @@ echo $JWT_SECRET
 # Käivita uuesti (Samm 5 ja 6)
 ```
 
-**2. Token on aegunud:**
+**2. "Token" on aegunud:**
 
 ```bash
 # Viga (error): Token expired
 
-# Genereeri uus token
+# Genereeri uus "token"
 TOKEN=$(curl -s -X POST http://localhost:3000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"test@example.com","password":"test123"}' \
@@ -609,11 +580,11 @@ docker ps | grep postgres
 # postgres-user (5432)
 # postgres-todo (5433)
 
-# Kontrolli User teenuse (service) logisid
+# Kontrolli User Service'i logisid
 docker logs user-service
 # Otsib: "Database connected" või "Error connecting to database"
 
-# Kontrolli Todo teenuse (service) logisid
+# Kontrolli Todo Service'i logisid
 docker logs todo-service
 # Otsid: "HikariPool started" või "Connection refused"
 ```
@@ -628,7 +599,7 @@ POSTGRES_TODO_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAd
 echo "User DB IP: $POSTGRES_USER_IP"
 echo "Todo DB IP: $POSTGRES_TODO_IP"
 
-# Taaskäivita (restart) teenused (services) IP'dega
+# Taaskäivita teenused IP'dega
 docker stop user-service
 docker rm user-service
 
@@ -645,7 +616,7 @@ docker run -d --name user-service \
   -e PORT=3000 \
   user-service:1.0
 
-# Sama Todo teenusele (service)
+# Sama Todo teenusele
 ```
 
 **5. Skeemi valideerimise viga (Schema validation error) (wrong column type):**
@@ -669,7 +640,7 @@ CREATE TABLE todos (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );"
 
-# Taaskäivita (restart) todo-service
+# Taaskäivita todo-service
 docker restart todo-service
 docker logs -f todo-service
 ```
@@ -689,107 +660,57 @@ docker run -p 3001:3000 ...  # Kasuta host porti 3001
 
 ---
 
-## 🎓 Õpitud Kontseptsioonid
+## 🎓 Õpitud kontseptsioonid
 
-### Mikroteenuste (Microservices) Arhitektuur:
+### Mikroteenuste arhitektuur:
 
-- **Autentimise keskus (Authentication Hub)** - Keskne autentimise teenus (service) (User Teenus (Service))
-- **Ressursi teenused (Resource Services)** - Ressursside haldamise teenused (services) (Todo Teenus (Service))
-- **JWT-põhine autentimine (JWT-based Auth)** - Token-põhine autentimine teenuste (services) vahel
+- **Autentimise keskus (Authentication Hub)** - Keskne autentimise teenus (User Service)
+- **Ressursi teenused (Resource Services)** - Ressursside haldamise teenused (Todo Service)
+- **JWT-põhine autentimine (JWT-based Auth)** - Token-põhine autentimine teenuste vahel
 - **Jagatud saladus (Shared Secret)** - Jagatud salajane võti (JWT_SECRET)
-- **Teenuste-vaheline usaldus (Service-to-Service Trust)** - Teenuste (services) vaheline usaldus
-- **Andmebaas teenuse kohta (Database per Service)** - Iga teenus (service) oma andmebaasiga (mikroteenuste (microservices) parim praktika (best practice))
+- **Teenuste-vaheline usaldus (Service-to-Service Trust)** - Teenuste vaheline usaldus
+- **Andmebaas teenuse kohta (Database per Service)** - Iga teenus oma andmebaasiga (mikroteenuste parim praktika)
 
-### Docker Mitme-Konteineri (Multi-Container):
+### Docker mitme konteineriga:
 
-- **Konteinerite linkimine (Container Linking)** (`--link` - aegunud (deprecated), aga lihtne õppimiseks!)
-- **Portide vastendamine (Port Mapping)** - Mitu teenust (service) erinevatel portidel
-- **Keskkonna muutujad (Environment Variables)** - Konfiguratsioon konteinerites
-- **Mitme andmebaasi seadistus (Multi-Database Setup)** - Iga teenus (service) oma PostgreSQL'iga
-- **Seisukorra kontrollid (Health Checks)** - Kontrolli, et teenused (services) töötavad
-- **Konteinerite sõltuvus (Container Dependency)** - Teenused (services) sõltuvad andmebaasidest
+- **Konteinerite linkimine (Container Linking)** (`--link` - aegunud, aga lihtne õppimiseks!)
+- **Portide vastendamine (Port Mapping)** - Mitu teenust erinevatel portidel
+- **Keskkonnamuutujad** - Konfiguratsioon konteinerites
+- **Mitme andmebaasi seadistus (Multi-Database Setup)** - Iga teenus oma PostgreSQL'iga
+- **Tervisekontrollid (Health Checks)** - Kontrolli, et teenused töötavad
+- **Konteinerite sõltuvus** - Teenused sõltuvad andmebaasidest
 
 ### JWT Autentimine:
 
-- **Tokeni genereerimine (Token Generation)** - User teenus (service) genereerib JWT tokenit
-- **Tokeni valideerimine (Token Validation)** - Todo teenus (service) valideerib JWT tokenit
-- **Tokeni sisu (Token Payload)** - Sisaldab userId, email, role, exp
-- **Tokeni allkiri (Token Signature)** - Allkirjastatud JWT_SECRET'iga
-- **Tokeni aegumine (Token Expiration)** - Tokenid aeguvad (vaikimisi 24h)
-- **Bearer autentimine (Bearer Authentication)** - `Authorization: Bearer <token>`
+- **"Token"-i genereerimine** - User Service genereerib JWT "token"-it
+- **"Token"-i valideerimine** - Todo Service valideerib JWT "token"-it
+- **"Token"-i sisu** - Sisaldab userId, email, role, exp
+- **"Token"-i allkiri** - Allkirjastatud JWT_SECRET'iga
+- **"Token"-i aegumine** - "Token"-id aeguvad (vaikimisi 24h)
+- **Bearer autentimine** - `Authorization: Bearer <token>`
 
-### Levinud Probleemid ja Lahendused:
+### Levinud probleemid ja lahendused:
 
-- **JWT_SECRET peab olema SAMA** mõlemas teenuses (services) → Kontrolli keskkonna muutujaid (environment variables)
+- **JWT_SECRET peab olema SAMA** mõlemas teenuses → Kontrolli keskkonnamuutujaid
 - **BIGSERIAL vs SERIAL** - Spring Boot vajab BIGINT → Kasuta BIGSERIAL
-- **Tokeni aegumine (Token expiration)** - Tokenid aeguvad → Genereeri uus token login'iga
+- **"Token"-i aegumine** - "Token"-id aeguvad → Genereeri uus "token" login'iga
 - **Konteineri DNS** - `--link` loob DNS aliase → Kasuta `--link` või konteineri IP-d
-- **Skeemi valideerimise vead (Schema validation errors)** - Andmebaasi veergude tüübid peavad vastama JPA Entity tüüpidele
-
-### Järgmine Samm:
-
-Harjutus 3 õpetab **korralikku võrgundust (proper networking)** Docker Võrkude (Networks) kasutades (mitte aegunud (deprecated) `--link`)!
-
----
-
-## 📊 Võrdlus: Harjutus 1 vs Harjutus 2
-
-| Aspekt | Harjutus 1 | Harjutus 2 |
-|--------|-----------|-----------|
-| **Konteinerid** | 1 (hangub (crashes)) | 4 (töötavad) |
-| **PostgreSQL** | ❌ Puudub | ✅ 2 DB konteinerit |
-| **Võrgundus (Networking)** | ❌ Puudub | ✅ --link |
-| **JWT autentimine (Auth)** | ❌ Ei tööta | ✅ Täielik voog (flow) |
-| **Staatus (Status)** | ❌ Hangub (crashes) | ✅ Töötab |
-| **Õpitav** | Dockeri põhitõed (basics) | Mikroteenused (Microservices) |
-| **User teenus (service)** | ❌ Hangub (crashes) | ✅ Genereerib JWT |
-| **Todo teenus (service)** | ❌ Hangub (crashes) | ✅ Valideerib JWT |
-| **API testid** | ❌ Ei tööta | ✅ Töötavad |
-
----
-
-## 💡 Parimad Praktikad (Best Practices)
-
-### Mikroteenuste (Microservices) Arhitektuur:
-
-1. **Andmebaas teenuse kohta (Database per Service)** - Iga teenus (service) oma andmebaasiga
-2. **Tsentraliseeritud autentimine (Centralized Authentication)** - Üks teenus (service) genereerib JWT tokeneid
-3. **Jagatud saladuse haldus (Shared Secret Management)** - Kõik teenused (services) usaldavad sama JWT_SECRET'i
-4. **Tokeni aegumine (Token Expiration)** - Tokenid aeguvad (turvalisuse jaoks)
-5. **Seisukorra kontrollid (Health Checks)** - Iga teenus (service) pakub /health lõpp-punkti (endpoint)
-
-### Docker Mitme-Konteineri (Multi-Container):
-
-1. **Kasuta --link'i säästlikult (Use --link Sparingly)** - `--link` on aegunud (deprecated), kasuta Harjutus 3-s kohandatud võrke (custom networks)
-2. **Keskkonna muutujad (Environment Variables)** - Konfiguratsioon läbi keskkonna muutujate (env vars), mitte kõvakodeeritud (hardcoded)
-3. **Portide vastendamine (Port Mapping)** - Kasuta erinevaid host porte konflikti vältimiseks
-4. **Konteinerite nimed (Container Names)** - Anna konteineritele selged nimed (user-service, postgres-user)
-5. **Logimine (Logging)** - Kasuta `docker logs` debugimiseks
-
-### JWT Autentimine:
-
-1. **Turvalised saladused (Secure Secrets)** - Genereeri JWT_SECRET `openssl rand -base64 32`
-2. **Tokeni aegumine (Token Expiration)** - Määra mõistlik aegumisaeg (expiration time) (24h arenduskeskkonnas (dev), 1h tootmiskeskkonnas (prod))
-3. **Valideeri tokeneid (Validate Tokens)** - Kontrolli alati tokeni signatuuri
-4. **Kaasa kasutaja info (Include User Info)** - Token peaks sisaldama userId, email, role
-5. **Bearer autentimine (Bearer Authentication)** - Kasuta standardset `Authorization: Bearer <token>` päist (header)
-
----
+- **Skeemi valideerimise vead** - Andmebaasi veergude tüübid peavad vastama JPA Entity tüüpidele
 
 ## 🔗 Järgmine Samm
 
-Järgmises harjutuses õpid **korralikku võrgundust (proper networking)** Docker Võrkude (Networks) kasutades!
+Järgmises harjutuses õpid **korralikku võrgundust** Docker võrke kasutades!
 
-**Miks kohandatud võrgud (custom networks) on paremad kui --link?**
+**Miks kohandatud võrgud on paremad kui --link?**
 - ✅ Pole aegunud (deprecated)
-- ✅ Parem DNS-i lahendus (resolution)
-- ✅ Võrgu isolatsioon (Network isolation)
-- ✅ Konteinerite avastamine (Container discovery)
-- ✅ Mitu võrku (Multiple networks)
+- ✅ Parem DNS-i lahendus
+- ✅ Võrgu isolatsioon
+- ✅ Konteinerite avastamine
+- ✅ Mitu võrku
 
-**Jätka:** [Harjutus 3: Docker võrgundus (Networking)](03-networking.md) - õpi kohandatud võrke (custom networks)!
+**Jätka:** [Harjutus 3: Docker võrgundus (Networking)](03-networking.md) - õpi kohandatud võrke!
 
----
+
 
 ## 📚 Viited
 
@@ -802,16 +723,5 @@ Järgmises harjutuses õpid **korralikku võrgundust (proper networking)** Docke
 
 ---
 
-**Õnnitleme! Oled ehitanud oma esimese mikroteenuste (microservices) süsteemi! 🎉**
+**Õnnitleme! Oled ehitanud oma esimese mikroteenuste süsteemi! 🎉**
 
-**Mida saavutasid:**
-- ✅ 4 konteinerit töötavad koos
-- ✅ 2 mikroteenust (microservices) suhtlevad JWT kaudu
-- ✅ 2 andmebaasi haldavad eraldi andmeid
-- ✅ Täielik autentimise ja autoriseerimise voog (flow)
-- ✅ Mõistad mikroteenuste (microservices) arhitektuuri põhimõtteid
-
-**Järgmises harjutuses:**
-- Õpid kohandatud (custom) Docker võrke (networks)
-- Loobud aegunud (deprecated) --link'ist
-- Ehitad parema võrgunduse (networking) lahenduse

@@ -24,14 +24,14 @@ Selles harjutuses seadistame **Grafana Loki** - log aggregation system, mida nim
 
 Peale selle harjutuse läbimist oskad:
 
-✅ Paigaldada Loki + Promtail Helm chart'iga
-✅ Mõista Loki arhitektuuri (labels vs indexed data)
-✅ Konfigureerida Promtail log collection
-✅ Kirjutada LogQL queries
-✅ Integreerida Loki Grafana'ga
-✅ Correlate logs ja metrics
-✅ Debuggida probleeme logide abil
-✅ Filtreerida logs label'ite ja regex'iga
+- ✅ Paigaldada Loki + Promtail Helm chart'iga
+- ✅ Mõista Loki arhitektuuri (labels vs indexed data)
+- ✅ Konfigureerida Promtail log collection
+- ✅ Kirjutada LogQL queries
+- ✅ Integreerida Loki Grafana'ga
+- ✅ Correlate logs ja metrics
+- ✅ Debuggida probleeme logide abil
+- ✅ Filtreerida logs label'ite ja regex'iga
 
 ---
 

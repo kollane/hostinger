@@ -20,12 +20,12 @@ Selles harjutuses provision'ime **user-service** application Terraform'i kaudu. 
 
 ## 🎯 Õpieesmärgid
 
-✅ Create Deployment resource
-✅ Create Service resource
-✅ Create ConfigMap
-✅ Use Terraform variables
-✅ Use Terraform outputs
-✅ Test application
+- ✅ Create Deployment resource
+- ✅ Create Service resource
+- ✅ Create ConfigMap
+- ✅ Use Terraform variables
+- ✅ Use Terraform outputs
+- ✅ Test application
 
 ---
 

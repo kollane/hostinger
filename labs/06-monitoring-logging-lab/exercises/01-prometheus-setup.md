@@ -21,12 +21,12 @@ Selles harjutuses paigaldad **Prometheus** - avatud lähtekoodiga monitoring ja 
 
 Peale selle harjutuse läbimist oskad:
 
-✅ Paigaldada Prometheus kube-prometheus-stack Helm chart'iga
-✅ Mõista Prometheus arhitektuuri
-✅ Navigeerida Prometheus UI's
-✅ Kirjutada basic PromQL queries
-✅ Kontrollida scrape targets'e
-✅ Verificeerida metrics collection'i
+- ✅ Paigaldada Prometheus kube-prometheus-stack Helm chart'iga
+- ✅ Mõista Prometheus arhitektuuri
+- ✅ Navigeerida Prometheus UI's
+- ✅ Kirjutada basic PromQL queries
+- ✅ Kontrollida scrape targets'e
+- ✅ Verificeerida metrics collection'i
 
 ---
 

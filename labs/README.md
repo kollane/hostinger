@@ -57,6 +57,10 @@ ps aux | grep docker  # Docker protsessid
 cd ~/labs/XX-lab-name/
 ./setup.sh    # Seadista lab (kui vaja)
 
+# Lab setup käsud (saab käivitada igalt poolt)
+lab1-setup          # Lab 1 setup (Docker image'id)
+lab2-setup          # Lab 2 setup (Docker Compose ressursid)
+
 # Docker puhastamine
 labs-reset          # Täielik reset (KÕIK Docker ressursid + apps failid, küsib image'ite kohta)
 docker-stop-all     # Peata kõik Docker konteinerid

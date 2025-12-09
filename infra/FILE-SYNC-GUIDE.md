@@ -268,9 +268,15 @@ Pärast sünkroniseerimist testi alati:
 
 **Stsenaarium:** Eemaldatud Node.js kontroll, lisatud PostgreSQL automaatne seadistus
 
-⚠️ **OLULINE:** Lab 1 setup skript on kättesaadav kahel viisil:
-1. `~/labs/01-docker-lab/setup.sh` - lokaalne fail (õpilased nägid harjutuses)
+⚠️ **OLULINE:** Lab setup skriptid on kättesaadavad kahel viisil:
+
+**Lab 1:**
+1. `~/labs/01-docker-lab/setup.sh` - lokaalne fail (õpilased näevad harjutuses)
 2. `lab1-setup` - bashrc alias (saab käivitada igalt poolt)
+
+**Lab 2:**
+1. `~/labs/02-docker-compose-lab/setup.sh` - lokaalne fail
+2. `lab2-setup` - bashrc alias (saab käivitada igalt poolt)
 
 **Uuendada on vaja ainult lokaalne fail!** Alias osutab lokaalse faili peale.
 
@@ -329,26 +335,28 @@ echo "Lab 1 setup.sh uuendatud kõigis konteinerites ($(date +%Y-%m-%d))" >> /ho
 
 ## Arhitektuur: Aliases vs System Commands
 
-### lab1-setup: Bashrc Alias (Current)
+### lab1-setup ja lab2-setup: Bashrc Aliased (Current)
 
-**Miks alias?**
+**Miks aliased?**
 - ✅ Töötab igalt poolt (alias teeb `cd` enne skripti käivitamist)
-- ✅ Hooldus lihtsam - ainult üks fail (`~/labs/01-docker-lab/setup.sh`)
+- ✅ Hooldus lihtsam - ainult üks fail iga labi kohta
 - ✅ Järgib sama mustrit nagu `labs-reset`
 - ✅ Ei vaja root õigusi template uuendamiseks
 
 **Kuidas töötab:**
 ```bash
-# .bashrc (line 137):
+# .bashrc:
 alias lab1-setup="cd ~/labs/01-docker-lab && ./setup.sh"
+alias lab2-setup="cd ~/labs/02-docker-compose-lab && ./setup.sh"
 
 # Kasutaja saab kutsuda:
 cd /tmp
 lab1-setup  # Alias teeb automaatselt: cd ~/labs/01-docker-lab && ./setup.sh
+lab2-setup  # Alias teeb automaatselt: cd ~/labs/02-docker-compose-lab && ./setup.sh
 ```
 
 **Uuendamiseks:**
-1. Muuda ainult `~/labs/01-docker-lab/setup.sh`
+1. Muuda ainult lokaalne fail (nt `~/labs/02-docker-compose-lab/setup.sh`)
 2. Alias osutab alati värskele versioonile
 
 ### labs-reset: Bashrc Alias
@@ -547,6 +555,6 @@ sg lxd -c "lxc delete temp-update"
 
 ---
 
-**Viimane uuendus:** 2025-11-27
+**Viimane uuendus:** 2025-12-01
 **Autor:** Administraator
-**Versioon:** 1.2 - Dokumenteeritud alias arhitektuur (lab1-setup nüüd bashrc alias, mitte system command)
+**Versioon:** 1.3 - Lisatud lab2-setup alias dokumentatsioon

@@ -1,170 +1,162 @@
-# Harjutus 1: Ühe Konteineri Käivitamine
+# Harjutus 1: Üksiku konteineri loomine (Todo Service)
+---
+## 📋 Harjutuse ülevaade
 
-**Eesmärk:** Konteineriseeri Java Spring Boot Todo teenus (service) ja õpi Dockerfile'i loomist
+**Harjutuse eesmärk:** Selles harjutuses konteineriseerid Java Spring Boot Todo Service'i rakenduse. Õpid looma Dockerfile'i, ehitama Docker tõmmist ja käivitama konteinereid.
 
-**📖 Rakendus:** [Todo Service README](../../apps/backend-java-spring/README.md) - Todo ülesannete rakendus (to-do list), kus kasutajad saavad hallata oma ülesandeid.
+**🏗️ Arhitektuurne Lähenemine:**
 
-**Mis see rakendus teeb:**
+Nendes harjutuses õpid looma **OCI-standardset** (Open Container Initiative) Docker tõmmist, mis sobib kasutamiseks nii Docker'iga kui ka **Kubernetes orkestratsioonisüsteemidega**.
+ 
+ See harjutus keskendub Docker põhitõdedele. **Täielikult OCI-standardne** ja **production-ready** lahendus tuleb **[Harjutus 5: Tõmmise Optimeerimine](05-optimization.md)**.
+
+## 📋 Harjutuse ülevaade
+**Harjutuse eesmärk:** Selles harjutuses konteineriseerid Java Spring Boot Todo Service'i rakenduse. Õpid looma Dockerfile'i, ehitama Docker tõmmist ja käivitama konteinereid.
+
+**Todo Service'i rakenduse lühitutvustus:**
 - ✍️ Loob ja haldab todo ülesandeid (CRUD)
 - 👀 Kuvab kasutaja ülesandeid (filtreerimine, sorteerimine)
 - 📊 Näitab statistikat (tehtud/pooleli ülesanded)
-- 🔐 Valideerib JWT tokeneid User Service'ilt
+- 🔐 Valideerib JWT "token"-eid User Service'ilt
 
----
+**📖 Rakenduse funktsionaalsuse kohta lähemalt siit:** [Todo Service README](../../apps/backend-java-spring/README.md)
 
-## ⚠️ OLULINE: Harjutuse Fookus
-
-**See harjutus keskendub Docker põhitõdede õppimisele, MITTE töötavale rakendusele (application)!**
+**Harjutuse Fookus:** See harjutus keskendub Docker põhitõdede õppimisele, MITTE töötavale rakendusele (application)!
 
 ✅ **Õpid:**
 - Dockerfile'i loomist
-- Docker pildi (image) ehitamist (build)
-- Konteineri käivitamist
-- Logide vaatamist ja debuggimist
+- Docker **tõmmise (docker image)** ehitamist
+- **Konteineri** käivitamist
+- **Logide (logs)** vaatamist ja **veatuvastust (debug)**
 - Docker käskude kasutamist
 
-❌ **Rakendus (application) EI TÖÖTA täielikult:**
-- Todo teenus (service) vajab PostgreSQL andmebaasi
+❌ **Rakendus EI TÖÖTA täielikult:**
+- Todo Service vajab PostgreSQL andmebaasi
 - Konteiner käivitub, aga hangub kohe (see on **OODATUD**)
-- Töötava rakenduse (application) saad **Harjutus 2**-s (mitme konteineri käivitamine)
-
----
-
-## 📋 Ülevaade
-
-Selles harjutuses konteineriseerid Java Spring Boot Todo teenuse (service) rakenduse (application). Õpid looma Dockerfile'i, ehitama (build) Docker pilti (image) ja käivitama konteinereid (isegi kui see hangub andmebaasi puudumise tõttu).
-
----
-
-## 🎯 Õpieesmärgid
-
-Peale selle harjutuse läbimist oskad:
-
-- ✅ Luua Dockerfile'i Java Spring Boot rakendusele (application)
-- ✅ Ehitada (build) Docker pilti (image)
-- ✅ Käivitada ja peatada konteinereid
-- ✅ Kasutada keskkonna muutujaid (environment variables)
-- ✅ Vaadata konteineri logisid
-- ✅ Debuggida konteineri probleeme
-
----
-
-## 🖥️ Sinu Testimise Konfiguratsioon
-
-### SSH Ühendus VPS-iga
-```bash
-ssh labuser@93.127.213.242 -p [SINU-PORT]
-```
-
-| Õpilane | SSH Port | Password |
-|---------|----------|----------|
-| student1 | 2201 | student1 |
-| student2 | 2202 | student2 |
-| student3 | 2203 | student3 |
-
----
-
-## 🏗️ Arhitektuur
-
-```
-┌─────────────────────────────┐
-│   Docker Konteiner          │
-│                             │
-│  ┌───────────────────────┐  │
-│  │  Java Rakendus (Application) │  │
-│  │  Todo Teenus (Service)         │  │
-│  │  Port: 8081           │  │
-│  └───────────────────────┘  │
-│                             │
-└─────────────────────────────┘
-          │
-          │ Portide vastendamine
-          │
-    localhost:8081
-```
-
----
+- Töötava rakenduse saad **Harjutus 2**-s (mitme konteineri käivitamine)
 
 ## 📝 Sammud
 
-### Samm 1: Tutvu Rakendusega (Application)
+### Samm 1: Tutvu rakenduse koodiga
 
-**Rakenduse (application) juurkataloog:** `~/labs/apps/backend-java-spring`
+**Rakenduse juurkataloog:** `~/labs/apps/backend-java-spring`
 
-Vaata Todo teenuse (service) koodi:
+Vaata Todo Service koodi:
 
 ```bash
 cd ~/labs/apps/backend-java-spring
-
+```
+```bash
 # Vaata faile
 ls -la
-
+```
+```bash
 # Loe README
 cat README.md
-
+```
+```bash
 # Vaata build.gradle
 cat build.gradle
 ```
 
 **Küsimused:**
-- Millise pordiga rakendus (application) käivitub? (8081)
+- Millise pordiga rakendus käivitub? (8081)
 - Millised sõltuvused (dependencies) on vajalikud? (vaata build.gradle)
-- Kas rakendus (application) vajab andmebaasi? (Jah, PostgreSQL)
+- Kas rakendus vajab andmebaasi? (Jah, PostgreSQL)
 
-### Samm 2: Loo Dockerfile
+### Samm 2: Dockerfile loomine
+---
 
-Loo fail nimega `Dockerfile`:
+- **📖 Dockerfile põhitõed:** Kui vajad abi Dockerfile instruktsioonide (FROM, WORKDIR, COPY, RUN, CMD, ARG, multi-stage) mõistmisega, loe [Peatükk 06: Dockerfile - Rakenduste Konteineriseerimise Detailid](../../../resource/06-Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md).
+- **📖 ARG-põhine Proxy Best Practices:** Kui soovid mõista, miks ettevõtetes (nt Intel võrk) on vaja proxy serverit ja kuidas ARG-põhine proxy konfiguratsioon töötab, loe: [Docker ARG-põhine Proxy Best Practices](../../../resource/code-explanations/Docker-ARG-Proxy-Best-Practices.md).
+- **📖 Gradle proxy konfiguratsioonide põhjalikku selgitust:** [Peatükk 06A: Java Spring Boot Spetsiifika](../../../resource/06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md)
 
-**⚠️ Oluline:** Dockerfail tuleb luua rakenduse (application) juurkataloogi `~/labs/apps/backend-java-spring`
+---
+
+####  Dockerfile loomine
+
+**⚠️ Oluline:** Dockerfail tuleb luua rakenduse juurkataloogi `~/labs/apps/backend-java-spring`.
+
+```bash
+cd ~/labs/apps/backend-java-spring
+```
+
+**Kasutame laboris** 2-stage build Gradle containeris ARG proksiga:
 
 ```bash
 vim Dockerfile
 ```
 
-**📖 Dockerfile põhitõed:** Kui vajad abi Dockerfile instruktsioonide (FROM, WORKDIR, COPY, CMD, EXPOSE) mõistmisega, loe [Peatükk 06: Dockerfile - Rakenduste Konteineriseerimise Detailid](../../../resource/06-Dockerfile-Rakenduste-Konteineriseerimise-Detailid.md).
-
-**Ülesanne:** Kirjuta Dockerfile, mis:
-1. Kasutab Java 21 JRE alpine baaspilti (base image)
-2. Seadistab töökataloogiks `/app`
-3. Kopeerib JAR faili (eeldab, et ehitamine (build) on tehtud)
-4. Avaldab pordi 8081
-5. Käivitab rakenduse (application)
-
-**Märkus:** See on lihtne Dockerfile, mis eeldab, et JAR fail on juba ehitatud (built). Optimeeritud versioonis (Harjutus 5) lisame mitme-sammulise (multi-stage) ehitamise (build).
-
-**💡 Abi vajadusel:**
-- Vaata Docker dokumentatsiooni: https://docs.docker.com/engine/reference/builder/
-- Vaata näidislahendust lahenduste kataloogis: `~/labs/01-docker-lab/solutions/backend-java-spring/Dockerfile`
-
-**💡 Näpunäide: Dockerfile struktuur**
-
 ```dockerfile
-FROM eclipse-temurin:21-jre-alpine
+# ====================================
+# 1. etapp: Builder (JAR'i ehitamine)
+# ====================================
+FROM gradle:8.11-jdk21-alpine AS builder
+
+# ARG võimaldab anda proxy build-time'is (portaabel!)
+ARG HTTP_PROXY
+ARG HTTPS_PROXY
 
 WORKDIR /app
 
-# Kopeeri JAR fail
-COPY build/libs/todo-service.jar app.jar
+# Kopeeri Gradle konfiguratsiooni failid
+COPY build.gradle settings.gradle ./
+COPY gradle ./gradle
+
+# Lae alla sõltuvused (cached kui build.gradle ei muutu)
+# OLULINE: export GRADLE_OPTS ja gradle käsk peavad olema SAMAS RUN blokis!
+RUN if [ -n "$HTTP_PROXY" ]; then \
+      PROXY_HOST=$(echo "$HTTP_PROXY" | sed 's|^.*://||; s|:.*$||'); \
+      PROXY_PORT=$(echo "$HTTP_PROXY" | grep -oE '[0-9]+$'); \
+      export GRADLE_OPTS="-Dhttp.proxyHost=$PROXY_HOST -Dhttp.proxyPort=$PROXY_PORT -Dhttps.proxyHost=$PROXY_HOST -Dhttps.proxyPort=$PROXY_PORT"; \
+      gradle dependencies --no-daemon; \
+    else \
+      gradle dependencies --no-daemon; \
+    fi
+
+# Kopeeri lähtekood
+COPY src ./src
+
+# Ehita JAR fail
+# OLULINE: Proxy seadistus tuleb korrata iga RUN käsu jaoks!
+RUN if [ -n "$HTTP_PROXY" ]; then \
+      PROXY_HOST=$(echo "$HTTP_PROXY" | sed 's|^.*://||; s|:.*$||'); \
+      PROXY_PORT=$(echo "$HTTP_PROXY" | grep -oE '[0-9]+$'); \
+      export GRADLE_OPTS="-Dhttp.proxyHost=$PROXY_HOST -Dhttp.proxyPort=$PROXY_PORT -Dhttps.proxyHost=$PROXY_HOST -Dhttps.proxyPort=$PROXY_PORT"; \
+      gradle bootJar --no-daemon; \
+    else \
+      gradle bootJar --no-daemon; \
+    fi
+
+# ====================================
+# 2. etapp: Runtime (clean JRE, ilma proksita)
+# ====================================
+FROM eclipse-temurin:21-jre-alpine AS runtime
+
+WORKDIR /app
+
+# Kopeeri ainult JAR builder'ist
+COPY --from=builder /app/build/libs/todo-service.jar app.jar
 
 # Avalda port
 EXPOSE 8081
 
-# Käivita rakendus (application)
+# Käivita rakendus
 CMD ["java", "-jar", "app.jar"]
 ```
+
+---
+
 
 ### Samm 3: Loo .dockerignore
 
 Loo `.dockerignore` fail, et vältida tarbetute failide kopeerimist:
 
-**⚠️ Oluline:** .dockerignore tuleb luua rakenduse (application) juurkataloogi `~/labs/apps/backend-java-spring`
+**⚠️ Oluline:** .dockerignore tuleb luua rakenduse juurkataloogi `~/labs/apps/backend-java-spring`
 
 ```bash
 vim .dockerignore
 ```
-
-**💡 Abi vajadusel:**
-Vaata näidislahendust: `~/labs/01-docker-lab/solutions/backend-java-spring/.dockerignore`
 
 **Sisu:**
 ```
@@ -176,46 +168,53 @@ build/
 .gitignore
 README.md
 *.md
-src/
 gradlew
 gradlew.bat
 ```
+**📖 Põhjalik selgitus:** [.dockerignore Selgitus](../../../resource/code-explanations/Dockerignore-Explained.md)
 
-**Miks see oluline on?**
-- Väiksem pildi (image) suurus
-- Kiirem ehitamine (build)
-- Turvalisem (ei kopeeri .env faile)
-- Ei kopeeri lähtekoodi (ainult JAR fail)
+---
 
-### Samm 4: Ehita (build) Docker pilt (image)
+**💡 Abi vajadusel:**
+Vaata näidislahendust: [`solutions/backend-java-spring/.dockerignore`](../solutions/backend-java-spring/.dockerignore)
+
+
+### Samm 4: Ehita Docker tõmmis
 
 **Asukoht:** `~/labs/apps/backend-java-spring`
 
-Esmalt ehita (build) JAR fail, seejärel Docker pilt (image):
-
-**⚠️ Oluline:** Nii JAR-i kui ka Docker pildi (image) ehitamiseks (build) pead olema rakenduse (application) juurkataloogis (kus asuvad `build.gradle` ja `Dockerfile`).
-
+**Ehita proksiga (corporate võrk):**
 ```bash
-# Ehita (build) JAR fail
-./gradlew clean bootJar
+# Asenda oma proxy aadress!
+docker build \
+  --build-arg HTTP_PROXY=http://cache1.sss:3128 \
+  --build-arg HTTPS_PROXY=http://cache1.sss:3128 \
+  -t todo-service:1.0 .
 
-# Kontrolli, et JAR on loodud
-ls -lh build/libs/
-
-# Ehita (build) Docker pilt (image) tag'iga
-docker build -t todo-service:1.0 .
-
-# Vaata ehitamise (build) protsessi
-# Märka: iga käsk loob uue kihi (layer)
+# Vaata ehitamise protsessi
+# Märka: iga RUN käsk loob uue kihi (layer)
 ```
 
-**Kontrolli pilti (image):**
+**Ehita ilma proksita (avalik võrk):**
+```bash
+docker build -t todo-service:1.0 .
+# ARG-id jäävad tühjaks, Gradle download töötab avalikus võrgus
+```
+
+**Kontrolli: Kas proxy leak'ib runtime'i?**
+```bash
+docker run --rm todo-service:1.0 env | grep -i proxy
+# Oodatud: TÜHI VÄLJUND! ✅
+# Proxy EI OLE runtime'is = clean, turvaline, portaabel!
+```
+
+**Kontrolli tõmmist:**
 
 ```bash
-# Vaata kõiki pilte (images)
+# Vaata kõiki tõmmiseid
 docker images
 
-# Vaata todo-service pildi (image) infot
+# Vaata todo-service tõmmise infot
 docker image inspect todo-service:1.0
 
 # Kontrolli suurust
@@ -223,24 +222,30 @@ docker images todo-service:1.0
 ```
 
 **Küsimused:**
-- Kui suur on sinu pilt (image)? (peaks olema ~200-250MB)
-- Mitu kihti (layers) on pildil (image)?
-- Millal pilt (image) loodi?
+- Kui suur on sinu tõmmis? (peaks olema ~180-230MB)
+- Mitu kihti (layers) on tõmmisel?
+- Millal tõmmis loodi?
 
 ### Samm 5: Käivita Konteiner
 
-**⚠️ OLULINE:** Järgnevad käsud käivitavad konteineri, aga rakendus (application) hangub, sest PostgreSQL puudub. See on **OODATUD** käitumine! Fookus on õppida Docker käske, mitte saada töötav rakendus (application).
+**ℹ️ Portide turvalisus:**
 
-#### Variant A: Interaktiivne režiim (näed kohe vigu (errors))
+Selles harjutuses kasutame lihtsustatud portide vastendust (`-p 8081:8081`).
+- ✅ **Host'i tulemüür kaitseb:** VPS-is on UFW tulemüür, mis blokeerib pordi 8081 internetist
+- 📚 **Tootmises oleks õige:** `-p 127.0.0.1:8081:8081` (avab pordi ainult localhost'il)
+- 🎯 **Lab 2 käsitleb:** Võrguturvalisust ja reverse proxy seadistust
 
-**See variant on PARIM õppimiseks** - näed kohe, mida juhtub:
+**Hetkel keskendume Docker põhitõdedele!**
+
+---
+
+#### Variant A: Ilma andmebaasita (testimiseks)
 
 ```bash
 # Käivita konteiner interaktiivselt
-# MÄRKUS: DB_HOST on vale, seega hangub (see on ÕIGE käitumine!)
 docker run -it --name todo-service-test \
   -p 8081:8081 \
-  -e DB_HOST=nonexistent-db \
+  -e DB_HOST=localhost \
   -e DB_PORT=5432 \
   -e DB_NAME=todo_service_db \
   -e DB_USER=postgres \
@@ -250,41 +255,32 @@ docker run -it --name todo-service-test \
 ```
 
 **Märkused:**
-- `-it` - interactive + tty (näed logisid real-time)
+- `-it` - interactive + tty
 - `--name` - anna konteinerile nimi
-- `-p 8081:8081` - portide vastendamine (port mapping) host'ist konteinerisse
-- `-e` - keskkonna muutuja (environment variable)
-- `JWT_SECRET` - lihtsalt test väärtus (min 32 tähemärki); tootmises kasuta `openssl rand -base64 32`
+- `-p 8081:8081` - portide vastendamine hostist konteinerisse
+- `-e` - keskkonna muutuja
 
 **Oodatud tulemus:**
 ```
-...
-Error connecting to database
-...
-Application failed to start
+❌ Error connecting to database
+Connection refused...
 ```
 
 **See on TÄPSELT see, mida tahame näha!** 🎉
 - Konteiner käivitus ✅
-- Rakendus (application) proovis käivituda ✅
-- Vea (error) sõnum näitab probleemi (puuduv DB) ✅
-- Õppisid, kuidas Docker vigu (errors) näeb ✅
+- Rakendus proovis käivituda ✅
+- Veateade näitab probleemi (puuduv DB) ✅
+- Õppisid, kuidas Docker vigu näeb ✅
 
 Vajuta `Ctrl+C` et peatada.
 
-#### Variant B: Taustal töötav režiim (detached mode) (õpi `docker ps` ja `docker logs`)
-
-**See variant õpetab, kuidas debuggida hangunud konteinereid:**
+#### Variant B: Taustal töötav režiim (Detached Mode)
 
 ```bash
-# Puhasta eelmine test konteiner
-docker rm -f todo-service-test
-
-# Käivita taustal töötavas režiimis (detached mode)
-# MÄRKUS: DB_HOST on vale, seega hangub (see on ÕIGE käitumine!)
+# Käivita taustal ehk detached režiimis (-d)
 docker run -d --name todo-service \
   -p 8081:8081 \
-  -e DB_HOST=nonexistent-db \
+  -e DB_HOST=host.docker.internal \
   -e DB_PORT=5432 \
   -e DB_NAME=todo_service_db \
   -e DB_USER=postgres \
@@ -294,53 +290,20 @@ docker run -d --name todo-service \
   todo-service:1.0
 ```
 
-**Vaata, mis juhtus:**
+### Samm 6: Veatuvastus ja tõrkeotsing
 
 ```bash
-# Kas töötab? (HINT: Ei tööta!)
+# Vaata kas töötab
 docker ps
 
-# Vaata ka peatatud konteinereid
-docker ps -a
-# STATUS peaks olema: Exited (1)
-```
-
-**Miks konteiner puudub `docker ps` väljundis?**
-- Konteiner käivitus, aga rakendus (application) hangus kohe
-- Docker peatas hangunud konteineri automaatselt
-- `docker ps` näitab ainult TÖÖTAVAID konteinereid
-- `docker ps -a` näitab KÕIKI konteinereid (ka peatatud)
-
-**Õpi logisid vaatama:**
-
-```bash
-# Vaata logisid (isegi kui konteiner on peatatud!)
-docker logs todo-service
-
-# Oodatud väljund:
-# Error: Unable to connect to database...
-# Connection refused...
-```
-
-**See on PERFEKTNE õppetund! 🎓**
-- Õppisid `-d` (taustal töötav režiim (detached mode)) ✅
-- Õppisid vahet `docker ps` vs `docker ps -a` ✅
-- Õppisid, et logid on ka peatatud konteinerites ✅
-- Mõistad, miks mitme konteineri lahendus on vaja ✅
-
-**Miks kasutasime `DB_HOST=nonexistent-db`?**
-- See tagab, et konteiner **hangub**, sest andmebaasi pole
-- See on OODATUD käitumine Harjutus 1's!
-- Töötava lahenduse saad [Harjutus 2: Mitme Konteineri Käivitamine](02-multi-container.md)-s
-
-### Samm 6: Debug ja Troubleshoot
-
-```bash
 # Vaata konteineri staatust
 docker ps -a
 
 # Vaata logisid
 docker logs todo-service
+
+# Vaata reaalajas
+docker logs -f todo-service
 
 # Sisene konteinerisse
 docker exec -it todo-service sh
@@ -354,9 +317,15 @@ exit
 # Inspekteeri konteinerit
 docker inspect todo-service
 
-# Vaata ressursside kasutust
+# Vaata ressursikasutust
 docker stats todo-service
 ```
+
+**Miks konteiner puudub `docker ps` väljundis?**
+- Konteiner käivitus, aga rakendus hangus kohe
+- Docker peatas hangunud konteineri automaatselt
+- `docker ps` näitab ainult TÖÖTAVAID konteinereid
+- `docker ps -a` näitab KÕIKI konteinereid (ka peatatud)
 
 **Levinud probleemid:**
 
@@ -369,7 +338,7 @@ docker stats todo-service
    docker run -p 8082:8081 ...
    ```
 
-2. **Rakendus (application) hangub:**
+2. **Rakendus hangub:**
    ```bash
    # Vaata logisid
    docker logs todo-service
@@ -382,80 +351,38 @@ docker stats todo-service
    # Kontrolli, kas konteiner töötab
    docker ps
 
-   # Vaata võrku (network)
+   # Vaata võrku (docker network)
    docker inspect todo-service | grep IPAddress
    ```
 
-4. **JWT_SECRET liiga lühike (kui kasutad oma väärtust):**
-   ```bash
-   # Viga (error): The specified key byte array is 88 bits which is not secure enough
-
-   # Lahendus: Kasuta vähemalt 32 tähemärki (256 bits)
-   # Test jaoks: my-test-secret-key-min-32-chars-long
-   # Tootmises: openssl rand -base64 32
-   ```
-
-5. **Konteiner hangub kohe (andmebaas puudub):**
-   ```bash
-   # Viga (error): Unable to connect to database
-
-   # See on OODATUD käitumine Harjutus 1's!
-   # Lahendus: Käivita PostgreSQL konteiner (Harjutus 2)
-   ```
-
 ---
 
-## 🎯 Oodatud Tulemus
-
-**Mida PEAKS saavutama:**
-
-✅ **Docker pilt (image) on loodud:**
-```bash
-docker images | grep todo-service
-# todo-service   1.0    abc123   ~200-250MB
-```
-
-✅ **Konteiner käivitub (isegi kui hangub):**
-```bash
-docker ps -a | grep todo-service
-# STATUS: Exited (1) - See on OK!
-```
-
-✅ **Logid näitavad vea (error) sõnumit:**
-```bash
-docker logs todo-service
-# Error: Unable to connect to database...
-```
-
-✅ **Oskad Docker käske kasutada:**
-- `docker build` - pildi (image) loomine
-- `docker run` - konteineri käivitamine
-- `docker ps` vs `docker ps -a` - töötavad vs kõik konteinerid
-- `docker logs` - logide vaatamine
-- `docker exec` - konteinerisse sisenemine
-
-**Mida EI PEAKS saavutama:**
-
-❌ Töötav rakendus (application) (see tuleb Harjutus 2-s)
-❌ Edukad API testid (andmebaas puudub)
-❌ `docker ps` näitab töötavat konteinerit (hangub kohe)
-
----
 
 ## 💡 Parimad Praktikad (Best Practices)
 
 1. **Kasuta `.dockerignore`** - Väldi tarbetute failide kopeerimist
-2. **Kasuta alpine pilte (images)** - Väiksem suurus, kiirem
-3. **Kasuta JRE (mitte JDK)** - Runtime ei vaja kompileerimise (compile) tööriistu
-4. **Ehita (build) JAR enne Docker pildi (image) ehitamist (build)** - Kiire taasehitamine (rebuild), kui kood muutub
-5. **Kasuta EXPOSE** - Dokumenteeri, millist porti rakendus (application) kasutab
+2. **Kasuta alpine tõmmiseid** - Väiksem suurus, kiirem
+3. **Kasuta JRE (mitte JDK)** - Runtime ei vaja kompileerimise tööriistu
+4. **Ehita JAR enne Docker tõmmise ehitamist** - Kiire taasehitamine, kui kood muutub
+5. **Kasuta EXPOSE** - Dokumenteeri, millist porti rakendus kasutab
 6. **JWT_SECRET peab olema turvaline** - Min 32 tähemärki; testiks sobib lihtsalt string, tootmises kasuta `openssl rand -base64 32`
 
 **📖 Java konteineriseerimise parimad tavad:** Põhjalikum käsitlus JAR vs WAR, Spring Boot spetsiifikast, JVM memory tuning'ust ja teised Java spetsiifilised teemad leiad [Peatükk 06A: Java Spring Boot ja Node.js Konteineriseerimise Spetsiifika](../../../resource/06A-Java-SpringBoot-NodeJS-Konteineriseerimise-Spetsiifika.md).
 
 ---
 
-**Õnnitleme! Oled loonud oma esimese Docker pildi (image)! 🎉**
+
+**💡 Näidislahendused:**
+
+Lahendused asuvad `solutions/backend-java-spring/` kaustas:
+- [`Dockerfile.simple`](../solutions/backend-java-spring/Dockerfile.simple) - Variant B (2-stage Gradle containeris)
+- [`Dockerfile.vps-simple`](../solutions/backend-java-spring/Dockerfile.vps-simple) - Variant A (1-stage pre-built JAR)
+
+📂 Kõik lahendused: [`solutions/backend-java-spring/`](../solutions/backend-java-spring/)
+
+---
+
+**Õnnitleme! Oled loonud oma esimese Docker tõmmise! 🎉**
 
 ## 🔗 Järgmine Samm
 
