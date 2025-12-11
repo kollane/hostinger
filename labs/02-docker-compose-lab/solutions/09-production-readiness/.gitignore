@@ -1,0 +1,25 @@
+# Environment Files (contains secrets!)
+.env.prod
+.env.production
+.env.local
+
+# SSL Certificates (generated locally)
+nginx/ssl/cert.pem
+nginx/ssl/key.pem
+nginx/ssl/*.crt
+nginx/ssl/*.key
+
+# Grafana data (temporary)
+grafana/grafana.db
+
+# Temporary files
+*.tmp
+*.log
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode/
+.idea/
+*.iml

@@ -1,0 +1,63 @@
+# Tier 2: Dockerised Application Layer
+# Uued mikroteenused, mis ühenduvad legacy infrastruktuuriga
+
+services:
+  # ==========================================================================
+  # User Service (Node.js)
+  # ==========================================================================
+  user-service:
+    image: user-service:1.0-optimized
+    container_name: docker-user-service
+    restart: unless-stopped
+    environment:
+      # OLULINE: Kasutame host.docker.internal legacy DB'ga ühendumiseks
+      # Docker Desktop (Mac/Windows): host.docker.internal töötab automaatselt
+      # Linux: Vajab extra_hosts konfiguratsiooni (vt allpool)
+      DATABASE_URL: postgresql://dbuser:dbpass123@host.docker.internal:5432/user_service_db
+      JWT_SECRET: ${JWT_SECRET:-super-secret-jwt-key-change-in-production}
+      NODE_ENV: production
+      PORT: 3000
+    ports:
+      # Eksponeerime hostile (legacy Nginx saab ligi)
+      - "3000:3000"
+    # Linux: Lisa host.docker.internal support
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 40s
+
+  # ==========================================================================
+  # Todo Service (Java Spring Boot)
+  # ==========================================================================
+  todo-service:
+    image: todo-service:1.0-optimized
+    container_name: docker-todo-service
+    restart: unless-stopped
+    environment:
+      # OLULINE: Kasutame host.docker.internal:5433 legacy DB'ga ühendumiseks
+      DATABASE_URL: postgresql://dbuser:dbpass123@host.docker.internal:5433/todo_service_db
+      JWT_SECRET: ${JWT_SECRET:-super-secret-jwt-key-change-in-production}
+      SPRING_PROFILES_ACTIVE: prod
+      SERVER_PORT: 8081
+    ports:
+      # Eksponeerime hostile (legacy Nginx saab ligi)
+      - "8081:8081"
+    # Linux: Lisa host.docker.internal support
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 60s
+    depends_on:
+      - user-service
+
+# MÄRKUS: ME EI DEFINEERI networks: sektsiooni!
+# Need konteinerid kasutavad vaikimisi bridge võrku, aga ühenduvad
+# legacy süsteemidega host võrgu kaudu

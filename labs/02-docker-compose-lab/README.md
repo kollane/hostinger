@@ -1,6 +1,6 @@
 # Labor 2: Docker Compose
 
-**Kestus:** 5.25 tundi
+**Kestus:** ~8-10 tundi (6 põhilist + 3 advanced harjutust)
 **Eeldused:** Labor 1 läbitud (4 optimeeritud konteinerit), Peatükk 13 (Docker Compose)
 **Eesmärk:** Õppida multi-container rakenduste orkestreerimist Docker Compose'iga ning turvalise võrgu segmenteerimise põhitõdesid
 
@@ -140,14 +140,16 @@ Peale selle labori läbimist oskad:
 02-docker-compose-lab/
 ├── README.md                  # See fail
 ├── setup.sh                   # Automaatne seadistus (kasuta aliast: lab2-setup)
-├── exercises/                 # Harjutused (7 harjutust)
+├── exercises/                 # Harjutused (9 harjutust)
 │   ├── 01-compose-basics.md           # Lab 1 → docker-compose.yml (4 teenust)
 │   ├── 02-add-frontend.md             # Lisa Frontend (5. teenus)
 │   ├── 03-network-segmentation.md     # Võrgu segmenteerimine ja portide turvalisus
 │   ├── 04-environment-management.md   # .env failid ja override pattern
 │   ├── 05-database-migrations.md      # Liquibase init container
 │   ├── 06-production-patterns.md      # Scaling, limits, health checks
-│   └── 07-advanced-patterns.md        # Advanced patterns
+│   ├── 07-advanced-patterns.md        # Advanced patterns (VALIKULINE)
+│   ├── 08-legacy-integration.md       # Legacy integration (vana maailm + Docker)
+│   └── 09-production-readiness.md     # Production-ready stack (SSL, HA, Monitoring)
 └── solutions/                 # Lahendused
     ├── docker-compose.yml             # 4 teenust (Harjutus 1)
     ├── docker-compose-full.yml        # 5 teenust (Harjutus 2)
@@ -155,7 +157,16 @@ Peale selle labori läbimist oskad:
     ├── docker-compose.override.yml    # Dev debug ports (Harjutus 3)
     ├── docker-compose.prod.yml        # Production variant
     ├── .env.example                   # Environment template
-    └── liquibase/                     # Migration failid
+    ├── liquibase/                     # Migration failid
+    ├── 08-legacy-integration/         # Legacy integration (3 tier'i)
+    │   ├── tier1-legacy-db/
+    │   ├── tier2-docker-apps/
+    │   └── tier3-legacy-nginx/
+    └── 09-production-readiness/       # Production stack
+        ├── docker-compose.prod.yml
+        ├── nginx/ (SSL konfiguratsioon)
+        ├── prometheus/
+        └── grafana/
 ```
 
 ---
@@ -482,14 +493,38 @@ Production-ready konfiguratsioon:
 - Tervisekontrollid ja dependency management
 - Logimise konfiguratsioon
 
-### Harjutus 7: Edasijõudnute mustrid (vajadusel)
+### Harjutus 7: Edasijõudnute mustrid (VALIKULINE)
 **Fail:** [exercises/07-advanced-patterns.md](exercises/07-advanced-patterns.md)
 
-Täiustatud mustrid:
+Täiustatud Docker Compose mustrid:
 
+- Docker Compose profiilid (dev, debug, prod)
+- Andmeköite varundamine ja taastamine
+- Võrgu tõrkeotsing (debug containers)
+- Compose Watch režiim (auto-rebuild arenduses)
 
+### Harjutus 8: Legacy Integration - Docker + Olemasolev Infrastruktuur (60-75 min)
+**Fail:** [exercises/08-legacy-integration.md](exercises/08-legacy-integration.md)
 
+Integreeri Dockerised rakendusi legacy infrastruktuuriga:
 
+- Ühenda Docker konteinerid **välistele andmebaasidele** (simuleerib AWS RDS, Azure DB)
+- Konfigureeri rakendused töötama **olemasoleva reverse proxy** taga
+- Kasuta `host.docker.internal` host teenustega suhtlemiseks
+- Simuleeri **3-tier enterprise arhitektuuri** (DB tier, App tier, LB tier)
+- Mõista **hübriid-infrastruktuuri** mustreid (vana maailm + Docker maailm)
+
+### Harjutus 9: Production Readiness - SSL, Failover, Health Checks, Monitoring (90-120 min)
+**Fail:** [exercises/09-production-readiness.md](exercises/09-production-readiness.md)
+
+Ettevalmistamine production deploy'iks:
+
+- Konfigureeri **SSL/TLS terminatsiooni** Nginx'is (self-signed + Let's Encrypt)
+- Implementeeri **high availability** (2 replicas per service, load balancing)
+- Advanced **health checks** (startup, liveness, readiness probes)
+- Seadista **Prometheus + Grafana** monitoring
+- **Resource limits** ja **graceful shutdown**
+- **Production best practices** (secrets management, backups, alerting)
 
 
 
@@ -541,4 +576,4 @@ Peale selle labori läbimist oled:
 ---
 
 **Staatus:** 🏗️ Ülesehitamisel
-**Viimane uuendus:** 2025-11-21
+**Viimane uuendus:** 2025-12-11

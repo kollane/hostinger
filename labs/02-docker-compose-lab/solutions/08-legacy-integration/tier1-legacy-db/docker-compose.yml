@@ -1,0 +1,63 @@
+# Tier 1: Legacy Database Layer
+# Simuleerib: Eraldi PostgreSQL serverit (bare-metal VM / AWS RDS / Azure DB)
+# Reaalses maailmas: See ei oleks Dockeris, vaid eraldi infrastruktuuris
+
+services:
+  # ==========================================================================
+  # Legacy PostgreSQL - Users Database
+  # ==========================================================================
+  legacy-postgres-user:
+    image: postgres:16-alpine
+    container_name: legacy-postgres-user
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: dbuser
+      POSTGRES_PASSWORD: dbpass123
+      POSTGRES_DB: user_service_db
+    ports:
+      # OLULINE: Eksponeerime hostile (simuleerib legacy DB serverit)
+      - "5432:5432"
+    volumes:
+      - legacy-postgres-user-data:/var/lib/postgresql/data
+    networks:
+      - legacy-db-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dbuser -d user_service_db"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  # ==========================================================================
+  # Legacy PostgreSQL - Todos Database
+  # ==========================================================================
+  legacy-postgres-todo:
+    image: postgres:16-alpine
+    container_name: legacy-postgres-todo
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: dbuser
+      POSTGRES_PASSWORD: dbpass123
+      POSTGRES_DB: todo_service_db
+    ports:
+      # OLULINE: Eksponeerime erinevale hostile pordile (5433 → 5432)
+      - "5433:5432"
+    volumes:
+      - legacy-postgres-todo-data:/var/lib/postgresql/data
+    networks:
+      - legacy-db-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dbuser -d todo_service_db"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+volumes:
+  legacy-postgres-user-data:
+    name: legacy-postgres-user-data
+  legacy-postgres-todo-data:
+    name: legacy-postgres-todo-data
+
+networks:
+  legacy-db-network:
+    name: legacy-db-network
+    driver: bridge
