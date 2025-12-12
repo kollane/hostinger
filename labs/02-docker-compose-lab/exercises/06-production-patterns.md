@@ -51,44 +51,93 @@ docker compose ps | grep liquibase
 
 ---
 
+## 🏗️ Pattern Selgitus: BASE + OVERRIDE
+
+**Eeldus:** Oled läbinud **Harjutus 4: Environment Management**
+
+Selles harjutuses kasutame **multi-environment pattern'i**:
+
+```
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.prod up -d
+                 ↑ BASE config         ↑ PRODUCTION override     ↑ PRODUCTION secrets
+```
+
+**3 komponenti:**
+
+1. **BASE config** (`docker-compose.yml`)
+   - Kõigile ühine (test, prod)
+   - Teenuste definitsioonid
+   - Võrgud ja volume'd
+   - Environment variables: `${VAR:-default}`
+
+2. **PRODUCTION override** (`docker-compose.prod.yml`)
+   - **Ainult** production-spetsiifilised muudatused
+   - Resource limits (CPU, memory)
+   - Restart policies (`always`)
+   - Port bindings (80 vs 8080)
+   - Logging levels (warn vs debug)
+
+3. **PRODUCTION secrets** (`.env.prod`)
+   - Tugevad paroolid (48+ bytes)
+   - JWT secrets
+   - **EI commit Git'i!** (ainult `.env.prod.example`)
+
+**Võtmepunkt:** `docker-compose.prod.yml` **EI OLE** täielik config - see sisaldab ainult OVERRIDE'e!
+
+**Viited:**
+- 📖 [compose-project/ENVIRONMENTS.md](../compose-project/ENVIRONMENTS.md) - 4 keskkonna juhend
+- 📖 [compose-project/PASSWORDS.md](../compose-project/PASSWORDS.md) - Secrets management
+
+---
+
 ## 📝 Sammud
 
-### Samm 1: Loo Production Compose fail
+### Samm 1: Loo Production Override Fail (20 min)
 
-Loo eraldi fail production seadistustele:
+#### 1.1. Mis on Override Fail?
+
+**OLULINE:** `docker-compose.prod.yml` **EI OLE** täielik konfiguratsioon!
+
+See fail sisaldab **ainult production-spetsiifilisi muudatusi**:
+- ✅ Resource limits (CPU, memory)
+- ✅ Restart policies (`always`)
+- ✅ Port bindings (80 vs 8080)
+- ✅ Logging levels (warn vs debug)
+
+**BASE config** (`docker-compose.yml`) jääb samaks - seal on:
+- Teenuste põhidefinitsioonid (image, networks, volumes)
+- Environment variables (`${VAR:-default}`)
+- Health checks
+- Dependencies
+
+#### 1.2. Loo docker-compose.prod.yml
 
 ```bash
 cd compose-project
 vim docker-compose.prod.yml
 ```
 
-Lisa järgmine sisu:
+Lisa **ainult OVERRIDE'id** (väike fail!):
 
 ```yaml
 # ==========================================================================
-# Docker Compose - Production Configuration
+# PRODUCTION Overrides
 # ==========================================================================
-# Kasutamine:
-#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+# Käivitamine:
+#   docker-compose -f docker-compose.yml -f docker-compose.prod.yml \
+#     --env-file .env.prod up -d
 # ==========================================================================
-
-# MÄRKUS: Docker Compose v2 (2025)
-# version: '3.8' on VALIKULINE Compose v2's!
-# Võid selle ära jätta - Compose v2 kasutab automaatselt uusimat versiooni.
-#version: '3.8'
 
 services:
-  # ==========================================================================
-  # PostgreSQL - Production Settings
-  # ==========================================================================
+  # PostgreSQL - Resource Limits
   postgres-user:
+    restart: always
     deploy:
       resources:
         limits:
           cpus: '1.0'
           memory: 512M
         reservations:
-          cpus: '0.5'
           memory: 256M
     logging:
       driver: "json-file"
@@ -97,13 +146,13 @@ services:
         max-file: "3"
 
   postgres-todo:
+    restart: always
     deploy:
       resources:
         limits:
           cpus: '1.0'
           memory: 512M
         reservations:
-          cpus: '0.5'
           memory: 256M
     logging:
       driver: "json-file"
@@ -111,75 +160,63 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  # ==========================================================================
-  # User Service - Production Settings
-  # ==========================================================================
+  # User Service - Strict Limits + Production Logging
   user-service:
-    deploy:
-      replicas: 2  # Scale to 2 instances
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 256M
-        reservations:
-          cpus: '0.25'
-          memory: 128M
-      restart_policy:
-        condition: on-failure
-        delay: 5s
-        max_attempts: 3
-        window: 120s
+    restart: always
     environment:
       NODE_ENV: production
-      LOG_LEVEL: info  # Vähem logisid kui dev's
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "5"
-    # Remove host volume mounts (no hot reload in prod)
-    volumes: []
-
-  # ==========================================================================
-  # Todo Service - Production Settings
-  # ==========================================================================
-  todo-service:
+      LOG_LEVEL: warn  # Minimal logging
     deploy:
-      replicas: 2  # Scale to 2 instances
       resources:
         limits:
           cpus: '1.0'
           memory: 512M
         reservations:
-          cpus: '0.5'
           memory: 256M
-      restart_policy:
-        condition: on-failure
-        delay: 5s
-        max_attempts: 3
-        window: 120s
-    environment:
-      SPRING_PROFILES_ACTIVE: prod
-      LOGGING_LEVEL_ROOT: WARN  # Vähem logisid
+    healthcheck:
+      interval: 15s  # Tihedam kontroll production'is
+      timeout: 5s
+      retries: 3
     logging:
       driver: "json-file"
       options:
         max-size: "10m"
         max-file: "5"
 
-  # ==========================================================================
-  # Frontend - Production Settings
-  # ==========================================================================
-  frontend:
+  # Todo Service - Strict Limits
+  todo-service:
+    restart: always
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      LOGGING_LEVEL_ROOT: WARN  # Minimal logging
     deploy:
-      replicas: 1  # Nginx on väga kerge, 1 piisab
       resources:
         limits:
-          cpus: '0.25'
-          memory: 128M
+          cpus: '2.0'
+          memory: 1G
         reservations:
-          cpus: '0.1'
-          memory: 64M
+          memory: 512M
+    healthcheck:
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  # Frontend - Production Port (80 instead of 8080)
+  frontend:
+    restart: always
+    ports:
+      - "80:80"      # HTTP
+      # - "443:443"  # HTTPS (uncomment when SSL ready)
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
     logging:
       driver: "json-file"
       options:
@@ -189,9 +226,93 @@ services:
 
 Salvesta: `Esc`, siis `:wq`, `Enter`
 
+#### 1.3. Võrdlus: BASE vs OVERRIDE
+
+| Service | BASE (docker-compose.yml) | PRODUCTION Override |
+|---------|---------------------------|---------------------|
+| **postgres-user** | image, environment, volumes, networks, healthcheck | restart, resource limits, logging |
+| **user-service** | image, environment (base), networks, depends_on | restart, LOG_LEVEL=warn, resource limits, healthcheck timing |
+| **frontend** | image, volumes, port 8080, networks | restart, **port 80**, resource limits, logging |
+
+**Printsiip:** BASE sisaldab struktuuri, OVERRIDE muudab käitumist.
+
+**Tulemus:**
+- BASE: 175 rida (kõik teenused täielikult)
+- OVERRIDE: ~100 rida (ainult erinevused)
+- Lihtne hooldada: muudatused BASE'is rakenduvad automaatselt
+
 ---
 
-### Samm 2: Mõista production seadistusi
+### Samm 2: Loo .env.prod Fail (15 min)
+
+#### 2.1. Loo Template'ist
+
+```bash
+cp .env.prod.example .env.prod
+```
+
+#### 2.2. Genereeri Tugevad Paroolid
+
+```bash
+# PostgreSQL password (48 bytes)
+openssl rand -base64 48
+
+# JWT Secret (32 bytes)
+openssl rand -base64 32
+```
+
+**Näide:**
+```bash
+$ openssl rand -base64 48
+kJ8xN2vL9mR3qW5tY8pF7nH6zX4cV1bM9sA2dG5hT3jK8lP0oI9uY7eR6tW4qX3zN2
+
+$ openssl rand -base64 32
+VXCkL39yz/6xw7JFpHdLpP8xgBFUSKbnNJWdAaeWDiM=
+```
+
+#### 2.3. Muuda .env.prod
+
+```bash
+nano .env.prod
+```
+
+**Lisa genereeritud paroolid:**
+
+```bash
+# PRODUCTION Environment
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=kJ8xN2vL9mR3qW5tY8pF7nH6zX4cV1bM9sA2dG5hT3jK8lP0oI9uY7eR6tW4qX3zN2
+POSTGRES_USER_DB=user_service_db
+POSTGRES_TODO_DB=todo_service_db
+
+JWT_SECRET=VXCkL39yz/6xw7JFpHdLpP8xgBFUSKbnNJWdAaeWDiM=
+
+USER_SERVICE_PORT=3000
+TODO_SERVICE_PORT=8081
+FRONTEND_PORT=80
+
+LOG_LEVEL=warn
+SPRING_LOG_LEVEL=WARN
+```
+
+**⚠️ OLULINE:** `.env.prod` on `.gitignore`'is - **EI lähe git'i!**
+
+#### 2.4. Kontrolli .gitignore
+
+```bash
+cat .gitignore | grep .env
+```
+
+**Peaks sisaldama:**
+```
+.env.prod
+.env.test
+.env.prelive
+```
+
+---
+
+### Samm 3: Mõista production seadistusi
 
 #### Ressursilimiidid (Resource Limits):
 
@@ -261,14 +382,15 @@ logging:
 
 ---
 
-### Samm 3: Käivita production mode'is
+### Samm 4: Käivita Production Mode'is (Composite Command)
 
 ```bash
 # Peata development stack
 docker compose down
 
 # Käivita production mode'is
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.prod up -d
+#               ↑ BASE config         ↑ PROD override            ↑ PROD secrets
 
 # Kontrolli staatust
 docker compose ps
@@ -301,7 +423,7 @@ docker service ps todo-stack_user-service
 
 ---
 
-### Samm 4: Kontrolli ressursikasutust
+### Samm 5: Kontrolli ressursikasutust
 
 ```bash
 # Vaata ressursikasutust
@@ -322,7 +444,7 @@ docker stats
 
 ---
 
-### Samm 5: Testi tervisekontrolle
+### Samm 6: Testi tervisekontrolle
 
 Rakenduse tervisekontrollid (Health Checks) on juba docker-compose.yml's defineeritud:
 
@@ -355,7 +477,7 @@ docker compose logs
 
 ---
 
-### Samm 6: Optimeeri logimine
+### Samm 7: Optimeeri logimine
 
 **Vaata praeguseid loge:**
 
@@ -376,7 +498,7 @@ sudo du -h /var/lib/docker/containers/*/user-service*-json.log
 
 ---
 
-### Samm 7: Turvalisuse tugevdamine (Hardening)
+### Samm 8: Turvalisuse tugevdamine (Hardening)
 
 Lisa turvaseadistused docker-compose.prod.yml'i:
 
