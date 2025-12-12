@@ -1,0 +1,147 @@
+# ==========================================================================
+# Docker Compose - PRODUCTION Environment
+# ==========================================================================
+# Käivitamine:
+#   docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# PRODUCTION keskkonna eripärad:
+# - Ranged resource limits
+# - Andmebaasid ISOLEERITUD
+# - Ainult frontend avalikult kättesaadav
+# - Production logging (info level)
+# - Health checks strict
+# - Restart policy: always
+# - SSL-ready (nginx port 443)
+# ==========================================================================
+
+services:
+  # ==========================================================================
+  # PostgreSQL andmebaasid - ISOLEERITUD + Resource Limits
+  # ==========================================================================
+  postgres-user:
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  postgres-todo:
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  # ==========================================================================
+  # Backend teenused - ISOLEERITUD + Strict Limits
+  # ==========================================================================
+  user-service:
+    restart: always
+    environment:
+      NODE_ENV: production
+      LOG_LEVEL: info
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "node", "healthcheck.js"]
+      interval: 15s        # Tihedam kontroll
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  todo-service:
+    restart: always
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      LOGGING_LEVEL_ROOT: WARN       # Ainult warnings ja errors
+      JAVA_OPTS: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Xms512m -Xmx768m"
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1G
+        reservations:
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/health"]
+      interval: 15s        # Tihedam kontroll
+      timeout: 5s
+      retries: 3
+      start_period: 45s
+
+  # ==========================================================================
+  # Frontend - Nginx (HTTP + HTTPS ready)
+  # ==========================================================================
+  frontend:
+    restart: always
+    ports:
+      - "80:80"            # HTTP (production IP)
+      # - "443:443"        # HTTPS (uncomment kui SSL sertifikaadid on)
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+
+# ==========================================================================
+# MÄRKUSED
+# ==========================================================================
+# 1. SSL/TLS:
+#    Kui soovid HTTPS'd, lisa nginx/ssl/ kataloog ja mount volume:
+#      volumes:
+#        - ./nginx/ssl:/etc/nginx/ssl:ro
+#    Ning muuda nginx.conf, et kasutada SSL'd
+#
+# 2. Environment Variables:
+#    Production'is EI kasuta hard-coded paroole!
+#    Kasuta .env faili või Docker Secrets:
+#      docker-compose -f docker-compose.yml -f docker-compose.prod.yml \
+#        --env-file .env.prod up -d
+#
+# 3. Backup:
+#    Enne production deploy'i:
+#      docker exec postgres-user pg_dump -U postgres user_service_db > backup.sql
+#
+# 4. Monitoring:
+#    Production'is lisa Prometheus + Grafana monitoring
+#    (vt Lab 2, Harjutus 9)
+# ==========================================================================
+
+# ==========================================================================
+# KASUTAMINE
+# ==========================================================================
+# Käivita:
+#   docker-compose -f docker-compose.yml -f docker-compose.prod.yml \
+#     --env-file .env.prod up -d
+#
+# Resource monitoring:
+#   docker stats
+#
+# Health check:
+#   docker ps  # Vaata (healthy) staatust
+#
+# Logid (ainult errors):
+#   docker-compose -f docker-compose.yml -f docker-compose.prod.yml logs --tail=100
+#
+# Seiska (graceful shutdown):
+#   docker-compose -f docker-compose.yml -f docker-compose.prod.yml down
+#
+# Seiska + kustuta volumes (OHTLIK!):
+#   docker-compose -f docker-compose.yml -f docker-compose.prod.yml down -v
+# ==========================================================================

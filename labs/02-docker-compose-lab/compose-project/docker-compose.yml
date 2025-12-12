@@ -22,9 +22,9 @@ services:
     container_name: postgres-user
     restart: unless-stopped
     environment:
-      POSTGRES_DB: user_service_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${POSTGRES_USER_DB:-user_service_db}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}  # ⚠️ Muuda production'is!
     volumes:
       - postgres-user-data:/var/lib/postgresql/data
     networks:
@@ -43,9 +43,9 @@ services:
     container_name: postgres-todo
     restart: unless-stopped
     environment:
-      POSTGRES_DB: todo_service_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${POSTGRES_TODO_DB:-todo_service_db}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}  # ⚠️ Muuda production'is!
     volumes:
       - postgres-todo-data:/var/lib/postgresql/data
     networks:
@@ -66,12 +66,12 @@ services:
     environment:
       DB_HOST: postgres-user
       DB_PORT: 5432
-      DB_NAME: user_service_db
-      DB_USER: postgres
-      DB_PASSWORD: postgres
-      JWT_SECRET: VXCkL39yz/6xw7JFpHdLpP8xgBFUSKbnNJWdAaeWDiM=
+      DB_NAME: ${POSTGRES_USER_DB:-user_service_db}
+      DB_USER: ${POSTGRES_USER:-postgres}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}  # ⚠️ Muuda production'is!
+      JWT_SECRET: ${JWT_SECRET:-VXCkL39yz/6xw7JFpHdLpP8xgBFUSKbnNJWdAaeWDiM=}  # ⚠️ Muuda production'is!
       JWT_EXPIRES_IN: 1h
-      PORT: 3000
+      PORT: ${USER_SERVICE_PORT:-3000}
       NODE_ENV: production
     networks:
       - backend-network     # Võtab vastu frontend päringuid (requests)
@@ -96,10 +96,10 @@ services:
     environment:
       DB_HOST: postgres-todo
       DB_PORT: 5432
-      DB_NAME: todo_service_db
-      DB_USER: postgres
-      DB_PASSWORD: postgres
-      JWT_SECRET: VXCkL39yz/6xw7JFpHdLpP8xgBFUSKbnNJWdAaeWDiM=
+      DB_NAME: ${POSTGRES_TODO_DB:-todo_service_db}
+      DB_USER: ${POSTGRES_USER:-postgres}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}  # ⚠️ Muuda production'is!
+      JWT_SECRET: ${JWT_SECRET:-VXCkL39yz/6xw7JFpHdLpP8xgBFUSKbnNJWdAaeWDiM=}  # ⚠️ Muuda production'is!
       SPRING_PROFILES_ACTIVE: prod
       JAVA_OPTS: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
     networks:

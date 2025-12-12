@@ -1,0 +1,77 @@
+# ==========================================================================
+# Docker Compose - TEST Environment
+# ==========================================================================
+# Käivitamine:
+#   docker-compose -f docker-compose.yml -f docker-compose.test.yml up -d
+#
+# TEST keskkonna eripärad:
+# - Kõik pordid avatud localhost'ile (debugging)
+# - Andmebaasid kättesaadavad DBeaver/pgAdmin'ist
+# - Rakenduste pordid avatud testimiseks
+# - Mitte-isoleeritud võrk (database-network internal: false)
+# ==========================================================================
+
+services:
+  # ==========================================================================
+  # PostgreSQL andmebaasid - Avatud localhost'ile
+  # ==========================================================================
+  postgres-user:
+    ports:
+      - "127.0.0.1:5432:5432"  # User Service DB
+
+  postgres-todo:
+    ports:
+      - "127.0.0.1:5433:5432"  # Todo Service DB (host port 5433!)
+
+  # ==========================================================================
+  # Backend teenused - Avatud localhost'ile
+  # ==========================================================================
+  user-service:
+    ports:
+      - "127.0.0.1:3000:3000"  # User Service API
+    environment:
+      NODE_ENV: development      # Debug mode
+      LOG_LEVEL: debug          # Verbose logging
+
+  todo-service:
+    ports:
+      - "127.0.0.1:8081:8081"  # Todo Service API
+    environment:
+      SPRING_PROFILES_ACTIVE: dev  # Development profile
+      LOGGING_LEVEL_ROOT: DEBUG    # Verbose logging
+
+  # ==========================================================================
+  # Frontend - Nginx (jääb samaks nagu base config)
+  # ==========================================================================
+  frontend:
+    ports:
+      - "8080:80"  # HTTP (avalikult kättesaadav)
+
+# ==========================================================================
+# Võrgu override - TEST keskkonnas ei ole database-network isoleeritud
+# ==========================================================================
+networks:
+  database-network:
+    internal: false  # ✅ Lubame välisühendused (nt host'ilt)
+
+# ==========================================================================
+# KASUTAMINE
+# ==========================================================================
+# Käivita:
+#   docker-compose -f docker-compose.yml -f docker-compose.test.yml up -d
+#
+# Ühenda andmebaasidega:
+#   User DB:  localhost:5432, user=postgres, password=postgres, db=user_service_db
+#   Todo DB:  localhost:5433, user=postgres, password=postgres, db=todo_service_db
+#
+# Testi API'd:
+#   User Service:  http://localhost:3000/health
+#   Todo Service:  http://localhost:8081/health
+#   Frontend:      http://localhost:8080
+#
+# Logi vaatamine:
+#   docker-compose -f docker-compose.yml -f docker-compose.test.yml logs -f
+#
+# Seiska:
+#   docker-compose -f docker-compose.yml -f docker-compose.test.yml down
+# ==========================================================================

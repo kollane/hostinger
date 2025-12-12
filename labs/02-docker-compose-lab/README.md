@@ -33,6 +33,64 @@ See labor kasutab **Docker Compose v2** (`docker compose` käsku, mitte `docker-
 
 ---
 
+## 🎯 Strateegiline Ülevaade: Legacy → Docker → Kubernetes
+
+### Miks See Labor On Oluline?
+
+Paljud ettevõtted jooksutavad rakendusi **legacy infrastruktuuris** (Tomcat, WebLogic, manuaalsed deploy'd). **Docker Compose on esimene samm moderniseerimise teel** - lihtsam kui Kubernetes, aga annab juba suurt väärtust.
+
+| Etapp | Tehnoloogia | Deploy Aeg | Downtime | Skaleeritavus |
+|-------|-------------|------------|----------|---------------|
+| **Legacy** | Tomcat/WebLogic | 30-60 min | 5-10 min | ❌ Raske |
+| **Docker Compose** | Docker | 5 min | 0 min | ✅ Manual (2-3 replicas) |
+| **Kubernetes** | K8s | 2 min | 0 min | ✅✅ Auto-scaling |
+
+**Võtmepunkt:** **80% projektidest ei vaja Kubernetes't!** Docker Compose on täisväärtuslik production lahendus.
+
+### Moderniseerimise Tee (Ülevaade)
+
+**Progressiivne lähenemine:** Legacy (Tomcat, WebLogic) → Docker → Docker Compose → Kubernetes
+
+```
+Etapp 1: Konteinerise (Lab 1)       → 3-6 kuud
+Etapp 2: Orkestreerimise (Lab 2)     → 3-6 kuud
+Etapp 2B: Production (Docker Compose) → 12-18 kuud
+Etapp 3: Kubernetes (Lab 3-10)       → Valikuline (kui kasvad)
+```
+
+**Millal jääda Docker Compose'i juurde:**
+- Teenuseid: 1-20
+- Servereid: 1-3
+- Legacy rakendusi: 5-15
+
+**Millal Kubernetes:**
+- Teenuseid: 30+
+- Servereid: 10+
+- Vajad auto-scaling'ut
+
+📖 **Detailne roadmap:** [LEGACY-TO-KUBERNETES-ROADMAP.md](LEGACY-TO-KUBERNETES-ROADMAP.md)
+- Tomcat/WebLogic konteinerimise praktilised näited
+- 15 rakenduse migratsioonistrateegia
+- Täielik ajakava (1.5-3 aastat)
+- Otsustamise kriteeriumid
+
+---
+
+### Lab 2 Õpieesmärgid
+
+Selles laboris õpid **kõik vajalikud oskused Docker Compose production setup'iks**:
+
+| Harjutus | Oskus | K8s Vaste |
+|----------|-------|-----------|
+| 1-3 | Basics, networking | Pods, Services |
+| 4 | Multi-environment | ConfigMaps, Secrets |
+| 6 | Production patterns | Resource Limits |
+| 9 | High Availability | Deployments, Ingress |
+
+**Võtmepunkt:** Docker Compose oskused on Kubernetes'e alus!
+
+---
+
 ## 🏗️ Arhitektuur
 
 ### Lab 1 Lõpuseisu (Stardipunkt)

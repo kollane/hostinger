@@ -1,0 +1,81 @@
+# ==========================================================================
+# Docker Compose - PRELIVE Environment
+# ==========================================================================
+# Käivitamine:
+#   docker-compose -f docker-compose.yml -f docker-compose.prelive.yml up -d
+#
+# PRELIVE keskkonna eripärad:
+# - Production'ile sarnane seadistus (testimiseks)
+# - Andmebaasid ISOLEERITUD (ei avaldu väljapoole)
+# - Ainult frontend avalikult kättesaadav
+# - Moderate resource limits
+# - Prod-sarnane logging
+# ==========================================================================
+
+services:
+  # ==========================================================================
+  # PostgreSQL andmebaasid - EI AVALDU (isoleeritud)
+  # ==========================================================================
+  # postgres-user ja postgres-todo ei vaja override'i
+  # Kasutavad base docker-compose.yml seadistust (isoleeritud)
+
+  # ==========================================================================
+  # Backend teenused - EI AVALDU (ainult frontend pääseb ligi)
+  # ==========================================================================
+  user-service:
+    environment:
+      NODE_ENV: production
+      LOG_LEVEL: info          # Production logging (mitte debug)
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'          # 50% CPU
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  todo-service:
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      LOGGING_LEVEL_ROOT: INFO     # Production logging
+      JAVA_OPTS: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Xms256m -Xmx768m"
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'          # 100% CPU
+          memory: 1G
+        reservations:
+          memory: 512M
+
+  # ==========================================================================
+  # Frontend - Avalikult kättesaadav
+  # ==========================================================================
+  frontend:
+    ports:
+      - "8080:80"              # HTTP (sama nagu base, aga siia clarity jaoks)
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 128M
+
+# ==========================================================================
+# KASUTAMINE
+# ==========================================================================
+# Käivita:
+#   docker-compose -f docker-compose.yml -f docker-compose.prelive.yml up -d
+#
+# Testi:
+#   Frontend:      http://localhost:8080
+#   API testid:    curl http://localhost:8080/api/users/health
+#
+# Andmebaasid:
+#   ❌ EI OLE kättesaadavad host'ilt (isoleeritud)
+#   ✅ Konteinerite seest: postgres-user:5432, postgres-todo:5432
+#
+# Resource kasutus:
+#   docker stats
+#
+# Seiska:
+#   docker-compose -f docker-compose.yml -f docker-compose.prelive.yml down
+# ==========================================================================

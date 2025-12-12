@@ -1,0 +1,18 @@
+# Local development override (ei lähe git'i)
+docker-compose.override.yml
+
+# Environment files (SISALDAVAD SALADUSI - ÄRA COMMIT'I!)
+.env
+.env.local
+.env.*.local
+.env.test
+.env.prelive
+.env.prod
+
+# ✅ Example failid on OK (need on templates)
+!.env*.example
+
+# Temporary files
+*.log
+*.tmp
+.DS_Store
