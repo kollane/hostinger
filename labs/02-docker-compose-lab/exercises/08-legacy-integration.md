@@ -517,16 +517,283 @@ docker exec -it legacy-postgres-todo psql -U dbuser -d todo_service_db -c "SELEC
 
 ---
 
-### Samm 4: Tier 3 - Legacy Nginx Reverse Proxy (20 min)
+### Samm 4: Tier2 Multi-Environment Setup (20 min)
 
-#### 4.1 Mõista Tier 3 rolli
+#### 4.1. Probleemi Kirjeldus
+
+**Olukord:**
+
+Tier2 (Docker apps) peab töötama **erinevates keskkondades:**
+
+- **TEST:** Debug logging, pordid avatud localhost'ile, leebemad resource limits
+- **PRODUCTION:** Warn logging, pordid ainult Docker võrgus, ranged resource limits
+
+**Lahendus: BASE + OVERRIDE Pattern**
+
+```
+tier2-docker-apps/
+├── docker-compose.yml              # BASE (Tier1 ühenduvus, image'id)
+├── docker-compose.test.yml         # TEST overrides (debug, ports)
+├── docker-compose.prod.yml         # PRODUCTION overrides (limits, logging)
+├── .env.test.example               # TEST template
+└── .env.prod.example               # PRODUCTION template
+```
+
+**Võrdlus:**
+
+| Aspekt | TEST | PRODUCTION |
+|--------|------|------------|
+| **Logging** | DEBUG level | WARN level |
+| **Ports** | `127.0.0.1:3000:3000` (avatud) | Ainult Docker võrgus |
+| **Resource Limits** | Leebemad (dev masinas) | Ranged (512MB, 1CPU) |
+| **Paroolid** | `test123` (lihtne) | Tugevad (48+ bytes) |
+| **Restart Policy** | `unless-stopped` | `always` |
+
+---
+
+#### 4.2. Loo Tier2 Override Failid
+
+**Kataloog:** `tier2-docker-apps/`
+
+##### docker-compose.test.yml
+
+```bash
+cd tier2-docker-apps/
+vim docker-compose.test.yml
+```
+
+**Fail: `tier2-docker-apps/docker-compose.test.yml`**
+
+```yaml
+# TEST Environment Overrides - Tier 2 (Docker Apps)
+# Kasutamine: docker-compose -f docker-compose.yml -f docker-compose.test.yml --env-file .env.test up -d
+
+services:
+  user-service:
+    environment:
+      LOG_LEVEL: debug           # TEST: Debug logging
+      NODE_ENV: development      # TEST: Development mode
+    ports:
+      - "127.0.0.1:3000:3000"    # TEST: Avatud localhost'ile (legacy Nginx ligi)
+
+  todo-service:
+    environment:
+      SPRING_PROFILES_ACTIVE: test      # TEST: Spring test profile
+      LOGGING_LEVEL_ROOT: DEBUG         # TEST: Debug logging
+    ports:
+      - "127.0.0.1:8081:8081"            # TEST: Avatud localhost'ile
+```
+
+**Salvesta** (`:wq`)
+
+##### docker-compose.prod.yml
+
+```bash
+vim docker-compose.prod.yml
+```
+
+**Fail: `tier2-docker-apps/docker-compose.prod.yml`**
+
+```yaml
+# PRODUCTION Environment Overrides - Tier 2 (Docker Apps)
+# Kasutamine: docker-compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.prod up -d
+
+services:
+  user-service:
+    environment:
+      LOG_LEVEL: warn            # PRODUCTION: Warn logging ainult
+      NODE_ENV: production
+    restart: always              # PRODUCTION: Alati restart
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'           # PRODUCTION: CPU limit
+          memory: 512M          # PRODUCTION: Memory limit
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    # MÄRKUS: Ported EI ole siin - jäävad BASE config'ist (3000:3000)
+    # Legacy Nginx kasutab host.docker.internal:3000
+
+  todo-service:
+    environment:
+      SPRING_PROFILES_ACTIVE: prod      # PRODUCTION: Spring prod profile
+      LOGGING_LEVEL_ROOT: WARN          # PRODUCTION: Warn logging ainult
+    restart: always                      # PRODUCTION: Alati restart
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'                   # PRODUCTION: CPU limit (Java vajab rohkem)
+          memory: 1G                    # PRODUCTION: Memory limit
+        reservations:
+          cpus: '1.0'
+          memory: 512M
+    # MÄRKUS: Ported EI ole siin - jäävad BASE config'ist (8081:8081)
+```
+
+**Salvesta** (`:wq`)
+
+---
+
+#### 4.3. Loo .env Failid Tier2 Jaoks
+
+##### .env.test (tier2)
+
+```bash
+vim .env.test.example
+```
+
+**Fail: `tier2-docker-apps/.env.test.example`**
+
+```bash
+# Tier2 TEST Environment
+# Loo oma .env.test fail: cp .env.test.example .env.test
+
+# Legacy DB Connection (Tier1)
+DB_HOST=host.docker.internal  # Viitab Tier1 legacy baasidele
+DB_USER_PORT=5432             # legacy-postgres-user
+DB_TODO_PORT=5433             # legacy-postgres-todo
+POSTGRES_PASSWORD=test123     # TEST: Lihtne parool
+
+# JWT Secret
+JWT_SECRET=test-secret-jwt-key-for-testing
+
+# Logging
+LOG_LEVEL=debug
+```
+
+**Salvesta** (`:wq`)
+
+```bash
+# Loo oma .env.test fail
+cp .env.test.example .env.test
+```
+
+##### .env.prod (tier2)
+
+```bash
+vim .env.prod.example
+```
+
+**Fail: `tier2-docker-apps/.env.prod.example`**
+
+```bash
+# Tier2 PRODUCTION Environment
+# Loo oma .env.prod fail: cp .env.prod.example .env.prod
+
+# Legacy DB Connection (Tier1)
+DB_HOST=host.docker.internal  # Viitab Tier1 legacy baasidele
+DB_USER_PORT=5432             # legacy-postgres-user
+DB_TODO_PORT=5433             # legacy-postgres-todo
+POSTGRES_PASSWORD=<GENERATE-STRONG-PASSWORD>  # GENEREERI: openssl rand -base64 48
+
+# JWT Secret
+JWT_SECRET=<GENERATE-STRONG-JWT-SECRET>       # GENEREERI: openssl rand -base64 32
+
+# Logging
+LOG_LEVEL=warn
+```
+
+**Salvesta** (`:wq`)
+
+```bash
+# Loo oma .env.prod fail ja genereeri paroolid
+cp .env.prod.example .env.prod
+vim .env.prod
+
+# Genereeri paroolid:
+openssl rand -base64 48  # POSTGRES_PASSWORD
+openssl rand -base64 32  # JWT_SECRET
+```
+
+**Lisa .gitignore:**
+
+```bash
+cd tier2-docker-apps/
+echo ".env.test" >> .gitignore
+echo ".env.prod" >> .gitignore
+git add .env.test.example .env.prod.example docker-compose.test.yml docker-compose.prod.yml
+```
+
+---
+
+#### 4.4. Käivitamine Erinevates Keskkondades
+
+##### TEST Keskkond (kõik 3 tier'i)
+
+```bash
+# Tier1: Legacy DB (base config, test paroolidega)
+cd ~/labs/02-docker-compose-lab/solutions/08-legacy-integration/tier1-legacy-db/
+docker-compose up -d
+
+# Tier2: Docker Apps (TEST config)
+cd ../tier2-docker-apps/
+docker-compose -f docker-compose.yml -f docker-compose.test.yml --env-file .env.test up -d
+
+# Kontrolli log level'i
+docker logs docker-user-service | grep -i debug   # Peaks näitama DEBUG log'e
+docker logs docker-todo-service | grep -i debug   # Peaks näitama DEBUG log'e
+
+# Tier3: Legacy Nginx (base config)
+cd ../tier3-legacy-nginx/
+docker-compose up -d
+```
+
+##### PRODUCTION Keskkond
+
+```bash
+# Tier1: Legacy DB (base config, production paroolidega)
+cd ~/labs/02-docker-compose-lab/solutions/08-legacy-integration/tier1-legacy-db/
+docker-compose --env-file .env.prod up -d
+
+# Tier2: Docker Apps (PROD config)
+cd ../tier2-docker-apps/
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.prod up -d
+
+# Kontrolli log level'i ja resource limits
+docker logs docker-user-service | grep -i warn    # Peaks näitama ainult WARN log'e
+docker stats docker-user-service docker-todo-service  # Memory/CPU limits aktiivsed
+
+# Tier3: Legacy Nginx (prod config või base)
+cd ../tier3-legacy-nginx/
+docker-compose --env-file .env.prod up -d
+```
+
+---
+
+#### 4.5. ✅ Põhimõte: 3-Tier Multi-Environment
+
+| Tier | Komponent | Multi-Environment Strategy |
+|------|-----------|---------------------------|
+| **Tier1** (DB) | Legacy PostgreSQL | Üks config (BASE), env-specific passwords |
+| **Tier2** (Apps) | Docker mikroteenused | **BASE + OVERRIDE** (test.yml, prod.yml) |
+| **Tier3** (LB) | Legacy Nginx | Üks config või env-specific nginx.conf |
+
+**Võtmepunkt:**
+
+- **Tier2** (Docker apps) kasutab **täielikku multi-env pattern'i** (BASE + OVERRIDE)
+- Tier1 ja Tier3 on legacy (lihtsamad konfid)
+- Kõik kolm tier'i saavad erinevaid `.env` faile (test vs prod paroolid)
+
+**Viited:**
+- 📖 [Harjutus 4: Multi-Environment Arhitektuur](04-environment-management.md#samm-3-multi-environment-arhitektuur) - Täielik pattern selgitus
+- 📖 [ENVIRONMENTS.md](../compose-project/ENVIRONMENTS.md) - Environment guide
+- 📖 [PASSWORDS.md](../compose-project/PASSWORDS.md) - Paroolide haldamine
+
+**✅ Tier 2 Multi-Environment Setup valmis!**
+
+---
+
+### Samm 5: Tier 3 - Legacy Nginx Reverse Proxy (20 min)
+
+#### 5.1 Mõista Tier 3 rolli
 
 **Eesmärk:**
 - Simuleerib legacy Nginx load balancer'it
 - Proksimine Tier 2 mikroteenustele (host.docker.internal:3000, :8081)
 - Avalik endpoint (port 8080)
 
-#### 4.2 Loo Nginx konfiguratsioon
+#### 5.2 Loo Nginx konfiguratsioon
 
 ```bash
 cd ../tier3-legacy-nginx
@@ -632,7 +899,7 @@ http {
 
 **Salvesta** (`:wq`)
 
-#### 4.3 Loo Tier 3 Compose fail
+#### 5.3 Loo Tier 3 Compose fail
 
 ```bash
 vim docker-compose.yml
@@ -670,7 +937,7 @@ services:
 
 **Salvesta** (`:wq`)
 
-#### 4.4 Käivita Tier 3
+#### 5.4 Käivita Tier 3
 
 ```bash
 # Käivita Tier 3
@@ -683,7 +950,7 @@ docker compose logs -f
 docker compose ps
 ```
 
-#### 4.5 Testi Legacy Load Balancer'it
+#### 5.5 Testi Legacy Load Balancer'it
 
 ```bash
 # Health check
@@ -730,9 +997,9 @@ curl http://localhost:8080/api/todos \
 
 ---
 
-### Samm 5: Ülevaade ja Analüüs (10 min)
+### Samm 6: Ülevaade ja Analüüs (10 min)
 
-#### 5.1 Visualiseeri arhitektuur
+#### 6.1 Visualiseeri arhitektuur
 
 **Praegune olukord:**
 
@@ -772,7 +1039,7 @@ Internet
 └──────────────────────────────────────────────────────────┘
 ```
 
-#### 5.2 Kontrolli logisid
+#### 6.2 Kontrolli logisid
 
 ```bash
 # Tier 1: Andmebaasi ühendused
@@ -788,7 +1055,7 @@ cd ../tier3-legacy-nginx
 docker compose logs legacy-nginx-lb | tail -20
 ```
 
-#### 5.3 Analüüsi võrgu ühenduvust
+#### 6.3 Analüüsi võrgu ühenduvust
 
 ```bash
 # Vaata, milliseid porte host kuulab
@@ -807,9 +1074,9 @@ ss -tuln | grep -E "3000|5432|5433|8080|8081"
 
 ---
 
-### Samm 6: Realismile Lähedane Stsenaarium (VALIKULINE - 10 min)
+### Samm 7: Realismile Lähedane Stsenaarium (VALIKULINE - 10 min)
 
-#### 6.1 Simuleeri AWS RDS ühendus
+#### 7.1 Simuleeri AWS RDS ühendus
 
 **Reaalses maailmas:** AWS RDS endpoint on midagi sellist:
 ```
@@ -854,7 +1121,7 @@ docker compose logs -f
 
 **Tulemus:** Looks täpselt nagu AWS RDS! (aga tegelikult on localhost)
 
-#### 6.2 Simuleeri load balancer failover
+#### 7.2 Simuleeri load balancer failover
 
 **Lisame 2. user-service instantsi (high availability):**
 
