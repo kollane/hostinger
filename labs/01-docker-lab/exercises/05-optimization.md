@@ -60,6 +60,13 @@ Kui soovid mõista optimeerimise 5 peamist eesmärki (layer caching, multi-stage
 
 Loome optimeeritud Dockerfailid mõlemale teenusele.
 
+**📖 Proxy konfiguratsioon:**
+
+Kui soovid mõista ARG-põhist proxy konfiguratsiooni (miks ettevõtted kasutavad proxy serverit, kuidas ARG vs ENV töötab, proxy leakage verifitseerimine), loe:
+- 👉 **[Koodiselgitus: Docker ARG-põhine Proxy Best Practices](../../../resource/code-explanations/Docker-ARG-Proxy-Best-Practices.md)**
+
+---
+
 #### 1a. User Service (Node.js) optimeerimine
 
 
@@ -554,42 +561,7 @@ docker images | grep -E 'user-service|todo-service' | sort
 
 ---
 
-### Samm 6: Proxy Konfiguratsiooni Best Practices
-
-**📖 Põhjalik selgitus - ARG-põhine Proxy Konfiguratsioon:**
-
-Kui soovid mõista, miks ettevõtetes on vaja proxy serverit ja kuidas ARG-põhine proxy konfiguratsioon töötab, loe:
-- 👉 **[Koodiselgitus: Docker ARG-põhine Proxy Best Practices](../../../resource/code-explanations/Docker-ARG-Proxy-Best-Practices.md)**
-
-**See dokument selgitab:**
-- ❓ Mis on proxy server ja miks ettevõtted (nt Intel) seda kasutavad?
-- 🔧 Kuidas ARG-põhine proxy töötab (ARG vs ENV, build-time vs runtime)
-- ✅ Proxy leakage verifitseerimine (test käsud)
-- ⚙️ Gradle vs npm proxy erinevus (GRADLE_OPTS parsing)
-- 📋 Best practices (DO ja DON'T)
-- 🌐 Praktiline kasutamine (Intel võrk vs AWS/GCP/Azure)
-
-**Kiire test (valikuline):**
-
-```bash
-# Veendu, et proxy EI LEKI runtime'i
-docker run --rm user-service:1.0-optimized env | grep -i proxy
-docker run --rm todo-service:1.0-optimized env | grep -i gradle
-
-# Oodatud: tühi väljund (ei leia midagi) ✅
-```
-
----
-
-**Kokkuvõte:** ARG-põhine proxy konfiguratsioon:
-- ✅ Töötab Intel võrgus JA väljaspool (portaabel)
-- ✅ Ei leki runtime'i (turvalisem)
-- ✅ Ei suurenda image suurust
-- ✅ Production-ready (sama Dockerfile mõlemas keskkonnas)
-
----
-
-## Samm 7: Image Quality Verification (5-Step Quality Gate)
+## Samm 6: Image Quality Verification (5-Step Quality Gate)
 
 **Eesmärk:** Verifitseeri, et tõmmis vastab tootmiskvaliteedi (production quality) standarditele.
 
@@ -608,7 +580,7 @@ Pärast image'i ehitamist ja optimeerimist on oluline verifitseerida 5 kvaliteed
 
 ---
 
-### 7.1. Dive - Image Efficiency Analüüs
+### 6.1. Dive - Image Efficiency Analüüs
 
 **Dive** näitab:
 - Kihtide (layers) struktuuri
@@ -690,7 +662,7 @@ dive todo-service:1.0-optimized
 
 ---
 
-### 7.2. Quality Gate - 5 Kontrolli
+### 6.2. Quality Gate - 5 Kontrolli
 
 **Enne production'i, veendu, et kõik 5 kontrolli on ✅:**
 
@@ -855,7 +827,7 @@ docker images | grep -E 'user-service|todo-service'
 
 ---
 
-### 7.3. Quality Gate Kokkuvõte
+### 6.3. Quality Gate Kokkuvõte
 
 **✅ KUI KÕIK 5 KONTROLLI ON ROHELINE:**
 

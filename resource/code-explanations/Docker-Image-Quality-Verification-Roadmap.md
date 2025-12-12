@@ -90,4 +90,4 @@ Kui need tingimused on täidetud, oled valmis Kubernetesele liikuma teadmisega, 
 
 **Viimane uuendus:** 2025-12-12
 **Tüüp:** Koodiselgitus
-**Kasutatakse:** Lab 1, Harjutus 05 (Samm 7: Image Quality Verification)
+**Kasutatakse:** Lab 1, Harjutus 05 (Samm 6: Image Quality Verification)
