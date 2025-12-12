@@ -150,6 +150,37 @@ exit
 
 ---
 
+#### Samm 3.1: Profiilid Erinevates Keskkondades
+
+**📚 Multi-Environment Context:**
+
+Profiilid töötavad hästi koos BASE + OVERRIDE pattern'iga:
+
+| Keskkond | Profiilid | Käivitamine |
+|----------|-----------|-------------|
+| **Development** (local) | `debug` | `docker compose --profile debug up -d` |
+| **TEST** | `debug` (valikuline) | `docker compose -f docker-compose.yml -f docker-compose.test.yml --env-file .env.test --profile debug up -d` |
+| **PRODUCTION** | **EI kasuta debug'i** | `docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.prod up -d` |
+
+**Parim praktika:**
+
+```yaml
+# docker-compose.yml (BASE)
+services:
+  debug-tools:
+    profiles: ["debug"]  # Ainult development/test
+
+# docker-compose.prod.yml (PRODUCTION)
+# EI sisalda debug-tools üldse!
+```
+
+**Tulemus:**
+- ✅ Development: debug-tools saadaval
+- ✅ TEST: debug-tools valikuline
+- ❌ PRODUCTION: debug-tools EI käivitu (turvalisus!)
+
+---
+
 ### Osa 2: Andmeköite varundamine ja taastamine (Volume Backup & Restore)
 
 #### Samm 4: Varunda PostgreSQL andmeköide (docker volume)
@@ -217,6 +248,77 @@ curl -X POST http://localhost:3000/api/auth/login \
 
 # Kui see töötab, taastamine oli edukas!
 ```
+
+---
+
+#### Samm 5.1: Varundamise Strateegiad Erinevates Keskkondades
+
+**📚 Multi-Environment Backup Strategy:**
+
+| Keskkond | Retention | Frequency | Asukoht | Krüpteerimine |
+|----------|-----------|-----------|---------|---------------|
+| **Development** (local) | 3 päeva | Manuaalne | Lokaalne disk | Ei |
+| **TEST** | 7 päeva | Päevane (cron) | NAS/S3 bucket | Valikuline |
+| **PRODUCTION** | 90 päeva | Iga 6h | S3 + Offsite | **Kohustuslik** |
+
+**TEST keskkonnas (`.env.test`):**
+
+```bash
+# Varundamise skript TEST jaoks
+#!/bin/bash
+BACKUP_DIR="/backups/test"
+RETENTION_DAYS=7
+
+docker run --rm \
+  -v postgres-user-data:/data \
+  -v $BACKUP_DIR:/backup \
+  alpine tar czf /backup/test-postgres-$(date +%Y%m%d-%H%M%S).tar.gz -C /data .
+
+# Kustuta vanad (>7 päeva)
+find $BACKUP_DIR -name "test-postgres-*.tar.gz" -mtime +$RETENTION_DAYS -delete
+```
+
+**PRODUCTION keskkonnas (`.env.prod`):**
+
+```bash
+# Varundamise skript PRODUCTION jaoks
+#!/bin/bash
+BACKUP_DIR="/backups/production"
+S3_BUCKET="s3://company-backups/postgres"
+RETENTION_DAYS=90
+ENCRYPTION_KEY="/etc/backup/encryption.key"
+
+# 1. Loo krüpteeritud varukoopia
+docker run --rm \
+  -v postgres-user-data:/data \
+  -v $BACKUP_DIR:/backup \
+  alpine tar czf /backup/prod-postgres-$(date +%Y%m%d-%H%M%S).tar.gz -C /data .
+
+# 2. Krüpteeri (GPG või OpenSSL)
+gpg --encrypt --recipient backup@company.com \
+  $BACKUP_DIR/prod-postgres-*.tar.gz
+
+# 3. Saada S3'sse (AWS CLI või rclone)
+aws s3 cp $BACKUP_DIR/prod-postgres-*.tar.gz.gpg $S3_BUCKET/
+
+# 4. Kustuta lokaalsed vanad (>7 päeva, S3'is säilib 90 päeva)
+find $BACKUP_DIR -name "prod-postgres-*.tar.gz*" -mtime +7 -delete
+```
+
+**Cron Schedule:**
+
+```bash
+# TEST: Päevane backup kell 02:00
+0 2 * * * /opt/scripts/backup-test.sh
+
+# PRODUCTION: Iga 6 tundi
+0 */6 * * * /opt/scripts/backup-production.sh
+```
+
+**Parim praktika:**
+- ✅ TEST: Lihtsam, lokaalne, lühem retention
+- ✅ PRODUCTION: Krüpteeritud, offsite, pikem retention
+- ✅ Dokumenteeri restore protseduur!
 
 ---
 
@@ -405,42 +507,77 @@ echo "// Test comment" >> server.js
 - ✅ Ei pea manuaalselt käivitama `docker compose build`
 - ✅ Kiire arenduse tagasisideahel
 
-#### Bonus: Watch režiim Toote keskkond (Production) vs Arenduskeskkond (Development)
+#### Bonus: Watch režiim Erinevates Keskkondades
+
+**📚 Multi-Environment Watch Strategy:**
+
+| Keskkond | Watch Režiim | Põhjendus |
+|----------|--------------|-----------|
+| **Development** (local) | ✅ Aktiivne (`sync+restart` või `rebuild`) | Kiire arenduse tsükkel |
+| **TEST** | ❌ **KEELATUD** | Stabiilsed image'id, mitte live muudatused |
+| **PRODUCTION** | ❌ **KEELATUD** | Turvalisus, stabiilsus, resource control |
 
 **Arenduskeskkond (Development) (watch režiim):**
 ```yaml
-develop:
-  watch:
-    - action: sync+restart  # Kiire tagasiside
-      path: ./src
-      target: /app/src
-```
-
-**Toote keskkond (Production) (EI OLE watch'i):**
-```yaml
-# Ära kasuta watch'i toote keskkonnas (production)!
-# develop: sektsiooni ei tohiks toote keskkonna konfis olla
-```
-
-**Parim praktika:**
-
-- ✅ Kasuta watch'i ainult arenduses
-- ✅ Kasuta `docker-compose.override.yml` watch konfi jaoks
-- ❌ ÄRA kasuta watch'i toote keskkonnas (production) (turvalisus + ressursikasutus)
-
-**docker-compose.override.yml näide (dev watch):**
-```yaml
-# docker-compose.override.yml (local development ainult)
-# MÄRKUS: version: '3.8' on valikuline Compose v2's
-#version: '3.8'
-
+# docker-compose.override.yml (LOCAL ainult - EI commit Git'i!)
 services:
   user-service:
     develop:
       watch:
-        - action: sync+restart
+        - action: sync+restart  # Kiire tagasiside
           path: ../../apps/backend-nodejs/src
           target: /app/src
+```
+
+**TEST keskkond (docker-compose.test.yml):**
+```yaml
+# docker-compose.test.yml
+# EI sisalda develop: watch sektsiooni!
+services:
+  user-service:
+    # Stabiilne image, EI rebuild automaatselt
+    image: user-service:1.0-optimized
+    restart: unless-stopped
+    # develop: sektsioon PUUDUB!
+```
+
+**PRODUCTION keskkond (docker-compose.prod.yml):**
+```yaml
+# docker-compose.prod.yml
+# EI sisalda develop: watch sektsiooni!
+services:
+  user-service:
+    # Stabiilne, versioneeritud image
+    image: user-service:1.0-optimized
+    restart: always
+    # develop: sektsioon PUUDUB!
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+```
+
+**Parim praktika:**
+
+- ✅ **Development:** Watch ainult `docker-compose.override.yml` (local, ei commitita)
+- ❌ **TEST:** EI kasuta watch'i (stabiilsed image'id)
+- ❌ **PRODUCTION:** EI kasuta watch'i (turvalisus + ressursikasutus)
+
+**Käivitamine:**
+
+```bash
+# DEVELOPMENT (local)
+docker compose up -d           # Automaatselt kasutab override.yml
+docker compose watch            # Watch režiim
+
+# TEST
+docker compose -f docker-compose.yml -f docker-compose.test.yml --env-file .env.test up -d
+# Watch POLE aktiveeritud, ainult stabiilsed image'id
+
+# PRODUCTION
+docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.prod up -d
+# Watch POLE aktiveeritud, versioned images
 ```
 
 **Mida õppisid:**
@@ -448,7 +585,7 @@ services:
 - ✅ Compose Watch režiim (auto-rebuild)
 - ✅ Watch toimingud: rebuild, sync, sync+restart
 - ✅ Kiire arenduse tagasisideahel
-- ✅ Development vs Production konfi eraldamine
+- ✅ **KRIITILINE:** Watch ainult development'is, MITTE test/prod!
 
 ---
 
@@ -532,6 +669,44 @@ docker run --rm \
 
 ---
 
+## 🌍 Multi-Environment Kokkuvõte
+
+**📚 Selles harjutuses õppisid, kuidas täiendavad mustrid töötavad erinevates keskkondades:**
+
+| Muster | Development | TEST | PRODUCTION |
+|--------|-------------|------|------------|
+| **Profiilid** | `--profile debug` | `--profile debug` (opt) | **EI kasuta** |
+| **Watch** | ✅ `docker-compose.override.yml` | ❌ Keelatud | ❌ Keelatud |
+| **Backup Retention** | 3 päeva | 7 päeva | 90 päeva |
+| **Backup Krüpteerimine** | ❌ Ei vaja | Valikuline | ✅ Kohustuslik |
+| **Debug Tools** | ✅ Alati saadaval | Valikuline | ❌ Keelatud |
+
+**Käivitamise käsud:**
+
+```bash
+# DEVELOPMENT (local)
+docker compose --profile debug up -d
+docker compose watch
+
+# TEST
+docker compose -f docker-compose.yml \
+               -f docker-compose.test.yml \
+               --env-file .env.test \
+               --profile debug up -d  # debug valikuline
+
+# PRODUCTION
+docker compose -f docker-compose.yml \
+               -f docker-compose.prod.yml \
+               --env-file .env.prod up -d  # EI kasuta debug ega watch
+```
+
+**Viited teistele harjutustele:**
+- 📖 [Harjutus 4: Multi-Environment Arhitektuur](04-environment-management.md#samm-3-multi-environment-arhitektuur) - BASE + OVERRIDE pattern
+- 📖 [ENVIRONMENTS.md](../compose-project/ENVIRONMENTS.md) - Täielik env guide
+- 📖 [PASSWORDS.md](../compose-project/PASSWORDS.md) - Paroolide haldamine
+
+---
+
 ## 💡 Parimad tavad
 
 ### 1. Profiilid:
@@ -543,11 +718,16 @@ services:
     profiles: ["prod"]
 
   debug-tools:
-    profiles: ["dev", "debug"]
+    profiles: ["dev", "debug"]  # Ainult development/test
 
   test-db:
     profiles: ["test"]
 ```
+
+**Multi-environment:**
+- ✅ Development: Kõik profiilid saadaval
+- ✅ TEST: Valikulised profiilid (debug)
+- ❌ PRODUCTION: Minimaalse profiilid (turvalisus)
 
 ### 2. Varundamise graafik:
 
