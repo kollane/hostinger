@@ -645,6 +645,307 @@ docker run --rm todo-service:1.0-optimized env | grep -i gradle
 - ✅ Production-ready (sama Dockerfile mõlemas keskkonnas)
 
 ---
+
+## Samm 8: Image Quality Verification (valikuline, aga soovitatav!)
+
+**Eesmärk:** Verifitseeri, et tõmmis vastab tootmiskvaliteedi (production quality) standarditele.
+
+**📖 Põhjalikud selgitused:**
+- 👉 **[Koodiselgitus: Docker Image Quality Verification Roadmap](../../../resource/code-explanations/Docker-Image-Quality-Verification-Roadmap.md)**
+- 👉 **[Koodiselgitus: Dive Tool](../../../resource/code-explanations/Dive-Tool-Explained.md)**
+
+**Mis on kvaliteedikontroll?**
+
+Pärast image'i ehitamist ja optimeerimist on oluline verifitseerida 5 kvaliteedi aspekti:
+1. **Efficiency (Efektiivsus):** Kas image on minimaalne? Ei ole raisatud ruumi?
+2. **Privacy (Privaatsus):** Kas proxy/secrets ei leki runtime'i?
+3. **Security (Turvalisus):** Kas on CVE'd (turvaaugud)?
+4. **User (Kasutaja):** Kas töötab non-root kasutajana?
+5. **Size (Suurus):** Kas suurus on mõistlik?
+
+---
+
+### 8.1. Dive - Image Efficiency Analüüs
+
+**Dive** näitab:
+- Kihtide (layers) struktuuri
+- Raisatud ruumi (wasted space)
+- Efektiivsuse skoori (efficiency score)
+- Failide muudatused kihtide vahel
+
+**Installi Dive (Docker konteinerina):**
+
+```bash
+# Alias mugavaks kasutamiseks
+alias dive='docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock wagoodman/dive:latest'
+
+# Veendu, et alias töötab
+dive --version
+```
+
+**Analüüsi User Service:**
+
+```bash
+dive user-service:1.0-optimized
+```
+
+**Dive kasutajaliides (UI):**
+```
+╔═══════════════════════════════════════════════════════════╗
+║  Layers (Vasakul)      │  File Tree (Paremal)            ║
+║                        │                                  ║
+║  Kiht 1: base         │  / (root)                        ║
+║  ├─ 180 MB            │  ├─ usr/                         ║
+║  │  Added: 234 files  │  │  ├─ bin/                      ║
+║  │                    │  │  └─ lib/                      ║
+║  Kiht 2: dependencies │  ├─ app/                         ║
+║  ├─ 125 MB            │  │  ├─ node_modules/ (prod)      ║
+║  │  Added: 1024 files │  │  └─ server.js                 ║
+║  │                    │  └─ home/                        ║
+║  Kiht 3: runtime      │     └─ nodejs/ (user)            ║
+║  ├─ 0.5 MB            │                                  ║
+║  │  Added: 5 files    │  Legend:                         ║
+║  │  Removed: 0 files  │  [deleted] = kustutatakse        ║
+║                       │  [modified] = muudatakse         ║
+║ Efficiency: 99%       │  [new] = lisatakse               ║
+║ Wasted Space: 0 MB    │                                  ║
+╚═══════════════════════════════════════════════════════════╝
+```
+
+**Klaviatuuri lühikäsud:**
+- `↑/↓` - navigeeri kihtide vahel
+- `←/→` - navigeeri failipuus
+- `Space` - laienda/sulge kaust
+- `Ctrl+L` - näita AINULT wasted faile (kriitiliselt oluline!)
+- `Ctrl+Q` - välju
+
+**Mida kontrollida:**
+
+1. **Efficiency Score:** > 98% ✅
+   - Kui madalam, on raisatud ruumi (wasted space)
+   - Vaata `Ctrl+L` - millised failid on deleted/wasted?
+
+2. **Wasted Space:** ≈ 0 MB ✅
+   - Kui suur, tähendab et lisasid faile ühes kihis ja kustutasid teises
+   - Multi-stage build peaks seda vältima!
+
+3. **File Tree (paremal paneel):**
+   - ❌ **EI tohi näha:** `src/`, `build/`, `target/`, `.gradle/`, `node_modules/devDependencies`
+   - ✅ **Peab nägema:** AINULT runtime failid (`app.jar`, `node_modules/` production-only, `server.js`)
+
+**Analüüsi Todo Service:**
+
+```bash
+dive todo-service:1.0-optimized
+```
+
+**Oodatud tulemus (Java):**
+- Efficiency: 99%
+- Wasted Space: 0 MB
+- Failipuus: `/app/app.jar`, JRE runtime, spring user (1001)
+- **PUUDUB:** Gradle, JDK, source code, Maven cache
+
+---
+
+### 8.2. Quality Gate - 5 Kontrolli
+
+**Enne production'i, veendu, et kõik 5 kontrolli on ✅:**
+
+#### 1️⃣ Efficiency (Dive)
+
+```bash
+# User Service
+dive user-service:1.0-optimized
+# Oodatud: Efficiency > 98%, Wasted Space < 1 MB
+
+# Todo Service
+dive todo-service:1.0-optimized
+# Oodatud: Efficiency > 98%, Wasted Space < 1 MB
+```
+
+**Kui efektiivsus < 98%:**
+- Vaata `Ctrl+L` Dive'is - millised failid on wasted?
+- Kontrolli Dockerfile: kas kustutad faile pärast kopeerimat (vale!)
+- Kasuta multi-stage build'i õigesti (kopeeri AINULT vajalikud failid)
+
+---
+
+#### 2️⃣ Privacy (Proxy/Secrets Leak)
+
+**Kontrolli history (ei tohi näidata proxy paroole):**
+
+```bash
+# User Service
+docker history --no-trunc user-service:1.0-optimized | grep -E "ARG|ENV|proxy"
+
+# Todo Service
+docker history --no-trunc todo-service:1.0-optimized | grep -E "ARG|ENV|proxy|GRADLE"
+```
+
+**Oodatud tulemus:**
+- ARG muutujad võivad näha olla, AGA **tühjad** (ilma väärtusteta)
+- ❌ **Kui näed:** `HTTP_PROXY=http://user:password@proxy.company.com` → **PROBLEEM!**
+- ✅ **Kui näed:** `ARG HTTP_PROXY=""` → **OK!**
+
+**Kontrolli runtime env (ei tohi olla proxy muutujaid):**
+
+```bash
+# User Service
+docker run --rm user-service:1.0-optimized env | grep -i proxy
+
+# Todo Service
+docker run --rm todo-service:1.0-optimized env | grep -E "proxy|GRADLE"
+```
+
+**Oodatud tulemus:** Tühi väljund ✅ (proxy ei leki runtime'i!)
+
+**Kui leiad proxy muutujaid runtime'is:**
+- ❌ **Probleem:** Rakendus püüab kasutada ettevõtte sisevõrgu proxyt (ei tööta production'is!)
+- ✅ **Lahendus:** Kasuta ARG (build-time), mitte ENV (runtime) Dockerfile'is
+
+---
+
+#### 3️⃣ Security (Trivy - juba Samm 5)
+
+```bash
+# Viide: Samm 5 (Trivy turvaskannimine)
+# Oodatud: 0 CRITICAL, 0-2 HIGH CVE'd
+
+# Kiirkontroll (kui juba skaneerisid Samm 5's):
+# ✅ User Service: 0 CRITICAL
+# ✅ Todo Service: 0 CRITICAL
+```
+
+**Kui leiad CRITICAL CVE'd:**
+1. Uuenda base image: `node:22-slim` → `node:22.x.x-slim` (latest patch)
+2. Uuenda dependencies: `npm audit fix` või `gradle dependencyUpdates`
+3. Rebuild image ja skanni uuesti
+
+---
+
+#### 4️⃣ User (Non-root)
+
+**Kontrolli, kas töötab non-root kasutajana:**
+
+```bash
+# User Service
+docker run --rm user-service:1.0-optimized id
+# Oodatud: uid=1001(nodejs) gid=1001(nodejs) ✅
+
+# Todo Service
+docker run --rm todo-service:1.0-optimized id
+# Oodatud: uid=1001(spring) gid=1001(spring) ✅
+```
+
+**Kui näed `uid=0(root)`:**
+- ❌ **Probleem:** Rakendus töötab root kasutajana (turvarisk!)
+- ✅ **Lahendus:** Lisa Dockerfile'i `USER nodejs:nodejs` või `USER spring:spring`
+
+---
+
+#### 5️⃣ Size (Mõistlik suurus)
+
+```bash
+# Võrdle mõlema teenuse suurusi
+docker images | grep -E 'user-service|todo-service'
+```
+
+**Oodatud tulemused:**
+
+| Image | Suurus | Hinnang |
+|-------|--------|---------|
+| `user-service:1.0-optimized` | ~305 MB | ✅ OK (Node.js + slim) |
+| `todo-service:1.0-optimized` | ~180 MB | ✅ OK (Java JRE + alpine) |
+
+**Suuruse standardid:**
+- Node.js (slim): 200-350 MB ✅
+- Node.js (alpine): 100-200 MB ✅✅
+- Java JRE (alpine): 150-250 MB ✅
+- Java JDK (ubuntu): 400-600 MB ⚠️ (liiga suur!)
+- Go (alpine): 10-30 MB ✅✅✅
+
+**Kui suurus on liiga suur:**
+- Kasuta väiksemat base image'i (`alpine` vs `slim` vs `ubuntu`)
+- Kasuta multi-stage build'i (JDK → JRE, dependencies → runtime)
+- Eemalda development dependencies (`npm ci --only=production`)
+
+---
+
+### 8.3. Quality Gate Kokkuvõte
+
+**✅ KUI KÕIK 5 KONTROLLI ON ROHELINE:**
+
+| Kontroll | Status | Kriteerium |
+|----------|--------|------------|
+| 1️⃣ **Efficiency** | ✅ | > 98%, Wasted Space < 1 MB |
+| 2️⃣ **Privacy** | ✅ | Proxy EI leki (env, history) |
+| 3️⃣ **Security** | ✅ | 0 CRITICAL CVE'd |
+| 4️⃣ **User** | ✅ | Non-root (nodejs:1001, spring:1001) |
+| 5️⃣ **Size** | ✅ | Node.js < 350 MB, Java < 250 MB |
+
+🎉 **Tõmmis on production-ready!**
+- Minimaalne suurus
+- Turvaline (CVE-free, non-root)
+- Ei leki saladusi
+- Efektiivne (no wasted space)
+
+**Järgmised sammud:**
+1. Push image Docker registry'sse (Harbor, AWS ECR, Azure ACR)
+2. Deploy Kubernetes'e (Lab 3-4)
+3. Setup CI/CD pipeline (Lab 5) - automatiseeri need 5 kontrolli!
+
+---
+
+### 8.4. CI/CD Integration (Valikuline)
+
+**Kuidas integreerida need kontrollid CI/CD pipeline'i?**
+
+**GitHub Actions näide:**
+
+```yaml
+# .github/workflows/docker-quality-check.yml
+name: Docker Image Quality Check
+
+on: [push]
+
+jobs:
+  quality-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker build -t myapp:test .
+
+      - name: 1. Dive Efficiency Check
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+            wagoodman/dive:latest myapp:test --ci --lowestEfficiency 98
+
+      - name: 2. Privacy Check (no proxy leak)
+        run: |
+          docker run --rm myapp:test env | grep -i proxy && exit 1 || echo "✅ No proxy leak"
+
+      - name: 3. Security Scan (Trivy)
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy:latest image --severity CRITICAL --exit-code 1 myapp:test
+
+      - name: 4. User Check (non-root)
+        run: |
+          USER_ID=$(docker run --rm myapp:test id -u)
+          [ "$USER_ID" -eq 0 ] && echo "❌ Running as root!" && exit 1 || echo "✅ Non-root user"
+
+      - name: 5. Size Check
+        run: |
+          SIZE=$(docker images myapp:test --format "{{.Size}}" | sed 's/MB//')
+          [ $(echo "$SIZE > 500" | bc) -eq 1 ] && echo "❌ Image too large!" && exit 1 || echo "✅ Size OK"
+```
+
+**Tulemus:** Kui kõik 5 kontrolli pass'ivad, pipeline jätkab deploy'ga. Kui mõni fail'ib, pipeline stopib.
+
+---
+
 ## 🎓 Parimad tavad
 
 1. ✅ Mitmeastmelised ehitused (JDK → JRE, sõltuvused → runtime)
@@ -654,6 +955,7 @@ docker run --rm todo-service:1.0-optimized env | grep -i gradle
 5. ✅ Tervisekontroll Dockerfile'is (monitooring)
 6. ✅ Gradle/npm --no-daemon (vähem mälu, kiirem ehitus)
 7. ✅ Testi optimeeritud tõmmiseid end-to-end töövooga
+8. ✅ **Kvaliteedikontroll (Quality Gate)** - Verifitseeri image 5 aspekti: Efficiency (Dive), Privacy (no proxy leak), Security (Trivy), User (non-root), Size
 
 **See on TÄIELIK tootmiskõlbulik (production-ready) mikroteenuste süsteem!** 🎉🚀
 
@@ -667,6 +969,7 @@ Sa oskad nüüd:
 3. ✅ Kasutada kohandatud võrke
 4. ✅ Säilitada andmeid andmeköidetega
 5. ✅ Optimeerida tõmmise suurust ja ehituse kiirust
+6. ✅ **Verifitseerida image kvaliteeti** (Dive, privacy check, security scan, non-root, size)
 
 **Aga...**
 - Kas pead käivitama 10 `docker run` käsku iga kord?
