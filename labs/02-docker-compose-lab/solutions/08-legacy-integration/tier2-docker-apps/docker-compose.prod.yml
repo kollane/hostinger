@@ -1,0 +1,34 @@
+# PRODUCTION Environment Overrides - Tier 2 (Docker Apps)
+# Kasutamine: docker-compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.prod up -d
+
+services:
+  user-service:
+    environment:
+      LOG_LEVEL: warn            # PRODUCTION: Warn logging ainult
+      NODE_ENV: production
+    restart: always              # PRODUCTION: Alati restart
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'           # PRODUCTION: CPU limit
+          memory: 512M          # PRODUCTION: Memory limit
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    # MÄRKUS: Ported EI ole siin - jäävad BASE config'ist (3000:3000)
+    # Legacy Nginx kasutab host.docker.internal:3000
+
+  todo-service:
+    environment:
+      SPRING_PROFILES_ACTIVE: prod      # PRODUCTION: Spring prod profile
+      LOGGING_LEVEL_ROOT: WARN          # PRODUCTION: Warn logging ainult
+    restart: always                      # PRODUCTION: Alati restart
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'                   # PRODUCTION: CPU limit (Java vajab rohkem)
+          memory: 1G                    # PRODUCTION: Memory limit
+        reservations:
+          cpus: '1.0'
+          memory: 512M
+    # MÄRKUS: Ported EI ole siin - jäävad BASE config'ist (8081:8081)

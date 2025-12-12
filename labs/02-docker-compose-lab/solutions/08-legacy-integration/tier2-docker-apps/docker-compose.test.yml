@@ -1,0 +1,17 @@
+# TEST Environment Overrides - Tier 2 (Docker Apps)
+# Kasutamine: docker-compose -f docker-compose.yml -f docker-compose.test.yml --env-file .env.test up -d
+
+services:
+  user-service:
+    environment:
+      LOG_LEVEL: debug           # TEST: Debug logging
+      NODE_ENV: development      # TEST: Development mode
+    ports:
+      - "127.0.0.1:3000:3000"    # TEST: Avatud localhost'ile (legacy Nginx ligi)
+
+  todo-service:
+    environment:
+      SPRING_PROFILES_ACTIVE: test      # TEST: Spring test profile
+      LOGGING_LEVEL_ROOT: DEBUG         # TEST: Debug logging
+    ports:
+      - "127.0.0.1:8081:8081"            # TEST: Avatud localhost'ile
