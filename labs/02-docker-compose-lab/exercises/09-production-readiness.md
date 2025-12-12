@@ -127,6 +127,58 @@ Oled välja arendanud mikroteenuste stack'i (Harjutused 1-8), aga nüüd tuleb s
 
 ---
 
+## 🏗️ Pattern Selgitus: BASE + OVERRIDE (OLULINE!)
+
+**Eeldus:** Oled läbinud **Harjutused 4-6** (Multi-Environment Pattern)
+
+Selles harjutuses jätkame **BASE + OVERRIDE** pattern'i kasutamist:
+
+```
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.prod up -d
+                 ↑ BASE (compose-project/)  ↑ PROD (solutions/09-*)  ↑ SECRETS
+```
+
+**Oluline erinevus:**
+
+- **BASE config:** `compose-project/docker-compose.yml` (Harjutused 1-6)
+  - Põhiteenused: postgres, user-service, todo-service, frontend
+  - Network definitions
+  - Basic health checks
+
+- **PRODUCTION override:** `solutions/09-production-readiness/docker-compose.prod.yml`
+  - **SSL/TLS** (Nginx port 443)
+  - **High Availability** (2 replicas per service)
+  - **Monitoring** (Prometheus, Grafana - UUED teenused)
+  - **Resource limits** (CPU, memory)
+  - **Advanced health checks**
+
+**Fail structure:**
+```
+compose-project/
+└── docker-compose.yml              # BASE (Harjutused 1-6)
+
+solutions/09-production-readiness/
+├── docker-compose.prod.yml         # PRODUCTION overrides + NEW services
+├── .env.prod.example               # Production secrets template
+├── nginx/                          # SSL config files
+├── prometheus/                     # Monitoring config
+└── grafana/                        # Dashboard config
+```
+
+**Käivitamine:**
+```bash
+cd solutions/09-production-readiness/
+docker-compose -f ../../compose-project/docker-compose.yml \
+               -f docker-compose.prod.yml \
+               --env-file .env.prod up -d
+```
+
+**Viited:**
+- 📖 [compose-project/ENVIRONMENTS.md](../compose-project/ENVIRONMENTS.md)
+- 📖 [compose-project/PASSWORDS.md](../compose-project/PASSWORDS.md)
+
+---
+
 ## 📝 Sammud
 
 ### Samm 1: SSL/TLS Seadistamine (30 min)
@@ -1057,9 +1109,12 @@ providers:
 
 ### Samm 5: Environment Variables (5 min)
 
+**Märkus:** See jätkab **Harjutus 4** multi-environment pattern'i.
+
 ```bash
-cd ~/labs/02-docker-compose-lab/exercises/09-production-readiness
-vim .env.prod
+cd ~/labs/02-docker-compose-lab/solutions/09-production-readiness
+cp .env.prod.example .env.prod
+nano .env.prod
 ```
 
 **Fail: `.env.prod`**
@@ -1067,6 +1122,7 @@ vim .env.prod
 ```bash
 # Production Environment Variables
 # IMPORTANT: In real production, use secrets management (Vault, AWS Secrets Manager)
+# See also: compose-project/PASSWORDS.md
 
 # Database
 DB_PASSWORD=SuperSecureProductionPassword123!
@@ -1159,13 +1215,17 @@ docker rm temp-postgres-user temp-postgres-todo
 #### 6.2 Käivita production stack
 
 ```bash
-cd ~/labs/02-docker-compose-lab/exercises/09-production-readiness
+cd ~/labs/02-docker-compose-lab/solutions/09-production-readiness
 
-# Käivita kõik teenused
-docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
+# Käivita kõik teenused (BASE + PROD override)
+docker compose -f ../../compose-project/docker-compose.yml \
+               -f docker-compose.prod.yml \
+               --env-file .env.prod up -d
+#               ↑ BASE config                    ↑ PROD override   ↑ SECRETS
 
 # Vaata logisid
-docker compose -f docker-compose.prod.yml logs -f
+docker compose -f ../../compose-project/docker-compose.yml \
+               -f docker-compose.prod.yml logs -f
 
 # Oota kuni kõik teenused on käivitunud (30-60 sekundit)
 ```
@@ -1174,7 +1234,8 @@ docker compose -f docker-compose.prod.yml logs -f
 
 ```bash
 # Vaata kõiki teenuseid
-docker compose -f docker-compose.prod.yml ps
+docker compose -f ../../compose-project/docker-compose.yml \
+               -f docker-compose.prod.yml ps
 
 # Peaks nägema 9 konteinerit:
 # - nginx-prod-lb (80, 443)
@@ -1185,7 +1246,19 @@ docker compose -f docker-compose.prod.yml ps
 # - grafana-prod (3001)
 
 # Health check'id
-docker compose -f docker-compose.prod.yml ps --filter "health=healthy"
+docker compose -f ../../compose-project/docker-compose.yml \
+               -f docker-compose.prod.yml ps --filter "health=healthy"
+```
+
+**Alias (valikuline):**
+```bash
+# Lisa ~/.bashrc faili lihtsustamiseks
+alias dc-prod-ex9='docker compose -f ../../compose-project/docker-compose.yml -f docker-compose.prod.yml --env-file .env.prod'
+
+# Kasutamine:
+dc-prod-ex9 ps
+dc-prod-ex9 logs -f
+dc-prod-ex9 down
 ```
 
 ---
