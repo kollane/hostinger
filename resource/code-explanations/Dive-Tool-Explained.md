@@ -256,4 +256,4 @@ Kui su Dive'i raport näeb hea välja, oled valmis Kubernetesele liikuma!
 
 **Viimane uuendus:** 2025-12-12
 **Tüüp:** Koodiselgitus
-**Kasutatakse:** Lab 1, Harjutus 05 (Samm 8: Image Quality Verification)
+**Kasutatakse:** Lab 1, Harjutus 05 (Samm 7: Image Quality Verification)

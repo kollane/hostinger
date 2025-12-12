@@ -439,64 +439,7 @@ docker stats --no-stream --format "table {{.Name}}\t{{.MemUsage}}\t{{.CPUPerc}}"
 4. ✅ AGA: Väiksemad tõmmised (-25-33%), tervisekontrollid, mitte-juurkasutajad!
 5. ✅ TOOTMISEKS VALMIS mikroteenuste süsteem! 🚀
 
-### Samm 5: Turvaskannimine ja haavatavuse hindamine
-
-**Tõmmise turvaaukude (vulnerabilities) skannimine on KRIITILINE tootmises!**
-
-**📖 Põhjalik käsitlus:** [Peatükk 06B: Docker Image Security ja Vulnerability Scanning](../../../resource/06B-Docker-Image-Security-ja-Vulnerability-Scanning.md) selgitab:
-- CVE ja CVSS skoorid (mis on turvaaugud, kuidas neid hinnata)
-- Trivy kasutamine (installimise juhised, kõik käsud, raportid)
-- Turvalisuse parimad praktikad (mitte-juurkasutajad, minimaalsed baastõmmised, tervisekontrollid, baastõmmise uuendamise strateegia)
-- CI/CD integratsioon (GitHub Actions, GitLab CI näited)
-
-**Siin on kiired käsud testimiseks:**
-
-#### Trivy (vulnerability scanner)
-
-**ℹ️ Märkus:** Trivy lokaalne binaar (`trivy`) ei ole paigaldatud. Kasutame Docker konteinerit.
-
-```bash
-# Seadista proksi (Intel võrk)
-export HTTP_PROXY=http://proxy-chain.intel.com:911
-export HTTPS_PROXY=http://proxy-chain.intel.com:912
-export NO_PROXY=localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16
-
-# Skanni User Service (Node.js)
-docker run --rm \
-  -e HTTP_PROXY=$HTTP_PROXY \
-  -e HTTPS_PROXY=$HTTPS_PROXY \
-  -e NO_PROXY=$NO_PROXY \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  aquasec/trivy:latest image \
-  --severity HIGH,CRITICAL user-service:1.0-optimized
-
-# Skanni Todo Service (Java)
-docker run --rm \
-  -e HTTP_PROXY=$HTTP_PROXY \
-  -e HTTPS_PROXY=$HTTPS_PROXY \
-  -e NO_PROXY=$NO_PROXY \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  aquasec/trivy:latest image \
-  --severity HIGH,CRITICAL todo-service:1.0-optimized
-```
-
-**Mida need käsud teevad:**
-- `-e HTTP_PROXY=$HTTP_PROXY` - edastab proksi seadistused Trivy konteinerile
-- `-v /var/run/docker.sock` - lubab Trivy-l pääseda Docker image'itele
-- `--severity HIGH,CRITICAL` - näitab ainult kriitilisi haavatavusi
-- Trivy laadib alla vulnerability DB läbi proksi (mirror.gcr.io)
-
-**Oodatud tulemused:**
-- ✅ Optimeeritud tõmmised võivad sisaldada vähem haavatavusi (sõltub baastõmmise versioonist)
-- ✅ Mitte-juurkasutajad on kasutuses (nodejs:1001, spring:1001) ✅
-- ✅ Tervisekontrollid lisatud ✅
-
-**Järgmised sammud:**
-1. Loe [Peatükk 06B](../../../resource/06B-Docker-Image-Security-ja-Vulnerability-Scanning.md) põhjalikuks uurimiseks
-2. Parandanud CRITICAL ja HIGH CVE'd enne toote keskkonda (production)
-3. Lisa automaatne skannimine CI/CD pipeline'i (juhised peatükis 06B)
-
-### Samm 6: Kihtide vahemälu test
+### Samm 5: Kihtide vahemälu test
 
 **Testime, kui hästi kihtide vahemälu töötab uuesti ehitamisel (rebuild):**
 
@@ -611,7 +554,7 @@ docker images | grep -E 'user-service|todo-service' | sort
 
 ---
 
-### Samm 7: Proxy Konfiguratsiooni Best Practices
+### Samm 6: Proxy Konfiguratsiooni Best Practices
 
 **📖 Põhjalik selgitus - ARG-põhine Proxy Konfiguratsioon:**
 
@@ -646,7 +589,7 @@ docker run --rm todo-service:1.0-optimized env | grep -i gradle
 
 ---
 
-## Samm 8: Image Quality Verification (valikuline, aga soovitatav!)
+## Samm 7: Image Quality Verification (5-Step Quality Gate)
 
 **Eesmärk:** Verifitseeri, et tõmmis vastab tootmiskvaliteedi (production quality) standarditele.
 
@@ -665,7 +608,7 @@ Pärast image'i ehitamist ja optimeerimist on oluline verifitseerida 5 kvaliteed
 
 ---
 
-### 8.1. Dive - Image Efficiency Analüüs
+### 7.1. Dive - Image Efficiency Analüüs
 
 **Dive** näitab:
 - Kihtide (layers) struktuuri
@@ -747,7 +690,7 @@ dive todo-service:1.0-optimized
 
 ---
 
-### 8.2. Quality Gate - 5 Kontrolli
+### 7.2. Quality Gate - 5 Kontrolli
 
 **Enne production'i, veendu, et kõik 5 kontrolli on ✅:**
 
@@ -805,21 +748,62 @@ docker run --rm todo-service:1.0-optimized env | grep -E "proxy|GRADLE"
 
 ---
 
-#### 3️⃣ Security (Trivy - juba Samm 5)
+#### 3️⃣ Security (Trivy - Vulnerability Scanning)
+
+**Tõmmise turvaaukude (vulnerabilities) skannimine on KRIITILINE tootmises!**
+
+**📖 Põhjalik käsitlus:** [Peatükk 06B: Docker Image Security ja Vulnerability Scanning](../../../resource/06B-Docker-Image-Security-ja-Vulnerability-Scanning.md) selgitab:
+- CVE ja CVSS skoorid (mis on turvaaugud, kuidas neid hinnata)
+- Trivy kasutamine (installimise juhised, kõik käsud, raportid)
+- Turvalisuse parimad praktikad (mitte-juurkasutajad, minimaalsed baastõmmised, tervisekontrollid, baastõmmise uuendamise strateegia)
+- CI/CD integratsioon (GitHub Actions, GitLab CI näited)
+
+**Trivy (vulnerability scanner):**
+
+**ℹ️ Märkus:** Trivy lokaalne binaar (`trivy`) ei ole paigaldatud. Kasutame Docker konteinerit.
 
 ```bash
-# Viide: Samm 5 (Trivy turvaskannimine)
-# Oodatud: 0 CRITICAL, 0-2 HIGH CVE'd
+# Seadista proksi (Intel võrk)
+export HTTP_PROXY=http://proxy-chain.intel.com:911
+export HTTPS_PROXY=http://proxy-chain.intel.com:912
+export NO_PROXY=localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16
 
-# Kiirkontroll (kui juba skaneerisid Samm 5's):
-# ✅ User Service: 0 CRITICAL
-# ✅ Todo Service: 0 CRITICAL
+# Skanni User Service (Node.js)
+docker run --rm \
+  -e HTTP_PROXY=$HTTP_PROXY \
+  -e HTTPS_PROXY=$HTTPS_PROXY \
+  -e NO_PROXY=$NO_PROXY \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  aquasec/trivy:latest image \
+  --severity HIGH,CRITICAL user-service:1.0-optimized
+
+# Skanni Todo Service (Java)
+docker run --rm \
+  -e HTTP_PROXY=$HTTP_PROXY \
+  -e HTTPS_PROXY=$HTTPS_PROXY \
+  -e NO_PROXY=$NO_PROXY \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  aquasec/trivy:latest image \
+  --severity HIGH,CRITICAL todo-service:1.0-optimized
 ```
+
+**Mida need käsud teevad:**
+- `-e HTTP_PROXY=$HTTP_PROXY` - edastab proksi seadistused Trivy konteinerile
+- `-v /var/run/docker.sock` - lubab Trivy-l pääseda Docker image'itele
+- `--severity HIGH,CRITICAL` - näitab ainult kriitilisi haavatavusi
+- Trivy laadib alla vulnerability DB läbi proksi (mirror.gcr.io)
+
+**Quality Gate kriteerium:** 0 CRITICAL CVE'd ✅
 
 **Kui leiad CRITICAL CVE'd:**
 1. Uuenda base image: `node:22-slim` → `node:22.x.x-slim` (latest patch)
 2. Uuenda dependencies: `npm audit fix` või `gradle dependencyUpdates`
 3. Rebuild image ja skanni uuesti
+
+**Järgmised sammud:**
+- Loe [Peatükk 06B](../../../resource/06B-Docker-Image-Security-ja-Vulnerability-Scanning.md) põhjalikuks uurimiseks
+- Parandanud CRITICAL ja HIGH CVE'd enne toote keskkonda (production)
+- Lisa automaatne skannimine CI/CD pipeline'i (juhised peatükis 06B)
 
 ---
 
@@ -871,7 +855,7 @@ docker images | grep -E 'user-service|todo-service'
 
 ---
 
-### 8.3. Quality Gate Kokkuvõte
+### 7.3. Quality Gate Kokkuvõte
 
 **✅ KUI KÕIK 5 KONTROLLI ON ROHELINE:**
 
@@ -896,7 +880,7 @@ docker images | grep -E 'user-service|todo-service'
 
 ---
 
-### 8.4. CI/CD Integration (Valikuline)
+### 7.4. CI/CD Integration (Valikuline)
 
 **Kuidas integreerida need kontrollid CI/CD pipeline'i?**
 
