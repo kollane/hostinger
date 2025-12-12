@@ -880,56 +880,6 @@ docker images | grep -E 'user-service|todo-service'
 
 ---
 
-### 7.4. CI/CD Integration (Valikuline)
-
-**Kuidas integreerida need kontrollid CI/CD pipeline'i?**
-
-**GitHub Actions näide:**
-
-```yaml
-# .github/workflows/docker-quality-check.yml
-name: Docker Image Quality Check
-
-on: [push]
-
-jobs:
-  quality-gate:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Build image
-        run: docker build -t myapp:test .
-
-      - name: 1. Dive Efficiency Check
-        run: |
-          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
-            wagoodman/dive:latest myapp:test --ci --lowestEfficiency 98
-
-      - name: 2. Privacy Check (no proxy leak)
-        run: |
-          docker run --rm myapp:test env | grep -i proxy && exit 1 || echo "✅ No proxy leak"
-
-      - name: 3. Security Scan (Trivy)
-        run: |
-          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
-            aquasec/trivy:latest image --severity CRITICAL --exit-code 1 myapp:test
-
-      - name: 4. User Check (non-root)
-        run: |
-          USER_ID=$(docker run --rm myapp:test id -u)
-          [ "$USER_ID" -eq 0 ] && echo "❌ Running as root!" && exit 1 || echo "✅ Non-root user"
-
-      - name: 5. Size Check
-        run: |
-          SIZE=$(docker images myapp:test --format "{{.Size}}" | sed 's/MB//')
-          [ $(echo "$SIZE > 500" | bc) -eq 1 ] && echo "❌ Image too large!" && exit 1 || echo "✅ Size OK"
-```
-
-**Tulemus:** Kui kõik 5 kontrolli pass'ivad, pipeline jätkab deploy'ga. Kui mõni fail'ib, pipeline stopib.
-
----
-
 ## 🎓 Parimad tavad
 
 1. ✅ Mitmeastmelised ehitused (JDK → JRE, sõltuvused → runtime)
