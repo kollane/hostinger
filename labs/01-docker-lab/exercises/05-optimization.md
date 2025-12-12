@@ -520,6 +520,8 @@ Pärast image'i ehitamist ja optimeerimist on oluline verifitseerida 5 kvaliteed
 
 ### 6.1. Dive - Image Efficiency Analüüs
 
+**ℹ️ Märkus:** Dive lokaalne binaar (`dive`) ei ole paigaldatud. Kasutame Docker konteinerit.
+
 **Dive** näitab:
 - Kihtide (layers) struktuuri
 - Raisatud ruumi (wasted space)
@@ -535,6 +537,8 @@ alias dive='docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock wag
 # Veendu, et alias töötab
 dive --version
 ```
+
+**💡 Proxy ei ole vajalik:** Dive analüüsib ainult kohalikke image'eid (ei lae midagi internetist).
 
 **Analüüsi User Service:**
 
