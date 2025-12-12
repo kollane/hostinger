@@ -30,42 +30,6 @@ Peale selle harjutuse läbimist oskad:
 
 ---
 
-## 🖥️ Sinu Testimise Konfiguratsioon
-
-### SSH Ühendus VPS-iga
-```bash
-ssh labuser@93.127.213.242 -p [SINU-PORT]
-```
-
-| Õpilane | SSH Port | Password |
-|---------|----------|----------|
-| student1 | 2201 | student1 |
-| student2 | 2202 | student2 |
-| student3 | 2203 | student3 |
-
-### Teenuste URL-id
-
-**Brauserist (oma arvutist):**
-
-| Õpilane | Frontend |
-|---------|----------|
-| student1 | http://93.127.213.242:8080 |
-| student2 | http://93.127.213.242:8180 |
-| student3 | http://93.127.213.242:8280 |
-
-💡 **API'd on kättesaadavad läbi frontend reverse proxy:**
-
-- `/api/auth/*` → user-service:3000
-- `/api/users*` → user-service:3000
-- `/api/todos*` → todo-service:8081
-
-**SSH Sessioonis (debugging):**
-
-- `curl http://localhost:3000/health`
-- `curl http://localhost:8081/health`
-
----
-
 ## 🏗️ Arhitektuur
 
 ### Enne (Harjutus 1):

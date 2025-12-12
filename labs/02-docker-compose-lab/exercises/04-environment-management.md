@@ -35,59 +35,39 @@ Peale selle harjutuse läbimist oskad:
 
 ---
 
-## 🖥️ Sinu Testimise Konfiguratsioon
-
-### SSH Ühendus VPS-iga
-```bash
-ssh labuser@93.127.213.242 -p [SINU-PORT]
-```
-
-| Õpilane | SSH Port | Password |
-|---------|----------|----------|
-| student1 | 2201 | student1 |
-| student2 | 2202 | student2 |
-| student3 | 2203 | student3 |
-
-### Teenuste URL-id
-
-**Brauserist (oma arvutist):**
-
-| Õpilane | Frontend |
-|---------|----------|
-| student1 | http://93.127.213.242:8080 |
-| student2 | http://93.127.213.242:8180 |
-| student3 | http://93.127.213.242:8280 |
-
-💡 **API'd on kättesaadavad läbi frontend reverse proxy:**
-
-- `/api/auth/*` → user-service:3000
-- `/api/users*` → user-service:3000
-- `/api/todos*` → todo-service:8081
-
-**SSH sessioonis (veatuvastus):**
-
-- `curl http://localhost:3000/health`
-- `curl http://localhost:8081/health`
-
----
-
 ## ⚠️ Enne Alustamist: Kontrolli Eeldusi
 
-**Veendu, et Harjutus 3 on läbitud:**
+**Veendu, et Harjutus 3 tulemus on olemas:**
 
 ```bash
-# 1. Kas 5 teenust töötavad?
-cd compose-project
-docker compose ps
-# Peaks nägema 5 teenust
+# 1. Mine töökausta
+cd ~/labs/02-docker-compose-lab/compose-project
 
-# 2. Kas docker-compose.yml on olemas?
-ls -la docker-compose.yml
+# 2. Kontrolli, kas Harjutus 3 failid on olemas
+ls -la docker-compose.yml nginx.conf
 ```
 
-**Kui midagi puudub:**
+**Kui failid PUUDUVAD (Harjutus 3 pole läbitud):**
 
-- 🔗 Mine tagasi [Harjutus 3](03-network-segmentation.md)
+```bash
+# VARIANT A: Kopeeri Harjutus 3 lahendus (kiire start)
+cp ../solutions/03-network-segmentation/docker-compose.secure.yml docker-compose.yml
+cp ../solutions/03-network-segmentation/nginx.conf .
+
+# VARIANT B: Läbi Harjutus 3 esmalt
+# 🔗 [Harjutus 3: Võrgu segmenteerimine](03-network-segmentation.md)
+```
+
+**Kontrolli, et docker-compose.yml sisaldab hardcoded väärtusi:**
+
+```bash
+# Peaks nägema hardcoded väärtusi (mitte ${VAR})
+grep "JWT_SECRET\|DB_PASSWORD" docker-compose.yml
+
+# Oodatud tulemus:
+#   DB_PASSWORD: postgres
+#   JWT_SECRET: VXCkL39yz/6xw7JFpHdLpP8xgBFUSKbnNJWdAaeWDiM=
+```
 
 **✅ Kui kõik ülalpool on OK, võid jätkata!**
 
@@ -97,7 +77,7 @@ ls -la docker-compose.yml
 
 ### Samm 1: Analüüsi praegust probleemi
 
-Vaata praegust docker-compose.yml faili:
+Vaata praegust docker-compose.yml faili (Harjutus 3 lõpptulemus):
 
 ```bash
 cat docker-compose.yml | grep -A 3 "JWT_SECRET"
@@ -105,21 +85,37 @@ cat docker-compose.yml | grep -A 3 "JWT_SECRET"
 
 **Näed:**
 ```yaml
-JWT_SECRET: shared-secret-key-change-this-in-production-must-be-at-least-256-bits
+# user-service:
+JWT_SECRET: VXCkL39yz/6xw7JFpHdLpP8xgBFUSKbnNJWdAaeWDiM=
+
+# todo-service:
+JWT_SECRET: VXCkL39yz/6xw7JFpHdLpP8xgBFUSKbnNJWdAaeWDiM=
+```
+
+**Samuti vaata andmebaasi paroole:**
+```bash
+cat docker-compose.yml | grep "DB_PASSWORD"
+```
+
+**Näed:**
+```yaml
+DB_PASSWORD: postgres
 ```
 
 **Probleemid:**
 
-- ❌ Saladus on nähtav failis
-- ❌ Sama saladus dev ja prod'is
+- ❌ Saladused on hardcoded (nähtavad failis)
+- ❌ Sama parool kõikides keskkondades (dev, test, prod)
 - ❌ Kui commit'id Git'i, saladus on avalik
-- ❌ Raske muuta (pead muutma 2 kohas: user-service ja todo-service)
+- ❌ Raske muuta (pead muutma 4 kohas: user-service, todo-service, postgres-user, postgres-todo)
 
 ---
 
 ### Samm 2: Loo .env fail
 
-Loo `.env` fail saladustele:
+**Eesmärk:** Defineeri keskkonnamuutujad ühes kohas, mida saad hiljem docker-compose.yml'is kasutada.
+
+Loo `.env` fail saladustele ja konfiguratsioonile:
 
 ```bash
 vim .env
@@ -129,21 +125,23 @@ Lisa järgmine sisu:
 
 ```bash
 # ==========================================================================
-# Environment Variables - Docker Compose
+# Environment Variables - Docker Compose (LOCAL TESTING)
 # ==========================================================================
 # TÄHTIS: See fail sisaldab saladusi!
 # EI TOHI commit'ida Git'i! Lisa .gitignore'i!
+# MÄRKUS: Need on LIHTSAMAD väärtused testimiseks.
+#         Production'is kasuta .env.prod faili tugevate paroolidega!
 # ==========================================================================
 
 # PostgreSQL Credentials
 POSTGRES_USER=postgres
-POSTGRES_PASSWORD=secure-db-password-change-me-in-production-12345
+POSTGRES_PASSWORD=postgres  # Harjutus 3 vaikeväärtus (lihtne local testing jaoks)
 
 # JWT Configuration
-JWT_SECRET=super-secret-jwt-key-change-this-in-production-must-be-at-least-256-bits-long
+JWT_SECRET=VXCkL39yz/6xw7JFpHdLpP8xgBFUSKbnNJWdAaeWDiM=  # Harjutus 3 väärtus
 JWT_EXPIRES_IN=1h
 
-# Application Ports
+# Application Ports (ei kasutata production mode'is - pordid eemaldatud)
 USER_SERVICE_PORT=3000
 TODO_SERVICE_PORT=8081
 FRONTEND_PORT=8080
@@ -166,11 +164,83 @@ SPRING_PROFILE=prod
 
 Salvesta: `Esc`, siis `:wq`, `Enter`
 
+**💡 Mida õppisid:**
+- ✅ .env fail hoiab keskkonnamuutujaid ühes kohas
+- ✅ Lihtne väärtuste haldamine (ei pea faili sisse otsima)
+- ✅ Järgmises sammus õpid, kuidas docker-compose.yml neid kasutab
+
 ---
 
-### Samm 3: Multi-Environment Arhitektuur (30 min)
+### Samm 3: Uuenda docker-compose.yml (BASE config)
 
-#### 3.1. Probleemi Kirjeldus
+**Eesmärk:** Nüüd kui .env fail on olemas, muuda olemasolev `compose-project/docker-compose.yml` fail kasutama neid muutujaid.
+
+Ava olemasolev docker-compose.yml fail:
+
+```bash
+vim docker-compose.yml
+```
+
+**Asenda "hardcoded" väärtused `${VARIABLE}` süntaksiga:**
+
+```yaml
+# Näide: PostgreSQL
+postgres-user:
+  environment:
+    POSTGRES_DB: ${USER_DB_NAME}             # .env failist
+    POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}  # .env failist (oli: postgres)
+
+# Näide: User Service
+user-service:
+  environment:
+    JWT_SECRET: ${JWT_SECRET}                # .env failist (oli: VXCkL39y...)
+    DB_PASSWORD: ${POSTGRES_PASSWORD}        # .env failist
+    NODE_ENV: ${NODE_ENV}                    # .env failist
+```
+
+**TÄHTIS:**
+- Jäta võrgud samaks nagu Harjutus 3's! (frontend-network, backend-network, database-network)
+- Asenda kõik hardcoded väärtused: `POSTGRES_PASSWORD`, `JWT_SECRET`, `USER_DB_NAME`, jne
+- Kasuta `${VARIABLE}` süntaksit
+
+**📖 Täielik näidisfail:**
+
+Vaata täielikku näidisfaili solution kaustas:
+
+```bash
+cat ../solutions/04-environment-management/docker-compose.yml
+```
+
+Salvesta: `Esc`, siis `:wq`, `Enter`
+
+**Testi, et BASE config kasutab .env faili:**
+
+```bash
+# Kontrolli, et muutujad substituteeruvad õigesti
+docker compose config | grep JWT_SECRET
+# Peaks nägema: JWT_SECRET: VXCkL39yz/6xw7JFpHdLpP8xgBFUSKbnNJWdAaeWDiM=
+
+docker compose config | grep POSTGRES_PASSWORD
+# Peaks nägema: POSTGRES_PASSWORD: postgres
+
+# Kontrolli, et võrgud on samad nagu Harjutus 3's
+docker compose config | grep -A 5 "^networks:"
+# Peaks nägema: frontend-network, backend-network, database-network
+```
+
+**💡 Mida õppisid:**
+- ✅ BASE config kasutab `${VARIABLE}` süntaksit
+- ✅ .env fail täidab need muutujad
+- ✅ Saad testida kohe (docker compose config)
+- ✅ Järgmises sammus õpid multi-environment pattern'i (TEST vs PROD)
+
+---
+
+### Samm 4: Multi-Environment Arhitektuur (30 min)
+
+**Eesmärk:** Nüüd kui BASE config on olemas, õpi eraldama TEST ja PRODUCTION keskkondade konfiguratsioone.
+
+#### 4.1. Probleemi Kirjeldus
 
 Seni kasutasime ühte `.env` faili ja `docker-compose.override.yml` faile.
 See töötab **local development'is**, aga **mitte production'is**:
@@ -182,7 +252,7 @@ See töötab **local development'is**, aga **mitte production'is**:
 
 ✅ **Lahendus: Environment-spetsiifilised failid**
 
-#### 3.2. Best Practice: 3-Taseme Arhitektuur
+#### 4.2. Best Practice: 3-Taseme Arhitektuur
 
 ```
 compose-project/
@@ -235,7 +305,7 @@ docker-compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.
 
 **Tulemus:** Sama kood (git'is), erinevad paroolid ja seadistused (igas serveris).
 
-#### 3.3. Loo Environment Override Failid
+#### 4.3. Loo Environment Override Failid
 
 Loo **docker-compose.test.yml**:
 
@@ -346,7 +416,7 @@ services:
 
 Salvesta: `Esc`, siis `:wq`, `Enter`
 
-#### 3.4. Loo Environment Variable Failid
+#### 4.4. Loo Environment Variable Failid
 
 Loo **.env.test.example**:
 
@@ -422,7 +492,7 @@ SPRING_LOG_LEVEL=WARN
 
 Salvesta: `Esc`, siis `:wq`, `Enter`
 
-#### 3.5. Uuenda .gitignore
+#### 4.5. Uuenda .gitignore
 
 ```bash
 vim .gitignore
@@ -455,7 +525,7 @@ Thumbs.db
 
 Salvesta: `Esc`, siis `:wq`, `Enter`
 
-#### 3.6. Kasutamine: Composite Commands
+#### 4.6. Kasutamine: Composite Commands
 
 **TEST Keskkond:**
 
@@ -496,7 +566,7 @@ docker stats  # Vaata resource kasutust
 # ❌ Andmebaasid ei ole kättesaadavad host'ilt (isoleeritud)
 ```
 
-#### 3.7. Võrdlus: Erinevused Keskkondade Vahel
+#### 4.7. Võrdlus: Erinevused Keskkondade Vahel
 
 | Aspekt | TEST | PRODUCTION |
 |--------|------|------------|
@@ -509,7 +579,7 @@ docker stats  # Vaata resource kasutust
 | **Restart Policy** | unless-stopped | always |
 | **Database Network** | internal: false | internal: true |
 
-#### 3.8. Alias'ed (Valikuline)
+#### 4.8. Alias'ed (Valikuline)
 
 Lisa `~/.bashrc`:
 
@@ -534,145 +604,9 @@ dc-prod logs -f
 
 ---
 
-### Samm 4: Uuenda docker-compose.yml (BASE config)
-
-**Märkus:** Praegu kasutame juba environment variable substitution'i compose-project/docker-compose.yml'is.
-See samm on VALIKULINE, kui soovid kontrollida või täiendada.
-
-Nüüd muuda docker-compose.yml, et kasutada .env faili muutujaid:
-
-```bash
-vim docker-compose.yml
-```
-
-**Asenda "hardcoded" väärtused ${VARIABLE} süntaksiga:**
-
-```yaml
-services:
-  postgres-user:
-    image: postgres:16-alpine
-    container_name: postgres-user
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${USER_DB_NAME}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}  # .env'ist
-    volumes:
-      - postgres-user-data:/var/lib/postgresql/data
-    ports:
-      - "${POSTGRES_USER_PORT}:5432"  # .env'ist
-    networks:
-      - todo-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  postgres-todo:
-    image: postgres:16-alpine
-    container_name: postgres-todo
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${TODO_DB_NAME}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}  # .env'ist
-    volumes:
-      - postgres-todo-data:/var/lib/postgresql/data
-    ports:
-      - "${POSTGRES_TODO_PORT}:5432"  # .env'ist
-    networks:
-      - todo-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  user-service:
-    image: user-service:1.0-optimized
-    container_name: user-service
-    restart: unless-stopped
-    environment:
-      DB_HOST: postgres-user
-      DB_PORT: 5432
-      DB_NAME: ${USER_DB_NAME}
-      DB_USER: ${POSTGRES_USER}
-      DB_PASSWORD: ${POSTGRES_PASSWORD}  # .env'ist
-      JWT_SECRET: ${JWT_SECRET}  # .env'ist
-      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
-      PORT: ${USER_SERVICE_PORT}
-      NODE_ENV: ${NODE_ENV}
-    ports:
-      - "${USER_SERVICE_PORT}:${USER_SERVICE_PORT}"  # .env'ist
-    networks:
-      - todo-network
-    depends_on:
-      postgres-user:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:${USER_SERVICE_PORT}/health"]
-      interval: 30s
-      timeout: 3s
-      retries: 3
-      start_period: 40s
-
-  todo-service:
-    image: todo-service:1.0-optimized
-    container_name: todo-service
-    restart: unless-stopped
-    environment:
-      DB_HOST: postgres-todo
-      DB_PORT: 5432
-      DB_NAME: ${TODO_DB_NAME}
-      DB_USER: ${POSTGRES_USER}
-      DB_PASSWORD: ${POSTGRES_PASSWORD}  # .env'ist
-      JWT_SECRET: ${JWT_SECRET}  # .env'ist
-      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILE}
-      JAVA_OPTS: ${JAVA_OPTS}
-    ports:
-      - "${TODO_SERVICE_PORT}:${TODO_SERVICE_PORT}"  # .env'ist
-    networks:
-      - todo-network
-    depends_on:
-      postgres-todo:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:${TODO_SERVICE_PORT}/health"]
-      interval: 30s
-      timeout: 3s
-      retries: 3
-      start_period: 60s
-
-  frontend:
-    image: nginx:alpine
-    container_name: frontend
-    restart: unless-stopped
-    ports:
-      - "${FRONTEND_PORT}:80"  # .env'ist
-    volumes:
-      - ../../apps/frontend:/usr/share/nginx/html:ro
-    networks:
-      - todo-network
-    depends_on:
-      - user-service
-      - todo-service
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1"]
-      interval: 30s
-      timeout: 3s
-      retries: 3
-
-# ... volumes ja networks jäävad samaks
-```
-
-Salvesta: `Esc`, siis `:wq`, `Enter`
-
----
-
 ### Samm 5: Loo .env.example mall (VALIKULINE)
 
-**Märkus:** See samm on nüüd VALIKULINE, kuna lõime juba `.env.test.example` ja `.env.prod.example` failid Samm 3's.
+**Märkus:** See samm on nüüd VALIKULINE, kuna lõime juba `.env.test.example` ja `.env.prod.example` failid Samm 4's.
 
 Kui soovid luua üldise `.env.example` faili (lokaalseks arenduks), loo mallifail:
 
@@ -726,7 +660,7 @@ Salvesta: `Esc`, siis `:wq`, `Enter`
 
 ### Samm 6: Kontrolli .gitignore
 
-**Märkus:** `.gitignore` fail loodi juba Samm 3.5's. See samm on kontrollimiseks.
+**Märkus:** `.gitignore` fail loodi juba Samm 4.5's. See samm on kontrollimiseks.
 
 Kontrolli .gitignore faili sisu:
 
