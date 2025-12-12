@@ -394,6 +394,25 @@ Lisa **kaks Liquibase teenust** (peale PostgreSQL teenuste, enne backend'e):
     restart: "no"  # Käivitub ainult üks kord
 ```
 
+**💡 Environment Variables:**
+
+Liquibase kasutab samu paroole nagu PostgreSQL teenused (tuleb `.env` failist):
+
+- `${POSTGRES_USER}` - Andmebaasi kasutaja (default: `postgres`)
+- `${POSTGRES_PASSWORD}` - Andmebaasi parool (tuleb `.env.test` või `.env.prod` failist)
+- `${USER_DB_NAME}` - User Service andmebaasi nimi
+- `${TODO_DB_NAME}` - Todo Service andmebaasi nimi
+
+**TEST keskkonnas** (`.env.test`):
+- Username: `postgres`
+- Password: `test123`
+
+**PRODUCTION keskkonnas** (`.env.prod`):
+- Username: `postgres`
+- Password: (tugev, genereeritud parool `.env.prod` failist - genereeri: `openssl rand -base64 48`)
+
+---
+
 **TÄHTIS:** Nüüd muuda backend teenused sõltuma Liquibase'ist:
 
 ```yaml
@@ -554,6 +573,140 @@ docker compose up liquibase-user
 docker compose exec postgres-user psql -U postgres -d user_service_db -c "\d users"
 
 # Peaks nägema "phone" veergu
+```
+
+---
+
+### Samm 6: Migrations Erinevates Keskkondades (15 min)
+
+#### 6.1. Probleemi Kirjeldus
+
+Liquibase changelog'id on **samad kõikides keskkondades** (test, prod),
+aga **ühenduse andmed erinevad**:
+
+| Keskkond | Parool | Andmebaas Asukoht | Pordid Avatud? |
+|----------|--------|-------------------|----------------|
+| **TEST** | `test123` | localhost:5432, localhost:5433 | ✅ Jah (debugging) |
+| **PRODUCTION** | Tugev (48 bytes) | Isoleeritud võrk | ❌ Ei (turvalisus) |
+
+**Küsimus:** Kuidas käivitada sama Liquibase changelog'e erinevates keskkondades?
+
+**Vastus:** `.env.{env}` failid!
+
+#### 6.2. Lahendus: Environment Variables
+
+Liquibase teenus kasutab `.env` failist paroole (määratud Samm 2.1):
+
+```yaml
+# docker-compose.yml
+services:
+  liquibase-user:
+    environment:
+      LIQUIBASE_COMMAND_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      #                             ↑ Tuleb .env.test või .env.prod failist
+```
+
+**Tulemus:**
+- Changelog failid (XML/YAML) on samad
+- Paroolid tulevad `.env.{env}` failist
+- Sama git repository, erinevad .env failid
+
+#### 6.3. Käivitamine TEST Keskkonnas
+
+```bash
+# 1. Kasuta .env.test faili
+cd compose-project/
+cp .env.test.example .env.test
+
+# 2. Käivita migrations TEST'is
+docker-compose -f docker-compose.yml -f docker-compose.test.yml --env-file .env.test up liquibase-user liquibase-todo
+
+# 3. Kontrolli logisid
+docker logs liquibase-user
+docker logs liquibase-todo
+
+# Peaks nägema:
+# Liquibase command 'update' was executed successfully.
+
+# 4. Kontrolli tabeleid (TEST'is pordid on avatud!)
+docker exec postgres-user psql -U postgres -d user_service_db -c "\dt"
+# Peaks nägema: users, todos, databasechangelog
+
+# Või DBeaver'iga:
+# Host: localhost, Port: 5432, User: postgres, Password: test123
+```
+
+#### 6.4. Käivitamine PRODUCTION Keskkonnas
+
+```bash
+# 1. Kasuta .env.prod faili (tugevad paroolid!)
+cp .env.prod.example .env.prod
+nano .env.prod  # Muuda POSTGRES_PASSWORD
+
+# Genereeri tugev parool:
+openssl rand -base64 48
+
+# 2. Käivita migrations PRODUCTION'is
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.prod up liquibase-user liquibase-todo
+
+# 3. Kontrolli logisid
+docker logs liquibase-user
+docker logs liquibase-todo
+
+# Peaks nägema:
+# Liquibase command 'update' was executed successfully.
+
+# ❌ PRODUCTION'is andmebaasi pordid EI ole avatud (internal network)
+# Kasuta docker exec:
+docker exec postgres-user psql -U postgres -d user_service_db -c "\dt"
+```
+
+#### 6.5. Võrdlus: TEST vs PRODUCTION
+
+| Aspekt | TEST | PRODUCTION |
+|--------|------|------------|
+| **Changelog Failid** | Samad (liquibase/ kataloog) | Samad (liquibase/ kataloog) |
+| **Paroolid** | `.env.test` (test123) | `.env.prod` (tugev, 48 bytes) |
+| **DB Ligipääs** | localhost:5432 (DBeaver) | docker exec (ainult konteinerid) |
+| **Composite Käsk** | `docker-compose -f docker-compose.yml -f docker-compose.test.yml --env-file .env.test up liquibase-user` | `docker-compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.prod up liquibase-user` |
+| **Restart Policy** | `restart: "no"` | `restart: "no"` (ühekordne) |
+
+#### 6.6. Best Practices (Multi-Environment Migrations)
+
+✅ **DO:**
+- Kasuta samu changelog faile kõikides keskkondades
+- Ühenduse andmed (paroolid) tuleb `.env.{env}` failist
+- Testi migratsioone **TEST keskkonnas enne PRODUCTION'i**
+- Commit'i changelog'id Git'i (versioonihaldus)
+
+❌ **DON'T:**
+- ❌ Ära hardcode paroole changelog'idesse
+- ❌ Ära loo eraldi changelog'e igale keskkonnale
+- ❌ Ära käivita migratsioone otse PRODUCTION'is (test enne TEST'is!)
+- ❌ Ära commit'i `.env.test` või `.env.prod` faile Git'i
+
+#### 6.7. Troubleshooting: Multi-Environment Migrations
+
+**Probleem:** "Liquibase ühendub vale parooliga (test parool production'is)"
+
+```bash
+# Diagnoos: Kontrolli, millist .env faili kasutati
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml config | grep LIQUIBASE_COMMAND_PASSWORD
+
+# Lahendus: Kasuta alati --env-file
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.prod up liquibase-user
+```
+
+**Probleem:** "Liquibase ei saa ühendust andmebaasiga (PRODUCTION)"
+
+```bash
+# Diagnoos: Kontrolli, et postgres on healthy
+docker ps | grep postgres
+
+# Lahendus: Oota, kuni PostgreSQL on valmis
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.prod logs postgres-user
+
+# Peaks nägema: "database system is ready to accept connections"
 ```
 
 ---
