@@ -141,6 +141,9 @@ POSTGRES_USER=postgres
 POSTGRES_PASSWORD=postgres  # Harjutus 3 vaikeväärtus (lihtne local testing jaoks)
 
 # JWT Configuration
+# ⚠️ OLULINE: PEAB olema Base64 encoded, min 256-bit (32 bytes)!
+# Spring Boot JwtTokenProvider nõuab tugevat Base64 secret'i.
+# Lihtne string EI TÖÖTA - põhjustab todo-service crash'i!
 JWT_SECRET=VXCkL39yz/6xw7JFpHdLpP8xgBFUSKbnNJWdAaeWDiM=  # Harjutus 3 väärtus
 JWT_EXPIRES_IN=1h
 
@@ -547,11 +550,13 @@ USER_DB_NAME=user_service_db
 TODO_DB_NAME=todo_service_db
 
 # JWT Configuration
-# MÄRKUS: See on TEST keskkonna lihtne secret (loetav, debug friendly)
-# ⚠️ PRODUCTION'is kasuta TUGEVAT secret'i:
-#   openssl rand -base64 32
-#   Näide: 8K+9fR3mL7vN2pQ6xW1yZ4tH5jB0cE8fG9aD3sK7mL1=
-JWT_SECRET=test-secret-not-for-production
+# ⚠️ OLULINE: PEAB olema Base64 encoded, min 256-bit (32 bytes)!
+# Spring Boot JwtTokenProvider nõuab tugevat Base64 secret'i.
+# Lihtne string "test-secret-not-for-production" EI TÖÖTA - põhjustab crash'i!
+#
+# TEST keskkond: kasuta sama secret'i mis Harjutus 3's (volume'id säilitavad seda)
+# PRODUCTION: genereeri UUS tugev secret: openssl rand -base64 32
+JWT_SECRET=VXCkL39yz/6xw7JFpHdLpP8xgBFUSKbnNJWdAaeWDiM=
 JWT_EXPIRES_IN=1h
 
 # Application Ports
