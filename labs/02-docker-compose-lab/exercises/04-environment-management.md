@@ -113,7 +113,7 @@ DB_PASSWORD: postgres
 
 ### Samm 2: Loo .env.test.example template
 
-**Eesmärk:** Loo TEST keskkonna template fail (.env.test.example), mis sisaldab kõiki vajalikke keskkonnamuutujaid. Seda template'i saab kasutada aluseks ka PRODUCTION keskkonna jaoks (.env.prod), kuid iga keskkond peab kasutama erinevaid väärtuseid keskkonnaspetsiifiliste muutujate jaoks (JWT_SECRET, LOG_LEVEL, NODE_ENV).
+**Eesmärk:** Loo template fail (.env.test.example), mis sisaldab kõiki vajalikke keskkonnamuutujaid. Seda saab kasutada näidisena teiste keskkondade .env failide loomiseks.
 
 Loo `.env.test.example` fail:
 
