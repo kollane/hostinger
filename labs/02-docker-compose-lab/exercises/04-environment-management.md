@@ -164,10 +164,10 @@ SPRING_PROFILE=prod
 
 Salvesta: `Esc`, siis `:wq`, `Enter`
 
-**💡 Mida õppisid:**
-- ✅ .env fail hoiab keskkonnamuutujaid ühes kohas
-- ✅ Lihtne väärtuste haldamine (ei pea faili sisse otsima)
-- ✅ Järgmises sammus õpid, kuidas docker-compose.yml neid kasutab
+**📖 Põhjalik koodi selgitus:**
+
+Kui vajad `.env` faili täpset selgitust (miks seda kasutatakse, kuidas Docker Compose seda loeb, turvalisus), loe:
+- 👉 **[Koodiselgitus: Docker Compose .env File](../../../resource/code-explanations/Docker-Compose-Env-File-Explained.md)**
 
 ---
 

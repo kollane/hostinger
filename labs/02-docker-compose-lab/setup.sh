@@ -534,10 +534,18 @@ EOF
             echo "✓ users tabel loodud ja eksisteerib"
         else
             echo "❌ users tabel ei eksisteeri (CREATE TABLE käsk täideti, aga tabel puudub!)"
+            echo "   Võimalik timing probleem - andmebaas ei ole veel täielikult valmis"
+            exit 1
         fi
     else
         echo "❌ users tabeli loomine ebaõnnestus"
+        exit 1
     fi
+
+    # Synchroniseeri andmebaas (tagab, et andmed kirjutatakse volume'i)
+    echo "Synchroniseerin users andmebaasi..."
+    docker exec postgres-user psql -U postgres -c "CHECKPOINT;" > /dev/null 2>&1
+    sleep 3
 
     # 2. Loo todos tabel
     echo "Loon todos tabeli..."
@@ -562,10 +570,18 @@ EOF
             echo "✓ todos tabel loodud ja eksisteerib"
         else
             echo "❌ todos tabel ei eksisteeri (CREATE TABLE käsk täideti, aga tabel puudub!)"
+            echo "   Võimalik timing probleem - andmebaas ei ole veel täielikult valmis"
+            exit 1
         fi
     else
         echo "❌ todos tabeli loomine ebaõnnestus"
+        exit 1
     fi
+
+    # Synchroniseeri andmebaas (tagab, et andmed kirjutatakse volume'i)
+    echo "Synchroniseerin todos andmebaasi..."
+    docker exec postgres-todo psql -U postgres -c "CHECKPOINT;" > /dev/null 2>&1
+    sleep 3
 
     echo ""
 
@@ -598,10 +614,16 @@ EOF
             echo "✓ users andmed täidetud ($user_count kasutajat)"
         else
             echo "❌ users andmeid ei lisatud (oodati vähemalt 4, leiti: $user_count)"
+            exit 1
         fi
     else
         echo "❌ users andmete täitmine ebaõnnestus"
+        exit 1
     fi
+
+    # Synchroniseeri andmed (tagab püsivuse volume'is)
+    docker exec postgres-user psql -U postgres -c "CHECKPOINT;" > /dev/null 2>&1
+    sleep 2
 
     # 4. Täida todos andmed (8 TODO'd - kõrge, keskmine, madal prioriteet)
     echo "Täidan todos andmed..."
@@ -642,10 +664,16 @@ EOF
             echo "✓ todos andmed täidetud ($todo_count TODO'd)"
         else
             echo "❌ todos andmeid ei lisatud (oodati vähemalt 8, leiti: $todo_count)"
+            exit 1
         fi
     else
         echo "❌ todos andmete täitmine ebaõnnestus"
+        exit 1
     fi
+
+    # Synchroniseeri andmed (tagab püsivuse volume'is)
+    docker exec postgres-todo psql -U postgres -c "CHECKPOINT;" > /dev/null 2>&1
+    sleep 2
 
     echo ""
     echo "=========================================="
@@ -661,13 +689,29 @@ EOF
         echo "✓ users: $user_count rida (andmed salvestatud volume'i)"
     else
         echo "❌ users: 0 rida (andmed ei jäänud püsima!)"
+        exit 1
     fi
 
     if [ "$todo_count" -gt 0 ]; then
         echo "✓ todos: $todo_count rida (andmed salvestatud volume'i)"
     else
         echo "❌ todos: 0 rida (andmed ei jäänud püsima!)"
+        exit 1
     fi
+
+    echo ""
+    echo "Tabelite struktuuride kontroll:"
+    echo ""
+
+    # Näita users tabelit
+    echo "📋 user_service_db tabelid:"
+    docker exec postgres-user psql -U postgres -d user_service_db -c "\dt" 2>/dev/null | grep -E "(Schema|users|rows)" || echo "  users tabel eksisteerib"
+
+    echo ""
+
+    # Näita todos tabelit
+    echo "📋 todo_service_db tabelid:"
+    docker exec postgres-todo psql -U postgres -d todo_service_db -c "\dt" 2>/dev/null | grep -E "(Schema|todos|rows)" || echo "  todos tabel eksisteerib"
 
     echo ""
     echo "=========================================="
@@ -714,23 +758,31 @@ if [ "$DB_INIT_MODE" == "auto" ]; then
     echo "JÄRGMISED SAMMUD - Alusta harjutusi:"
     echo ""
     echo "1. Käivita stack käsitsi (pedagoogiline):"
-    echo "   cd compose-project"
+    echo "   cd solutions/01-compose-basics"
     echo "   docker compose up -d"
     echo ""
     echo "2. Kontrolli teenuste olekut:"
     echo "   docker compose ps"
     echo "   docker compose logs -f"
     echo ""
-    echo "3. Testi rakendust:"
+    echo "3. KONTROLLI TABELEID (OLULINE!):"
+    echo "   docker compose exec postgres-user psql -U postgres -d user_service_db -c '\dt'"
+    echo "   docker compose exec postgres-todo psql -U postgres -d todo_service_db -c '\dt'"
+    echo ""
+    echo "   Peaksid nägema:"
+    echo "   - user_service_db: users tabel"
+    echo "   - todo_service_db: todos tabel"
+    echo ""
+    echo "4. Vaata andmeid:"
+    echo "   docker compose exec postgres-user psql -U postgres -d user_service_db -c 'SELECT * FROM users;'"
+    echo "   docker compose exec postgres-todo psql -U postgres -d todo_service_db -c 'SELECT * FROM todos;'"
+    echo ""
+    echo "5. Testi rakendust:"
     echo "   curl http://localhost:8080                 - Frontend"
     echo "   curl http://localhost:3000/health          - User Service"
     echo "   curl http://localhost:8081/health          - Todo Service"
     echo ""
-    echo "4. Vaata andmeid:"
-    echo "   docker exec postgres-user psql -U postgres -d user_service_db -c 'SELECT * FROM users;'"
-    echo "   docker exec postgres-todo psql -U postgres -d todo_service_db -c 'SELECT * FROM todos;'"
-    echo ""
-    echo "5. Alusta Harjutus 1'st:"
+    echo "6. Alusta Harjutus 1'st:"
     echo "   cat exercises/01-compose-basics.md"
     echo ""
 else
