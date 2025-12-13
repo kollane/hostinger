@@ -367,14 +367,6 @@ services:
 networks:
   database-network:
     internal: false  # Luba host ligipääs (andmebaasidele DBeaver'iga)
-
-# Named volumes (TEST-spetsiifilised nimed)
-# OLULINE: Eraldi volume'id võimaldavad erinevaid paroole TEST vs PROD!
-volumes:
-  postgres-user-data:
-    name: postgres-user-data-test
-  postgres-todo-data:
-    name: postgres-todo-data-test
 ```
 
 Salvesta: `Esc`, siis `:wq`, `Enter`
@@ -442,14 +434,6 @@ services:
     restart: always
     ports:
       - "80:80"  # HTTP (production port)
-
-# Named volumes (PRODUCTION-spetsiifilised nimed)
-# OLULINE: Eraldi volume'id võimaldavad erinevaid paroole TEST vs PROD!
-volumes:
-  postgres-user-data:
-    name: postgres-user-data-prod
-  postgres-todo-data:
-    name: postgres-todo-data-prod
 ```
 
 Salvesta: `Esc`, siis `:wq`, `Enter`
@@ -620,11 +604,18 @@ Lisa sisu:
 #   - postgres-todo:5432  (Todo Service andmebaas)
 # PRODUCTION'is andmebaasid on isoleeritud (internal network, pordid suletud!)
 #
-# ⚠️ OLULINE: PRODUCTION kasutab eraldi volume'id!
-# Volume nimed: postgres-user-data-prod, postgres-todo-data-prod
-# See võimaldab ERINEVAT parooli võrreldes TEST'iga (postgres-user-data-test)
+# 📚 HARJUTUSE LIHTSUSTUS:
+# Selles harjutuses kasutame SAMA parooli kui TEST'is ("postgres")
+# Põhjus: Sama PostgreSQL volume (postgres-user-data, postgres-todo-data)
+#         → PostgreSQL ignoreerib uut parooli, kui volume on juba initsialiseeritud
+#
+# 🏢 REAALSES PRODUCTION KESKKONNAS:
+# - Eraldi server (prod.company.com)
+# - Eraldi volume'id (või managed DB: AWS RDS, Azure Database)
+# - TUGEVAD erinevad paroolid (openssl rand -base64 48)
+# - Mitte kunagi sama parool kui TEST/DEV!
 POSTGRES_USER=postgres
-POSTGRES_PASSWORD=CHANGE_ME_TO_STRONG_PASSWORD_MIN_32_CHARS
+POSTGRES_PASSWORD=postgres
 
 # Database Names
 USER_DB_NAME=user_service_db
@@ -727,42 +718,27 @@ docker-compose -f docker-compose.yml -f docker-compose.test.yml logs -f
 **PRODUCTION Keskkond:**
 
 ```bash
-# 1. Loo .env.prod fail ja muuda paroole
+# 1. Loo .env.prod fail
 cp .env.prod.example .env.prod
-nano .env.prod  # MUUDA paroolid!
 
-# Genereeri tugevad paroolid (ERINEVAD TEST'ist!)
-openssl rand -base64 48  # PostgreSQL password
-openssl rand -base64 32  # JWT secret
+# 📚 HARJUTUSES: Kasutame sama parooli mis TEST'is (postgres)
+# 🏢 REAALSES ELUS: Kasutaksid ERINEVAT tugevat parooli eraldi serveris!
 
-# Näide .env.prod fail:
-# POSTGRES_PASSWORD=8xK3mL9pQ2vN7wR5tY1zF4hB6cE0gD8aJ3sK7mL1nP9qW2xV5yT8uR3
-# JWT_SECRET=8K+9fR3mL7vN2pQ6xW1yZ4tH5jB0cE8fG9aD3sK7mL1=
+# VALIKULINE: Genereeri tugev JWT_SECRET (erinev TEST'ist)
+STRONG_JWT=$(openssl rand -base64 32)
+sed -i "s/8K+9fR3mL7vN2pQ6xW1yZ4tH5jB0cE8fG9aD3sK7mL1=/$STRONG_JWT/" .env.prod
 
 # 2. Käivita PRODUCTION keskkonnaga
-# ⚠️ OLULINE: Docker loob AUTOMAATSELT uued volume'id:
-#   - postgres-user-data-prod  (TÜHI, initsialiseeritakse PROD parooliga)
-#   - postgres-todo-data-prod  (TÜHI, initsialiseeritakse PROD parooliga)
-# Need on ERINEVAD TEST volume'idest (postgres-*-data-test)!
+# MÄRKUS: Kasutab samu volume'id mis TEST (harjutuse lihtsustus!)
+# Reaalses elus: Eraldi server → eraldi volume'id → erinevad paroolid
 docker-compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.prod up -d
 
-# 3. Kontrolli, et uued volume'id loodi
-docker volume ls | grep postgres
-# Peaks nägema MÕLEMAT:
-#   postgres-user-data-prod  ← UUS (PROD parooliga)
-#   postgres-todo-data-prod  ← UUS (PROD parooliga)
-#   postgres-user-data-test  ← VANA (TEST parooliga, kui TEST käivitatud)
-#   postgres-todo-data-test  ← VANA (TEST parooliga)
-
-# 4. Kontrolli, et PostgreSQL initsialiseerus PROD parooliga
-docker logs postgres-user | grep "PostgreSQL init process complete"
-# Peaks nägema: "PostgreSQL init process complete; ready for start up."
-
-# 5. Kontrolli teenuseid
+# 3. Kontrolli teenuseid
 docker ps  # Vaata (healthy) staatust
 docker stats  # Vaata resource kasutust
 
 # ❌ Andmebaasid ei ole kättesaadavad host'ilt (isoleeritud - internal network)
+# ✅ Ainult frontend port 80 on avatud
 ```
 
 #### 4.6. Võrdlus: Erinevused Keskkondade Vahel
@@ -772,13 +748,14 @@ docker stats  # Vaata resource kasutust
 | **DB Pordid** | ✅ 5432, 5433 (localhost) | ❌ Isoleeritud (internal network) |
 | **Backend Pordid** | ✅ 3000, 8081 (localhost) | ❌ Sisevõrk ainult |
 | **Frontend Port** | 8080 | 80 (või 443 SSL'iga) |
-| **Volume Nimed** | `postgres-*-data-test` | `postgres-*-data-prod` |
-| **DB Paroolid** | `postgres` (lihtne, sama mis Harjutus 3) | Tugevad (48+ bytes, `openssl rand -base64 48`) |
+| **DB Paroolid** | `postgres` (harjutuses sama) | `postgres` (harjutuses sama¹) |
 | **JWT Secret** | `VXCkL39yz...` (Base64, 256-bit) | ERINEV tugev hash (32+ bytes, `openssl rand -base64 32`) |
 | **Logging** | DEBUG (verbose) | WARN (minimal) |
 | **Resource Limits** | ❌ Pole | ✅ Strict (CPU, memory) |
 | **Restart Policy** | unless-stopped | always |
 | **Database Network** | internal: false | internal: true |
+
+**¹ Märkus:** Harjutuses kasutame sama DB parooli, sest kasutame samu volume'id. Reaalses production keskkonnas oleksid eraldi serverid → eraldi volume'id → ERINEVAD tugevad paroolid!
 
 #### 4.7. Alias'ed (Valikuline)
 
@@ -1041,51 +1018,32 @@ alias dc-test='docker-compose -f docker-compose.yml -f docker-compose.test.yml -
 alias dc-prod='docker-compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.prod'
 ```
 
-### Named Volumes (Eraldi keskkondade jaoks):
+### Volume'id ja Paroolid (Harjutuse lihtsustus):
 
-**Probleem:** Vaikimisi kasutavad kõik keskkond sama volume'id → sama parool!
+**Selles harjutuses:**
+- ✅ TEST ja PROD kasutavad **samu volume'id** (`postgres-user-data`, `postgres-todo-data`)
+- ✅ Sama DB parool mõlemas keskkonnas: `postgres`
+- ✅ ERINEV JWT_SECRET (TEST vs PROD)
 
-**Lahendus:** Named volumes override failides
-```yaml
-# docker-compose.test.yml
-volumes:
-  postgres-user-data:
-    name: postgres-user-data-test  # ← TEST-spetsiifiline
+**Põhjus:**
+- Sama volume → PostgreSQL ignoreerib teist parooli (juba initsialiseeritud)
+- Lihtsam harjutuseks (fokus: multi-environment pattern, mitte volume haldus)
 
-# docker-compose.prod.yml
-volumes:
-  postgres-user-data:
-    name: postgres-user-data-prod  # ← PROD-spetsiifiline
+**🏢 Reaalses production keskkonnas:**
+
 ```
+Test Server (test.company.com):
+  └─ Volume: /mnt/postgres-data-test
+  └─ Parool: test_password_123
 
-**Automaatne loomine:**
-```bash
-# Esimene kord TEST käivitades - Docker loob automaatselt:
-docker-compose -f docker-compose.yml -f docker-compose.test.yml up -d
-# → postgres-user-data-test (TÜHI, initsialiseeritakse TEST parooliga)
-# → postgres-todo-data-test (TÜHI, initsialiseeritakse TEST parooliga)
-
-# Esimene kord PROD käivitades - Docker loob UUED volume'id:
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
-# → postgres-user-data-prod (TÜHI, initsialiseeritakse PROD parooliga)
-# → postgres-todo-data-prod (TÜHI, initsialiseeritakse PROD parooliga)
+Production Server (prod.company.com):
+  └─ Volume: /mnt/postgres-data-prod  ← ERINEV server, ERINEV volume!
+  └─ Parool: Sx8K3mL9pQ2vN7wR5t...    ← TUGEV, ERINEV parool!
 ```
 
 **Tulemus:**
-- ✅ TEST: `postgres-user-data-test` → parool `postgres`
-- ✅ PROD: `postgres-user-data-prod` → ERINEV tugev parool
-- ✅ Volume'id luuakse automaatselt (EI pea käsitsi `docker volume create`)
-- ✅ Eraldi volume'id võimaldavad erinevaid paroole
-- ✅ Realistlik (nagu päris production serverid)
-
-**Kontroll:**
-```bash
-docker volume ls | grep postgres
-# postgres-user-data-test   ← TEST parooliga
-# postgres-todo-data-test   ← TEST parooliga
-# postgres-user-data-prod   ← PROD parooliga (ERINEV!)
-# postgres-todo-data-prod   ← PROD parooliga (ERINEV!)
-```
+- ✅ Harjutuses: Õpid multi-environment pattern'i (compose failid, .env failid)
+- ✅ Reaalses elus: Eraldi serverid → eraldi volume'id → erinevad paroolid
 
 ### docker-compose.override.yml (Lokaalne Dev):
 
