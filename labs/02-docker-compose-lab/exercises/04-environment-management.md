@@ -524,42 +524,100 @@ services:
 
 Salvesta: `Esc`, siis `:wq`, `Enter`
 
-**Testi PRODUCTION override (ajutine .env fail):**
+**Loo .env.prod fail testimiseks:**
 
 ```bash
-# Loo ajutine .env.prod fail testimiseks (koopia template'ist)
+# 1. Kopeeri template → .env.prod
 cp .env.test.example .env.prod
 
-# Käivita PRODUCTION override'iga
+# 2. Genereeri tugev JWT_SECRET PRODUCTION'i jaoks
+openssl rand -base64 32
+
+# 3. Muuda .env.prod failis järgmised väärtused
+vim .env.prod
+```
+
+**Muuda `.env.prod` failis järgmised read:**
+
+```bash
+# Muuda JWT_SECRET → uus väärtus openssl'ist (erinev TEST'ist!)
+JWT_SECRET=<kopeeri openssl rand -base64 32 tulemus siia>
+
+# Muuda logging tasemed → production level
+LOG_LEVEL=warn
+SPRING_LOG_LEVEL=WARN
+
+# Muuda environment → production
+NODE_ENV=production
+SPRING_PROFILE=prod
+
+# POSTGRES_PASSWORD jääb samaks: postgres (harjutuse lihtsustus)
+# 📚 HARJUTUSE LIHTSUSTUS: sama DB parool kui TEST'is
+#    Põhjus: Sama volume → PostgreSQL ignoreerib uut parooli
+# 🏢 REAALSES PRODUCTION'IS: eraldi server → erinev tugev parool!
+```
+
+Salvesta: `Esc`, siis `:wq`, `Enter`
+
+**Testi PRODUCTION keskkonda:**
+
+```bash
+# Käivita PRODUCTION keskkonnaga (kasutab .env.prod faili)
 docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.prod up -d
 
-# 1. Kontrolli, et ainult frontend port 80 on avatud
-docker ps | grep -E "frontend|user-service|todo-service"
-# Frontend: 0.0.0.0:80->80/tcp
-# user-service, todo-service: EI OLE porte
+# 1. Kontrolli, et teenused käivituvad
+docker ps
+# Peaks nägema: frontend, user-service, todo-service, postgres-user, postgres-todo
 
-# 2. Kontrolli restart policies
-docker inspect frontend --format='{{.HostConfig.RestartPolicy.Name}}'
+# 2. Kontrolli, et AINULT frontend port on avatud (PRODUCTION mode)
+docker ps | grep -E "user-service|todo-service|postgres"
+# Peaks nägema:
+#   user-service: EI OLE porte (internal only)
+#   todo-service: EI OLE porte (internal only)
+#   postgres-user: EI OLE porte (internal only)
+#   postgres-todo: EI OLE porte (internal only)
+
+docker ps | grep frontend
+# Peaks nägema: 0.0.0.0:80->80/tcp (ainult frontend on avalik)
+
+# 3. Testi, et backend ei ole kättesaadav väljastpoolt
+curl http://localhost:3000/health  # EI TÖÖTA (port not exposed)
+curl http://localhost:8081/health  # EI TÖÖTA (port not exposed)
+# Oodatud: Connection refused
+
+# 4. Kontrolli environment muutujaid (production mode)
+docker exec user-service printenv NODE_ENV
+# Peaks olema: production
+
+docker exec todo-service printenv SPRING_PROFILES_ACTIVE
+# Peaks olema: prod
+
+# 5. Kontrolli, et database network ON isoleeritud (PRODUCTION mode)
+docker network inspect compose-project_database-network | grep -i internal
+# Peaks olema: "Internal": true
+
+# 6. Kontrolli resource limits
+docker stats --no-stream
+# Peaks nägema CPU ja memory limite:
+#   postgres-user: 1.0 CPU, 512M memory
+#   postgres-todo: 1.0 CPU, 512M memory
+#   user-service: 1.0 CPU, 512M memory
+#   todo-service: 2.0 CPU, 1G memory
+
+# 7. Kontrolli restart policies
+docker inspect user-service --format='{{.HostConfig.RestartPolicy.Name}}'
 # Peaks olema: always
-
-# 3. Kontrolli resource limits (docker stats)
-docker stats --no-stream | grep -E "user-service|todo-service|postgres"
-# Peaks nägema CPU ja memory limite
 
 # Seiska teenused
 docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.prod down
-
-# Eemalda ajutine .env.prod fail
-rm .env.prod
 ```
 
 **💡 Mida õppisid:**
-- ✅ PRODUCTION override muudab porte (ainult frontend:80)
-- ✅ Lisab restart policies (always)
-- ✅ Lisab resource limits (CPU, memory)
-- ✅ Järgmises sammus (5.3) loome .env.prod faili õigete seadistustega
-
-**📌 Märkus:** See oli ajutine test. Samm 5.3-s loome `.env.prod` faili õigete production seadistustega (erinev JWT_SECRET, production log level, jne).
+- ✅ PRODUCTION: Ainult frontend port 80 avatud (backend ja DB isoleeritud)
+- ✅ Environment muutujad: NODE_ENV=production, SPRING_PROFILES_ACTIVE=prod
+- ✅ Database network on isoleeritud (internal: true)
+- ✅ Resource limits ja restart policies on rakendatud
+- ✅ **Võrdlus TEST vs PROD:** TEST = debug pordid + dev mode, PROD = isoleeritud + production mode
 
 ---
 
