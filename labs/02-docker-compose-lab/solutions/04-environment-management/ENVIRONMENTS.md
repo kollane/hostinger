@@ -1,13 +1,25 @@
-# Mitme Keskkonna Seadistused
+# Mitme Keskkonna Seadistused (Multi-Environment)
 
-See projekt toetab **4 erinevat keskkonda**:
+## 📚 Harjutuse Lihtsustus
+
+**Selles harjutuses:**
+- ✅ 3 keskkonda: Local Dev (VALIKULINE), Test, Production
+- ✅ Sama DB parool (`postgres`) TEST ja PROD jaoks
+- ✅ ERINEV JWT Secret TEST vs PROD
+
+**🏢 Reaalses Production Keskkonnas:**
+- Eraldi serverid (test.company.com, prod.company.com)
+- Eraldi volume'id → ERINEVAD paroolid!
+
+---
+
+## Keskkondade Ülevaade
 
 | Keskkond | Fail | Kasutus | Pordid avatud? |
 |----------|------|---------|----------------|
-| **Local Dev** | `docker-compose.override.yml` | Automaatne (git ignore) | ✅ Kõik localhost'ile |
-| **Test** | `docker-compose.test.yml` | Manuaalne käivitamine | ✅ Kõik localhost'ile |
-| **Prelive** | `docker-compose.prelive.yml` | Prod-sarnane testimine | ❌ Ainult frontend |
-| **Production** | `docker-compose.prod.yml` | Live deploy | ❌ Ainult frontend |
+| **Local Dev** | `docker-compose.override.yml` | Automaatne (VALIKULINE) | ✅ Kõik localhost'ile |
+| **Test** | `docker-compose.test.yml` | Debug, testimine | ✅ Kõik localhost'ile |
+| **Production** | `docker-compose.prod.yml` | Live deploy | ❌ Ainult frontend (80) |
 
 ---
 
@@ -56,30 +68,7 @@ docker-compose -f docker-compose.yml -f docker-compose.test.yml down
 
 ---
 
-### 3️⃣ Prelive Keskkond (Prod-sarnane)
-
-```bash
-# Käivita
-docker-compose -f docker-compose.yml -f docker-compose.prelive.yml up -d
-
-# Kontrolli resource kasutust
-docker stats
-
-# Testi frontend'i (ainult see on avatud!)
-curl http://localhost:8080
-
-# API testid läbi frontend'i
-curl http://localhost:8080/api/users/health
-
-# ❌ Andmebaasid ei ole kättesaadavad host'ilt (isoleeritud)
-
-# Seiska
-docker-compose -f docker-compose.yml -f docker-compose.prelive.yml down
-```
-
----
-
-### 4️⃣ Production Keskkond
+### 3️⃣ Production Keskkond
 
 ```bash
 # Käivita environment variables'iga
@@ -109,16 +98,20 @@ docker-compose -f docker-compose.yml -f docker-compose.prod.yml down -v
 
 ## Keskkondade Erinevused
 
-| Aspekt | Local Dev | Test | Prelive | Production |
-|--------|-----------|------|---------|------------|
-| **Andmebaasi pordid** | ✅ 5432, 5433 | ✅ 5432, 5433 | ❌ Isoleeritud | ❌ Isoleeritud |
-| **Backend pordid** | ✅ 3000, 8081 | ✅ 3000, 8081 | ❌ Sisevõrk | ❌ Sisevõrk |
-| **Frontend port** | ✅ 8080 | ✅ 8080 | ✅ 8080 | ✅ 80 (443 SSL) |
-| **Database network** | Internal: false | Internal: false | Internal: true | Internal: true |
-| **Resource limits** | ❌ Pole | ✅ Moderate | ✅ Strict | ✅ Very strict |
-| **Logging level** | DEBUG | DEBUG | INFO | WARN |
-| **Restart policy** | unless-stopped | unless-stopped | unless-stopped | always |
-| **Health checks** | 30s interval | 30s interval | 15s interval | 15s interval |
+| Aspekt | Local Dev | Test | Production |
+|--------|-----------|------|------------|
+| **Andmebaasi pordid** | ✅ 5432, 5433 | ✅ 5432, 5433 | ❌ Isoleeritud |
+| **Backend pordid** | ✅ 3000, 8081 | ✅ 3000, 8081 | ❌ Sisevõrk |
+| **Frontend port** | ✅ 8080 | ✅ 8080 | ✅ 80 (443 SSL) |
+| **DB Paroolid** | `postgres` | `postgres` | `postgres` (harjutus¹) |
+| **JWT Secret** | Harjutus 3 | Base64, 256-bit | ERINEV hash |
+| **Database network** | Internal: false | Internal: false | Internal: true |
+| **Resource limits** | ❌ Pole | ❌ Pole | ✅ Strict |
+| **Logging level** | DEBUG | DEBUG | WARN |
+| **Restart policy** | unless-stopped | unless-stopped | always |
+
+**¹ Harjutuse lihtsustus:** Sama DB parool (postgres), sest kasutame samu volume'id.
+**Reaalses elus:** Eraldi serverid → eraldi volume'id → ERINEVAD paroolid!
 
 ---
 
@@ -128,15 +121,14 @@ Lisa `~/.bashrc` või `~/.zshrc` faili:
 
 ```bash
 # Docker Compose aliased
-alias dc-test='docker-compose -f docker-compose.yml -f docker-compose.test.yml'
-alias dc-prelive='docker-compose -f docker-compose.yml -f docker-compose.prelive.yml'
-alias dc-prod='docker-compose -f docker-compose.yml -f docker-compose.prod.yml'
+alias dc-test='docker-compose -f docker-compose.yml -f docker-compose.test.yml --env-file .env.test'
+alias dc-prod='docker-compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.prod'
 ```
 
 **Kasutamine:**
 ```bash
 dc-test up -d
-dc-prelive logs -f
+dc-test logs -f
 dc-prod down
 ```
 
@@ -188,12 +180,7 @@ docker ps  # Vaata PORTS veergu
    - Ava kõik pordid debugging'uks
    - Kasuta DBeaver/pgAdmin'i andmebaasidega ühendamiseks
 
-3. **Prelive:**
-   - Testi production-sarnases keskkonnas
-   - Resource limit'id peavad olema seatud
-   - Andmebaasid isoleeritud (nagu prod'is)
-
-4. **Production:**
+3. **Production:**
    - Kasuta `.env.prod` faili (ÄRA commit'i saladusi!)
    - SSL/TLS (HTTPS)
    - Monitoring (Prometheus + Grafana)
@@ -205,9 +192,8 @@ docker ps  # Vaata PORTS veergu
 
 - **Base config:** `docker-compose.yml`
 - **Test override:** `docker-compose.test.yml`
-- **Prelive override:** `docker-compose.prelive.yml`
 - **Production override:** `docker-compose.prod.yml`
-- **Local dev override:** `docker-compose.override.yml` (git ignore)
+- **Local dev override:** `docker-compose.override.yml` (git ignore, VALIKULINE)
 
 ---
 

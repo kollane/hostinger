@@ -1,13 +1,31 @@
 # Paroolide ja Saladuste Haldamine
 
-## 🔐 Turvalisuse Mudel
+## 📚 Harjutuse Lihtsustus
 
-| Keskkond | Paroolide Allikas | Turvalisus | Kas commit'ida git'i? |
-|----------|-------------------|------------|----------------------|
-| **Local Dev** | Hardcoded defaults (`postgres`) | ⚠️ Nõrk (OK local) | ✅ Jah (docker-compose.yml) |
-| **Test** | `.env.test` fail | ⚠️ Nõrk (OK test) | ✅ Jah (example fail) |
-| **Prelive** | `.env.prelive` fail | ✅ Tugev | ❌ **EI! (.gitignore)** |
-| **Production** | `.env.prod` fail | ✅ Väga tugev | ❌ **EI KUNAGI!** |
+**⚠️ TÄHTIS:** Selles harjutuses kasutame **SAMA DB parooli** TEST ja PROD keskkonnas (`postgres`).
+
+**Põhjus:**
+- Kasutame samu PostgreSQL volume'id (`postgres-user-data`, `postgres-todo-data`)
+- PostgreSQL **ignoreerib** uut parooli, kui volume on juba initsialiseeritud
+- Fokus on multi-environment pattern'il (compose failid, .env failid), mitte volume haldamisel
+
+**🏢 Reaalses Production Keskkonnas:**
+- Eraldi serverid (test.company.com, prod.company.com)
+- Eraldi volume'id (või managed DB: AWS RDS, Azure Database)
+- **ERINEVAD tugevad paroolid** igale keskkonnale!
+
+---
+
+## 🔐 Turvalisuse Mudel (Harjutus)
+
+| Keskkond | DB Parool | JWT Secret | Kas commit'ida git'i? |
+|----------|-----------|------------|----------------------|
+| **Local Dev** | `postgres` (hardcoded) | Harjutus 3 väärtus | ✅ Jah (docker-compose.yml) |
+| **Test** | `postgres` (sama¹) | Base64, 256-bit | ✅ Jah (example fail) |
+| **Production** | `postgres` (sama¹) | ERINEV Base64 hash | ❌ **EI! (.gitignore)** |
+
+**¹ Harjutuse lihtsustus:** Sama DB parool (postgres), sest sama volume.
+**Reaalses elus:** Eraldi serverid → eraldi volume'id → ERINEVAD paroolid!
 
 ---
 
@@ -31,27 +49,30 @@ nano .env.prod  # MUUDA KINDLASTI kõik paroolid!
 
 ---
 
-### 2️⃣ Genereeri Tugevad Paroolid (Production)
+### 2️⃣ Genereeri JWT Secret (PRODUCTION)
+
+**Harjutuses:**
+- DB parool: `postgres` (sama mis TEST, ei vaja genereerimist)
+- JWT Secret: Genereeri ERINEV hash (32 bytes, Base64)
 
 ```bash
-# PostgreSQL parool (48 bytes, base64)
-openssl rand -base64 48
-
-# JWT Secret (32 bytes, base64)
+# JWT Secret (32 bytes, base64) - PEAB olema erinev TEST'ist!
 openssl rand -base64 32
 
-# Või kasutades pwgen (kui installitud)
-pwgen -s 48 1  # PostgreSQL
-pwgen -s 32 1  # JWT secret
+# Või kasutades Node.js
+node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 ```
 
 **Näide:**
 ```bash
-$ openssl rand -base64 48
-kJ8xN2vL9mR3qW5tY8pF7nH6zX4cV1bM9sA2dG5hT3jK8lP0oI9uY7eR6tW4qX3zN2
-
 $ openssl rand -base64 32
-VXCkL39yz/6xw7JFpHdLpP8xgBFUSKbnNJWdAaeWDiM=
+8K+9fR3mL7vN2pQ6xW1yZ4tH5jB0cE8fG9aD3sK7mL1=
+```
+
+**🏢 Reaalses Production Keskkonnas:**
+Genereerid ka DB parooli (eraldi server → eraldi volume):
+```bash
+openssl rand -base64 48  # PostgreSQL password
 ```
 
 ---
@@ -119,10 +140,12 @@ environment:
    - Cloud secrets (AWS Secrets Manager, Azure Key Vault)
    - **MITTE git'is!**
 
-4. **Kasuta erinevaid paroole igale keskkonnale**
-   - Test: `test123` (lihtne, debugging)
-   - Prelive: `prelive_strong_pass_456!` (tugev)
-   - Production: `kJ8xN2vL9mR3qW5tY8pF7nH6zX4cV1bM...` (väga tugev, genereeritud)
+4. **Kasuta erinevaid JWT secret'e igale keskkonnale**
+   - Test: `VXCkL39yz/6xw7JFpHdLpP8xgBFUSKbnNJWdAaeWDiM=` (Base64, 256-bit)
+   - Production: `8K+9fR3mL7vN2pQ6xW1yZ4tH5jB0cE8fG9aD3sK7mL1=` (ERINEV Base64 hash)
+
+   **Harjutuses:** DB parool on sama (`postgres`) - volume konflikt!
+   **Reaalses elus:** DB paroolid ka erinevad (eraldi serverid)
 
 5. **Rotate (vaheta) paroole regulaarselt**
    ```bash
@@ -163,19 +186,31 @@ environment:
 
 ---
 
-## 📝 Näited
+## 📝 Näited (Harjutus)
 
 ### TEST keskkond (`.env.test`):
 ```bash
-POSTGRES_PASSWORD=test123
-JWT_SECRET=test-secret-not-for-production
+POSTGRES_PASSWORD=postgres  # Harjutus 3 vaikeväärtus
+JWT_SECRET=VXCkL39yz/6xw7JFpHdLpP8xgBFUSKbnNJWdAaeWDiM=  # Base64, 256-bit
+NODE_ENV=development
 LOG_LEVEL=debug
+SPRING_PROFILE=dev
 ```
 
 ### PRODUCTION keskkond (`.env.prod`):
 ```bash
-POSTGRES_PASSWORD=kJ8xN2vL9mR3qW5tY8pF7nH6zX4cV1bM9sA2dG5hT3jK8lP0oI9uY7eR6tW4qX3zN2
-JWT_SECRET=VXCkL39yz/6xw7JFpHdLpP8xgBFUSKbnNJWdAaeWDiM=
+POSTGRES_PASSWORD=postgres  # Sama mis TEST (harjutuse lihtsustus!)
+JWT_SECRET=8K+9fR3mL7vN2pQ6xW1yZ4tH5jB0cE8fG9aD3sK7mL1=  # ERINEV hash!
+NODE_ENV=production
+LOG_LEVEL=warn
+SPRING_PROFILE=prod
+```
+
+**🏢 Reaalse Production `.env.prod` näide:**
+```bash
+POSTGRES_PASSWORD=kJ8xN2vL9mR3qW5tY8pF7nH6zX4cV1bM...  # ERINEV tugev hash
+JWT_SECRET=8K+9fR3mL7vN2pQ6xW1yZ4tH5jB0cE8fG9aD3sK7mL1=
+NODE_ENV=production
 LOG_LEVEL=warn
 ```
 

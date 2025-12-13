@@ -912,25 +912,25 @@ docker-compose -f docker-compose.yml -f docker-compose.test.yml stop
 
 ### Keskkondade Haldamine (Multi-Environment)
 
-👉 **Detailne juhend:** [compose-project/ENVIRONMENTS.md](../compose-project/ENVIRONMENTS.md)
+👉 **Detailne juhend:** [solutions/04-environment-management/ENVIRONMENTS.md](../solutions/04-environment-management/ENVIRONMENTS.md)
 
 **Sisaldab:**
-- 4 keskkonna võrdlus (local dev, test, prelive, prod)
+- 3 keskkonna võrdlus (local dev, test, prod)
 - Composite käskude näited
 - Alias'ed (.bashrc)
 - Troubleshooting
-- Multi-server deployment juhised
+- Harjutuse lihtsustus vs reaalse elu praktika
 
 ### Paroolide ja Saladuste Turvalisus
 
-👉 **Turvalisuse juhend:** [compose-project/PASSWORDS.md](../compose-project/PASSWORDS.md)
+👉 **Turvalisuse juhend:** [solutions/04-environment-management/PASSWORDS.md](../solutions/04-environment-management/PASSWORDS.md)
 
 **Sisaldab:**
-- Tugevate paroolide genereerimine (openssl, pwgen)
+- JWT Secret'i genereerimine (openssl)
 - `.env` failide turvalisus
-- Secrets rotation best practices
-- Password manager integratsioon
-- Troubleshooting (unustatud paroolid)
+- Harjutuse lihtsustus (sama DB parool)
+- Reaalse production praktika
+- Troubleshooting
 
 ---
 
