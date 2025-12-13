@@ -541,8 +541,10 @@ Lisa sisu:
 # Parool peab olema SAMA mis Harjutus 3's (volume'id säilitavad seda!)
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=postgres
-POSTGRES_USER_DB=user_service_db
-POSTGRES_TODO_DB=todo_service_db
+
+# Database Names
+USER_DB_NAME=user_service_db
+TODO_DB_NAME=todo_service_db
 
 # JWT Configuration
 # MÄRKUS: See on TEST keskkonna lihtne secret (loetav, debug friendly)
@@ -550,11 +552,23 @@ POSTGRES_TODO_DB=todo_service_db
 #   openssl rand -base64 32
 #   Näide: 8K+9fR3mL7vN2pQ6xW1yZ4tH5jB0cE8fG9aD3sK7mL1=
 JWT_SECRET=test-secret-not-for-production
+JWT_EXPIRES_IN=1h
 
 # Application Ports
 USER_SERVICE_PORT=3000
 TODO_SERVICE_PORT=8081
 FRONTEND_PORT=8080
+POSTGRES_USER_PORT=5432
+POSTGRES_TODO_PORT=5433
+
+# Node.js Environment
+NODE_ENV=development
+
+# Java Options
+JAVA_OPTS=-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0
+
+# Spring Profile
+SPRING_PROFILE=dev
 
 # Logging
 LOG_LEVEL=debug
@@ -586,19 +600,31 @@ Lisa sisu:
 # PRODUCTION'is andmebaasid on isoleeritud (internal network, pordid suletud!)
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=CHANGE_ME_TO_STRONG_PASSWORD_MIN_32_CHARS
-POSTGRES_USER_DB=user_service_db
-POSTGRES_TODO_DB=todo_service_db
+
+# Database Names
+USER_DB_NAME=user_service_db
+TODO_DB_NAME=todo_service_db
 
 # JWT Configuration
 # ⚠️ OLULINE: Genereeri UUS secret (ÄRA kasuta seda näidist!):
 #   openssl rand -base64 32
 # PEAB olema erinev TEST keskkonnast (test-secret-not-for-production)!
 JWT_SECRET=8K+9fR3mL7vN2pQ6xW1yZ4tH5jB0cE8fG9aD3sK7mL1=
+JWT_EXPIRES_IN=1h
 
-# Application Ports
+# Application Ports (PRODUCTION'is sisevõrgus, pordid suletud!)
 USER_SERVICE_PORT=3000
 TODO_SERVICE_PORT=8081
 FRONTEND_PORT=80
+
+# Node.js Environment
+NODE_ENV=production
+
+# Java Options
+JAVA_OPTS=-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0
+
+# Spring Profile
+SPRING_PROFILE=prod
 
 # Logging
 LOG_LEVEL=warn
