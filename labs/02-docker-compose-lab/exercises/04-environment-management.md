@@ -444,8 +444,8 @@ docker exec todo-service printenv SPRING_PROFILES_ACTIVE
 # Peaks olema: dev
 
 # 5. Kontrolli, et database network EI OLE isoleeritud (TEST mode)
-docker network inspect compose-project_database-network | grep internal
-# Peaks olema: "internal": false
+docker network inspect compose-project_database-network | grep -i internal
+# Peaks olema: "Internal": false
 
 # Seiska teenused (enne järgmist sammu)
 docker compose -f docker-compose.yml -f docker-compose.test.yml down
@@ -699,8 +699,8 @@ docker exec todo-service printenv SPRING_PROFILES_ACTIVE
 # Peaks olema: prod
 
 # 5. Kontrolli, et database network ON isoleeritud (PRODUCTION mode)
-docker network inspect compose-project_database-network | grep internal
-# Peaks olema: "internal": true
+docker network inspect compose-project_database-network | grep -i internal
+# Peaks olema: "Internal": true
 
 # 6. Kontrolli resource limits
 docker stats --no-stream
