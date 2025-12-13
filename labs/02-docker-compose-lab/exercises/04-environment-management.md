@@ -414,6 +414,29 @@ networks:
 
 Salvesta: `Esc`, siis `:wq`, `Enter`
 
+**Testi TEST keskkonda:**
+
+```bash
+# Käivita TEST keskkonnaga (kasutab .env.test faili)
+docker compose -f docker-compose.yml -f docker-compose.test.yml --env-file .env.test up -d
+
+# Kontrolli, et teenused käivituvad
+docker ps
+# Peaks nägema: frontend, user-service, todo-service, postgres-user, postgres-todo
+
+# Kontrolli, et pordid on avatud (TEST mode)
+docker ps | grep postgres
+# Peaks nägema: 127.0.0.1:5432->5432/tcp ja 127.0.0.1:5433->5432/tcp
+
+# Seiska teenused (enne järgmist sammu)
+docker compose -f docker-compose.yml -f docker-compose.test.yml down
+```
+
+**💡 Mida õppisid:**
+- ✅ TEST override lisab debug porte (127.0.0.1 prefix)
+- ✅ Composite käsk ühendab BASE + TEST override + .env.test
+- ✅ Saad kohe testida, kas konfiguratsioon töötab
+
 ---
 
 ##### 5.2.2. PRODUCTION Override (docker-compose.prod.yml)
@@ -480,6 +503,10 @@ services:
 ```
 
 Salvesta: `Esc`, siis `:wq`, `Enter`
+
+**💡 Testimine:**
+
+PRODUCTION override'i testimine tuleb pärast Samm 5.3 (kui `.env.prod` fail on loodud). Praegu jätkame järgmise override failiga.
 
 ---
 
@@ -617,6 +644,34 @@ Salvesta: `Esc`, siis `:wq`, `Enter`
 - ✅ Muudad ainult keskkonnapõhiseid seadistusi (JWT_SECRET, LOG_LEVEL, NODE_ENV)
 - ✅ Ei pea kopeerima tervet faili käsitsi (vähem vigu)
 - ✅ Template on commit'itud Git'i, `.env.prod` on ignored
+
+**Testi PRODUCTION keskkonda:**
+
+```bash
+# Käivita PRODUCTION keskkonnaga (kasutab .env.prod faili)
+docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.prod up -d
+
+# Kontrolli, et teenused käivituvad
+docker ps
+# Peaks nägema: frontend, user-service, todo-service, postgres-user, postgres-todo
+
+# Kontrolli, et ainult frontend port on avatud (PRODUCTION mode)
+docker ps | grep -E "frontend|user-service|todo-service"
+# Frontend: 0.0.0.0:80->80/tcp
+# user-service ja todo-service: EI OLE porte (internal only)
+
+# Kontrolli resource limits
+docker stats --no-stream
+# Peaks nägema CPU ja memory limite
+
+# Seiska teenused
+docker compose -f docker-compose.yml -f docker-compose.prod.yml down
+```
+
+**💡 Mida õppisid:**
+- ✅ PRODUCTION override lisab resource limits ja restart policies
+- ✅ Ainult frontend port 80 on avatud (backend ja DB isoleeritud)
+- ✅ Saad võrrelda TEST vs PROD käitumist
 
 ---
 
