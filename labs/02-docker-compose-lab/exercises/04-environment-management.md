@@ -524,9 +524,42 @@ services:
 
 Salvesta: `Esc`, siis `:wq`, `Enter`
 
-**💡 Testimine:**
+**Testi PRODUCTION override (ajutine .env fail):**
 
-PRODUCTION override'i testimine tuleb pärast Samm 5.3 (kui `.env.prod` fail on loodud). Praegu jätkame järgmise override failiga.
+```bash
+# Loo ajutine .env.prod fail testimiseks (koopia template'ist)
+cp .env.test.example .env.prod
+
+# Käivita PRODUCTION override'iga
+docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.prod up -d
+
+# 1. Kontrolli, et ainult frontend port 80 on avatud
+docker ps | grep -E "frontend|user-service|todo-service"
+# Frontend: 0.0.0.0:80->80/tcp
+# user-service, todo-service: EI OLE porte
+
+# 2. Kontrolli restart policies
+docker inspect frontend --format='{{.HostConfig.RestartPolicy.Name}}'
+# Peaks olema: always
+
+# 3. Kontrolli resource limits (docker stats)
+docker stats --no-stream | grep -E "user-service|todo-service|postgres"
+# Peaks nägema CPU ja memory limite
+
+# Seiska teenused
+docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.prod down
+
+# Eemalda ajutine .env.prod fail
+rm .env.prod
+```
+
+**💡 Mida õppisid:**
+- ✅ PRODUCTION override muudab porte (ainult frontend:80)
+- ✅ Lisab restart policies (always)
+- ✅ Lisab resource limits (CPU, memory)
+- ✅ Järgmises sammus (5.3) loome .env.prod faili õigete seadistustega
+
+**📌 Märkus:** See oli ajutine test. Samm 5.3-s loome `.env.prod` faili õigete production seadistustega (erinev JWT_SECRET, production log level, jne).
 
 ---
 
