@@ -4,12 +4,32 @@
 
 **Selles harjutuses:**
 - ✅ 3 keskkonda: Local Dev (VALIKULINE), Test, Production
+- ✅ **Üks template** (`.env.test.example`) aluseks kõigile keskkondadele
 - ✅ Sama DB parool (`postgres`) TEST ja PROD jaoks
 - ✅ ERINEV JWT Secret TEST vs PROD
 
 **🏢 Reaalses Production Keskkonnas:**
 - Eraldi serverid (test.company.com, prod.company.com)
 - Eraldi volume'id → ERINEVAD paroolid!
+
+---
+
+## 📁 Template Pattern
+
+**Harjutuses:**
+```
+.env.test.example  (template - commit'itud Git'i)
+     ↓ cp
+.env.test          (test secrets - git ignored)
+     ↓ cp + muuda JWT_SECRET
+.env.prod          (prod secrets - git ignored)
+```
+
+**Solution kaustas:**
+```
+.env.test.example  (template)
+.env.prod.example  (näidisfail - täielik PROD näide)
+```
 
 ---
 
@@ -197,4 +217,4 @@ docker ps  # Vaata PORTS veergu
 
 ---
 
-**Viimane uuendus:** 2025-12-11
+**Viimane uuendus:** 2025-12-13

@@ -31,21 +31,28 @@
 
 ## 📋 Kiire Alustamine
 
-### 1️⃣ Loo `.env` failid template'idest
+### 1️⃣ Loo `.env` failid template'ist
+
+**Harjutuses kasutame ühte template'i (`.env.test.example`) aluseks kõigile keskkondadele:**
 
 ```bash
-# Test keskkond
+# Test keskkond (ei vaja muutmist)
 cp .env.test.example .env.test
-# Hardcoded test paroolid on OK (ei lähe git'i)
+# Kasutab Harjutus 3 väärtusi (postgres, VXCkL39yz...)
 
-# Prelive keskkond
-cp .env.prelive.example .env.prelive
-nano .env.prelive  # Muuda POSTGRES_PASSWORD ja JWT_SECRET
-
-# Production keskkond
-cp .env.prod.example .env.prod
-nano .env.prod  # MUUDA KINDLASTI kõik paroolid!
+# Production keskkond (muuda JWT_SECRET!)
+cp .env.test.example .env.prod
+nano .env.prod
+# Muuda:
+#   - JWT_SECRET=<openssl rand -base64 32 tulemus>
+#   - LOG_LEVEL=warn
+#   - SPRING_LOG_LEVEL=WARN
+#   - NODE_ENV=production
+#   - SPRING_PROFILE=prod
+# POSTGRES_PASSWORD=postgres jääb samaks (harjutuse lihtsustus)
 ```
+
+**💡 Märkus:** `.env.test.example` on template, `.env.prod.example` on näidisfail solution kaustas.
 
 ---
 
@@ -256,4 +263,4 @@ docker-compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.
 
 ---
 
-**Viimane uuendus:** 2025-12-11
+**Viimane uuendus:** 2025-12-13

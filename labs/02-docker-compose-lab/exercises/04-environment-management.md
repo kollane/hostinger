@@ -111,61 +111,71 @@ DB_PASSWORD: postgres
 
 ---
 
-### Samm 2: Loo .env fail
+### Samm 2: Loo .env.test.example template
 
-**Eesmärk:** Defineeri keskkonnamuutujad ühes kohas, mida saad hiljem docker-compose.yml'is kasutada.
+**Eesmärk:** Loo template fail, mis sisaldab kõiki vajalikke keskkonnamuutujaid. Seda saab kasutada aluseks nii TEST kui PRODUCTION keskkondade jaoks.
 
-Loo `.env` fail saladustele ja konfiguratsioonile:
+Loo `.env.test.example` fail:
 
 ```bash
-vim .env
+vim .env.test.example
 ```
 
 Lisa järgmine sisu:
 
 ```bash
 # ==========================================================================
-# Environment Variables - Docker Compose (LOCAL TESTING)
+# TEST Environment Variables Template
 # ==========================================================================
-# TÄHTIS: See fail sisaldab saladusi!
-# EI TOHI commit'ida Git'i! Lisa .gitignore'i!
-# MÄRKUS: Need on LIHTSAMAD väärtused testimiseks.
-#         Production'is kasuta .env.prod faili tugevate paroolidega!
+# See on TEMPLATE fail, mida saab kasutada aluseks:
+#   - TEST keskkond: cp .env.test.example .env.test
+#   - PROD keskkond: cp .env.test.example .env.prod (muuda seadistusi!)
+#
+# ⚠️ TÄHTIS: .env.test ja .env.prod failid sisaldavad saladusi!
+#            EI TOHI commit'ida Git'i! Lisa .gitignore'i!
 # ==========================================================================
 
 # PostgreSQL Credentials
 # MÄRKUS: Kasutab Docker Compose teenuseid (service names):
 #   - postgres-user:5432  (User Service andmebaas)
 #   - postgres-todo:5432  (Todo Service andmebaas)
+# Parool peab olema SAMA mis Harjutus 3's (volume'id säilitavad seda!)
 POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres  # Harjutus 3 vaikeväärtus (lihtne local testing jaoks)
+POSTGRES_PASSWORD=postgres
+
+# Database Names
+USER_DB_NAME=user_service_db
+TODO_DB_NAME=todo_service_db
 
 # JWT Configuration
 # ⚠️ OLULINE: PEAB olema Base64 encoded, min 256-bit (32 bytes)!
 # Spring Boot JwtTokenProvider nõuab tugevat Base64 secret'i.
-# Lihtne string EI TÖÖTA - põhjustab todo-service crash'i!
-JWT_SECRET=VXCkL39yz/6xw7JFpHdLpP8xgBFUSKbnNJWdAaeWDiM=  # Harjutus 3 väärtus
+# Lihtne string "test-secret-not-for-production" EI TÖÖTA - põhjustab crash'i!
+#
+# TEST keskkond: kasuta sama secret'i mis Harjutus 3's (volume'id säilitavad seda)
+# PRODUCTION: genereeri UUS tugev secret: openssl rand -base64 32
+JWT_SECRET=VXCkL39yz/6xw7JFpHdLpP8xgBFUSKbnNJWdAaeWDiM=
 JWT_EXPIRES_IN=1h
 
-# Application Ports (ei kasutata production mode'is - pordid eemaldatud)
+# Application Ports
 USER_SERVICE_PORT=3000
 TODO_SERVICE_PORT=8081
 FRONTEND_PORT=8080
 POSTGRES_USER_PORT=5432
 POSTGRES_TODO_PORT=5433
 
-# Database Names
-USER_DB_NAME=user_service_db
-TODO_DB_NAME=todo_service_db
-
 # Node.js Environment
-NODE_ENV=production
+NODE_ENV=development
 
 # Java Options
 JAVA_OPTS=-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0
 
 # Spring Profile
-SPRING_PROFILE=prod
+SPRING_PROFILE=dev
+
+# Logging
+LOG_LEVEL=debug
+SPRING_LOG_LEVEL=DEBUG
 ```
 
 Salvesta: `Esc`, siis `:wq`, `Enter`
@@ -175,11 +185,41 @@ Salvesta: `Esc`, siis `:wq`, `Enter`
 Kui vajad `.env` faili täpset selgitust (miks seda kasutatakse, kuidas Docker Compose seda loeb, turvalisus), loe:
 - 👉 **[Koodiselgitus: Docker Compose .env File](../../../resource/code-explanations/Docker-Compose-Env-File-Explained.md)**
 
+**💡 Mida õppisid:**
+- ✅ Template fail on alus kõigile keskkondadele
+- ✅ Commit'id Git'i `.env.test.example` (template), MITTE `.env.test` (saladused)
+- ✅ Järgmises sammus lood `.env.test` faili template'i alusel
+
 ---
 
-### Samm 3: Uuenda docker-compose.yml (BASE config)
+### Samm 3: Loo .env.test fail template'ist
 
-**Eesmärk:** Nüüd kui .env fail on olemas, muuda olemasolev `compose-project/docker-compose.yml` fail kasutama neid muutujaid.
+**Eesmärk:** Kopeeri template fail ja kasuta seda TEST keskkonnas.
+
+Kopeeri template fail:
+
+```bash
+# Kopeeri .env.test.example → .env.test
+cp .env.test.example .env.test
+```
+
+**Kontrolli, et fail loodi:**
+
+```bash
+ls -la .env.test
+# Peaks nägema: .env.test (sama sisu mis .env.test.example)
+```
+
+**💡 Mida õppisid:**
+- ✅ `.env.test` fail on valmis TEST keskkonna jaoks
+- ✅ Ei pea käsitsi muutma (kasutab Harjutus 3 väärtusi)
+- ✅ Järgmises sammus õpid, kuidas luua PRODUCTION keskkonnal erinev `.env.prod` fail
+
+---
+
+### Samm 4: Uuenda docker-compose.yml (BASE config)
+
+**Eesmärk:** Nüüd kui .env.test fail on olemas, muuda olemasolev `compose-project/docker-compose.yml` fail kasutama neid muutujaid.
 
 Ava olemasolev docker-compose.yml fail:
 
@@ -219,10 +259,10 @@ cat ../solutions/04-environment-management/docker-compose.yml
 
 Salvesta: `Esc`, siis `:wq`, `Enter`
 
-**Testi, et BASE config kasutab .env faili:**
+**Testi, et BASE config kasutab .env.test faili:**
 
 ```bash
-# Kontrolli, et muutujad substituteeruvad õigesti
+# Kontrolli, et muutujad substituteeruvad õigesti (.env.test fail loetakse automaatselt)
 docker compose config | grep JWT_SECRET
 # Peaks nägema: JWT_SECRET: VXCkL39yz/6xw7JFpHdLpP8xgBFUSKbnNJWdAaeWDiM=
 
@@ -236,17 +276,17 @@ docker compose config | grep -A 5 "^networks:"
 
 **💡 Mida õppisid:**
 - ✅ BASE config kasutab `${VARIABLE}` süntaksit
-- ✅ .env fail täidab need muutujad
+- ✅ `.env.test` fail täidab need muutujad
 - ✅ Saad testida kohe (docker compose config)
 - ✅ Järgmises sammus õpid multi-environment pattern'i (TEST vs PROD)
 
 ---
 
-### Samm 4: Multi-Environment Arhitektuur (30 min)
+### Samm 5: Multi-Environment Setup (30 min)
 
 **Eesmärk:** Nüüd kui BASE config on olemas, õpi eraldama TEST ja PRODUCTION keskkondade konfiguratsioone.
 
-#### 4.1. Best Practice: Multi-File Pattern (4 Tüüpi Override Faile)
+#### 5.1. Best Practice: Multi-File Pattern (4 Tüüpi Override Faile)
 
 **Docker Compose toetab mitut override faili tüüpi:**
 
@@ -313,9 +353,9 @@ docker-compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.
 
 **Tulemus:** Sama kood (git'is), erinevad paroolid ja seadistused (igas serveris).
 
-#### 4.2. Loo Override Failid
+#### 5.2. Loo Override Failid
 
-Selles sammus loome 3 override faili (vaata Samm 4.1 tabelit):
+Selles sammus loome 3 override faili (vaata Samm 5.1 tabelit):
 
 1. ✅ **docker-compose.test.yml** (TEST) - Kohustuslik
 2. ✅ **docker-compose.prod.yml** (PRODUCTION) - Kohustuslik
@@ -323,7 +363,7 @@ Selles sammus loome 3 override faili (vaata Samm 4.1 tabelit):
 
 ---
 
-##### 4.2.1. TEST Override (docker-compose.test.yml)
+##### 5.2.1. TEST Override (docker-compose.test.yml)
 
 Loo **docker-compose.test.yml**:
 
@@ -373,7 +413,7 @@ Salvesta: `Esc`, siis `:wq`, `Enter`
 
 ---
 
-##### 4.2.2. PRODUCTION Override (docker-compose.prod.yml)
+##### 5.2.2. PRODUCTION Override (docker-compose.prod.yml)
 
 Loo **docker-compose.prod.yml**:
 
@@ -440,9 +480,9 @@ Salvesta: `Esc`, siis `:wq`, `Enter`
 
 ---
 
-##### 4.2.3. LOCAL DEV Override (docker-compose.override.yml) - VALIKULINE
+##### 5.2.3. LOCAL DEV Override (docker-compose.override.yml) - VALIKULINE
 
-**💡 Viide:** See on 4. override faili tüüp, mida käsitleti Samm 4.1-s (Multi-File Pattern).
+**💡 Viide:** See on 4. override faili tüüp, mida käsitleti Samm 5.1-s (Multi-File Pattern).
 
 **Märkus:** See samm on VALIKULINE. Kui ei tee aktiivset arendust (volume mounts, hot reload), võid vahele jätta.
 
@@ -452,7 +492,7 @@ Salvesta: `Esc`, siis `:wq`, `Enter`
 
 **Erinevus:**
 
-| Aspekt | override.yml (4.2.3) | test.yml (4.2.1) |
+| Aspekt | override.yml (5.2.3) | test.yml (5.2.1) |
 |--------|----------------------|------------------|
 | **Käivitamine** | `docker-compose up -d` (automaatne) | `-f docker-compose.yml -f docker-compose.test.yml` (explicit) |
 | **Kasutus** | Aktiivne arendus (volume mounts, hot reload) | Testimine (built images, pordid avatud) |
@@ -520,136 +560,64 @@ docker compose config
 
 ---
 
-#### 4.3. Loo Environment Variable Failid
+#### 5.3. Loo .env.prod fail PRODUCTION keskkonna jaoks
 
-Loo **.env.test.example**:
+**Eesmärk:** Loo PRODUCTION keskkonna .env fail template'i alusel ja muuda ainult vajalikke seadistusi.
+
+**Märkus:** `.env.test.example` template loodi juba Samm 2's. Kasuta seda aluseks PRODUCTION keskkonna jaoks.
+
+Loo `.env.prod` fail template'i alusel:
 
 ```bash
-vim .env.test.example
+# 1. Kopeeri template → .env.prod
+cp .env.test.example .env.prod
+
+# 2. Genereeri tugev JWT_SECRET PRODUCTION'i jaoks
+openssl rand -base64 32
+
+# 3. Muuda .env.prod failis järgmised väärtused
+vim .env.prod
 ```
 
-Lisa sisu:
+**Muuda `.env.prod` failis järgmised read:**
 
 ```bash
-# ==========================================================================
-# TEST Environment Variables
-# ==========================================================================
-# Kopeeri: cp .env.test.example .env.test
-# ==========================================================================
+# Muuda JWT_SECRET → uus väärtus openssl'ist (erinev TEST'ist!)
+JWT_SECRET=<kopeeri openssl rand -base64 32 tulemus siia>
 
-# PostgreSQL Credentials
-# MÄRKUS: Kasutab Docker Compose teenuseid (service names):
-#   - postgres-user:5432  (User Service andmebaas)
-#   - postgres-todo:5432  (Todo Service andmebaas)
-# Parool peab olema SAMA mis Harjutus 3's (volume'id säilitavad seda!)
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
-
-# Database Names
-USER_DB_NAME=user_service_db
-TODO_DB_NAME=todo_service_db
-
-# JWT Configuration
-# ⚠️ OLULINE: PEAB olema Base64 encoded, min 256-bit (32 bytes)!
-# Spring Boot JwtTokenProvider nõuab tugevat Base64 secret'i.
-# Lihtne string "test-secret-not-for-production" EI TÖÖTA - põhjustab crash'i!
-#
-# TEST keskkond: kasuta sama secret'i mis Harjutus 3's (volume'id säilitavad seda)
-# PRODUCTION: genereeri UUS tugev secret: openssl rand -base64 32
-JWT_SECRET=VXCkL39yz/6xw7JFpHdLpP8xgBFUSKbnNJWdAaeWDiM=
-JWT_EXPIRES_IN=1h
-
-# Application Ports
-USER_SERVICE_PORT=3000
-TODO_SERVICE_PORT=8081
-FRONTEND_PORT=8080
-POSTGRES_USER_PORT=5432
-POSTGRES_TODO_PORT=5433
-
-# Node.js Environment
-NODE_ENV=development
-
-# Java Options
-JAVA_OPTS=-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0
-
-# Spring Profile
-SPRING_PROFILE=dev
-
-# Logging
-LOG_LEVEL=debug
-SPRING_LOG_LEVEL=DEBUG
-```
-
-Salvesta: `Esc`, siis `:wq`, `Enter`
-
-Loo **.env.prod.example**:
-
-```bash
-vim .env.prod.example
-```
-
-Lisa sisu:
-
-```bash
-# ==========================================================================
-# PRODUCTION Environment Variables
-# ==========================================================================
-# ⚠️ MUUDA KÕIK PAROOLID JA SECRETID!
-# Kopeeri: cp .env.prod.example .env.prod
-# ==========================================================================
-
-# PostgreSQL Credentials
-# MÄRKUS: Kasutab Docker Compose teenuseid (service names):
-#   - postgres-user:5432  (User Service andmebaas)
-#   - postgres-todo:5432  (Todo Service andmebaas)
-# PRODUCTION'is andmebaasid on isoleeritud (internal network, pordid suletud!)
-#
-# 📚 HARJUTUSE LIHTSUSTUS:
-# Selles harjutuses kasutame SAMA parooli kui TEST'is ("postgres")
-# Põhjus: Sama PostgreSQL volume (postgres-user-data, postgres-todo-data)
-#         → PostgreSQL ignoreerib uut parooli, kui volume on juba initsialiseeritud
-#
-# 🏢 REAALSES PRODUCTION KESKKONNAS:
-# - Eraldi server (prod.company.com)
-# - Eraldi volume'id (või managed DB: AWS RDS, Azure Database)
-# - TUGEVAD erinevad paroolid (openssl rand -base64 48)
-# - Mitte kunagi sama parool kui TEST/DEV!
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
-
-# Database Names
-USER_DB_NAME=user_service_db
-TODO_DB_NAME=todo_service_db
-
-# JWT Configuration
-# ⚠️ OLULINE: Genereeri UUS secret (ÄRA kasuta seda näidist!):
-#   openssl rand -base64 32
-# PEAB olema erinev TEST keskkonnast (test-secret-not-for-production)!
-JWT_SECRET=8K+9fR3mL7vN2pQ6xW1yZ4tH5jB0cE8fG9aD3sK7mL1=
-JWT_EXPIRES_IN=1h
-
-# Application Ports (PRODUCTION'is sisevõrgus, pordid suletud!)
-USER_SERVICE_PORT=3000
-TODO_SERVICE_PORT=8081
-FRONTEND_PORT=80
-
-# Node.js Environment
-NODE_ENV=production
-
-# Java Options
-JAVA_OPTS=-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0
-
-# Spring Profile
-SPRING_PROFILE=prod
-
-# Logging
+# Muuda logging tasemed → production level
 LOG_LEVEL=warn
 SPRING_LOG_LEVEL=WARN
+
+# Muuda environment → production
+NODE_ENV=production
+SPRING_PROFILE=prod
+
+# POSTGRES_PASSWORD jääb samaks: postgres (harjutuse lihtsustus)
+# 📚 HARJUTUSE LIHTSUSTUS: sama DB parool kui TEST'is
+#    Põhjus: Sama volume → PostgreSQL ignoreerib uut parooli
+# 🏢 REAALSES PRODUCTION'IS: eraldi server → erinev tugev parool!
+```
+
+**Näide täielikust `.env.prod` failist:**
+
+Vaata täielikku näidisfaili solution kaustas:
+
+```bash
+cat ../solutions/04-environment-management/.env.prod.example
 ```
 
 Salvesta: `Esc`, siis `:wq`, `Enter`
 
-#### 4.4. Uuenda .gitignore
+**💡 Mida õppisid:**
+- ✅ Kasutad sama template'i (`.env.test.example`) aluseks kõigile keskkondadele
+- ✅ Muudad ainult keskkonnapõhiseid seadistusi (JWT_SECRET, LOG_LEVEL, NODE_ENV)
+- ✅ Ei pea kopeerima tervet faili käsitsi (vähem vigu)
+- ✅ Template on commit'itud Git'i, `.env.prod` on ignored
+
+---
+
+#### 5.4. Uuenda .gitignore
 
 ```bash
 vim .gitignore
@@ -682,7 +650,9 @@ Thumbs.db
 
 Salvesta: `Esc`, siis `:wq`, `Enter`
 
-#### 4.5. Kasutamine: Composite Commands
+---
+
+#### 5.5. Kasutamine: Composite Commands
 
 **TEST Keskkond:**
 
@@ -741,7 +711,9 @@ docker stats  # Vaata resource kasutust
 # ✅ Ainult frontend port 80 on avatud
 ```
 
-#### 4.6. Võrdlus: Erinevused Keskkondade Vahel
+---
+
+#### 5.6. Võrdlus: Erinevused Keskkondade Vahel
 
 | Aspekt | TEST | PRODUCTION |
 |--------|------|------------|
@@ -757,7 +729,9 @@ docker stats  # Vaata resource kasutust
 
 **¹ Märkus:** Harjutuses kasutame sama DB parooli, sest kasutame samu volume'id. Reaalses production keskkonnas oleksid eraldi serverid → eraldi volume'id → ERINEVAD tugevad paroolid!
 
-#### 4.7. Alias'ed (Valikuline)
+---
+
+#### 5.7. Alias'ed (Valikuline)
 
 Lisa `~/.bashrc`:
 
@@ -772,6 +746,8 @@ dc-test up -d
 dc-prod logs -f
 ```
 
+---
+
 #### ✅ Kontrollküsimused
 
 1. Miks ei saa kasutada sama `.env` faili test ja production'is?
@@ -782,92 +758,7 @@ dc-prod logs -f
 
 ---
 
-### Samm 5: Loo .env.example mall (VALIKULINE)
-
-**Märkus:** See samm on nüüd VALIKULINE, kuna lõime juba `.env.test.example` ja `.env.prod.example` failid Samm 4's.
-
-Kui soovid luua üldise `.env.example` faili (lokaalseks arenduks), loo mallifail:
-
-```bash
-vim .env.example
-```
-
-Lisa järgmine sisu (ilma päris saladusteta):
-
-```bash
-# ==========================================================================
-# Environment Variables Template
-# ==========================================================================
-# Kopeeri see fail .env failiks ja täida päris väärtustega:
-#   cp .env.example .env
-#   vim .env
-# ==========================================================================
-
-# PostgreSQL Credentials
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=change-me-in-production
-
-# JWT Configuration
-JWT_SECRET=change-this-to-a-strong-random-secret-at-least-256-bits
-JWT_EXPIRES_IN=1h
-
-# Application Ports
-USER_SERVICE_PORT=3000
-TODO_SERVICE_PORT=8081
-FRONTEND_PORT=8080
-POSTGRES_USER_PORT=5432
-POSTGRES_TODO_PORT=5433
-
-# Database Names
-USER_DB_NAME=user_service_db
-TODO_DB_NAME=todo_service_db
-
-# Node.js Environment
-NODE_ENV=production
-
-# Java Options
-JAVA_OPTS=-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0
-
-# Spring Profile
-SPRING_PROFILE=prod
-```
-
-Salvesta: `Esc`, siis `:wq`, `Enter`
-
----
-
-### Samm 6: Kontrolli .gitignore
-
-**Märkus:** `.gitignore` fail loodi juba Samm 4.4's. See samm on kontrollimiseks.
-
-Kontrolli .gitignore faili sisu:
-
-```bash
-vim .gitignore
-```
-
-Lisa:
-
-```
-# Environment files with secrets
-.env
-
-# Docker Compose overrides (optional - depends on your workflow)
-# docker-compose.override.yml
-
-# Logs
-*.log
-
-# OS files
-.DS_Store
-Thumbs.db
-```
-
-Salvesta: `Esc`, siis `:wq`, `Enter`
-
----
-
-### Samm 7: Valideeri ja Testi Multi-Environment Setup (10 min)
+### Samm 6: Valideeri ja Testi Multi-Environment Setup (10 min)
 
 **TEST Keskkond:**
 
@@ -940,12 +831,12 @@ Peale selle harjutuse läbimist peaksid omama:
 
 ### Failid (Multi-Environment Setup):
 - [ ] **docker-compose.yml** - BASE config (env vars: `${VAR:-default}`)
-- [ ] **docker-compose.test.yml** - TEST overrides (Samm 4.2.1)
-- [ ] **docker-compose.prod.yml** - PRODUCTION overrides (Samm 4.2.2)
-- [ ] **docker-compose.override.yml** - LOCAL DEV overrides (Samm 4.2.3 - VALIKULINE)
-- [ ] **.env.test.example** - TEST template (commit'itud)
-- [ ] **.env.prod.example** - PRODUCTION template (commit'itud)
-- [ ] **.env.test** - TEST secrets (git ignored, lokaalselt loodud)
+- [ ] **docker-compose.test.yml** - TEST overrides (Samm 5.2.1)
+- [ ] **docker-compose.prod.yml** - PRODUCTION overrides (Samm 5.2.2)
+- [ ] **docker-compose.override.yml** - LOCAL DEV overrides (Samm 5.2.3 - VALIKULINE)
+- [ ] **.env.test.example** - TEST template (commit'itud, Samm 2)
+- [ ] **.env.test** - TEST secrets (git ignored, lokaalselt loodud, Samm 3)
+- [ ] **.env.prod** - PRODUCTION secrets (git ignored, lokaalselt loodud, Samm 5.3)
 - [ ] **.gitignore** - Actual .env files ignored
 - [ ] **ENVIRONMENTS.md** viide olemas
 - [ ] **PASSWORDS.md** viide olemas
@@ -964,21 +855,21 @@ Peale selle harjutuse läbimist peaksid omama:
 ### Kontroll-käsud:
 
 ```bash
-# 1. Kas .env fail eksisteerib?
-ls -la .env
-# Peaks nägema .env faili
+# 1. Kas .env.test fail eksisteerib?
+ls -la .env.test
+# Peaks nägema .env.test faili
 
-# 2. Kas .env loetakse?
+# 2. Kas .env.test loetakse?
 docker compose config | grep JWT_SECRET
-# Peaks nägema .env'ist väärtust
+# Peaks nägema .env.test'ist väärtust
 
 # 3. Kas .gitignore toimib?
 git status
-# .env EI PEAKS olema nimekirjas
+# .env.test EI PEAKS olema nimekirjas (ainult .env.test.example)
 
-# 4. Kas override rakendub?
-docker compose config | grep NODE_ENV
-# Development mode'is peaks olema: NODE_ENV: development
+# 4. Kas override rakendub (TEST keskkond)?
+docker compose -f docker-compose.yml -f docker-compose.test.yml config | grep NODE_ENV
+# TEST mode'is peaks olema: NODE_ENV: development
 ```
 
 ---
@@ -1047,7 +938,7 @@ Production Server (prod.company.com):
 
 ### docker-compose.override.yml (Lokaalne Dev):
 
-**📖 Vaata:** Samm 4.2.3 (LOCAL DEV Override) - VALIKULINE
+**📖 Vaata:** Samm 5.2.3 (LOCAL DEV Override) - VALIKULINE
 
 - Rakendub **automaatselt** peale docker-compose.yml (kui fail eksisteerib)
 - Kasutatakse lokaalseks development'iks (hot reload, volume mounts)
@@ -1061,14 +952,17 @@ Production Server (prod.company.com):
 - `docker-compose.yml` (BASE config)
 - `docker-compose.test.yml` (TEST overrides)
 - `docker-compose.prod.yml` (PRODUCTION overrides)
-- `.env.test.example` (TEST template)
-- `.env.prod.example` (PRODUCTION template)
+- `.env.test.example` (TEST template - Samm 2)
 - `.gitignore`
 
 ❌ **EI commit Git'i:**
 
-- `.env`, `.env.test`, `.env.prod` (sisaldavad päris paroole!)
+- `.env.test`, `.env.prod` (sisaldavad päris paroole!)
 - `docker-compose.override.yml` (optional lokaalne dev)
+
+**💡 Märkus:**
+- `.env.test.example` on template, mida kasutad aluseks nii TEST kui PROD keskkondade jaoks
+- `.env.prod.example` on näidisfail solution kaustas (täielik näide)
 
 ---
 
@@ -1076,126 +970,14 @@ Production Server (prod.company.com):
 
 ### Multi-Environment Setup:
 
-1. **Ära kunagi commit'i .env faile** - Lisa .gitignore'i (`.env`, `.env.test`, `.env.prod`)
-2. **Commit template failid** - `.env.test.example`, `.env.prod.example` (ilma päris paroolideta)
-3. **Genereeri tugevad saladused PRODUCTION'is** - JWT_SECRET ja POSTGRES_PASSWORD peavad olema juhuslikud
-4. **Kasuta ERINEVAID paroole** - Test vs Prod (KUNAGI mitte sama parool!)
-5. **Dokumenteeri .env.example failid** - Lisa kommentaarid ja näited
-6. **Multi-server setup** - Iga server kasutab oma `.env.{env}` faili, sama git repo
-7. **Alias'ed** - Lisa `~/.bashrc`: `alias dc-test='...'`, `alias dc-prod='...'`
-
-### Tugeva JWT_SECRET Genereerimine:
-
-```bash
-# Linux/Mac:
-openssl rand -base64 64
-
-# Või Node.js:
-node -e "console.log(require('crypto').randomBytes(64).toString('base64'))"
-
-# Kopeeri tulemus .env faili:
-JWT_SECRET=<genereeritud-väärtus>
-```
-
----
-
-## 🐛 Levinud Probleemid
-
-### Probleem 1: "Variable not set: JWT_SECRET"
-
-```bash
-# Kontrolli, kas .env fail on olemas
-ls -la .env
-
-# Kui puudub, kopeeri .env.example
-cp .env.example .env
-vim .env  # Lisa päris väärtused
-```
-
-### Probleem 2: ".env fail ei loeta"
-
-```bash
-# .env peab olema samas kataloogis docker-compose.yml'iga
-ls -la
-# Peaks nägema:
-# docker-compose.yml
-# .env
-
-# Kontrolli faili õigusi
-chmod 644 .env
-```
-
-### Probleem 3: "Override ei rakendu"
-
-```bash
-# Kontrolli, et docker-compose.override.yml on olemas
-ls -la docker-compose.override.yml
-
-# Vaata, mis konfiguratsioon rakendub
-docker compose config
-
-# Force override
-docker compose -f docker-compose.yml -f docker-compose.override.yml up -d
-```
-
-### Probleem 4: "Muutujad ei substitueeru"
-
-```bash
-# Vale süntaks:
-$VARIABLE  # ❌
-
-# Õige süntaks:
-${VARIABLE}  # ✅
-
-# Vaikeväärtusega:
-${VARIABLE:-default}  # ✅
-```
-
-### Probleem 5: "TEST keskkond ei käivitu - pordid ei ole avatud"
-
-```bash
-# Kontrolli, et kasutad õiget compose faili
-docker-compose -f docker-compose.yml -f docker-compose.test.yml ps
-
-# Kontrolli docker-compose.test.yml sisu
-cat docker-compose.test.yml | grep -A 2 "ports:"
-
-# Peaks nägema:
-#   ports:
-#     - "127.0.0.1:5432:5432"
-
-# Restart õige config'iga
-docker-compose -f docker-compose.yml -f docker-compose.test.yml down
-docker-compose -f docker-compose.yml -f docker-compose.test.yml --env-file .env.test up -d
-```
-
-### Probleem 6: "Vale keskkond käivitus (test parool production'is)"
-
-```bash
-# Kontrolli, millist .env faili kasutati
-docker compose -f docker-compose.yml -f docker-compose.prod.yml config | grep POSTGRES_PASSWORD
-
-# Kontrolli konteineris
-docker exec postgres-user env | grep POSTGRES_PASSWORD
-
-# Lahendus: Kasuta alati --env-file
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.prod up -d
-```
-
-### Probleem 7: "Andmebaasid ei ole kättesaadavad DBeaver'ist (PRODUCTION)"
-
-**See on ÕIGE käitumine!**
-
-```bash
-# PRODUCTION'is on database-network internal: true (isoleeritud)
-# Andmebaasidele saab ligi ainult konteinerite seest
-
-# Lahendus 1: Kasuta TEST keskkonda debugging'uks
-docker-compose -f docker-compose.yml -f docker-compose.test.yml --env-file .env.test up -d
-
-# Lahendus 2: Kasuta docker exec
-docker exec -it postgres-user psql -U postgres -d user_service_db
-```
+1. **Ära kunagi commit'i .env faile** - Lisa .gitignore'i (`.env.test`, `.env.prod`)
+2. **Commit template fail** - `.env.test.example` (template kõigile keskkondadele)
+3. **Genereeri tugevad saladused PRODUCTION'is** - JWT_SECRET peab olema juhuslik (openssl rand -base64 32)
+4. **Kasuta template'i aluseks** - Kopeeri `.env.test.example` → `.env.prod`, muuda ainult vajalikud seadistused
+5. **Kasuta ERINEVAID JWT_SECRET'e** - Test vs Prod (KUNAGI mitte sama secret!)
+6. **Dokumenteeri template fail** - Lisa kommentaarid ja näited (`.env.test.example`)
+7. **Multi-server setup** - Iga server kasutab oma `.env.{env}` faili, sama git repo
+8. **Alias'ed** - Lisa `~/.bashrc`: `alias dc-test='...'`, `alias dc-prod='...'`
 
 ---
 
@@ -1205,11 +987,13 @@ Suurepärane! Nüüd haldad saladusi turvaliselt multi-environment pattern'iga.
 
 **Mis õppisid:**
 
+- ✅ `.env.test.example` template loomine (ühine alus kõigile keskkondadele)
+- ✅ Template'i kasutamine keskkondade jaoks (cp .env.test.example → .env.test/prod)
 - ✅ Multi-file pattern (4 tüüpi override faile: BASE + test.yml + prod.yml + override.yml)
 - ✅ Composite käsud (`-f docker-compose.yml -f docker-compose.test.yml --env-file .env.test`)
 - ✅ Environment-spetsiifilised konfiguratsioonid (test vs prod)
 - ✅ docker-compose.override.yml automaatne käitumine (VALIKULINE local dev)
-- ✅ Tugevate paroolide genereerimine
+- ✅ Tugevate paroolide genereerimine (openssl rand -base64 32)
 - ✅ Multi-server deployment muster
 - ⏭️ **Järgmine:** Andmebaasi migratsioonid (Liquibase)
 
