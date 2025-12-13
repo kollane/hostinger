@@ -134,6 +134,9 @@ Lisa järgmine sisu:
 # ==========================================================================
 
 # PostgreSQL Credentials
+# MÄRKUS: Kasutab Docker Compose teenuseid (service names):
+#   - postgres-user:5432  (User Service andmebaas)
+#   - postgres-todo:5432  (Todo Service andmebaas)
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=postgres  # Harjutus 3 vaikeväärtus (lihtne local testing jaoks)
 
@@ -532,8 +535,12 @@ Lisa sisu:
 # ==========================================================================
 
 # PostgreSQL Credentials
+# MÄRKUS: Kasutab Docker Compose teenuseid (service names):
+#   - postgres-user:5432  (User Service andmebaas)
+#   - postgres-todo:5432  (Todo Service andmebaas)
+# Parool peab olema SAMA mis Harjutus 3's (volume'id säilitavad seda!)
 POSTGRES_USER=postgres
-POSTGRES_PASSWORD=test123
+POSTGRES_PASSWORD=postgres
 POSTGRES_USER_DB=user_service_db
 POSTGRES_TODO_DB=todo_service_db
 
@@ -569,6 +576,10 @@ Lisa sisu:
 # ==========================================================================
 
 # PostgreSQL Credentials
+# MÄRKUS: Kasutab Docker Compose teenuseid (service names):
+#   - postgres-user:5432  (User Service andmebaas)
+#   - postgres-todo:5432  (Todo Service andmebaas)
+# PRODUCTION'is andmebaasid on isoleeritud (internal network, pordid suletud!)
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=CHANGE_ME_TO_STRONG_PASSWORD_MIN_32_CHARS
 POSTGRES_USER_DB=user_service_db
@@ -638,9 +649,22 @@ docker-compose -f docker-compose.yml -f docker-compose.test.yml --env-file .env.
 docker ps
 docker-compose -f docker-compose.yml -f docker-compose.test.yml logs -f
 
-# 4. Ühenda andmebaasidega (DBeaver)
-# User DB: localhost:5432, postgres / test123
-# Todo DB: localhost:5433, postgres / test123
+# 4. Ühenda andmebaasidega (DBeaver - TEST keskkonnas pordid on avatud!)
+# MÄRKUS: Ühenda õige keskkonna andmebaasiga:
+#   - TEST: localhost:5432 ja localhost:5433 (pordid avatud)
+#   - PROD: Andmebaasid isoleeritud (pordid suletud, internal network)
+#
+# User DB: localhost:5432
+#   Host: localhost, Port: 5432
+#   Database: user_service_db
+#   Username: postgres
+#   Password: postgres  (sama mis .env.test failis!)
+#
+# Todo DB: localhost:5433
+#   Host: localhost, Port: 5433
+#   Database: todo_service_db
+#   Username: postgres
+#   Password: postgres  (sama mis .env.test failis!)
 ```
 
 **PRODUCTION Keskkond:**
@@ -671,7 +695,8 @@ docker stats  # Vaata resource kasutust
 | **DB Pordid** | ✅ 5432, 5433 (localhost) | ❌ Isoleeritud (internal network) |
 | **Backend Pordid** | ✅ 3000, 8081 (localhost) | ❌ Sisevõrk ainult |
 | **Frontend Port** | 8080 | 80 (või 443 SSL'iga) |
-| **Paroolid** | `test123` (lihtne) | Tugevad (48 bytes) |
+| **DB Paroolid** | `postgres` (lihtne, sama mis Harjutus 3) | Tugevad (48+ bytes, `openssl rand -base64 48`) |
+| **JWT Secret** | `test-secret-not-for-production` | Tugev (32+ bytes, `openssl rand -base64 32`) |
 | **Logging** | DEBUG (verbose) | WARN (minimal) |
 | **Resource Limits** | ❌ Pole | ✅ Strict (CPU, memory) |
 | **Restart Policy** | unless-stopped | always |
