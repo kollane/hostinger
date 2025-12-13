@@ -113,7 +113,7 @@ DB_PASSWORD: postgres
 
 ### Samm 2: Loo .env.test.example template
 
-**Eesmärk:** Loo template fail, mis sisaldab kõiki vajalikke keskkonnamuutujaid. Seda saab kasutada aluseks nii TEST kui PRODUCTION keskkondade jaoks.
+**Eesmärk:** Loo TEST keskkonna template fail (.env.test.example), mis sisaldab kõiki vajalikke keskkonnamuutujaid. Seda template'i saab kasutada aluseks ka PRODUCTION keskkonna jaoks (.env.prod), kuid iga keskkond peab kasutama erinevaid väärtuseid keskkonnaspetsiifiliste muutujate jaoks (JWT_SECRET, LOG_LEVEL, NODE_ENV).
 
 Loo `.env.test.example` fail:
 
@@ -194,7 +194,7 @@ Kui vajad `.env` faili täpset selgitust (miks seda kasutatakse, kuidas Docker C
 
 ### Samm 3: Loo .env.test fail template'ist
 
-**Eesmärk:** Kopeeri template fail ja kasuta seda TEST keskkonnas.
+**Eesmärk:** Kopeeri template fail ja veendu, et see sisaldaks TEST keskkonna väärtuseid
 
 Kopeeri template fail:
 
