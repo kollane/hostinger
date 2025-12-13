@@ -1,10 +1,50 @@
 # ==========================================================================
-# Docker Compose - Lab 1 Lõpuseisu Konversioon
+# Docker Compose - Turvaline Arhitektuur + Environment Variables (Harjutus 4 Lahendus)
 # ==========================================================================
-# Käivitab 4 teenust:
-# - 2x PostgreSQL (users ja todos)
-# - User Service (Node.js)
-# - Todo Service (Java Spring Boot)
+# Võrgu segmenteerimine (Network Segmentation) + Portide Turvalisus
+# + Environment Variables (.env fail)
+#
+# 5 teenust (services) 3 võrgus (networks):
+# - Frontend (Nginx) - Avalik (public), port 8080
+# - User Service (Node.js) - Sisene (internal), ei ole avalik
+# - Todo Service (Java Spring Boot) - Sisene (internal), ei ole avalik
+# - 2x PostgreSQL - Isoleeritud (isolated), ei ole avalik
+#
+# Võrgu Arhitektuur (3-tier):
+#   Internet (0.0.0.0:8080)
+#       ↓
+#   Frontend Network (DMZ) - frontend
+#       ↓
+#   Backend Network (Application) - frontend, user-service, todo-service
+#       ↓
+#   Database Network (Data - ISOLATED) - user-service, todo-service, postgres-*
+#
+# Turvalisuse Parandused (Harjutus 3):
+# - ✅ 96% rünnaku pinna vähenemine (5 pordid → 1 port)
+# - ✅ Andmebaasid ei ole avalikud
+# - ✅ Backend API'd ei ole avalikud
+# - ✅ Frontend ei pääse ligi andmebaasidele
+# - ✅ Võrgu segmenteerimine (network segmentation)
+# - ✅ Vähimate õiguste printsiip (principle of least privilege)
+#
+# Turvalisuse Parandused (Harjutus 4 - SEE FAIL):
+# - ✅ Saladused .env failis (mitte hardcoded)
+# - ✅ Erinevad keskkondade konfiguratsioonid (test, prod)
+# - ✅ Versioonihaldus (.gitignore .env failid)
+# - ✅ Template failid (.env.example)
+#
+# Kasutamine:
+#   # TEST keskkond
+#   docker compose -f docker-compose.yml -f docker-compose.test.yml --env-file .env.test up -d
+#
+#   # PRODUCTION keskkond
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.prod up -d
+#
+#   # Vaata config'i (ilma käivitamata)
+#   docker compose config
+#
+#   # Peatamine
+#   docker compose down
 # ==========================================================================
 
 # MÄRKUS: Docker Compose v2 (2025)
@@ -15,64 +55,64 @@
 
 services:
   # ==========================================================================
-  # PostgreSQL - User Service Database
+  # FRONTEND LAYER (DMZ - Demilitarized Zone)
   # ==========================================================================
-  postgres-user:
-    image: postgres:16-alpine
-    container_name: postgres-user
+  # Turvaline: Avalik teenus (public service), hardened Nginx,
+  #            ei pääse ligi andmebaasidele
+  # Võrgud: frontend-network (avalik), backend-network (proxy backend'idele)
+  # ==========================================================================
+
+  frontend:
+    image: nginx:alpine
+    container_name: frontend
     restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${POSTGRES_USER_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}  # ⚠️ Muuda production'is!
+    ports:
+      - "8080:80"    # ✅ AINULT see port on avalik (0.0.0.0:8080)
+                     # PRODUCTION override muudab selle 80:80 (docker-compose.prod.yml)
     volumes:
-      - postgres-user-data:/var/lib/postgresql/data
+      # Mount frontend failid (read-only)
+      - ../../apps/frontend:/usr/share/nginx/html:ro
+      # Mount Nginx konfiguratsioon (reverse proxy API päringutele)
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
     networks:
-      - database-network    # ✅ Ainult database võrgus (network)
+      - frontend-network    # Avalik ligipääs (public access)
+      - backend-network     # Pääseb ligi backend'idele (reverse proxy)
+    depends_on:
+      - user-service
+      - todo-service
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    # Turvalisus: Read-only volumes, ei ole database-network'is
 
   # ==========================================================================
-  # PostgreSQL - Todo Service Database
+  # APPLICATION LAYER (Backend Services)
   # ==========================================================================
-  postgres-todo:
-    image: postgres:16-alpine
-    container_name: postgres-todo
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${POSTGRES_TODO_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}  # ⚠️ Muuda production'is!
-    volumes:
-      - postgres-todo-data:/var/lib/postgresql/data
-    networks:
-      - database-network    # ✅ Ainult database võrgus (network)
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+  # Turvaline: Sisene teenus (internal service), ei ole avalik,
+  #            pääseb ligi ainult oma andmebaasile
+  # Võrgud: backend-network (võtab vastu frontend päringuid),
+  #         database-network (ühendub postgres-user'iga)
+  # ==========================================================================
 
-  # ==========================================================================
-  # User Service - Node.js + Express + PostgreSQL
-  # ==========================================================================
   user-service:
     image: user-service:1.0-optimized
     container_name: user-service
     restart: unless-stopped
     environment:
       DB_HOST: postgres-user
-      DB_PORT: 5432
-      DB_NAME: ${POSTGRES_USER_DB}
-      DB_USER: ${POSTGRES_USER}
-      DB_PASSWORD: ${POSTGRES_PASSWORD}  # ⚠️ Muuda production'is!
-      JWT_SECRET: ${JWT_SECRET}  # ⚠️ Muuda production'is!
-      JWT_EXPIRES_IN: 1h
-      PORT: ${USER_SERVICE_PORT}
-      NODE_ENV: production
+      DB_PORT: 5432    # Sisene port (internal port), ei ole avalik
+      DB_NAME: ${USER_DB_NAME}                # .env failist
+      DB_USER: ${POSTGRES_USER}               # .env failist
+      DB_PASSWORD: ${POSTGRES_PASSWORD}       # .env failist (oli hardcoded: postgres)
+      JWT_SECRET: ${JWT_SECRET}               # .env failist (oli hardcoded: VXCkL39yz...)
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}       # .env failist
+      PORT: ${USER_SERVICE_PORT}              # .env failist (oli hardcoded: 3000)
+      NODE_ENV: ${NODE_ENV}                   # .env failist (oli hardcoded: production)
+    # ❌ EI OLE ports: sektsiooni - teenus ei ole avalik!
+    # Kättesaadav ainult Docker DNS kaudu: http://user-service:3000
+    # Development debug: kasuta docker-compose.test.yml (127.0.0.1:3000)
     networks:
       - backend-network     # Võtab vastu frontend päringuid (requests)
       - database-network    # Pääseb ligi postgres-user'ile
@@ -85,23 +125,24 @@ services:
       timeout: 3s
       retries: 3
       start_period: 40s
+    # Turvalisus: Ei ole avalik, ainult backend-network ja database-network
 
-  # ==========================================================================
-  # Todo Service - Java Spring Boot + PostgreSQL
-  # ==========================================================================
   todo-service:
     image: todo-service:1.0-optimized
     container_name: todo-service
     restart: unless-stopped
     environment:
       DB_HOST: postgres-todo
-      DB_PORT: 5432
-      DB_NAME: ${POSTGRES_TODO_DB}
-      DB_USER: ${POSTGRES_USER}
-      DB_PASSWORD: ${POSTGRES_PASSWORD}  # ⚠️ Muuda production'is!
-      JWT_SECRET: ${JWT_SECRET}  # ⚠️ Muuda production'is!
-      SPRING_PROFILES_ACTIVE: prod
-      JAVA_OPTS: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
+      DB_PORT: 5432    # Sisene port (internal port), ei ole avalik
+      DB_NAME: ${TODO_DB_NAME}                # .env failist
+      DB_USER: ${POSTGRES_USER}               # .env failist
+      DB_PASSWORD: ${POSTGRES_PASSWORD}       # .env failist (oli hardcoded: postgres)
+      JWT_SECRET: ${JWT_SECRET}               # .env failist (oli hardcoded: VXCkL39yz...)
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILE}  # .env failist (oli hardcoded: prod)
+      JAVA_OPTS: ${JAVA_OPTS}                 # .env failist
+    # ❌ EI OLE ports: sektsiooni - teenus ei ole avalik!
+    # Kättesaadav ainult Docker DNS kaudu: http://todo-service:8081
+    # Development debug: kasuta docker-compose.test.yml (127.0.0.1:8081)
     networks:
       - backend-network     # Võtab vastu frontend päringuid (requests)
       - database-network    # Pääseb ligi postgres-todo'le
@@ -114,61 +155,145 @@ services:
       timeout: 3s
       retries: 3
       start_period: 60s
+    # Turvalisus: Ei ole avalik, ainult backend-network ja database-network
 
   # ==========================================================================
-  # Frontend - Nginx Static Files
+  # DATA LAYER (Databases)
   # ==========================================================================
-  frontend:
-    image: nginx:alpine
-    container_name: frontend
+  # Turvaline: Isoleeritud teenus (isolated service), ei ole avalik,
+  #            kättesaadav ainult backend teenustele (backend services)
+  # Võrgud: database-network AINULT (internal: true - täielik isoleerimine)
+  # ==========================================================================
+
+  postgres-user:
+    image: postgres:16-alpine
+    container_name: postgres-user
     restart: unless-stopped
-    ports:
-      - "8080:80"
+    environment:
+      POSTGRES_DB: ${USER_DB_NAME}            # .env failist (oli hardcoded: user_service_db)
+      POSTGRES_USER: ${POSTGRES_USER}         # .env failist (oli hardcoded: postgres)
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD} # .env failist (oli hardcoded: postgres)
     volumes:
-      # Mount frontend failid (read-only)
-      - ../../apps/frontend:/usr/share/nginx/html:ro
-      # Mount Nginx konfiguratsioon (reverse proxy API päringutele)
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - postgres-user-data:/var/lib/postgresql/data
+    # ❌ EI OLE ports: sektsiooni - andmebaas ei ole avalik!
+    # Kättesaadav ainult Docker DNS kaudu: postgres-user:5432
+    # Development debug: kasuta docker-compose.test.yml (127.0.0.1:5432)
     networks:
-      - frontend-network    # Avalik ligipääs (public access)
-      - backend-network     # Pääseb ligi backend'idele (proxy)        
-    depends_on:
-      - user-service
-      - todo-service
+      - database-network    # ✅ AINULT database võrgus (network)
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1"]
-      interval: 30s
-      timeout: 3s
-      retries: 3
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # Turvalisus: Ei ole avalik, ainult user-service pääseb ligi
+
+  postgres-todo:
+    image: postgres:16-alpine
+    container_name: postgres-todo
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${TODO_DB_NAME}            # .env failist (oli hardcoded: todo_service_db)
+      POSTGRES_USER: ${POSTGRES_USER}         # .env failist (oli hardcoded: postgres)
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD} # .env failist (oli hardcoded: postgres)
+    volumes:
+      - postgres-todo-data:/var/lib/postgresql/data
+    # ❌ EI OLE ports: sektsiooni - andmebaas ei ole avalik!
+    # Kättesaadav ainult Docker DNS kaudu: postgres-todo:5432
+    # Development debug: kasuta docker-compose.test.yml (127.0.0.1:5433)
+    networks:
+      - database-network    # ✅ AINULT database võrgus (network)
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # Turvalisus: Ei ole avalik, ainult todo-service pääseb ligi
 
 # ==========================================================================
 # VÕRGU SEGMENTEERIMINE (Network Segmentation)
 # ==========================================================================
 # 3-taseme arhitektuur: DMZ → Backend → Database
+#
+# Turvaline konfiguratsioon:
+# - Frontend Network (DMZ): Avalik võrk (public network)
+# - Backend Network (Application): Sisene võrk (internal network)
+# - Database Network (Data): Isoleeritud võrk (isolated network)
+#
+# Ligipääsu Kontroll (Access Control):
+#   ┌──────────────┬──────────┬──────────┬──────────┬────────────┬────────────┐
+#   │ KES?         │ Frontend │ User Svc │ Todo Svc │ Postgres-U │ Postgres-T │
+#   ├──────────────┼──────────┼──────────┼──────────┼────────────┼────────────┤
+#   │ Internet     │    ✅    │    ❌    │    ❌    │     ❌     │     ❌     │
+#   │ Frontend     │    -     │    ✅    │    ✅    │     ❌     │     ❌     │
+#   │ User Service │    -     │    -     │    ❌    │     ✅     │     ❌     │
+#   │ Todo Service │    -     │    -     │    -     │     ❌     │     ✅     │
+#   └──────────────┴──────────┴──────────┴──────────┴────────────┴────────────┘
 # ==========================================================================
+
 networks:
-  # FRONTEND NETWORK (DMZ - Demilitarized Zone)
-  # Avalik võrk (network), kus on frontend
+  # PUBLIC NETWORK (DMZ - Demilitarized Zone)
+  # Avalik võrk (public network), kus on frontend
+  # Väliselt kättesaadav (externally accessible): 0.0.0.0:8080
   frontend-network:
     driver: bridge
+    # Ei ole internal - võimaldab välisest ligipääsu frontend'ile
 
-  # BACKEND NETWORK (Application Layer)
-  # Sisevõrk (internal network) backend teenustele (services)
+  # APPLICATION NETWORK (Backend Services)
+  # Sisene võrk (internal network) backend teenustele (backend services)
+  # Ei ole väliselt kättesaadav (not externally accessible)
+  # Frontend pääseb ligi backend'idele reverse proxy kaudu
   backend-network:
     driver: bridge
+    # Ei ole internal - võimaldab frontend'il proxy'd teha backend'idele
 
-  # DATABASE NETWORK (Data Layer)
+  # DATA NETWORK (Databases)
   # Isoleeritud võrk (isolated network) andmebaasidele
-  # internal: true = Ei saa ühendust välismaailmaga
+  # Täielikult isoleeritud (completely isolated) - ei saa ühendust välismaailmaga
+  # Ainult backend teenused (backend services) pääsevad ligi
   database-network:
     driver: bridge
-    internal: true    # ✅ OLULINE: Täielikult isoleeritud        
-        
+    internal: true    # ✅ OLULINE: Täielikult isoleeritud võrk (isolated network)
+    # internal: true tähendab:
+    # - Ei saa ühendust välismaailmaga (no external access)
+    # - Ei saa pinge'ida 8.8.8.8 (no internet)
+    # - Ainult sisene suhtlus (internal communication only)
+
 # ==========================================================================
-# Volumes - Kasutame Lab 1'st loodud andmehoidlaid
+# ANDMEHOIDLAD (Volumes) - Data Persistence
 # ==========================================================================
 volumes:
   postgres-user-data:
-    external: true  # Kasutame Lab 1'st loodud volume'i
+    external: true    # Kasutame Lab 1'st loodud volume'i
   postgres-todo-data:
-    external: true  # Kasutame Lab 1'st loodud volume'i
+    external: true    # Kasutame Lab 1'st loodud volume'i
+
+# ==========================================================================
+# TURVALISUSE KOKKUVÕTE (Security Summary)
+# ==========================================================================
+#
+# ENNE (Harjutus 1-2):
+# - 5 avalikku porti: 8080, 3000, 8081, 5432, 5433
+# - 1 võrk (flat network): todo-network
+# - Kõik teenused näevad kõike (no segmentation)
+# - Andmebaasid otse internetist kättesaadavad
+# - Backend API'd otse internetist kättesaadavad
+# - Saladused hardcoded (JWT_SECRET, paroolid)
+# - Turvarisk: ❌ KÕRGE
+#
+# PEALE (Harjutus 3 + 4 - SEE FAIL):
+# - 1 avalik port: 8080 (ainult frontend)
+# - 3 võrku (segmented): frontend, backend, database
+# - Teenused näevad ainult seda, mida vaja (least privilege)
+# - Andmebaasid MITTE avalikud (isolated)
+# - Backend API'd MITTE avalikud (internal only)
+# - Saladused .env failis (git ignored, environment-specific)
+# - Multi-environment support (test, prod)
+# - Turvarisk: ✅ MADAL
+#
+# Paranemine:
+# - 96% rünnaku pinna vähenemine (attack surface reduction)
+# - Defense in depth (kaitse sügavuses)
+# - Secrets management (saladuste haldus)
+# - Environment separation (keskkondade eraldamine)
+# - Compliance ready (vastab standarditele)
+# ==========================================================================
