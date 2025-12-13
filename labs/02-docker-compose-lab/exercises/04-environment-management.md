@@ -329,9 +329,9 @@ Sama pattern töötab kahes stsenaariumis:
 **Stsenaarium A: Lokaalne Arendus (1 masin)**
 ```bash
 # Sinu laptop'is - vahelduvad keskkondade vahel
-docker-compose -f docker-compose.yml -f docker-compose.test.yml up -d    # TEST
-docker-compose down
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d   # PROD
+docker-compose -f docker-compose.yml -f docker-compose.test.yml --env-file .env.test up -d    # TEST
+docker-compose -f docker-compose.yml -f docker-compose.test.yml --env-file .env.test down
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.prod up -d   # PROD
 ```
 
 **Stsenaarium B: Eraldi Serverid (tavaline production)**
@@ -448,7 +448,7 @@ docker network inspect compose-project_database-network | grep -i internal
 # Peaks olema: "Internal": false
 
 # Seiska teenused (enne järgmist sammu)
-docker compose -f docker-compose.yml -f docker-compose.test.yml down
+docker compose -f docker-compose.yml -f docker-compose.test.yml --env-file .env.test down
 ```
 
 **💡 Mida õppisid:**
@@ -715,7 +715,7 @@ docker inspect user-service --format='{{.HostConfig.RestartPolicy.Name}}'
 # Peaks olema: always
 
 # Seiska teenused
-docker compose -f docker-compose.yml -f docker-compose.prod.yml down
+docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.prod down
 ```
 
 **💡 Mida õppisid:**
@@ -901,10 +901,10 @@ curl -X POST http://localhost:3000/api/auth/register \
 
 ```bash
 # Seiska TEST keskkond
-docker-compose -f docker-compose.yml -f docker-compose.test.yml down
+docker-compose -f docker-compose.yml -f docker-compose.test.yml --env-file .env.test down
 
 # Või kui tahad andmed säilitada:
-docker-compose -f docker-compose.yml -f docker-compose.test.yml stop
+docker-compose -f docker-compose.yml -f docker-compose.test.yml --env-file .env.test stop
 ```
 
 ---
