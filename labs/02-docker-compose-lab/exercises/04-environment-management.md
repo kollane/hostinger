@@ -188,38 +188,48 @@ Kui vajad `.env` faili täpset selgitust (miks seda kasutatakse, kuidas Docker C
 **💡 Mida õppisid:**
 - ✅ Template fail on alus kõigile keskkondadele
 - ✅ Commit'id Git'i `.env.test.example` (template), MITTE `.env.test` (saladused)
-- ✅ Järgmises sammus lood `.env.test` faili template'i alusel
+- ✅ Järgmises sammus lood `.env.test` ja `.env` failid template'i alusel
 
 ---
 
-### Samm 3: Loo .env.test fail template'ist
+### Samm 3: Loo .env.test ja .env failid template'ist
 
-**Eesmärk:** Kopeeri template fail ja veendu, et see sisaldaks TEST keskkonna väärtuseid
+**Eesmärk:** Kopeeri template fail TEST keskkonna jaoks ja loo ka `.env` fail, mida Docker Compose loeb automaatselt.
 
-Kopeeri template fail:
+Kopeeri template fail TEST keskkonna jaoks:
 
 ```bash
 # Kopeeri .env.test.example → .env.test
 cp .env.test.example .env.test
 ```
 
-**Kontrolli, et fail loodi:**
+Loo `.env` fail (default, mida Docker Compose loeb automaatselt):
 
 ```bash
-ls -la .env.test
-# Peaks nägema: .env.test (sama sisu mis .env.test.example)
+# Kopeeri .env.test → .env
+cp .env.test .env
+```
+
+**💡 Selgitus:** Docker Compose loeb automaatselt `.env` faili (kui see eksisteerib). `.env.test` ja `.env.prod` failid kasutatakse explicit `--env-file` flagiga.
+
+**Kontrolli, et failid loodi:**
+
+```bash
+ls -la .env .env.test
+# Peaks nägema: .env ja .env.test (mõlemad sama sisuga)
 ```
 
 **💡 Mida õppisid:**
-- ✅ `.env.test` fail on valmis TEST keskkonna jaoks
-- ✅ Ei pea käsitsi muutma (kasutab Harjutus 3 väärtusi)
-- ✅ Järgmises sammus õpid, kuidas luua PRODUCTION keskkonnal erinev `.env.prod` fail
+- ✅ `.env.test` fail on TEST keskkonna konfiguratsioon
+- ✅ `.env` fail on default, mida Docker Compose loeb automaatselt
+- ✅ Mõlemad failid sisaldavad praegu samu väärtuseid (TEST keskkonna väärtused)
+- ✅ Järgmises sammus õpid, kuidas BASE config kasutab neid muutujaid
 
 ---
 
 ### Samm 4: Uuenda docker-compose.yml (BASE config)
 
-**Eesmärk:** Nüüd kui .env.test fail on olemas, muuda olemasolev `compose-project/docker-compose.yml` fail kasutama neid muutujaid.
+**Eesmärk:** Nüüd kui `.env.test` ja `.env` failid on olemas, muuda olemasolev `compose-project/docker-compose.yml` fail kasutama neid muutujaid.
 
 Ava olemasolev docker-compose.yml fail:
 
@@ -259,10 +269,10 @@ cat ../solutions/04-environment-management/docker-compose.yml
 
 Salvesta: `Esc`, siis `:wq`, `Enter`
 
-**Testi, et BASE config kasutab .env.test faili:**
+**Testi, et BASE config kasutab .env faili:**
 
 ```bash
-# Kontrolli, et muutujad substituteeruvad õigesti (.env.test fail loetakse automaatselt)
+# Kontrolli, et muutujad substituteeruvad õigesti (.env fail loetakse automaatselt)
 docker compose config | grep JWT_SECRET
 # Peaks nägema: JWT_SECRET: VXCkL39yz/6xw7JFpHdLpP8xgBFUSKbnNJWdAaeWDiM=
 
@@ -274,9 +284,11 @@ docker compose config | grep -A 5 "^networks:"
 # Peaks nägema: frontend-network, backend-network, database-network
 ```
 
+**💡 Selgitus:** `docker compose config` loeb automaatselt `.env` faili (ilma `--env-file` flagita). Seetõttu lõime Samm 3-s `.env` faili.
+
 **💡 Mida õppisid:**
 - ✅ BASE config kasutab `${VARIABLE}` süntaksit
-- ✅ `.env.test` fail täidab need muutujad
+- ✅ `.env` fail täidab need muutujad (loetakse automaatselt)
 - ✅ Saad testida kohe (docker compose config)
 - ✅ Järgmises sammus õpid multi-environment pattern'i (TEST vs PROD)
 
