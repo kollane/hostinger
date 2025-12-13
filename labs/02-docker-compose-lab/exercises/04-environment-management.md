@@ -586,8 +586,10 @@ POSTGRES_USER_DB=user_service_db
 POSTGRES_TODO_DB=todo_service_db
 
 # JWT Configuration
-# Genereeri: openssl rand -base64 32
-JWT_SECRET=CHANGE_ME_TO_RANDOM_BASE64_STRING_32_BYTES
+# ⚠️ OLULINE: Genereeri UUS secret (ÄRA kasuta seda näidist!):
+#   openssl rand -base64 32
+# PEAB olema erinev TEST keskkonnast (test-secret-not-for-production)!
+JWT_SECRET=8K+9fR3mL7vN2pQ6xW1yZ4tH5jB0cE8fG9aD3sK7mL1=
 
 # Application Ports
 USER_SERVICE_PORT=3000
