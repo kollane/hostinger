@@ -6,7 +6,7 @@
 
 ## 📋 Harjutuse ülevaade
 
-Selles harjutuses õpid eraldama saladused docker-compose.yml failist ja haldama neid turvaliselt `.env` failidega. Samuti õpid kasutama `docker-compose.override.yml` mustrit erinevate keskkondade (dev, prod) jaoks.
+Selles harjutuses õpid eraldama saladused docker-compose.yml failist ja haldama neid turvaliselt `.env` failidega. Samuti õpid kasutama **multi-file pattern'i** (4 tüüpi override faile) erinevate keskkondade (dev, test, prod) jaoks.
 
 **Probleem praegu:**
 
@@ -16,8 +16,8 @@ Selles harjutuses õpid eraldama saladused docker-compose.yml failist ja haldama
 
 **Lahendus:**
 
-- ✅ .env fail saladuste haldamiseks
-- ✅ docker-compose.override.yml dev seadistuste jaoks
+- ✅ .env failid saladuste haldamiseks (.env.test, .env.prod)
+- ✅ Multi-file pattern (docker-compose.test.yml, docker-compose.prod.yml, docker-compose.override.yml)
 - ✅ Versioonihaldus (.env.example, mitte .env)
 
 ---
@@ -28,8 +28,8 @@ Peale selle harjutuse läbimist oskad:
 
 - ✅ Luua ja kasutada **.env faile**
 - ✅ Kasutada **keskkonnamuutujaid (environment variables)** `docker-compose.yml` failis
-- ✅ Implementeerida `docker-compose.override.yml` **mustrit (pattern)**
-- ✅ Eraldada arenduse (dev) ja toote keskkonna (prod) konfiguratsioone
+- ✅ Implementeerida **multi-file pattern'i** (4 tüüpi override faile: test.yml, prod.yml, override.yml)
+- ✅ Eraldada arenduse (dev), testimise (test) ja toote keskkonna (prod) konfiguratsioone
 - ✅ Turvaliselt kasutada **versioonihaldust (version control)** (`.gitignore`)
 - ✅ Jagada **malle (templates)** (`.env.example`)
 
@@ -242,34 +242,70 @@ docker compose config | grep -A 5 "^networks:"
 
 #### 4.1. Probleemi Kirjeldus
 
-Seni kasutasime ühte `.env` faili ja `docker-compose.override.yml` faile.
+**Mis on docker-compose.override.yml?**
+
+`docker-compose.override.yml` on **automaatne override fail**, mida Docker Compose loeb ALATI peale `docker-compose.yml` faili:
+
+```bash
+# Kui käivitad lihtsalt:
+docker-compose up -d
+
+# Docker Compose loeb AUTOMAATSELT mõlemat:
+# 1. docker-compose.yml        (BASE config)
+# 2. docker-compose.override.yml  (override config) - kui see fail eksisteerib!
+```
+
+**Kasutus lokaalseks development'iks:**
+- Ava pordid debugging'uks (5432, 3000, 8081)
+- Lisa volume mount'id (hot reload)
+- Muuda NODE_ENV=development
+- Lisa debug logging
+
+**Probleem production'is:**
+
+Seni kasutasime ühte `.env` faili ja `docker-compose.override.yml` faili.
 See töötab **local development'is**, aga **mitte production'is**:
 
 ❌ **Probleemid:**
 - Sama parool kõikides keskkondades (test, prod)
-- `docker-compose.override.yml` laetakse ALATI (automaatne)
+- `docker-compose.override.yml` laetakse ALATI (automaatne) - ei saa välja lülitada
 - Ei saa kontrollida, millist konfiguratsiooni kasutatakse
+- Production serveris ei taha avatud porte ega debug logging'ut!
 
 ✅ **Lahendus: Environment-spetsiifilised failid**
 
-#### 4.2. Best Practice: 3-Taseme Arhitektuur
+#### 4.2. Best Practice: Multi-File Pattern (4 Tüüpi Override Faile)
+
+**Docker Compose toetab mitut override faili tüüpi:**
 
 ```
 compose-project/
 ├── docker-compose.yml              # BASE (kõigile ühine)
-├── docker-compose.test.yml         # TEST overrides
-├── docker-compose.prelive.yml      # PRELIVE overrides
-├── docker-compose.prod.yml         # PRODUCTION overrides
+│
+├── docker-compose.test.yml         # TEST overrides (explicit -f flag)
+├── docker-compose.prelive.yml      # PRELIVE overrides (explicit -f flag)
+├── docker-compose.prod.yml         # PRODUCTION overrides (explicit -f flag)
+├── docker-compose.override.yml     # LOCAL DEV overrides (AUTOMAATNE, VALIKULINE)
 │
 ├── .env.test.example               # TEST template
 ├── .env.prelive.example            # PRELIVE template
 └── .env.prod.example               # PRODUCTION template
 ```
 
+**4 Faili Tüüpi:**
+
+| Fail | Käivitamine | Kasutus | Git Commit? |
+|------|-------------|---------|-------------|
+| **docker-compose.yml** | Alati (BASE) | Ühine config (services, networks, volumes) | ✅ Jah |
+| **docker-compose.test.yml** | `-f docker-compose.yml -f docker-compose.test.yml` | TEST: pordid avatud, debug logging | ✅ Jah |
+| **docker-compose.prod.yml** | `-f docker-compose.yml -f docker-compose.prod.yml` | PRODUCTION: isoleeritud, resource limits | ✅ Jah |
+| **docker-compose.override.yml** | Automaatne (kui eksisteerib) | LOCAL DEV: hot reload, volumes | ⚠️ Valikuline |
+
 **Põhimõte:**
 1. **BASE** = Ühine konfiguratsioon (kõik teenused, võrgud, volumes)
-2. **OVERRIDE** = Keskkonna-spetsiifilised erinevused (pordid, limits, secrets)
-3. **ENV FILES** = Paroolid ja saladused (git ignore!)
+2. **EXPLICIT OVERRIDES** = Keskkonna-spetsiifilised (test.yml, prod.yml) - kasutatakse `-f` flagiga
+3. **AUTOMATIC OVERRIDE** = `docker-compose.override.yml` - laetakse automaatselt, VALIKULINE
+4. **ENV FILES** = Paroolid ja saladused (git ignore!)
 
 **💡 Töötab Nii Lokaalselt Kui Mitmete Serveritega:**
 
@@ -305,7 +341,17 @@ docker-compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.
 
 **Tulemus:** Sama kood (git'is), erinevad paroolid ja seadistused (igas serveris).
 
-#### 4.3. Loo Environment Override Failid
+#### 4.3. Loo Override Failid
+
+Selles sammus loome 3 override faili (vaata Samm 4.2 tabelit):
+
+1. ✅ **docker-compose.test.yml** (TEST) - Kohustuslik
+2. ✅ **docker-compose.prod.yml** (PRODUCTION) - Kohustuslik
+3. ⚠️ **docker-compose.override.yml** (LOCAL DEV) - VALIKULINE
+
+---
+
+##### 4.3.1. TEST Override (docker-compose.test.yml)
 
 Loo **docker-compose.test.yml**:
 
@@ -352,6 +398,10 @@ networks:
 ```
 
 Salvesta: `Esc`, siis `:wq`, `Enter`
+
+---
+
+##### 4.3.2. PRODUCTION Override (docker-compose.prod.yml)
 
 Loo **docker-compose.prod.yml**:
 
@@ -415,6 +465,88 @@ services:
 ```
 
 Salvesta: `Esc`, siis `:wq`, `Enter`
+
+---
+
+##### 4.3.3. LOCAL DEV Override (docker-compose.override.yml) - VALIKULINE
+
+**💡 Viide:** See on 4. override faili tüüp, mida käsitleti Samm 4.2-s (Multi-File Pattern).
+
+**Märkus:** See samm on VALIKULINE. Kui ei tee aktiivset arendust (volume mounts, hot reload), võid vahele jätta.
+
+**Millal kasutada:**
+- ✅ **docker-compose.override.yml** - Kui teed aktiivset arendust (hot reload, volume mounts, `npm run dev`)
+- ✅ **docker-compose.test.yml** - Kui testid teenuseid (stabiilsed image'd, debugging pordid)
+
+**Erinevus:**
+
+| Aspekt | override.yml (4.3.3) | test.yml (4.3.1) |
+|--------|----------------------|------------------|
+| **Käivitamine** | `docker-compose up -d` (automaatne) | `-f docker-compose.yml -f docker-compose.test.yml` (explicit) |
+| **Kasutus** | Aktiivne arendus (volume mounts, hot reload) | Testimine (built images, pordid avatud) |
+| **Git Commit** | ⚠️ Valikuline (sõltub workflow'st) | ✅ Jah (team-wide config) |
+
+Loo override fail development seadistustele:
+
+```bash
+vim docker-compose.override.yml
+```
+
+Lisa:
+
+```yaml
+# ==========================================================================
+# Docker Compose Override - Development Environment
+# ==========================================================================
+# See fail rakendub automaatselt üle docker-compose.yml
+# Kasutamine:
+#   docker compose up -d  # Rakendab nii docker-compose.yml kui override.yml
+# ==========================================================================
+
+# MÄRKUS: Docker Compose v2 (2025)
+# version: '3.8' on VALIKULINE (optional) Compose v2's!
+# Võid selle ära jätta - Compose v2 kasutab automaatselt uusimat versiooni.
+#version: '3.8'
+
+services:
+  user-service:
+    environment:
+      NODE_ENV: development
+      LOG_LEVEL: debug
+    # Development volume mount (hot reload)
+    volumes:
+      - ../../apps/backend-nodejs:/app
+    # Override command for development
+    command: npm run dev
+
+  todo-service:
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      LOGGING_LEVEL_ROOT: DEBUG
+
+  frontend:
+    # Development: enable directory listing for debugging (veatuvastus)
+    # (Remove :ro to allow writing)
+    volumes:
+      - ../../apps/frontend:/usr/share/nginx/html
+```
+
+Salvesta: `Esc`, siis `:wq`, `Enter`
+
+**Testimine:**
+
+```bash
+# Ilma override'ita (production mode)
+docker compose -f docker-compose.yml up -d
+
+# Override'iga (development mode)
+docker compose up -d  # Rakendab mõlemat
+
+# Vaata, mis konfiguratsioon rakendus
+docker compose config
+```
+
+---
 
 #### 4.4. Loo Environment Variable Failid
 
@@ -730,72 +862,6 @@ docker-compose -f docker-compose.yml -f docker-compose.test.yml stop
 
 ---
 
-### Samm 8: Loo docker-compose.override.yml lokaalseks dev'iks (VALIKULINE)
-
-**Märkus:** See samm on VALIKULINE. Kui soovid lokaalselt arendada (hot reload, volume mounts), loo override fail.
-
-Loo override fail development seadistustele:
-
-```bash
-vim docker-compose.override.yml
-```
-
-Lisa:
-
-```yaml
-# ==========================================================================
-# Docker Compose Override - Development Environment
-# ==========================================================================
-# See fail rakendub automaatselt üle docker-compose.yml
-# Kasutamine:
-#   docker compose up -d  # Rakendab nii docker-compose.yml kui override.yml
-# ==========================================================================
-
-# MÄRKUS: Docker Compose v2 (2025)
-# version: '3.8' on VALIKULINE (optional) Compose v2's!
-# Võid selle ära jätta - Compose v2 kasutab automaatselt uusimat versiooni.
-#version: '3.8'
-
-services:
-  user-service:
-    environment:
-      NODE_ENV: development
-      LOG_LEVEL: debug
-    # Development volume mount (hot reload)
-    volumes:
-      - ../../apps/backend-nodejs:/app
-    # Override command for development
-    command: npm run dev
-
-  todo-service:
-    environment:
-      SPRING_PROFILES_ACTIVE: dev
-      LOGGING_LEVEL_ROOT: DEBUG
-
-  frontend:
-    # Development: enable directory listing for debugging (veatuvastus)
-    # (Remove :ro to allow writing)
-    volumes:
-      - ../../apps/frontend:/usr/share/nginx/html
-```
-
-Salvesta: `Esc`, siis `:wq`, `Enter`
-
-**Testimine:**
-
-```bash
-# Ilma override'ita (production mode)
-docker compose -f docker-compose.yml up -d
-
-# Override'iga (development mode)
-docker compose up -d  # Rakendab mõlemat
-
-# Vaata, mis konfiguratsioon rakendus
-docker compose config
-```
-
----
-
 ## 📚 Täiendavad Juhendid
 
 ### Keskkondade Haldamine (Multi-Environment)
@@ -828,8 +894,9 @@ Peale selle harjutuse läbimist peaksid omama:
 
 ### Failid (Multi-Environment Setup):
 - [ ] **docker-compose.yml** - BASE config (env vars: `${VAR:-default}`)
-- [ ] **docker-compose.test.yml** - TEST overrides
-- [ ] **docker-compose.prod.yml** - PRODUCTION overrides
+- [ ] **docker-compose.test.yml** - TEST overrides (Samm 4.3.1)
+- [ ] **docker-compose.prod.yml** - PRODUCTION overrides (Samm 4.3.2)
+- [ ] **docker-compose.override.yml** - LOCAL DEV overrides (Samm 4.3.3 - VALIKULINE)
 - [ ] **.env.test.example** - TEST template (commit'itud)
 - [ ] **.env.prod.example** - PRODUCTION template (commit'itud)
 - [ ] **.env.test** - TEST secrets (git ignored, lokaalselt loodud)
@@ -887,10 +954,11 @@ ${VARIABLE_NAME:-default_value}
 
 ### Multi-Environment Pattern (Best Practice):
 
-**3-Taseme Arhitektuur:**
+**Multi-File Pattern (4 Tüüpi):**
 1. **BASE** = `docker-compose.yml` (ühine config, env vars: `${VAR:-default}`)
-2. **OVERRIDE** = `docker-compose.{env}.yml` (keskkonna-spetsiifilised muudatused)
-3. **SECRETS** = `.env.{env}` failid (paroolid, git ignored!)
+2. **EXPLICIT OVERRIDES** = `docker-compose.{env}.yml` (test.yml, prod.yml - käivitamine `-f` flagiga)
+3. **AUTOMATIC OVERRIDE** = `docker-compose.override.yml` (local dev - automaatne, VALIKULINE)
+4. **SECRETS** = `.env.{env}` failid (paroolid, git ignored!)
 
 **Composite käsud:**
 ```bash
@@ -905,6 +973,8 @@ alias dc-prod='docker-compose -f docker-compose.yml -f docker-compose.prod.yml -
 ```
 
 ### docker-compose.override.yml (Lokaalne Dev):
+
+**📖 Vaata:** Samm 4.3.3 (LOCAL DEV Override) - VALIKULINE
 
 - Rakendub **automaatselt** peale docker-compose.yml (kui fail eksisteerib)
 - Kasutatakse lokaalseks development'iks (hot reload, volume mounts)
@@ -1062,9 +1132,10 @@ Suurepärane! Nüüd haldad saladusi turvaliselt multi-environment pattern'iga.
 
 **Mis õppisid:**
 
-- ✅ Multi-environment pattern (BASE + OVERRIDE + SECRETS)
+- ✅ Multi-file pattern (4 tüüpi override faile: BASE + test.yml + prod.yml + override.yml)
 - ✅ Composite käsud (`-f docker-compose.yml -f docker-compose.test.yml --env-file .env.test`)
 - ✅ Environment-spetsiifilised konfiguratsioonid (test vs prod)
+- ✅ docker-compose.override.yml automaatne käitumine (VALIKULINE local dev)
 - ✅ Tugevate paroolide genereerimine
 - ✅ Multi-server deployment muster
 - ⏭️ **Järgmine:** Andmebaasi migratsioonid (Liquibase)
