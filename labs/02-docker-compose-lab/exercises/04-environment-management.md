@@ -774,7 +774,7 @@ docker-compose -f docker-compose.yml -f docker-compose.test.yml --env-file .env.
 
 # 3. Kontrolli
 docker ps
-docker compose -f docker-compose.yml -f docker-compose.test.yml logs
+docker compose -f docker-compose.yml -f docker-compose.test.yml --env-file .env.test logs
 
 # Kontrolli, et andmebaasi pordid on avatud
 docker ps | grep postgres
@@ -863,7 +863,7 @@ ls -la .env.test
 # Peaks nägema .env.test faili
 
 # 2. Kas .env.test loetakse?
-docker compose config | grep JWT_SECRET
+docker compose --env-file .env.test config | grep JWT_SECRET
 # Peaks nägema .env.test'ist väärtust
 
 # 3. Kas .gitignore toimib?
@@ -871,7 +871,7 @@ git status
 # .env.test EI PEAKS olema nimekirjas (ainult .env.test.example)
 
 # 4. Kas override rakendub (TEST keskkond)?
-docker compose -f docker-compose.yml -f docker-compose.test.yml config | grep NODE_ENV
+docker compose -f docker-compose.yml -f docker-compose.test.yml --env-file .env.test config | grep NODE_ENV
 # TEST mode'is peaks olema: NODE_ENV: development
 ```
 
