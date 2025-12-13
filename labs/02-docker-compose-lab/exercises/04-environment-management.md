@@ -420,22 +420,42 @@ Salvesta: `Esc`, siis `:wq`, `Enter`
 # Käivita TEST keskkonnaga (kasutab .env.test faili)
 docker compose -f docker-compose.yml -f docker-compose.test.yml --env-file .env.test up -d
 
-# Kontrolli, et teenused käivituvad
+# 1. Kontrolli, et teenused käivituvad
 docker ps
 # Peaks nägema: frontend, user-service, todo-service, postgres-user, postgres-todo
 
-# Kontrolli, et pordid on avatud (TEST mode)
-docker ps | grep postgres
-# Peaks nägema: 127.0.0.1:5432->5432/tcp ja 127.0.0.1:5433->5432/tcp
+# 2. Kontrolli, et DEBUG pordid on avatud (TEST mode)
+docker ps | grep -E "user-service|todo-service|postgres"
+# Peaks nägema:
+#   user-service: 127.0.0.1:3000->3000/tcp
+#   todo-service: 127.0.0.1:8081->8081/tcp
+#   postgres-user: 127.0.0.1:5432->5432/tcp
+#   postgres-todo: 127.0.0.1:5433->5432/tcp
+
+# 3. Testi portide kättesaadavust
+curl http://localhost:3000/health  # User Service - peaks töötama
+curl http://localhost:8081/health  # Todo Service - peaks töötama
+
+# 4. Kontrolli environment muutujaid (debug mode)
+docker exec user-service printenv NODE_ENV
+# Peaks olema: development
+
+docker exec todo-service printenv SPRING_PROFILES_ACTIVE
+# Peaks olema: dev
+
+# 5. Kontrolli, et database network EI OLE isoleeritud (TEST mode)
+docker network inspect compose-project_database-network | grep internal
+# Peaks olema: "internal": false
 
 # Seiska teenused (enne järgmist sammu)
 docker compose -f docker-compose.yml -f docker-compose.test.yml down
 ```
 
 **💡 Mida õppisid:**
-- ✅ TEST override lisab debug porte (127.0.0.1 prefix)
+- ✅ TEST override lisab debug porte (127.0.0.1:3000, 8081, 5432, 5433)
+- ✅ Environment muutujad: NODE_ENV=development, SPRING_PROFILES_ACTIVE=dev
+- ✅ Database network ei ole isoleeritud (saad ühenduda DBeaver'iga)
 - ✅ Composite käsk ühendab BASE + TEST override + .env.test
-- ✅ Saad kohe testida, kas konfiguratsioon töötab
 
 ---
 
@@ -651,27 +671,59 @@ Salvesta: `Esc`, siis `:wq`, `Enter`
 # Käivita PRODUCTION keskkonnaga (kasutab .env.prod faili)
 docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.prod up -d
 
-# Kontrolli, et teenused käivituvad
+# 1. Kontrolli, et teenused käivituvad
 docker ps
 # Peaks nägema: frontend, user-service, todo-service, postgres-user, postgres-todo
 
-# Kontrolli, et ainult frontend port on avatud (PRODUCTION mode)
-docker ps | grep -E "frontend|user-service|todo-service"
-# Frontend: 0.0.0.0:80->80/tcp
-# user-service ja todo-service: EI OLE porte (internal only)
+# 2. Kontrolli, et AINULT frontend port on avatud (PRODUCTION mode)
+docker ps | grep -E "user-service|todo-service|postgres"
+# Peaks nägema:
+#   user-service: EI OLE porte (internal only)
+#   todo-service: EI OLE porte (internal only)
+#   postgres-user: EI OLE porte (internal only)
+#   postgres-todo: EI OLE porte (internal only)
 
-# Kontrolli resource limits
+docker ps | grep frontend
+# Peaks nägema: 0.0.0.0:80->80/tcp (ainult frontend on avalik)
+
+# 3. Testi, et backend ei ole kättesaadav väljastpoolt
+curl http://localhost:3000/health  # EI TÖÖTA (port not exposed)
+curl http://localhost:8081/health  # EI TÖÖTA (port not exposed)
+# Oodatud: Connection refused
+
+# 4. Kontrolli environment muutujaid (production mode)
+docker exec user-service printenv NODE_ENV
+# Peaks olema: production
+
+docker exec todo-service printenv SPRING_PROFILES_ACTIVE
+# Peaks olema: prod
+
+# 5. Kontrolli, et database network ON isoleeritud (PRODUCTION mode)
+docker network inspect compose-project_database-network | grep internal
+# Peaks olema: "internal": true
+
+# 6. Kontrolli resource limits
 docker stats --no-stream
-# Peaks nägema CPU ja memory limite
+# Peaks nägema CPU ja memory limite:
+#   postgres-user: 1.0 CPU, 512M memory
+#   postgres-todo: 1.0 CPU, 512M memory
+#   user-service: 1.0 CPU, 512M memory
+#   todo-service: 2.0 CPU, 1G memory
+
+# 7. Kontrolli restart policies
+docker inspect user-service --format='{{.HostConfig.RestartPolicy.Name}}'
+# Peaks olema: always
 
 # Seiska teenused
 docker compose -f docker-compose.yml -f docker-compose.prod.yml down
 ```
 
 **💡 Mida õppisid:**
-- ✅ PRODUCTION override lisab resource limits ja restart policies
-- ✅ Ainult frontend port 80 on avatud (backend ja DB isoleeritud)
-- ✅ Saad võrrelda TEST vs PROD käitumist
+- ✅ PRODUCTION: Ainult frontend port 80 avatud (backend ja DB isoleeritud)
+- ✅ Environment muutujad: NODE_ENV=production, SPRING_PROFILES_ACTIVE=prod
+- ✅ Database network on isoleeritud (internal: true)
+- ✅ Resource limits ja restart policies on rakendatud
+- ✅ **Võrdlus TEST vs PROD:** TEST = debug pordid + dev mode, PROD = isoleeritud + production mode
 
 ---
 
