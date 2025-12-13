@@ -701,124 +701,7 @@ docker compose config
 
 ---
 
-#### 5.3. Loo .env.prod fail PRODUCTION keskkonna jaoks
-
-**Eesmärk:** Loo PRODUCTION keskkonna .env fail template'i alusel ja muuda ainult vajalikke seadistusi.
-
-**Märkus:** `.env.test.example` template loodi juba Samm 2's. Kasuta seda aluseks PRODUCTION keskkonna jaoks.
-
-Loo `.env.prod` fail template'i alusel:
-
-```bash
-# 1. Kopeeri template → .env.prod
-cp .env.test.example .env.prod
-
-# 2. Genereeri tugev JWT_SECRET PRODUCTION'i jaoks
-openssl rand -base64 32
-
-# 3. Muuda .env.prod failis järgmised väärtused
-vim .env.prod
-```
-
-**Muuda `.env.prod` failis järgmised read:**
-
-```bash
-# Muuda JWT_SECRET → uus väärtus openssl'ist (erinev TEST'ist!)
-JWT_SECRET=<kopeeri openssl rand -base64 32 tulemus siia>
-
-# Muuda logging tasemed → production level
-LOG_LEVEL=warn
-SPRING_LOG_LEVEL=WARN
-
-# Muuda environment → production
-NODE_ENV=production
-SPRING_PROFILE=prod
-
-# POSTGRES_PASSWORD jääb samaks: postgres (harjutuse lihtsustus)
-# 📚 HARJUTUSE LIHTSUSTUS: sama DB parool kui TEST'is
-#    Põhjus: Sama volume → PostgreSQL ignoreerib uut parooli
-# 🏢 REAALSES PRODUCTION'IS: eraldi server → erinev tugev parool!
-```
-
-**Näide täielikust `.env.prod` failist:**
-
-Vaata täielikku näidisfaili solution kaustas:
-
-```bash
-cat ../solutions/04-environment-management/.env.prod.example
-```
-
-Salvesta: `Esc`, siis `:wq`, `Enter`
-
-**💡 Mida õppisid:**
-- ✅ Kasutad sama template'i (`.env.test.example`) aluseks kõigile keskkondadele
-- ✅ Muudad ainult keskkonnapõhiseid seadistusi (JWT_SECRET, LOG_LEVEL, NODE_ENV)
-- ✅ Ei pea kopeerima tervet faili käsitsi (vähem vigu)
-- ✅ Template on commit'itud Git'i, `.env.prod` on ignored
-
-**Testi PRODUCTION keskkonda:**
-
-```bash
-# Käivita PRODUCTION keskkonnaga (kasutab .env.prod faili)
-docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.prod up -d
-
-# 1. Kontrolli, et teenused käivituvad
-docker ps
-# Peaks nägema: frontend, user-service, todo-service, postgres-user, postgres-todo
-
-# 2. Kontrolli, et AINULT frontend port on avatud (PRODUCTION mode)
-docker ps | grep -E "user-service|todo-service|postgres"
-# Peaks nägema:
-#   user-service: EI OLE porte (internal only)
-#   todo-service: EI OLE porte (internal only)
-#   postgres-user: EI OLE porte (internal only)
-#   postgres-todo: EI OLE porte (internal only)
-
-docker ps | grep frontend
-# Peaks nägema: 0.0.0.0:80->80/tcp (ainult frontend on avalik)
-
-# 3. Testi, et backend ei ole kättesaadav väljastpoolt
-curl http://localhost:3000/health  # EI TÖÖTA (port not exposed)
-curl http://localhost:8081/health  # EI TÖÖTA (port not exposed)
-# Oodatud: Connection refused
-
-# 4. Kontrolli environment muutujaid (production mode)
-docker exec user-service printenv NODE_ENV
-# Peaks olema: production
-
-docker exec todo-service printenv SPRING_PROFILES_ACTIVE
-# Peaks olema: prod
-
-# 5. Kontrolli, et database network ON isoleeritud (PRODUCTION mode)
-docker network inspect compose-project_database-network | grep -i internal
-# Peaks olema: "Internal": true
-
-# 6. Kontrolli resource limits
-docker stats --no-stream
-# Peaks nägema CPU ja memory limite:
-#   postgres-user: 1.0 CPU, 512M memory
-#   postgres-todo: 1.0 CPU, 512M memory
-#   user-service: 1.0 CPU, 512M memory
-#   todo-service: 2.0 CPU, 1G memory
-
-# 7. Kontrolli restart policies
-docker inspect user-service --format='{{.HostConfig.RestartPolicy.Name}}'
-# Peaks olema: always
-
-# Seiska teenused
-docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.prod down
-```
-
-**💡 Mida õppisid:**
-- ✅ PRODUCTION: Ainult frontend port 80 avatud (backend ja DB isoleeritud)
-- ✅ Environment muutujad: NODE_ENV=production, SPRING_PROFILES_ACTIVE=prod
-- ✅ Database network on isoleeritud (internal: true)
-- ✅ Resource limits ja restart policies on rakendatud
-- ✅ **Võrdlus TEST vs PROD:** TEST = debug pordid + dev mode, PROD = isoleeritud + production mode
-
----
-
-#### 5.4. Uuenda .gitignore
+#### 5.3. Uuenda .gitignore
 
 ```bash
 vim .gitignore
@@ -853,7 +736,7 @@ Salvesta: `Esc`, siis `:wq`, `Enter`
 
 ---
 
-#### 5.5. Kasutamine: Composite Commands
+#### 5.4. Kasutamine: Composite Commands
 
 **TEST Keskkond:**
 
@@ -914,7 +797,7 @@ docker stats  # Vaata resource kasutust
 
 ---
 
-#### 5.6. Võrdlus: Erinevused Keskkondade Vahel
+#### 5.5. Võrdlus: Erinevused Keskkondade Vahel
 
 | Aspekt | TEST | PRODUCTION |
 |--------|------|------------|
@@ -932,7 +815,7 @@ docker stats  # Vaata resource kasutust
 
 ---
 
-#### 5.7. Alias'ed (Valikuline)
+#### 5.6. Alias'ed (Valikuline)
 
 Lisa `~/.bashrc`:
 
@@ -1037,7 +920,7 @@ Peale selle harjutuse läbimist peaksid omama:
 - [ ] **docker-compose.override.yml** - LOCAL DEV overrides (Samm 5.2.3 - VALIKULINE)
 - [ ] **.env.test.example** - TEST template (commit'itud, Samm 2)
 - [ ] **.env.test** - TEST secrets (git ignored, lokaalselt loodud, Samm 3)
-- [ ] **.env.prod** - PRODUCTION secrets (git ignored, lokaalselt loodud, Samm 5.3)
+- [ ] **.env.prod** - PRODUCTION secrets (git ignored, lokaalselt loodud, Samm 5.2.2)
 - [ ] **.gitignore** - Actual .env files ignored
 - [ ] **ENVIRONMENTS.md** viide olemas
 - [ ] **PASSWORDS.md** viide olemas
