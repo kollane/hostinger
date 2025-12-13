@@ -740,22 +740,29 @@ openssl rand -base64 32  # JWT secret
 # JWT_SECRET=8K+9fR3mL7vN2pQ6xW1yZ4tH5jB0cE8fG9aD3sK7mL1=
 
 # 2. Käivita PRODUCTION keskkonnaga
-# MÄRKUS: Kasutab eraldi volume'id (postgres-*-data-prod)
+# ⚠️ OLULINE: Docker loob AUTOMAATSELT uued volume'id:
+#   - postgres-user-data-prod  (TÜHI, initsialiseeritakse PROD parooliga)
+#   - postgres-todo-data-prod  (TÜHI, initsialiseeritakse PROD parooliga)
+# Need on ERINEVAD TEST volume'idest (postgres-*-data-test)!
 docker-compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.prod up -d
 
-# 3. Kontrolli volume'id (peaks nägema -prod volume'id)
+# 3. Kontrolli, et uued volume'id loodi
 docker volume ls | grep postgres
-# Peaks nägema:
-#   postgres-user-data-prod
-#   postgres-todo-data-prod
-#   postgres-user-data-test  (kui TEST käivitatud)
-#   postgres-todo-data-test
+# Peaks nägema MÕLEMAT:
+#   postgres-user-data-prod  ← UUS (PROD parooliga)
+#   postgres-todo-data-prod  ← UUS (PROD parooliga)
+#   postgres-user-data-test  ← VANA (TEST parooliga, kui TEST käivitatud)
+#   postgres-todo-data-test  ← VANA (TEST parooliga)
 
-# 4. Kontrolli teenuseid
+# 4. Kontrolli, et PostgreSQL initsialiseerus PROD parooliga
+docker logs postgres-user | grep "PostgreSQL init process complete"
+# Peaks nägema: "PostgreSQL init process complete; ready for start up."
+
+# 5. Kontrolli teenuseid
 docker ps  # Vaata (healthy) staatust
 docker stats  # Vaata resource kasutust
 
-# ❌ Andmebaasid ei ole kättesaadavad host'ilt (isoleeritud)
+# ❌ Andmebaasid ei ole kättesaadavad host'ilt (isoleeritud - internal network)
 ```
 
 #### 4.6. Võrdlus: Erinevused Keskkondade Vahel
@@ -1051,19 +1058,33 @@ volumes:
     name: postgres-user-data-prod  # ← PROD-spetsiifiline
 ```
 
+**Automaatne loomine:**
+```bash
+# Esimene kord TEST käivitades - Docker loob automaatselt:
+docker-compose -f docker-compose.yml -f docker-compose.test.yml up -d
+# → postgres-user-data-test (TÜHI, initsialiseeritakse TEST parooliga)
+# → postgres-todo-data-test (TÜHI, initsialiseeritakse TEST parooliga)
+
+# Esimene kord PROD käivitades - Docker loob UUED volume'id:
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+# → postgres-user-data-prod (TÜHI, initsialiseeritakse PROD parooliga)
+# → postgres-todo-data-prod (TÜHI, initsialiseeritakse PROD parooliga)
+```
+
 **Tulemus:**
 - ✅ TEST: `postgres-user-data-test` → parool `postgres`
 - ✅ PROD: `postgres-user-data-prod` → ERINEV tugev parool
+- ✅ Volume'id luuakse automaatselt (EI pea käsitsi `docker volume create`)
 - ✅ Eraldi volume'id võimaldavad erinevaid paroole
 - ✅ Realistlik (nagu päris production serverid)
 
 **Kontroll:**
 ```bash
 docker volume ls | grep postgres
-# postgres-user-data-test
-# postgres-todo-data-test
-# postgres-user-data-prod
-# postgres-todo-data-prod
+# postgres-user-data-test   ← TEST parooliga
+# postgres-todo-data-test   ← TEST parooliga
+# postgres-user-data-prod   ← PROD parooliga (ERINEV!)
+# postgres-todo-data-prod   ← PROD parooliga (ERINEV!)
 ```
 
 ### docker-compose.override.yml (Lokaalne Dev):
